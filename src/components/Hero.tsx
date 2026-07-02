@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { Play, BookOpen } from "lucide-react";
+import ZaizaiRive from "./ZaizaiRive";
 
 type Props = {
   onOpenDemo: () => void;
@@ -8,7 +9,7 @@ type Props = {
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-const idleButtons = ["说点什么", "陪我会儿", "记录一下"];
+const idleButtons = ["早上起不来", "吃饭没胃口", "记录一下"];
 
 export default function Hero({ onOpenDemo }: Props) {
   const [active, setActive] = useState<number | null>(null);
@@ -25,7 +26,7 @@ export default function Hero({ onOpenDemo }: Props) {
             className="inline-flex items-center gap-2 rounded-full border border-line bg-canvas px-3 py-1 text-[12px] text-ink-soft"
           >
             <span className="h-1.5 w-1.5 rounded-full bg-ink" />
-            一个陪你待一会儿的 AI 伙伴
+            面向社会功能受损青少年的 AI 健康生活管理助手
           </motion.span>
 
           <motion.h1
@@ -34,9 +35,9 @@ export default function Hero({ onOpenDemo }: Props) {
             transition={{ duration: 0.7, delay: 0.06, ease }}
             className="mt-7 text-[40px] leading-[1.06] tracking-tightest text-ink sm:text-[52px] md:text-[60px]"
           >
-            不急于解决，
+            不靠意志力启动，
             <br />
-            只是先陪你在。
+            从一个生活节点开始。
           </motion.h1>
 
           <motion.p
@@ -45,8 +46,7 @@ export default function Hero({ onOpenDemo }: Props) {
             transition={{ duration: 0.7, delay: 0.14, ease }}
             className="mt-6 max-w-md text-[15px] leading-relaxed text-ink-soft"
           >
-            占位文案：在呀是一个基于临床心理框架的 AI 陪伴产品，用顿感的角色
-            「在在」陪你度过那些说不清、但就是不太对劲的时刻。最终文案待回填。
+            在呀 ZÀIYA 通过虚拟形象「在在」出现在早起、吃饭、睡前、情绪波动和复诊前等关键时刻，帮助社会功能受损的青少年把日常状态记录下来，并逐步恢复更稳定的生活节奏。
           </motion.p>
 
           <motion.div
@@ -86,7 +86,7 @@ export default function Hero({ onOpenDemo }: Props) {
   );
 }
 
-/** Hero 右侧的 demo 闲置态：手机框 + 在在占位 + 三按钮（浅层反馈） */
+/** Hero 右侧的 demo 闲置态：手机框 + 在在 Rive + 三个生活节点按钮（浅层反馈） */
 function DemoIdlePreview({
   active,
   setActive,
@@ -103,9 +103,9 @@ function DemoIdlePreview({
           <span className="h-6 w-6 rounded-full border border-line bg-canvas" />
         </div>
 
-        {/* 在在占位图形：静态灰圆 */}
+        {/* 在在动画 */}
         <div className="absolute inset-0 grid place-items-center">
-          <div className="h-24 w-24 rounded-full bg-ink/15" />
+          <ZaizaiRive className="h-28 w-28" />
         </div>
 
         {/* 底部三按钮 */}
