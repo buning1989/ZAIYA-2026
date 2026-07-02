@@ -20,19 +20,23 @@ export default function Team() {
         <div className="mt-12 grid gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-2">
           {team.map((m, i) => (
             <Reveal key={m.name} delay={i * 0.08}>
-              <div className="flex h-full flex-col gap-4 bg-canvas p-8">
-                <div className="grid h-11 w-11 place-items-center rounded-full bg-ink font-display text-[14px] font-medium text-canvas">
-                  {m.initials}
-                </div>
-                <div>
-                  <div className="font-display text-[17px] font-semibold tracking-tight text-ink">
-                    {m.name}
+              <div className="flex h-full flex-col bg-canvas p-8">
+                <div className="flex items-center gap-6">
+                  <img
+                    src={m.avatar}
+                    alt={m.name}
+                    className="h-[88px] w-[88px] flex-shrink-0 rounded-full object-cover"
+                  />
+                  <div className="min-w-0">
+                    <div className="font-display text-[17px] font-semibold tracking-tight text-ink">
+                      {m.name}
+                    </div>
+                    <div className="mt-2 max-w-[18rem] text-[13px] leading-relaxed text-ink-faint">
+                      {m.role}
+                    </div>
                   </div>
-                  <div className="mt-0.5 text-[13px] text-ink-faint">
-                    {m.role}
-                  </div>
                 </div>
-                <p className="text-[13.5px] leading-relaxed text-ink-soft">
+                <p className="mt-4 max-w-[29rem] text-[15px] leading-relaxed text-ink-soft">
                   {m.bio}
                 </p>
               </div>

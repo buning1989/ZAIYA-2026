@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { X, ChevronLeft, ArrowRight, Send } from "lucide-react";
+import { ChevronLeft, ArrowRight, Send, X } from "lucide-react";
 import ZaizaiRive from "./ZaizaiRive";
+import AppMainSurface from "./AppMainSurface";
 
 type Props = { onClose: () => void };
 
@@ -10,42 +11,50 @@ const ease = [0.22, 1, 0.36, 1] as const;
 export default function Demo({ onClose }: Props) {
   const [screen, setScreen] = useState(0);
 
-  // 锁定背景滚动
+  // 锁定背景滚动 + Esc 退出
+  const handleEsc = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    },
+    [onClose]
+  );
+
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleEsc);
     return () => {
       document.body.style.overflow = prev;
+      window.removeEventListener("keydown", handleEsc);
     };
-  }, []);
+  }, [handleEsc]);
 
   const goNext = () => setScreen((s) => Math.min(5, s + 1));
   const goPrev = () => setScreen((s) => Math.max(0, s - 1));
   const restart = () => setScreen(0);
 
   return (
-    <div className="fixed inset-0 z-[100] grid place-items-center bg-ink/30 p-4">
-      {/* 关闭按钮 */}
-      <button
-        onClick={onClose}
-        aria-label="关闭 Demo"
-        className="absolute right-5 top-5 grid h-10 w-10 place-items-center rounded-full bg-canvas text-ink shadow-sm transition-colors hover:bg-line-soft"
-      >
-        <X className="h-5 w-5" />
-      </button>
-
+    <div className="fixed inset-0 z-[100] grid place-items-center bg-canvas p-4">
       {/* 手机边框（固定，不响应式） */}
       <div className="w-full max-w-[340px]">
         <div className="rounded-[44px] border-[10px] border-ink bg-ink p-1 shadow-2xl">
           <div className="relative aspect-[9/18] overflow-hidden rounded-[36px] bg-canvas">
-            {/* 顶部状态栏占位 */}
+            {/* 顶部状态栏：毛玻璃质感 */}
             <div className="absolute left-0 right-0 top-0 z-10 flex items-center justify-between px-6 py-3 text-[11px] font-medium text-ink-soft">
               <span>在呀</span>
               <span>9:41</span>
+              {/* 关闭入口：手机内部右上角 */}
+              <button
+                onClick={onClose}
+                aria-label="关闭 Demo"
+                className="grid h-6 w-6 place-items-center rounded-full bg-white/50 backdrop-blur-xl border border-white/30 shadow-sm text-ink-faint transition-colors hover:text-ink"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
             </div>
 
-            {/* 上一步（非首屏可用） */}
-            {screen > 0 && screen < 5 && (
+            {/* 上一步（HomeScreen 为主界面入口态，不显示返回，与首页 Hero 一致） */}
+            {screen > 1 && screen < 5 && (
               <button
                 onClick={goPrev}
                 aria-label="上一步"
@@ -95,7 +104,7 @@ function IntroScreen({ onNext }: { onNext: () => void }) {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 1, ease }}
       >
-        <ZaizaiRive className="h-24 w-24" />
+        <ZaizaiRive className="h-40 w-40" />
       </motion.div>
       <motion.p
         initial={{ opacity: 0 }}
@@ -109,59 +118,14 @@ function IntroScreen({ onNext }: { onNext: () => void }) {
   );
 }
 
-/* —— 屏 1：主页呈现 —— */
+/* —— 屏 1：主页呈现（复用 AppMainSurface，与首页 Hero 完全一致） —— */
 function HomeScreen({ onNext }: { onNext: () => void }) {
-  const [tapped, setTapped] = useState<number | null>(null);
-  const buttons = ["早上起不来", "吃饭没胃口", "记录一下"];
-
-  const handleTap = (i: number) => {
-    setTapped(i);
-    setTimeout(onNext, 300);
-  };
-
   return (
-    <div className="flex h-full flex-col bg-line-soft">
-      {/* 顶部两个图标 */}
-      <div className="flex items-center justify-between px-6 pt-14">
-        {[0, 1].map((i) => (
-          <button
-            key={i}
-            onPointerDown={() => setTapped(i + 10)}
-            onPointerUp={() => setTapped(null)}
-            onPointerLeave={() => setTapped(null)}
-            className={`grid h-9 w-9 place-items-center rounded-full border transition-colors ${
-              tapped === i + 10
-                ? "border-ink bg-ink text-canvas"
-                : "border-line bg-canvas text-ink-soft"
-            }`}
-          >
-            <span className="h-3 w-3 rounded-full bg-current opacity-60" />
-          </button>
-        ))}
-      </div>
-
-      {/* 在在动画 */}
-      <div className="flex flex-1 items-center justify-center">
-        <ZaizaiRive className="h-28 w-28" />
-      </div>
-
-      {/* 底部三按钮 */}
-      <div className="flex flex-col gap-2 p-6">
-        {buttons.map((label, i) => (
-          <button
-            key={label}
-            onClick={() => handleTap(i)}
-            className={`w-full rounded-xl border px-4 py-3.5 text-[14px] font-medium transition-colors ${
-              tapped === i
-                ? "border-ink bg-ink text-canvas"
-                : "border-line bg-canvas text-ink-soft hover:border-ink/40"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-    </div>
+    <AppMainSurface
+      interactive
+      onPrimaryAction={onNext}
+      onButtonClick={() => onNext()}
+    />
   );
 }
 
@@ -191,7 +155,7 @@ function StoryScreen({ onNext }: { onNext: () => void }) {
       {/* 在在在场 */}
       <div className="flex flex-1 items-center justify-center">
         <ZaizaiRive
-          className={`h-28 w-28 transition-opacity ${
+          className={`h-44 w-44 transition-opacity ${
             current.who === "zaizai" ? "opacity-100" : "opacity-70"
           }`}
         />
@@ -288,7 +252,7 @@ function TimelineScreen({ onNext }: { onNext: () => void }) {
       <div className="p-6">
         <button
           onClick={onNext}
-          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-ink px-4 py-3 text-[13px] font-medium text-canvas"
+          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#FC591B] px-4 py-3 text-[13px] font-medium text-canvas"
         >
           继续
           <ArrowRight className="h-4 w-4" />
@@ -335,7 +299,7 @@ function ValidationScreen({ onNext }: { onNext: () => void }) {
 
       {/* 在在动画 */}
       <div className="flex flex-1 items-center justify-center">
-        <ZaizaiRive className="h-24 w-24" />
+        <ZaizaiRive className="h-40 w-40" />
       </div>
 
       {/* 回复（浮在场景里） */}
@@ -364,7 +328,7 @@ function ValidationScreen({ onNext }: { onNext: () => void }) {
             onClick={submit}
             disabled={loading || !!reply || !value.trim()}
             aria-label="发送"
-            className="grid h-9 w-9 place-items-center rounded-lg bg-ink text-canvas transition-opacity disabled:opacity-30"
+            className="grid h-9 w-9 place-items-center rounded-lg bg-[#FC591B] text-canvas transition-opacity disabled:opacity-30"
           >
             <Send className="h-4 w-4" />
           </button>
@@ -394,14 +358,14 @@ function ClosingScreen({
 }) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-8 bg-line-soft px-10">
-      <ZaizaiRive className="h-24 w-24" />
+      <ZaizaiRive className="h-40 w-40" />
       <p className="text-center text-[16px] leading-relaxed text-ink">
         在呀不替代医生或咨询师。它把起床、吃饭、睡眠、情绪波动这些生活节点留下来，让下一次复诊或沟通前，状态更容易被看见。
       </p>
       <div className="flex w-full flex-col gap-2">
         <button
           onClick={onRestart}
-          className="w-full rounded-lg bg-ink px-4 py-3 text-[13px] font-medium text-canvas"
+          className="w-full rounded-lg bg-[#FC591B] px-4 py-3 text-[13px] font-medium text-canvas"
         >
           重新开始
         </button>

@@ -19,12 +19,13 @@ export default {
         "ink-faint": "#A1A1AA",
         line: "#E4E4E7",
         "line-soft": "#EDEDEE",
-        accent: "#E07A5F",
-        "accent-soft": "#F4D9CD",
+        accent: "#FC591B",
+        "accent-soft": "#FFE0D2",
       },
       fontFamily: {
         display: ['"Geist"', "ui-sans-serif", "system-ui", "sans-serif"],
         body: ['"Hanken Grotesk"', "ui-sans-serif", "system-ui", "sans-serif"],
+        brand: ['"Songti SC"', '"STSong"', '"Noto Serif CJK SC"', "serif"],
       },
       letterSpacing: {
         tightest: "-0.04em",
