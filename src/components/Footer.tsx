@@ -1,31 +1,20 @@
-import TolanGlyph from "./TolanGlyph";
-
-const APP_STORE_URL =
-  "https://apps.apple.com/us/app/tolan-alien-best-friend/id6477549878";
+import Logo from "./Logo";
 
 const columns = [
   {
-    title: "Product",
+    title: "产品",
     links: [
-      { label: "Download", href: APP_STORE_URL },
-      { label: "Watch the Trailer", href: "#trailer" },
-      { label: "About", href: "#about" },
+      { label: "体验 Demo", href: "#demo" },
+      { label: "需求与方案", href: "#problem" },
+      { label: "技术实践", href: "#clinical" },
     ],
   },
   {
-    title: "Company",
+    title: "关于",
     links: [
-      { label: "Research", href: "#research" },
-      { label: "Press", href: "#press" },
-      { label: "Careers", href: "#careers" },
-    ],
-  },
-  {
-    title: "Connect",
-    links: [
-      { label: "Instagram", href: "https://www.tolans.com" },
-      { label: "TikTok", href: "https://www.tolans.com" },
-      { label: "X", href: "https://www.tolans.com" },
+      { label: "角色设计", href: "#character" },
+      { label: "团队", href: "#team" },
+      { label: "愿景", href: "#vision" },
     ],
   },
 ];
@@ -33,19 +22,13 @@ const columns = [
 export default function Footer() {
   return (
     <footer className="border-t border-line">
-      <div className="container grid gap-10 py-14 md:grid-cols-[1.5fr_1fr_1fr_1fr]">
+      <div className="container grid gap-10 py-14 md:grid-cols-[1.5fr_1fr_1fr]">
         <div>
-          <a href="#top" className="flex items-center gap-2">
-            <span className="grid h-7 w-7 place-items-center rounded-md bg-ink">
-              <TolanGlyph className="h-4 w-4" tone="canvas" />
-            </span>
-            <span className="font-display text-[15px] font-semibold tracking-tight text-ink">
-              Tolan
-            </span>
+          <a href="#top" className="flex items-center">
+            <Logo />
           </a>
           <p className="mt-4 max-w-xs text-[13px] leading-relaxed text-ink-soft">
-            A friend who gets you. An embodied AI companion for the everyday
-            moments that matter.
+            占位文案：一个不急于解决问题的 AI 陪伴产品。最终文案待回填。
           </p>
         </div>
 
@@ -59,8 +42,6 @@ export default function Footer() {
                 <li key={l.label}>
                   <a
                     href={l.href}
-                    target={l.href.startsWith("http") ? "_blank" : undefined}
-                    rel={l.href.startsWith("http") ? "noreferrer" : undefined}
                     className="text-[13.5px] text-ink-soft transition-colors hover:text-ink"
                   >
                     {l.label}
@@ -74,8 +55,8 @@ export default function Footer() {
 
       <div className="border-t border-line">
         <div className="container flex flex-col items-center justify-between gap-3 py-6 text-[12.5px] text-ink-faint sm:flex-row">
-          <span>© {new Date().getFullYear()} Tolan. A replication project.</span>
-          <span>San Francisco, CA</span>
+          <span>© {new Date().getFullYear()} 在呀 ZÀIYA</span>
+          <span>骨架搭建阶段</span>
         </div>
       </div>
     </footer>

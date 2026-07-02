@@ -1,20 +1,15 @@
 import { useEffect, useState } from "react";
 import { Menu, X, ArrowUpRight } from "lucide-react";
-import { useRive } from "@rive-app/react-canvas";
 import { navLinks } from "@/data/content";
+import Logo from "./Logo";
 
-const APP_STORE_URL =
-  "https://apps.apple.com/us/app/tolan-alien-best-friend/id6477549878";
+type Props = {
+  onOpenDemo: () => void;
+};
 
-export default function Nav() {
+export default function Nav({ onOpenDemo }: Props) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-
-  const { RiveComponent: LogoRive } = useRive({
-    src: "/lil_guy.riv",
-    stateMachines: "State Machine 1",
-    autoplay: true,
-  });
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -32,13 +27,8 @@ export default function Nav() {
       }`}
     >
       <nav className="container flex h-16 items-center justify-between">
-        <a href="#top" className="flex items-center gap-3">
-          <span className="h-[280px] w-[280px] overflow-hidden rounded-md">
-            <LogoRive className="h-full w-full" />
-          </span>
-          <span className="font-display text-[48px] font-semibold tracking-tight text-ink">
-            在呀 ZÀIYA
-          </span>
+        <a href="#top" className="flex items-center">
+          <Logo />
         </a>
 
         <div className="hidden items-center gap-8 md:flex">
@@ -54,15 +44,13 @@ export default function Nav() {
         </div>
 
         <div className="hidden md:block">
-          <a
-            href={APP_STORE_URL}
-            target="_blank"
-            rel="noreferrer"
+          <button
+            onClick={onOpenDemo}
             className="group inline-flex items-center gap-1.5 rounded-md bg-ink px-3.5 py-2 text-[13px] font-medium text-canvas transition-opacity hover:opacity-90"
           >
-            Download
+            体验 Demo
             <ArrowUpRight className="h-3.5 w-3.5 opacity-70 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-          </a>
+          </button>
         </div>
 
         <button
@@ -87,15 +75,16 @@ export default function Nav() {
                 {l.label}
               </a>
             ))}
-            <a
-              href={APP_STORE_URL}
-              target="_blank"
-              rel="noreferrer"
+            <button
+              onClick={() => {
+                setOpen(false);
+                onOpenDemo();
+              }}
               className="mt-2 inline-flex items-center justify-center gap-1.5 rounded-md bg-ink px-3.5 py-2.5 text-sm font-medium text-canvas"
             >
-              Download on the App Store
+              体验 Demo
               <ArrowUpRight className="h-3.5 w-3.5" />
-            </a>
+            </button>
           </div>
         </div>
       )}
