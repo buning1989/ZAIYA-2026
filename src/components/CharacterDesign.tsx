@@ -1,10 +1,11 @@
 import Reveal from "./Reveal";
 import SectionHeading from "./SectionHeading";
+import ZaizaiRive from "./ZaizaiRive";
 
 const principles = [
-  { label: "非人非动物", text: "占位：不指向任何现实物种，避免投射与角色混淆。" },
-  { label: "无嘴无鼻", text: "占位：不说话、不评判，降低「被评价」的紧张感。" },
-  { label: "顿感", text: "占位：反应慢半拍，留出空间让你先表达。" },
+  { label: "非人非动物", text: "不指向现实物种，避免用户把它理解成宠物、医生或权威角色。" },
+  { label: "无嘴无鼻", text: "弱化表达和评判感，让它更像一个安静在场的生活节点提醒。" },
+  { label: "低刺激", text: "减少强情绪反馈，不催促、不逼问，适合主动触发困难的人群。" },
 ];
 
 export default function CharacterDesign() {
@@ -12,11 +13,11 @@ export default function CharacterDesign() {
     <section id="character" className="border-t border-line">
       <div className="container py-20 md:py-32">
         <div className="grid gap-14 md:grid-cols-[1fr_1fr] md:gap-20 md:items-start">
-          {/* 图片占位 */}
+          {/* 在在动画 */}
           <Reveal>
             <div className="aspect-square rounded-2xl border border-line bg-line-soft">
               <div className="grid h-full place-items-center">
-                <div className="h-40 w-40 rounded-full bg-ink/10" />
+                <ZaizaiRive className="h-44 w-44" />
               </div>
             </div>
           </Reveal>
@@ -25,13 +26,11 @@ export default function CharacterDesign() {
           <div>
             <SectionHeading
               eyebrow="角色设计"
-              title="在在，被刻意设计成「不那么像」。"
+              title="在在，被设计成一个低刺激的在场者。"
             />
             <Reveal delay={0.1}>
               <p className="mt-6 max-w-prose text-[15px] leading-relaxed text-ink-soft">
-                占位文案：在在不是一个拟人的助手，而是一个存在感很低的陪伴者。它的
-                每一个视觉特征都是为了减少干扰，让你把注意力放回自己身上。最终文案
-                待回填。
+                在在不是医生、咨询师，也不是替用户做决定的助手。它更像一个安静的生活节点：在起床、吃饭、睡前和复诊前出现，帮助用户把状态留下来，把下一步降到足够小。
               </p>
             </Reveal>
 
