@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X, ChevronLeft, ArrowRight, Send } from "lucide-react";
+import ZaizaiRive from "./ZaizaiRive";
 
 type Props = { onClose: () => void };
 
@@ -80,11 +81,6 @@ export default function Demo({ onClose }: Props) {
   );
 }
 
-/* —— 在在占位图形 —— */
-function ZaizaiGlyph({ className = "" }: { className?: string }) {
-  return <div className={`rounded-full bg-ink/15 ${className}`} />;
-}
-
 /* —— 屏 0：冷启动·在在出现 —— */
 function IntroScreen({ onNext }: { onNext: () => void }) {
   useEffect(() => {
@@ -99,7 +95,7 @@ function IntroScreen({ onNext }: { onNext: () => void }) {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 1, ease }}
       >
-        <ZaizaiGlyph className="h-24 w-24" />
+        <ZaizaiRive className="h-24 w-24" />
       </motion.div>
       <motion.p
         initial={{ opacity: 0 }}
@@ -107,7 +103,7 @@ function IntroScreen({ onNext }: { onNext: () => void }) {
         transition={{ delay: 0.8, duration: 0.6 }}
         className="text-[13px] text-ink-faint"
       >
-        在在正在出现…
+        跟着小晨的一段日常
       </motion.p>
     </div>
   );
@@ -116,7 +112,7 @@ function IntroScreen({ onNext }: { onNext: () => void }) {
 /* —— 屏 1：主页呈现 —— */
 function HomeScreen({ onNext }: { onNext: () => void }) {
   const [tapped, setTapped] = useState<number | null>(null);
-  const buttons = ["说点什么", "陪我会儿", "记录一下"];
+  const buttons = ["早上起不来", "吃饭没胃口", "记录一下"];
 
   const handleTap = (i: number) => {
     setTapped(i);
@@ -144,9 +140,9 @@ function HomeScreen({ onNext }: { onNext: () => void }) {
         ))}
       </div>
 
-      {/* 在在占位 */}
+      {/* 在在动画 */}
       <div className="flex flex-1 items-center justify-center">
-        <ZaizaiGlyph className="h-28 w-28" />
+        <ZaizaiRive className="h-28 w-28" />
       </div>
 
       {/* 底部三按钮 */}
@@ -169,12 +165,12 @@ function HomeScreen({ onNext }: { onNext: () => void }) {
   );
 }
 
-/* —— 屏 2：故事推进（对话浮在场景里，非气泡） —— */
+/* —— 屏 2：故事推进（生活节点，不做治疗承诺） —— */
 const storyLines = [
-  { who: "you", text: "占位：今天有点说不上来的闷。" },
-  { who: "zaizai", text: "占位：嗯，我在。" },
-  { who: "you", text: "占位：也不知道从哪说起。" },
-  { who: "zaizai", text: "占位：那就先不用急着说。" },
+  { who: "you", text: "今天 7:40，小晨醒了，但还是不想动。" },
+  { who: "zaizai", text: "我在。先不用决定上不上学，先把窗帘拉开一点。" },
+  { who: "you", text: "窗帘拉开了，但还是没力气。" },
+  { who: "zaizai", text: "那今天只做一个更小的动作：洗脸、喝水，把药放到桌上。" },
 ];
 
 function StoryScreen({ onNext }: { onNext: () => void }) {
@@ -189,15 +185,15 @@ function StoryScreen({ onNext }: { onNext: () => void }) {
     >
       {/* 顶部场景标签 */}
       <div className="px-6 pt-14 text-[11px] uppercase tracking-[0.16em] text-ink-faint">
-        场景 · 占位
+        场景 · 早晨启动
       </div>
 
-      {/* 在在占位（角色在场） */}
+      {/* 在在在场 */}
       <div className="flex flex-1 items-center justify-center">
-        <ZaizaiGlyph
-          className={
-            current.who === "zaizai" ? "h-28 w-28 bg-ink/25" : "h-28 w-28"
-          }
+        <ZaizaiRive
+          className={`h-28 w-28 transition-opacity ${
+            current.who === "zaizai" ? "opacity-100" : "opacity-70"
+          }`}
         />
       </div>
 
@@ -224,14 +220,14 @@ function StoryScreen({ onNext }: { onNext: () => void }) {
 
 /* —— 屏 3：数据时间线（双 tab，不用天数计数器） —— */
 const timelineUser = [
-  { when: "某个安静的晚上", text: "占位：你和在在待了一会儿。" },
-  { when: "稍晚一些", text: "占位：你说了一句平时没说出口的话。" },
-  { when: "另一个下午", text: "占位：你回头看了这次记录。" },
+  { when: "第一个早晨", text: "记录了起床困难，完成了洗脸和喝水。" },
+  { when: "几天后的午饭前", text: "主动记录“没胃口”，晚饭由家长陪着吃了一半。" },
+  { when: "复诊前一晚", text: "回看了两周的睡眠、饮食和情绪波动。" },
 ];
 const timelineBrief = [
-  { when: "本次对话", text: "占位：情绪基调偏低，未触及风险信号。" },
-  { when: "整体观察", text: "占位：表达意愿在缓慢打开。" },
-  { when: "建议方向", text: "占位：继续保持不推进的节奏。" },
+  { when: "作息", text: "早晨启动困难集中在上学日前，周末波动较小。" },
+  { when: "饮食", text: "午餐缺失较多，晚餐相对稳定，可继续观察食欲变化。" },
+  { when: "复诊参考", text: "未生成诊断结论，只整理可带给医生和咨询师的生活状态线索。" },
 ];
 
 function TimelineScreen({ onNext }: { onNext: () => void }) {
@@ -249,7 +245,7 @@ function TimelineScreen({ onNext }: { onNext: () => void }) {
         <div className="mt-4 flex gap-1 rounded-lg bg-line-soft p-1">
           {(
             [
-              { key: "user", label: "你的视角" },
+              { key: "user", label: "小晨视角" },
               { key: "brief", label: "简报视角" },
             ] as const
           ).map((t) => (
@@ -309,11 +305,21 @@ function ValidationScreen({ onNext }: { onNext: () => void }) {
   const [loading, setLoading] = useState(false);
 
   const submit = () => {
-    if (!value.trim() || loading) return;
+    const text = value.trim();
+    if (!text || loading) return;
+
     setLoading(true);
-    // 占位回复：延迟 0.5s 显示固定回复
     setTimeout(() => {
-      setReply("占位回复：我听到了。");
+      const riskPattern = /自杀|自残|割腕|跳楼|不想活|想死|死掉|结束生命|活不下去/;
+      if (riskPattern.test(text)) {
+        setReply(
+          "这已经超过在呀能单独陪伴的范围。请立刻联系身边可信赖的大人、医生，或拨打当地急救电话 / 心理援助热线。现在先不要独处。"
+        );
+      } else {
+        setReply(
+          `我先记下：“${text}”。今天不急着解决全部问题，只先做一个最小动作：喝一口水、坐起来 2 分钟，或告诉家长“我现在需要慢一点”。这条会进入今晚的生活记录。`
+        );
+      }
       setLoading(false);
     }, 500);
   };
@@ -324,20 +330,20 @@ function ValidationScreen({ onNext }: { onNext: () => void }) {
         验证点
       </div>
       <p className="mt-3 text-[15px] leading-relaxed text-ink">
-        占位：试着对在在说一句话。
+        输入一句今天最真实的状态，在呀会把它整理成一个很小的下一步。
       </p>
 
-      {/* 在在占位 */}
+      {/* 在在动画 */}
       <div className="flex flex-1 items-center justify-center">
-        <ZaizaiGlyph className="h-24 w-24" />
+        <ZaizaiRive className="h-24 w-24" />
       </div>
 
-      {/* 占位回复（浮在场景里） */}
+      {/* 回复（浮在场景里） */}
       {reply && (
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="mb-4 text-center text-[14px] text-ink"
+          className="mb-4 text-center text-[14px] leading-relaxed text-ink"
         >
           {reply}
         </motion.p>
@@ -350,7 +356,7 @@ function ValidationScreen({ onNext }: { onNext: () => void }) {
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submit()}
-            placeholder="占位：想说点什么…"
+            placeholder="比如：我今天还是不想出门…"
             disabled={loading || !!reply}
             className="flex-1 bg-transparent px-2 text-[14px] text-ink placeholder:text-ink-faint focus:outline-none disabled:opacity-50"
           />
@@ -388,9 +394,9 @@ function ClosingScreen({
 }) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-8 bg-line-soft px-10">
-      <ZaizaiGlyph className="h-24 w-24" />
+      <ZaizaiRive className="h-24 w-24" />
       <p className="text-center text-[16px] leading-relaxed text-ink">
-        占位收尾文字：这一段先到这里。下次见。
+        在呀不替代医生或咨询师。它把起床、吃饭、睡眠、情绪波动这些生活节点留下来，让下一次复诊或沟通前，状态更容易被看见。
       </p>
       <div className="flex w-full flex-col gap-2">
         <button
