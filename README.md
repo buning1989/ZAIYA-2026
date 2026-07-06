@@ -1,57 +1,100 @@
-# React + TypeScript + Vite
+# 在呀 ZÀIYA Web Demo
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+面向「在呀 ZÀIYA」项目的前端 Web Demo。当前技术栈为 React + TypeScript + Vite，主要用于承载大赛展示页、产品演示流程和后续原型验证。
 
-Currently, two official plugins are available:
+## 项目定位
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+在呀 ZÀIYA 是面向社会功能已受损青少年 / 年轻人群的陪伴式 AI 健康生活管理产品。
 
-## Expanding the ESLint configuration
+产品不定位为 AI 医生、AI 心理咨询师，也不以情绪聊天或报告生成为核心目标。核心目标是帮助社会功能受损人群，从异常生活模式走向更健康、稳定、可持续的生活模式。
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+因此，Demo 中的页面、交互、文案和视觉元素都应服务于同一个方向：降低行动启动门槛，让生活状态被低压力地记录、回看和理解，并支持用户、家长与专业支持系统之间的信息协同。
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+## 全局产品原则：所有信息都必须有价值
+
+所有产品文案、符号、按钮、图标、卡片、弹窗、空状态、Toast、引导语和视觉装饰，都必须有明确的价值和作用。任何无法帮助用户理解状态、完成动作、降低风险、建立边界或减少摩擦的信息，都是噪音，应删除。
+
+这条原则全局应用于本项目的所有页面和组件。
+
+### 判断标准
+
+新增或修改任何 UI 元素前，必须先回答四个问题：
+
+1. 它在帮助用户做什么决定？
+2. 它是否提供了用户当前不知道、但会影响操作的信息？
+3. 它是否降低了操作成本、理解成本或风险成本？
+4. 删除它后，用户是否真的会更难使用产品？
+
+如果答案不明确，默认不展示。
+
+### 文案原则
+
+产品文案应克制、具体、可操作。不要为了「显得完整」而补充解释，不要重复用户已经能从上下文推断的信息，不要使用空泛安慰、泛化提醒或装饰性说明。
+
+例如删除确认弹窗中：
+
+- 推荐：标题「要删掉这条夸夸吗？」；操作「删除」「取消」。
+- 避免：额外展示「删除后就不能再看见了。」这类通用后果说明。
+
+只有当信息会改变用户判断时，才允许出现补充说明。例如涉及账号注销、数据导出、家长可见权限、隐私授权、危机转介等高影响操作时，必须用最短文本说明具体后果。
+
+### 符号与视觉原则
+
+图标和符号不是装饰物。每一个图标都必须承担导航、反馈、状态表达或操作入口的作用。无法被用户理解、无法被点击、无法传递状态，也不承担氛围表达的符号，应移除。
+
+视觉层级应优先帮助用户理解当前状态和下一步动作，而不是制造复杂度。不要为了「丰富画面」增加卡套卡、冗余标签、重复按钮或多余说明。
+
+### 弹窗与确认原则
+
+弹窗只在用户需要停下来做决定时出现。弹窗内容只保留三类信息：
+
+1. 当前要确认的动作；
+2. 会影响决定的必要后果；
+3. 明确的下一步操作。
+
+普通删除、取消、关闭等低复杂度操作，不额外解释已由动作本身表达清楚的后果。高风险操作才补充必要说明，但必须具体、短、可判断。
+
+### 面向在呀的特殊要求
+
+在呀的用户可能已经处于低能量、低启动、低耐受状态。产品不应通过冗余文案增加阅读负担，也不应通过过度提醒制造压力。
+
+更好的体验不是「把话说全」，而是「只在需要的时候说必要的话」。
+
+## 开发要求
+
+### 安装依赖
+
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 本地运行
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  extends: [
-    // other configs...
-    // Enable lint rules for React
-    reactX.configs['recommended-typescript'],
-    // Enable lint rules for React DOM
-    reactDom.configs.recommended,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```bash
+npm run dev
 ```
+
+### 类型检查
+
+```bash
+npm run check
+```
+
+### 构建
+
+```bash
+npm run build
+```
+
+## Review Checklist
+
+提交 UI 或文案改动前，必须检查：
+
+- 是否存在解释性但不改变用户判断的文案；
+- 是否存在只为填充空间而出现的图标、标签或装饰元素；
+- 是否存在重复表达同一信息的标题、副标题、按钮或 Toast；
+- 是否存在把用户已经知道的结果再说一遍的确认说明；
+- 是否存在会增加低能量用户阅读负担的长句；
+- 是否所有高风险操作都保留了必要、具体、最短的后果说明。
+
+不满足以上标准的内容，应先删除，再判断是否需要以更轻的方式补回。
