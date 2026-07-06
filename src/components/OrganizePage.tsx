@@ -26,6 +26,7 @@ import {
   type OrganizeRange,
   type OrganizeSectionId,
 } from "@/data/organize";
+import VoiceInputBar from "./VoiceInputBar";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -379,7 +380,7 @@ export default function OrganizePage({
           {step === "range" && (
             <button
               onClick={() => setStep("sections")}
-              className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#FC591B] px-4 py-3 text-[13px] font-medium text-canvas"
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-accent px-4 py-3 text-[13px] font-medium text-canvas"
             >
               下一步
               <ChevronRight className="h-4 w-4" />
@@ -389,7 +390,7 @@ export default function OrganizePage({
             <button
               onClick={() => setStep("supplement")}
               disabled={selectedSections.length === 0}
-              className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#FC591B] px-4 py-3 text-[13px] font-medium text-canvas transition-opacity disabled:opacity-30"
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-accent px-4 py-3 text-[13px] font-medium text-canvas transition-opacity disabled:opacity-30"
             >
               下一步
               <ChevronRight className="h-4 w-4" />
@@ -406,7 +407,7 @@ export default function OrganizePage({
               </button>
               <button
                 onClick={enterPreview}
-                className="inline-flex flex-[2] items-center justify-center gap-1.5 rounded-lg bg-[#FC591B] px-4 py-3 text-[13px] font-medium text-canvas"
+                className="inline-flex flex-[2] items-center justify-center gap-1.5 rounded-lg bg-accent px-4 py-3 text-[13px] font-medium text-canvas"
               >
                 生成整理单
                 <ChevronRight className="h-4 w-4" />
@@ -425,7 +426,7 @@ export default function OrganizePage({
                 </button>
                 <button
                   onClick={handleSave}
-                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#FC591B] px-4 py-3 text-[13px] font-medium text-canvas"
+                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-accent px-4 py-3 text-[13px] font-medium text-canvas"
                 >
                   保存到历史
                 </button>
@@ -488,7 +489,7 @@ function AudienceStep({
                 </p>
               </div>
               {active && (
-                <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#FC591B]" />
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
               )}
             </button>
           );
@@ -534,7 +535,7 @@ function RangeStep({
               {opt.default && !active && (
                 <span className="text-[10px] text-ink-faint">默认</span>
               )}
-              {active && <Check className="h-4 w-4 text-[#FC591B]" />}
+              {active && <Check className="h-4 w-4 text-accent" />}
             </button>
           );
         })}
@@ -602,7 +603,7 @@ function SectionsStep({
                 <span
                   className={`mt-0.5 grid shrink-0 place-items-center rounded-[5px] border transition-colors ${
                     checked
-                      ? "border-[#FC591B] bg-[#FC591B] text-canvas"
+                      ? "border-accent bg-accent text-canvas"
                       : "border-line bg-canvas"
                   }`}
                   style={{ height: 18, width: 18 }}
@@ -683,14 +684,17 @@ function SupplementStep({
         {cfg.desc}
       </p>
 
-      {/* 输入框：placeholder 按受众动态变化 */}
-      <textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={cfg.placeholder}
-        rows={5}
-        className="mt-4 w-full resize-none rounded-2xl border border-line bg-white px-4 py-3 text-[14px] leading-relaxed text-ink placeholder:text-ink-faint focus:border-ink-faint focus:outline-none"
-      />
+      {/* 输入区：复用全局 VoiceInputBar，支持文字和语音输入 */}
+      <div className="mt-4">
+        <VoiceInputBar
+          value={value}
+          onChange={onChange}
+          onSend={() => {}}
+          canSend={true}
+          placeholder={cfg.placeholder}
+          showSendButton={false}
+        />
+      </div>
 
       {/* 底部一行轻量提示 */}
       <p className="mt-3 text-[11.5px] leading-relaxed text-ink-faint">
@@ -953,7 +957,7 @@ function HistoryStep({
           </p>
           <button
             onClick={onStartNew}
-            className="mt-2 inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#FC591B] px-4 py-2.5 text-[12.5px] font-medium text-canvas"
+            className="mt-2 inline-flex items-center justify-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 text-[12.5px] font-medium text-canvas"
           >
             开始一次整理
           </button>

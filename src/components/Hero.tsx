@@ -35,7 +35,7 @@ export default function Hero({ onOpenDemo }: Props) {
               transition={{ duration: 0.6, ease }}
               className="inline-flex items-center gap-2 rounded-full border border-line bg-canvas px-3 py-1 text-[12px] text-ink-soft"
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-[#FC591B]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
               面向社会功能受损青少年的 AI 健康生活管理助手
             </motion.span>
 
@@ -68,7 +68,7 @@ export default function Hero({ onOpenDemo }: Props) {
           >
             <button
               onClick={onOpenDemo}
-              className="group inline-flex items-center gap-2 rounded-md bg-[#FC591B] px-5 py-3 text-sm font-medium text-canvas"
+              className="group inline-flex items-center gap-2 rounded-md bg-accent px-5 py-3 text-sm font-medium text-canvas"
             >
               <Play className="h-4 w-4 fill-canvas" />
               开始体验 Demo

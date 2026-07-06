@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
+import VoiceInputBar from "./VoiceInputBar";
 import {
   lookbackData,
   moodLabel,
@@ -1266,9 +1267,6 @@ function DeleteConfirm({
       >
         <div className="mb-5">
           <div className="text-[16px] font-semibold text-ink">删除这条记录？</div>
-          <div className="mt-2 text-[13px] leading-relaxed text-ink-faint">
-            删除后，这一天的对应记录将不再显示。
-          </div>
         </div>
         <div className="flex flex-col gap-2.5">
           <button
@@ -1466,7 +1464,7 @@ function buildPatch(
         const [wh, wm] = wakeTime.split(":").map(Number);
         let sMin = sh * 60 + sm;
         if (sMin < 6 * 60) sMin += 24 * 60;
-        let wMin = wh * 60 + wm;
+        const wMin = wh * 60 + wm;
         sleepDurationMin = wMin + 24 * 60 - sMin;
         if (sleepDurationMin > 12 * 60) sleepDurationMin -= 24 * 60;
       }
@@ -1531,21 +1529,40 @@ function TextInput({
   onChange,
   placeholder,
   theme,
+  enableVoice = false,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   theme: Theme;
+  enableVoice?: boolean;
 }) {
   return (
-    <input
-      type="text"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      className="w-full rounded-xl border bg-white px-3 py-2.5 text-[14px] text-ink outline-none transition-colors focus:border-current"
-      style={{ borderColor: theme.softer, color: theme.text }}
-    />
+    <div className="relative">
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={`w-full rounded-xl border bg-white py-2.5 text-[14px] text-ink outline-none transition-colors focus:border-current ${
+          enableVoice ? "pl-3 pr-11" : "px-3"
+        }`}
+        style={{ borderColor: theme.softer, color: theme.text }}
+      />
+      {enableVoice && (
+        <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+          <VoiceInputBar
+            compact
+            size="sm"
+            tint={theme.mark}
+            value={value}
+            onChange={onChange}
+            onSend={() => {}}
+            canSend={false}
+          />
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1608,21 +1625,40 @@ function TextArea({
   onChange,
   placeholder,
   theme,
+  enableVoice = false,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   theme: Theme;
+  enableVoice?: boolean;
 }) {
   return (
-    <textarea
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      rows={3}
-      className="w-full resize-none rounded-xl border bg-white px-3 py-2.5 text-[14px] text-ink outline-none transition-colors focus:border-current"
-      style={{ borderColor: theme.softer, color: theme.text }}
-    />
+    <div className="relative">
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={3}
+        className={`w-full resize-none rounded-xl border bg-white py-2.5 text-[14px] text-ink outline-none transition-colors focus:border-current ${
+          enableVoice ? "pl-3 pr-3 pb-9" : "px-3 py-2.5"
+        }`}
+        style={{ borderColor: theme.softer, color: theme.text }}
+      />
+      {enableVoice && (
+        <div className="absolute bottom-1.5 right-1.5">
+          <VoiceInputBar
+            compact
+            size="sm"
+            tint={theme.mark}
+            value={value}
+            onChange={onChange}
+            onSend={() => {}}
+            canSend={false}
+          />
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1660,6 +1696,7 @@ function MoodEditForm({
           onChange={(v) => setField("moodWords", v)}
           placeholder="如：烦躁、疲惫"
           theme={theme}
+          enableVoice
         />
       </FormField>
       <FormField label="触发事件">
@@ -1668,6 +1705,7 @@ function MoodEditForm({
           onChange={(v) => setField("moodTrigger", v)}
           placeholder="如：和家人争吵"
           theme={theme}
+          enableVoice
         />
       </FormField>
       <FormField label="身体感受">
@@ -1676,6 +1714,7 @@ function MoodEditForm({
           onChange={(v) => setField("moodBody", v)}
           placeholder="如：胸闷"
           theme={theme}
+          enableVoice
         />
       </FormField>
       <FormField label="补充说明">
@@ -1684,6 +1723,7 @@ function MoodEditForm({
           onChange={(v) => setField("moodNote", v)}
           placeholder="可补充"
           theme={theme}
+          enableVoice
         />
       </FormField>
     </>
@@ -1730,6 +1770,7 @@ function SleepEditForm({
           onChange={(v) => setField("wakeFeeling", v)}
           placeholder="如：还行"
           theme={theme}
+          enableVoice
         />
       </FormField>
     </>
@@ -1783,6 +1824,7 @@ function MealsEditForm({
           onChange={(v) => setField("mealFeeling", v)}
           placeholder="如：还好"
           theme={theme}
+          enableVoice
         />
       </FormField>
     </>
@@ -1829,6 +1871,7 @@ function MedEditForm({
           onChange={(v) => setField("medChangeNote", v)}
           placeholder="如：剂量调整"
           theme={theme}
+          enableVoice
         />
       </FormField>
     </>
@@ -1867,6 +1910,7 @@ function ActivityEditForm({
           onChange={(v) => setField("activityContent", v)}
           placeholder="如：出门买东西"
           theme={theme}
+          enableVoice
         />
       </FormField>
       <FormField label="补充说明">
@@ -1875,6 +1919,7 @@ function ActivityEditForm({
           onChange={(v) => setField("activityNote", v)}
           placeholder="可补充"
           theme={theme}
+          enableVoice
         />
       </FormField>
     </>

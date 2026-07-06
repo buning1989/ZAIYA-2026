@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -10,15 +11,10 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   ChevronLeft,
   ChevronRight,
-  Loader2,
-  Mic,
   MoreHorizontal,
   Pencil,
-  Send,
   Sparkles,
-  Square,
   Trash2,
-  X,
 } from "lucide-react";
 import ZaizaiRive from "./ZaizaiRive";
 import VoiceInputBar from "./VoiceInputBar";
@@ -469,7 +465,7 @@ function RecordWizard({
   };
 
   // 返回上一项（不清空答案）
-  const goPrev = () => {
+  const goPrev = useCallback(() => {
     if (stepStack.length > 1) {
       setStepStack((s) => s.slice(0, -1));
       setInputText("");
@@ -477,7 +473,7 @@ function RecordWizard({
       setEditingCustom(false);
       setRevealedStepId(null);
     }
-  };
+  }, [stepStack.length]);
 
   // 展开自由输入
   const openCustom = () => setCustomOpen(true);
@@ -594,11 +590,11 @@ function RecordWizard({
       // 聚焦在 input/textarea 时不触发
       const ae = document.activeElement;
       if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA")) return;
-      if (stepStack.length > 1) goPrev();
+      goPrev();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [showConfirmPage, stepStack.length]);
+  }, [goPrev, showConfirmPage]);
 
   return (
     <div className="relative flex h-full flex-col">
@@ -1247,34 +1243,22 @@ function FieldEditSheet({
         )}
 
         {/* 自定义文本输入：用于自由输入字段，或对枚举字段自定义覆盖 */}
-        <div className="mt-3 flex items-center gap-2 rounded-xl border border-line bg-white p-2">
-          <input
-            value={customText}
-            onChange={(e) => setCustomText(e.target.value)}
-            onKeyDown={(e) =>
-              e.key === "Enter" && customText.trim() && onSaveCustom(customText)
-            }
-            placeholder="或自己写一句…"
-            className="w-full flex-1 bg-transparent px-2 text-[14px] text-ink placeholder:text-ink-faint focus:outline-none"
-          />
-          <button
-            onClick={() => onSaveCustom(customText)}
-            disabled={!customText.trim()}
-            aria-label="保存"
-            className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-accent text-canvas transition-opacity ${
-              customText.trim() ? "opacity-100" : "opacity-30"
-            }`}
-          >
-            <Send className="h-4 w-4" />
-          </button>
-        </div>
+        <VoiceInputBar
+          value={customText}
+          onChange={setCustomText}
+          onSend={() => onSaveCustom(customText)}
+          canSend={customText.trim().length > 0}
+          placeholder="或自己写一句…"
+          sendButtonClassName="bg-accent text-canvas"
+          className="mt-3 rounded-xl border border-line bg-white p-2"
+        />
       </motion.div>
     </motion.div>
   );
 }
 
 /* —— 删除记录二次确认（记录级，区别于字段级 DeleteConfirm） ——
- * 文案：删除后，这条记录不会出现在回看和整理里。
+ * 文案：要删掉这条记录吗？
  * 按钮：取消 / 删除
  * 确认删除 → onAbort（丢弃草稿，返回 recordHome，不进入完成页 / 不触发能量） */
 function DeleteRecordConfirm({
@@ -1301,8 +1285,8 @@ function DeleteRecordConfirm({
         className="w-full max-w-[280px] rounded-2xl bg-white p-5"
         onClick={(e) => e.stopPropagation()}
       >
-        <p className="text-center text-[14px] leading-relaxed text-ink">
-          删除后，这条记录不会出现在回看和整理里。
+        <p className="text-center text-[14px] font-medium text-ink">
+          要删掉这条记录吗？
         </p>
         <div className="mt-4 flex gap-2">
           <button

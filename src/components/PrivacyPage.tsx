@@ -9,41 +9,49 @@ import {
   Copy,
   Camera,
   Check,
+  Star,
 } from "lucide-react";
 import {
   EMERGENCY_CONTACT_MAX,
+  TEACHER_ROLE_LABEL,
+  TEACHER_ROLE_OPTIONS,
   basicProfileStatus,
   bodyDataStatus,
-  emergencyStatusLabel,
-  familyStatusLabel,
+  canAddEmergencyContact,
+  countEmergencyContacts,
   fillStatusLabel,
   genId,
-  medsStatusLabel,
+  guardianStatusLabel,
   loadBasicProfile,
   loadBodyData,
-  loadEmergencyContacts,
-  loadFamilyMembers,
+  loadContacts,
   loadMedSchedules,
+  medsStatusLabel,
   saveBasicProfile,
   saveBodyData,
-  saveEmergencyContacts,
-  saveFamilyMembers,
+  saveContacts,
   saveMedSchedules,
+  teacherStatusLabel,
   type BasicProfile,
   type BodyData,
-  type EmergencyContact,
-  type FamilyMember,
+  type Contact,
+  type ContactType,
   type Gender,
   type MedSchedule,
+  type TeacherRole,
 } from "@/data/privacy";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
 /* —— 「我的隐私」本地状态机 ——
- * 一级页 home：3 分组 5 入口，仅展示名称与状态，不暴露具体内容。
+ * 一级页 home：3 分组 5 入口（基础资料 / 身体资料 / 家长 / 老师 / 服用安排）。
  * 二级页：
  *   basicProfile / bodyData：查看 + 编辑 + 保存
- *   family / emergency / meds：列表 + 新增 / 编辑 / 删除
+ *   guardian / teacher：联系人列表 + 新增 / 编辑 / 删除 + 紧急联系人标记
+ *   meds：列表 + 新增 / 编辑 / 删除
+ *
+ * 紧急联系人不是独立分组，而是 guardian / teacher 联系人中的状态标记，
+ * 全局最多 3 位（家长 + 老师合并计算）。
  *
  * 风格与 PraisePage / OrganizePage 一致：克制、白底、圆角卡片、底部确认层。
  * 不接后端 / LLM；localStorage 持久化。 */
@@ -51,10 +59,10 @@ type Layer =
   | "home"
   | "basicProfile"
   | "bodyData"
-  | "family"
-  | "familyEdit"
-  | "emergency"
-  | "emergencyEdit"
+  | "guardian"
+  | "guardianEdit"
+  | "teacher"
+  | "teacherEdit"
   | "meds"
   | "medsEdit";
 
@@ -69,22 +77,18 @@ export default function PrivacyPage({ onBack }: Props) {
   // —— 各类数据（localStorage 持久化）——
   const [basicProfile, setBasicProfile] = useState<BasicProfile>({});
   const [bodyData, setBodyData] = useState<BodyData>({});
-  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
-  const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>(
-    [],
-  );
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [medSchedules, setMedSchedules] = useState<MedSchedule[]>([]);
 
   // 初始加载
   useEffect(() => {
     setBasicProfile(loadBasicProfile());
     setBodyData(loadBodyData());
-    setFamilyMembers(loadFamilyMembers());
-    setEmergencyContacts(loadEmergencyContacts());
+    setContacts(loadContacts());
     setMedSchedules(loadMedSchedules());
   }, []);
 
-  // —— 编辑目标 id（用于 familyEdit / emergencyEdit / medsEdit）——
+  // —— 编辑目标 id ——
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // —— 持久化 helper ——
@@ -96,13 +100,9 @@ export default function PrivacyPage({ onBack }: Props) {
     setBodyData(next);
     saveBodyData(next);
   };
-  const persistFamily = (next: FamilyMember[]) => {
-    setFamilyMembers(next);
-    saveFamilyMembers(next);
-  };
-  const persistEmergency = (next: EmergencyContact[]) => {
-    setEmergencyContacts(next);
-    saveEmergencyContacts(next);
+  const persistContacts = (next: Contact[]) => {
+    setContacts(next);
+    saveContacts(next);
   };
   const persistMeds = (next: MedSchedule[]) => {
     setMedSchedules(next);
@@ -110,11 +110,47 @@ export default function PrivacyPage({ onBack }: Props) {
   };
 
   const goHome = () => setLayer("home");
-
-  // —— 二级页返回：先回一级页 home ——
   const backToHome = () => {
     setEditingId(null);
     setLayer("home");
+  };
+
+  // —— 联系人通用操作 ——
+  const upsertContact = (c: Contact) => {
+    const exists = contacts.some((x) => x.id === c.id);
+    const next = exists
+      ? contacts.map((x) => (x.id === c.id ? c : x))
+      : [...contacts, c];
+    persistContacts(next);
+  };
+
+  const deleteContact = (id: string) => {
+    // 删除已设为紧急联系人的联系人后，紧急联系人身份同步移除（条目整体删除）
+    persistContacts(contacts.filter((c) => c.id !== id));
+  };
+
+  /** 切换某联系人的紧急联系人身份。
+   *  取消：直接取消。
+   *  设置：若全局已达 3 位则拒绝（返回 false 由调用方提示）。 */
+  const toggleEmergency = (id: string): boolean => {
+    const target = contacts.find((c) => c.id === id);
+    if (!target) return false;
+    if (target.isEmergencyContact) {
+      persistContacts(
+        contacts.map((c) =>
+          c.id === id ? { ...c, isEmergencyContact: false } : c,
+        ),
+      );
+      return true;
+    }
+    // 设置前检查上限
+    if (!canAddEmergencyContact(contacts)) return false;
+    persistContacts(
+      contacts.map((c) =>
+        c.id === id ? { ...c, isEmergencyContact: true } : c,
+      ),
+    );
+    return true;
   };
 
   return (
@@ -132,8 +168,7 @@ export default function PrivacyPage({ onBack }: Props) {
             <HomeView
               basicProfile={basicProfile}
               bodyData={bodyData}
-              familyMembers={familyMembers}
-              emergencyContacts={emergencyContacts}
+              contacts={contacts}
               medSchedules={medSchedules}
               onBack={onBack}
               onEnter={(l) => setLayer(l)}
@@ -162,87 +197,80 @@ export default function PrivacyPage({ onBack }: Props) {
             />
           )}
 
-          {layer === "family" && (
-            <FamilyList
-              list={familyMembers}
+          {layer === "guardian" && (
+            <ContactList
+              type="guardian"
+              list={contacts.filter((c) => c.type === "guardian")}
+              allContacts={contacts}
               onBack={backToHome}
               onAdd={() => {
                 setEditingId(null);
-                setLayer("familyEdit");
+                setLayer("guardianEdit");
               }}
               onEdit={(id) => {
                 setEditingId(id);
-                setLayer("familyEdit");
+                setLayer("guardianEdit");
               }}
-              onDelete={(id) => persistFamily(familyMembers.filter((m) => m.id !== id))}
+              onDelete={deleteContact}
+              onToggleEmergency={toggleEmergency}
             />
           )}
 
-          {layer === "familyEdit" && (
-            <FamilyEdit
-              member={
-                editingId
-                  ? familyMembers.find((m) => m.id === editingId) ?? null
-                  : null
-              }
-              onBack={() => {
-                setEditingId(null);
-                setLayer("family");
-              }}
-              onSave={(m) => {
-                if (editingId) {
-                  persistFamily(
-                    familyMembers.map((x) => (x.id === editingId ? m : x)),
-                  );
-                } else {
-                  persistFamily([...familyMembers, m]);
-                }
-                setEditingId(null);
-                setLayer("family");
-              }}
-            />
-          )}
-
-          {layer === "emergency" && (
-            <EmergencyList
-              list={emergencyContacts}
-              onBack={backToHome}
-              onAdd={() => {
-                setEditingId(null);
-                setLayer("emergencyEdit");
-              }}
-              onEdit={(id) => {
-                setEditingId(id);
-                setLayer("emergencyEdit");
-              }}
-              onDelete={(id) =>
-                persistEmergency(emergencyContacts.filter((c) => c.id !== id))
-              }
-            />
-          )}
-
-          {layer === "emergencyEdit" && (
-            <EmergencyEdit
+          {layer === "guardianEdit" && (
+            <ContactEdit
+              type="guardian"
               contact={
                 editingId
-                  ? emergencyContacts.find((c) => c.id === editingId) ?? null
+                  ? contacts.find((c) => c.id === editingId) ?? null
                   : null
               }
-              canAddMore={emergencyContacts.length < EMERGENCY_CONTACT_MAX}
               onBack={() => {
                 setEditingId(null);
-                setLayer("emergency");
+                setLayer("guardian");
               }}
               onSave={(c) => {
-                if (editingId) {
-                  persistEmergency(
-                    emergencyContacts.map((x) => (x.id === editingId ? c : x)),
-                  );
-                } else {
-                  persistEmergency([...emergencyContacts, c]);
-                }
+                upsertContact(c);
                 setEditingId(null);
-                setLayer("emergency");
+                setLayer("guardian");
+              }}
+            />
+          )}
+
+          {layer === "teacher" && (
+            <ContactList
+              type="teacher"
+              list={contacts.filter((c) => c.type === "teacher")}
+              allContacts={contacts}
+              onBack={backToHome}
+              onAdd={() => {
+                setEditingId(null);
+                setLayer("teacherEdit");
+              }}
+              onEdit={(id) => {
+                setEditingId(id);
+                setLayer("teacherEdit");
+              }}
+              onDelete={deleteContact}
+              onToggleEmergency={toggleEmergency}
+            />
+          )}
+
+          {layer === "teacherEdit" && (
+            <ContactEdit
+              type="teacher"
+              contact={
+                editingId
+                  ? contacts.find((c) => c.id === editingId) ?? null
+                  : null
+              }
+              onBack={() => {
+                setEditingId(null);
+                setLayer("teacher");
+              }}
+              onSave={(c) => {
+                upsertContact(c);
+                setEditingId(null);
+                setLayer("teacher");
               }}
             />
           )}
@@ -301,16 +329,14 @@ export default function PrivacyPage({ onBack }: Props) {
 function HomeView({
   basicProfile,
   bodyData,
-  familyMembers,
-  emergencyContacts,
+  contacts,
   medSchedules,
   onBack,
   onEnter,
 }: {
   basicProfile: BasicProfile;
   bodyData: BodyData;
-  familyMembers: FamilyMember[];
-  emergencyContacts: EmergencyContact[];
+  contacts: Contact[];
   medSchedules: MedSchedule[];
   onBack: () => void;
   onEnter: (l: Layer) => void;
@@ -347,18 +373,18 @@ function HomeView({
           />
         </div>
 
-        {/* 分组 2：家人和联系人 */}
-        <SectionLabel className="mt-7">家人和联系人</SectionLabel>
+        {/* 分组 2：联系方式 */}
+        <SectionLabel className="mt-7">联系方式</SectionLabel>
         <div className="mt-2 flex flex-col gap-2.5">
           <EntryRow
-            label="家人信息"
-            status={familyStatusLabel(familyMembers)}
-            onClick={() => onEnter("family")}
+            label="家长"
+            status={guardianStatusLabel(contacts)}
+            onClick={() => onEnter("guardian")}
           />
           <EntryRow
-            label="紧急联系人"
-            status={emergencyStatusLabel(emergencyContacts)}
-            onClick={() => onEnter("emergency")}
+            label="老师"
+            status={teacherStatusLabel(contacts)}
+            onClick={() => onEnter("teacher")}
           />
         </div>
 
@@ -738,177 +764,44 @@ function BodyDataEdit({
 }
 
 /* =========================================================
- * FamilyList —— 家人信息列表
+ * ContactList —— 家长 / 老师联系人列表（统一组件，type 区分）
+ *  - 紧急联系人卡片标识 + 切换按钮
+ *  - 拨打 / 复制 / 删除（二次确认）
  * ======================================================= */
-function FamilyList({
+function ContactList({
+  type,
   list,
+  allContacts,
   onBack,
   onAdd,
   onEdit,
   onDelete,
+  onToggleEmergency,
 }: {
-  list: FamilyMember[];
+  type: ContactType;
+  list: Contact[];
+  /** 全量联系人，用于计算全局紧急联系人计数 */
+  allContacts: Contact[];
   onBack: () => void;
   onAdd: () => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
-}) {
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-
-  return (
-    <div className="relative flex h-full flex-col bg-canvas">
-      <PageHeader title="家人信息" onBack={onBack} />
-
-      <div className="flex-1 overflow-y-auto px-5 pb-24 pt-2">
-        {list.length === 0 ? (
-          <p className="mt-6 text-center text-[13px] text-ink-faint">
-            还没有添加家人。
-          </p>
-        ) : (
-          <div className="flex flex-col gap-2.5">
-            {list.map((m) => (
-              <button
-                key={m.id}
-                onClick={() => onEdit(m.id)}
-                className="w-full rounded-2xl border border-line bg-white px-5 py-4 text-left transition-colors hover:border-ink-faint"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 pr-3">
-                    <div className="text-[15px] font-medium text-ink">
-                      {m.name}
-                    </div>
-                    <div className="mt-1 text-[12.5px] text-ink-faint">
-                      {m.relation}
-                      {m.contact ? ` · ${m.contact}` : ""}
-                    </div>
-                  </div>
-                  <Trash2
-                    className="h-4 w-4 shrink-0 text-ink-faint transition-colors hover:text-[#B7583F]"
-                    strokeWidth={1.6}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDeleteId(m.id);
-                    }}
-                  />
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* 悬浮新增 */}
-      <button
-        onClick={onAdd}
-        aria-label="新增家人"
-        className="absolute bottom-7 right-5 z-20 grid h-11 w-11 place-items-center rounded-full border border-line bg-white text-ink shadow-[0_4px_18px_-6px_rgba(0,0,0,0.14)] transition-colors hover:border-ink-faint hover:text-ink"
-      >
-        <Plus className="h-5 w-5" strokeWidth={1.8} />
-      </button>
-
-      {/* 删除二次确认 */}
-      <AnimatePresence>
-        {deleteId && (
-          <DeleteConfirm
-            title="要删掉这位家人吗？"
-            description="删除后无法恢复。"
-            onCancel={() => setDeleteId(null)}
-            onConfirm={() => {
-              onDelete(deleteId);
-              setDeleteId(null);
-            }}
-          />
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-/* —— 家人信息编辑 —— */
-function FamilyEdit({
-  member,
-  onBack,
-  onSave,
-}: {
-  member: FamilyMember | null;
-  onBack: () => void;
-  onSave: (m: FamilyMember) => void;
-}) {
-  const [name, setName] = useState(member?.name ?? "");
-  const [relation, setRelation] = useState(member?.relation ?? "");
-  const [contact, setContact] = useState(member?.contact ?? "");
-
-  const canSave = name.trim() !== "" && relation.trim() !== "";
-
-  const submit = () => {
-    if (!canSave) return;
-    onSave({
-      id: member?.id ?? genId(),
-      name: name.trim(),
-      relation: relation.trim(),
-      contact: contact.trim() || undefined,
-    });
-  };
-
-  return (
-    <div className="relative flex h-full flex-col bg-canvas">
-      <PageHeader title={member ? "编辑家人" : "新增家人"} onBack={onBack} />
-
-      <div className="flex-1 overflow-y-auto px-5 pb-4 pt-2">
-        <div className="flex flex-col gap-2.5">
-          <FieldRow label="姓名">
-            <TextInput
-              value={name}
-              onChange={setName}
-              placeholder="姓名"
-              maxLength={30}
-            />
-          </FieldRow>
-          <FieldRow label="关系">
-            <TextInput
-              value={relation}
-              onChange={setRelation}
-              placeholder="如 妈妈 / 爸爸 / 姐姐"
-              maxLength={20}
-            />
-          </FieldRow>
-          <FieldRow label="联系方式">
-            <TextInput
-              value={contact}
-              onChange={setContact}
-              placeholder="手机号或其他联系方式"
-              type="tel"
-              maxLength={30}
-            />
-          </FieldRow>
-        </div>
-      </div>
-
-      <SaveBar canSave={canSave} onSave={submit} />
-    </div>
-  );
-}
-
-/* =========================================================
- * EmergencyList —— 紧急联系人列表（拨打 / 复制 / 删除）
- * ======================================================= */
-function EmergencyList({
-  list,
-  onBack,
-  onAdd,
-  onEdit,
-  onDelete,
-}: {
-  list: EmergencyContact[];
-  onBack: () => void;
-  onAdd: () => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  /** 切换紧急联系人身份，返回是否成功 */
+  onToggleEmergency: (id: string) => boolean;
 }) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [emergencyLimitHit, setEmergencyLimitHit] = useState(false);
 
-  const handleCopy = async (c: EmergencyContact) => {
+  const title = type === "guardian" ? "家长" : "老师";
+  const emptyText =
+    type === "guardian" ? "还没有添加家长。" : "还没有添加老师。";
+  const addLabel =
+    type === "guardian" ? "新增家长" : "新增老师";
+
+  const emergencyCount = countEmergencyContacts(allContacts);
+
+  const handleCopy = async (c: Contact) => {
     try {
       await navigator.clipboard.writeText(c.phone);
       setCopiedId(c.id);
@@ -918,14 +811,23 @@ function EmergencyList({
     }
   };
 
+  const handleToggleEmergency = (c: Contact) => {
+    const ok = onToggleEmergency(c.id);
+    if (!ok && !c.isEmergencyContact) {
+      // 设置失败且当前不是紧急联系人 → 触已达上限提示
+      setEmergencyLimitHit(true);
+      window.setTimeout(() => setEmergencyLimitHit(false), 1800);
+    }
+  };
+
   return (
     <div className="relative flex h-full flex-col bg-canvas">
-      <PageHeader title="紧急联系人" onBack={onBack} />
+      <PageHeader title={title} onBack={onBack} />
 
       <div className="flex-1 overflow-y-auto px-5 pb-24 pt-2">
         {list.length === 0 ? (
           <p className="mt-6 text-center text-[13px] text-ink-faint">
-            还没有添加紧急联系人。
+            {emptyText}
           </p>
         ) : (
           <div className="flex flex-col gap-2.5">
@@ -934,17 +836,31 @@ function EmergencyList({
                 key={c.id}
                 className="rounded-2xl border border-line bg-white px-5 py-4"
               >
+                {/* 顶部：信息 + 删除 */}
                 <button
                   onClick={() => onEdit(c.id)}
                   className="w-full text-left"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1 pr-3">
-                      <div className="text-[15px] font-medium text-ink">
-                        {c.name}
+                      <div className="flex items-center gap-2">
+                        <span className="text-[15px] font-medium text-ink">
+                          {c.name}
+                        </span>
+                        {c.isEmergencyContact && (
+                          <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10.5px] font-medium text-[#B5421A]">
+                            紧急联系人
+                          </span>
+                        )}
                       </div>
                       <div className="mt-1 text-[12.5px] text-ink-faint">
-                        {c.relation} · {c.phone}
+                        {type === "guardian"
+                          ? c.relationship
+                            ? `${c.relationship} · ${c.phone}`
+                            : c.phone
+                          : c.teacherRole
+                            ? `${TEACHER_ROLE_LABEL[c.teacherRole]} · ${c.phone}`
+                            : c.phone}
                       </div>
                     </div>
                     <Trash2
@@ -958,8 +874,23 @@ function EmergencyList({
                   </div>
                 </button>
 
-                {/* 操作行：拨打 / 复制 */}
+                {/* 操作行：紧急联系人 + 拨打 + 复制 */}
                 <div className="mt-3 flex gap-2 border-t border-line pt-3">
+                  <button
+                    onClick={() => handleToggleEmergency(c)}
+                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-[13px] transition-colors ${
+                      c.isEmergencyContact
+                        ? "bg-accent-soft text-[#B5421A]"
+                        : "bg-line-soft text-ink-soft hover:bg-line"
+                    }`}
+                  >
+                    <Star
+                      className="h-3.5 w-3.5"
+                      strokeWidth={1.8}
+                      fill={c.isEmergencyContact ? "currentColor" : "none"}
+                    />
+                    {c.isEmergencyContact ? "已设紧急" : "设为紧急"}
+                  </button>
                   <a
                     href={`tel:${c.phone}`}
                     className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-line-soft py-2 text-[13px] text-ink-soft transition-colors hover:bg-line"
@@ -984,34 +915,53 @@ function EmergencyList({
                     )}
                   </button>
                 </div>
+
+                {c.note && (
+                  <p className="mt-3 border-t border-line pt-3 text-[12.5px] leading-relaxed text-ink-faint">
+                    {c.note}
+                  </p>
+                )}
               </div>
             ))}
           </div>
         )}
 
-        {/* 上限提示 */}
-        {list.length >= EMERGENCY_CONTACT_MAX && (
+        {/* 紧急联系人计数提示 */}
+        {emergencyCount > 0 && (
           <p className="mt-4 text-center text-[12px] text-ink-faint">
-            最多 {EMERGENCY_CONTACT_MAX} 位联系人。
+            紧急联系人 {emergencyCount} / {EMERGENCY_CONTACT_MAX}
           </p>
         )}
+
+        {/* 达上限提示 */}
+        <AnimatePresence>
+          {emergencyLimitHit && (
+            <motion.p
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 4 }}
+              transition={{ duration: 0.2, ease }}
+              className="mt-3 text-center text-[12px] text-[#B7583F]"
+            >
+              最多设置 {EMERGENCY_CONTACT_MAX} 位紧急联系人。
+            </motion.p>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* 悬浮新增：达到上限时隐藏 */}
-      {list.length < EMERGENCY_CONTACT_MAX && (
-        <button
-          onClick={onAdd}
-          aria-label="新增紧急联系人"
-          className="absolute bottom-7 right-5 z-20 grid h-11 w-11 place-items-center rounded-full border border-line bg-white text-ink shadow-[0_4px_18px_-6px_rgba(0,0,0,0.14)] transition-colors hover:border-ink-faint hover:text-ink"
-        >
-          <Plus className="h-5 w-5" strokeWidth={1.8} />
-        </button>
-      )}
+      {/* 悬浮新增 */}
+      <button
+        onClick={onAdd}
+        aria-label={addLabel}
+        className="absolute bottom-7 right-5 z-20 grid h-11 w-11 place-items-center rounded-full border border-line bg-white text-ink shadow-[0_4px_18px_-6px_rgba(0,0,0,0.14)] transition-colors hover:border-ink-faint hover:text-ink"
+      >
+        <Plus className="h-5 w-5" strokeWidth={1.8} />
+      </button>
 
       <AnimatePresence>
         {deleteId && (
           <DeleteConfirm
-            title="要删掉这位紧急联系人吗？"
+            title={`要删掉这位${type === "guardian" ? "家长" : "老师"}吗？`}
             description="删除后无法恢复。"
             onCancel={() => setDeleteId(null)}
             onConfirm={() => {
@@ -1025,55 +975,65 @@ function EmergencyList({
   );
 }
 
-/* —— 紧急联系人编辑 —— */
-function EmergencyEdit({
+/* —— 联系人编辑（家长 / 老师统一） —— */
+function ContactEdit({
+  type,
   contact,
-  canAddMore,
   onBack,
   onSave,
 }: {
-  contact: EmergencyContact | null;
-  canAddMore: boolean;
+  type: ContactType;
+  contact: Contact | null;
   onBack: () => void;
-  onSave: (c: EmergencyContact) => void;
+  onSave: (c: Contact) => void;
 }) {
   const [name, setName] = useState(contact?.name ?? "");
+  const [relationship, setRelationship] = useState(contact?.relationship ?? "");
+  const [teacherRole, setTeacherRole] = useState<TeacherRole | "">(
+    contact?.teacherRole ?? "",
+  );
   const [phone, setPhone] = useState(contact?.phone ?? "");
-  const [relation, setRelation] = useState(contact?.relation ?? "");
+  const [note, setNote] = useState(contact?.note ?? "");
+
+  const isGuardian = type === "guardian";
+  const title = contact
+    ? isGuardian
+      ? "编辑家长"
+      : "编辑老师"
+    : isGuardian
+      ? "新增家长"
+      : "新增老师";
 
   const phoneValid = phone.trim().length >= 3;
-  const canSave = name.trim() !== "" && phoneValid && relation.trim() !== "";
-
-  // 新建时已达上限：不允许进入。保守起见在此也阻断保存。
-  if (!contact && !canAddMore) {
-    return (
-      <div className="relative flex h-full flex-col bg-canvas">
-        <PageHeader title="新增紧急联系人" onBack={onBack} />
-        <div className="flex flex-1 items-center justify-center px-8">
-          <p className="text-center text-[13px] text-ink-faint">
-            最多 {EMERGENCY_CONTACT_MAX} 位联系人。
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const nameValid = name.trim() !== "";
+  // 家长：关系必填；老师：身份必填
+  const roleValid = isGuardian
+    ? relationship.trim() !== ""
+    : teacherRole !== "";
+  const canSave = nameValid && phoneValid && roleValid;
 
   const submit = () => {
     if (!canSave) return;
-    onSave({
+    const now = new Date().toISOString();
+    const next: Contact = {
       id: contact?.id ?? genId(),
+      type,
       name: name.trim(),
+      relationship: isGuardian ? relationship.trim() : undefined,
+      teacherRole: !isGuardian ? (teacherRole as TeacherRole) : undefined,
       phone: phone.trim(),
-      relation: relation.trim(),
-    });
+      note: note.trim() || undefined,
+      // 编辑保留原紧急联系人身份；新建默认 false
+      isEmergencyContact: contact?.isEmergencyContact ?? false,
+      createdAt: contact?.createdAt ?? now,
+      updatedAt: now,
+    };
+    onSave(next);
   };
 
   return (
     <div className="relative flex h-full flex-col bg-canvas">
-      <PageHeader
-        title={contact ? "编辑紧急联系人" : "新增紧急联系人"}
-        onBack={onBack}
-      />
+      <PageHeader title={title} onBack={onBack} />
 
       <div className="flex-1 overflow-y-auto px-5 pb-4 pt-2">
         <div className="flex flex-col gap-2.5">
@@ -1085,23 +1045,58 @@ function EmergencyEdit({
               maxLength={30}
             />
           </FieldRow>
-          <FieldRow label="电话">
+
+          {isGuardian ? (
+            <FieldRow label="关系">
+              <TextInput
+                value={relationship}
+                onChange={setRelationship}
+                placeholder="如 妈妈 / 爸爸 / 姐姐"
+                maxLength={20}
+              />
+            </FieldRow>
+          ) : (
+            <div className="rounded-2xl border border-line bg-white px-5 py-4">
+              <div className="text-[12px] text-ink-faint">身份</div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {TEACHER_ROLE_OPTIONS.map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setTeacherRole(r)}
+                    className={`rounded-xl border px-3 py-2 text-[13px] transition-colors ${
+                      teacherRole === r
+                        ? "border-ink bg-ink text-canvas"
+                        : "border-line bg-white text-ink-soft hover:border-ink-faint"
+                    }`}
+                  >
+                    {TEACHER_ROLE_LABEL[r]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <FieldRow label="手机号">
             <TextInput
               value={phone}
               onChange={setPhone}
-              placeholder="电话号码"
+              placeholder="手机号"
               type="tel"
               maxLength={30}
             />
           </FieldRow>
-          <FieldRow label="关系">
-            <TextInput
-              value={relation}
-              onChange={setRelation}
-              placeholder="如 妈妈 / 朋友 / 医生"
-              maxLength={20}
+
+          <div className="rounded-2xl border border-line bg-white px-5 py-4">
+            <div className="text-[12px] text-ink-faint">备注</div>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="可选"
+              rows={3}
+              maxLength={100}
+              className="mt-1.5 w-full resize-none bg-transparent text-[15px] leading-relaxed text-ink placeholder:text-ink-faint focus:outline-none"
             />
-          </FieldRow>
+          </div>
         </div>
       </div>
 

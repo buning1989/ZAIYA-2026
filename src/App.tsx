@@ -14,16 +14,18 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-canvas font-body text-ink antialiased">
-      <Nav onOpenDemo={() => setDemoOpen(true)} />
-      <main>
-        <Hero onOpenDemo={() => setDemoOpen(true)} />
-        <ProblemSolution />
-        <ClinicalFramework />
-        <CharacterDesign />
-        <Team />
-        <Vision />
-      </main>
-      <Footer />
+      <div aria-hidden={demoOpen}>
+        <Nav onOpenDemo={() => setDemoOpen(true)} />
+        <main>
+          <Hero onOpenDemo={() => setDemoOpen(true)} />
+          <ProblemSolution />
+          <ClinicalFramework />
+          <CharacterDesign />
+          <Team />
+          <Vision />
+        </main>
+        <Footer />
+      </div>
 
       {demoOpen && <Demo onClose={() => setDemoOpen(false)} />}
     </div>

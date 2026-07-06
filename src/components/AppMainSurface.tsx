@@ -3,11 +3,9 @@ import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
 import {
   Menu,
   MessageCircle,
-  Mic,
   Pause,
   Play,
   BookOpen,
-  Send,
   Users,
   Wind,
   Wifi,
@@ -15,6 +13,7 @@ import {
   Waves,
   Hand,
   Leaf,
+  ChevronLeft,
 } from "lucide-react";
 import ZaizaiRive from "./ZaizaiRive";
 import VoiceInputBar from "./VoiceInputBar";
@@ -34,6 +33,16 @@ import type { OrganizeHistoryEntry } from "@/data/organize";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
+/* —— 应用锁受保护入口 ——
+ * 仅这 4 个入口被应用锁保护；首页 / 记一下的新建入口 / 帮助与反馈 /
+ * 设置首页 / 应用隐私条款 / 用户协议 均不触发验证 */
+const APP_LOCK_PROTECTED_ITEMS: MoreItemId[] = [
+  "review",
+  "organize",
+  "praise",
+  "privacy",
+];
+
 /* —— 首页内缓解模式：3 个核心方法，结构预留扩展到 6 个 ——
  * 仅样式与点击反馈，不含真实心理干预内容。 */
 type ReliefMethodId = "breathing" | "grounding" | "mindfulness";
@@ -47,6 +56,18 @@ const reliefMethods: {
   { id: "grounding", label: "五感接地", Icon: Hand },
   { id: "mindfulness", label: "正念", Icon: Leaf },
 ];
+
+function buildDemoReply(text: string) {
+  if (/起不来|不想动|没力气|没劲|躺着/.test(text)) {
+    return "我在。先不用把今天都想完，只试一个很小的动作：坐起来，把水杯放到手边。做完就算这一轮已经开始了。";
+  }
+
+  if (/不想出门|出门|上学|见人/.test(text)) {
+    return "先不把目标定成出门。我们只确认下一步：换到门口附近，或者把要带的东西放进包里。能做到哪一步，就停在哪一步。";
+  }
+
+  return "我先记下来了。今天不用一次解决全部问题，只选一个最小动作：喝一口水、坐起来两分钟，或告诉身边的人“我现在需要慢一点”。";
+}
 
 /* —— iOS 风格手机状态栏（抽象绘制，仅增强真实感，不承担功能） ——
  * 左：时间；右：信号 / Wi-Fi / 电池。颜色 text-ink，接近真实状态栏。
@@ -111,7 +132,8 @@ type SurfaceMode =
   | "presenceSelect"
   | "presenceRoom"
   | "more"
-  | "moreDetail";
+  | "moreDetail"
+  | "verify";
 
 type DialogMessage = { id: number; role: "user" | "zaizai"; text: string };
 
@@ -181,6 +203,32 @@ export default function AppMainSurface({
   // 默认关闭：首页右上角保持空置；开启后显示「记一下」快捷入口。
   // 主控在「更多 → 设置 → 首页与快捷入口 → 记一下」；不在记录页主体常驻。
   const [homeShortcut, setHomeShortcut] = useState(false);
+
+  // —— 应用锁 ——
+  // appLock：是否开启应用锁，localStorage 持久化（zaiya_app_lock）
+  // sessionVerified：本会话内是否已通过验证；不持久化，刷新页面后重置为 false
+  // pendingProtectedItem：受保护入口被拦截时暂存目标 id，验证通过后进入该页
+  // 受保护入口：回头看看 / 帮我整理 / 我的隐私 / 夸夸自己
+  // 不保护：首页 / 记一下的新建入口 / 帮助与反馈 / 设置首页 / 隐私条款 / 用户协议
+  const [appLock, setAppLockState] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.localStorage.getItem("zaiya_app_lock") === "true";
+    } catch {
+      return false;
+    }
+  });
+  const [sessionVerified, setSessionVerified] = useState(false);
+  const [pendingProtectedItem, setPendingProtectedItem] =
+    useState<MoreItemId | null>(null);
+  const setAppLock = (v: boolean) => {
+    setAppLockState(v);
+    try {
+      window.localStorage.setItem("zaiya_app_lock", v ? "true" : "false");
+    } catch {
+      // 忽略写入失败（隐私模式 / 配额满）
+    }
+  };
 
   // —— 记录历史 + 快捷入口提示（本地 mock） ——
   // recordHistory 追踪每次记录的类型/时间/是否完整/来源
@@ -352,6 +400,41 @@ export default function AppMainSurface({
     setMode("moreDetail");
   };
 
+  // —— 应用锁拦截：从「更多」侧边栏选择某项时统一走此处理 ——
+  // 「记一下」始终不拦截；其余受保护入口在 appLock 开启且本会话未验证时进入 verify 模式，
+  // 验证通过后 sessionVerified 置 true，本会话内不再弹验证。
+  const handleMoreItemSelect = (id: MoreItemId) => {
+    if (id === "note") {
+      enterRecordFromMore();
+      return;
+    }
+    if (
+      appLock &&
+      !sessionVerified &&
+      APP_LOCK_PROTECTED_ITEMS.includes(id)
+    ) {
+      setPendingProtectedItem(id);
+      setMode("verify");
+      return;
+    }
+    setMoreDetailId(id);
+    setMode("moreDetail");
+  };
+
+  // 验证页：点击「验证并进入」→ 本会话标记已验证 → 进入目标受保护页
+  const confirmAppLockVerify = () => {
+    if (!pendingProtectedItem) return;
+    setSessionVerified(true);
+    setMoreDetailId(pendingProtectedItem);
+    setPendingProtectedItem(null);
+    setMode("moreDetail");
+  };
+  // 验证页：返回 → 回到更多侧边栏
+  const cancelAppLockVerify = () => {
+    setPendingProtectedItem(null);
+    setMode("more");
+  };
+
   // 新消息进入时滚动到底部
   useEffect(() => {
     const el = scrollRef.current;
@@ -383,7 +466,7 @@ export default function AppMainSurface({
     setTimeout(() => {
       setMessages((m) => [
         ...m,
-        { id: Date.now() + 1, role: "zaizai", text: "【对话反馈占位】" },
+        { id: Date.now() + 1, role: "zaizai", text: buildDemoReply(text) },
       ]);
       setSending(false);
     }, delay);
@@ -667,7 +750,7 @@ export default function AppMainSurface({
                 onSend={send}
                 canSend={input.trim().length > 0 && !sending}
                 placeholder="说点什么…"
-                sendButtonClassName="bg-[#FC591B] text-canvas"
+                sendButtonClassName="bg-accent text-canvas"
                 className="rounded-xl border border-line bg-white p-2"
               />
             </motion.div>
@@ -705,16 +788,6 @@ export default function AppMainSurface({
                     <span className="text-[13px] text-ink">{m.label}</span>
                   </button>
                 ))}
-                {/* 占位：弱化，便于后续扩展到 6 个方法 */}
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div
-                    key={`ph-${i}`}
-                    className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-line py-5"
-                  >
-                    <div className="h-7 w-7 rounded-full border border-line" />
-                    <span className="text-[12px] text-ink-faint">敬请期待</span>
-                  </div>
-                ))}
               </div>
             </motion.div>
           </FeaturePageTransition>
@@ -750,8 +823,8 @@ export default function AppMainSurface({
                 animate={rhythmControls}
                 className="h-32 w-32 rounded-full border border-line bg-white/60"
               />
-              <p className="mt-6 text-[13px] leading-relaxed text-ink-soft">
-                【练习提示占位】
+              <p className="mt-6 max-w-[220px] text-center text-[13px] leading-relaxed text-ink-soft">
+                跟着圆慢一点。能停下来，就已经够了。
               </p>
             </motion.div>
 
@@ -844,14 +917,7 @@ export default function AppMainSurface({
               transition={{ duration: 0.32, ease }}
             >
               <MoreContent
-                onSelect={(id) => {
-                  if (id === "note") {
-                    enterRecordFromMore();
-                  } else {
-                    setMoreDetailId(id);
-                    setMode("moreDetail");
-                  }
-                }}
+                onSelect={handleMoreItemSelect}
                 onClose={() => setMode("home")}
               />
             </motion.div>
@@ -883,6 +949,8 @@ export default function AppMainSurface({
               }}
               homeShortcut={homeShortcut}
               setHomeShortcut={setHomeShortcut}
+              appLock={appLock}
+              setAppLock={setAppLock}
               showShortcutHint={hintVisibleForResult}
               onAcceptShortcut={acceptShortcut}
               onDismissShortcutHint={dismissShortcutHint}
@@ -899,6 +967,52 @@ export default function AppMainSurface({
                 )
               }
             />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* verify 模式：应用锁模拟验证页（受保护入口被拦截时显示）
+          * 全屏覆盖，z-[70] 盖在 moreDetail (z-60) 与 more 侧边栏 (z-50) 之上
+          * 标题「验证后查看」+ 说明「此内容受应用锁保护。」+ 按钮「验证并进入」
+          * 点击验证 → 本会话标记已验证 → 进入目标受保护页；返回 → 回到更多侧边栏 */}
+      <AnimatePresence>
+        {mode === "verify" && pendingProtectedItem && (
+          <motion.div
+            key="verify-layer"
+            className="absolute inset-0 z-[70] bg-canvas"
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ duration: 0.32, ease }}
+          >
+            <div className="relative flex h-full flex-col bg-canvas">
+              {/* 顶部：返回 + 标题 */}
+              <div className="flex items-center gap-3 px-5 pt-14 pb-2">
+                <button
+                  onClick={cancelAppLockVerify}
+                  aria-label="返回更多"
+                  className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+                <h2 className="text-[17px] font-semibold tracking-tight text-ink">
+                  验证后查看
+                </h2>
+              </div>
+
+              {/* 中部：说明 + 验证按钮 */}
+              <div className="flex flex-1 flex-col items-center justify-center px-8">
+                <p className="text-center text-[14px] leading-relaxed text-ink-soft">
+                  此内容受应用锁保护。
+                </p>
+                <button
+                  onClick={confirmAppLockVerify}
+                  className="mt-8 rounded-xl bg-ink px-6 py-3 text-[14px] font-medium text-white transition-opacity hover:opacity-90"
+                >
+                  验证并进入
+                </button>
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

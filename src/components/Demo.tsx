@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ArrowRight, Send } from "lucide-react";
 import ZaizaiRive from "./ZaizaiRive";
@@ -10,33 +10,79 @@ const ease = [0.22, 1, 0.36, 1] as const;
 
 export default function Demo({ onClose }: Props) {
   const [screen, setScreen] = useState(0);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
-  // 锁定背景滚动 + Esc 退出
-  const handleEsc = useCallback(
+  // 锁定背景滚动 + Esc 退出 + Tab 焦点留在 Demo 内
+  const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+
+      if (e.key !== "Tab") return;
+
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+
+      const focusable = Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => !el.hasAttribute("aria-hidden"));
+
+      if (focusable.length === 0) {
+        e.preventDefault();
+        dialog.focus({ preventScroll: true });
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
     },
     [onClose]
   );
 
   useEffect(() => {
     const prev = document.body.style.overflow;
+    const prevActive =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
     document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", handleEsc);
+    window.addEventListener("keydown", handleKeyDown);
+    dialogRef.current?.focus({ preventScroll: true });
     return () => {
       document.body.style.overflow = prev;
-      window.removeEventListener("keydown", handleEsc);
+      window.removeEventListener("keydown", handleKeyDown);
+      prevActive?.focus({ preventScroll: true });
     };
-  }, [handleEsc]);
+  }, [handleKeyDown]);
 
   const goNext = () => setScreen((s) => Math.min(5, s + 1));
   const goPrev = () => setScreen((s) => Math.max(0, s - 1));
   const restart = () => setScreen(0);
 
   return (
-    <div className="fixed inset-0 z-[100] grid place-items-center bg-canvas p-4">
-      {/* 手机整体：高度驱动等比缩放，桌面约 390×780，移动端不溢出视口 */}
-      <div className="h-[min(780px,calc(100vh-32px))] aspect-[9/18]">
+    <div
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="在呀 Demo 演示"
+      tabIndex={-1}
+      className="fixed inset-0 z-[100] grid place-items-center bg-canvas p-4 focus:outline-none"
+    >
+      {/* 手机整体：宽高双约束，桌面约 390×780，移动端不裁边 */}
+      <div className="aspect-[9/18] w-[min(390px,calc(100vw-32px),calc(50vh-16px))]">
         {/* 边框：轻薄、柔和圆角、轻阴影 */}
         <div className="h-full w-full rounded-[40px] border-[7px] border-ink bg-ink p-[2px] shadow-[0_8px_40px_-12px_rgba(0,0,0,0.18)]">
           <div className="relative h-full w-full overflow-hidden rounded-[33px] bg-canvas">
@@ -235,7 +281,7 @@ function TimelineScreen({ onNext }: { onNext: () => void }) {
       <div className="p-6">
         <button
           onClick={onNext}
-          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#FC591B] px-4 py-3 text-[13px] font-medium text-canvas"
+          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-accent px-4 py-3 text-[13px] font-medium text-canvas"
         >
           继续
           <ArrowRight className="h-4 w-4" />
@@ -311,7 +357,7 @@ function ValidationScreen({ onNext }: { onNext: () => void }) {
             onClick={submit}
             disabled={loading || !!reply || !value.trim()}
             aria-label="发送"
-            className="grid h-9 w-9 place-items-center rounded-lg bg-[#FC591B] text-canvas transition-opacity disabled:opacity-30"
+            className="grid h-9 w-9 place-items-center rounded-lg bg-accent text-canvas transition-opacity disabled:opacity-30"
           >
             <Send className="h-4 w-4" />
           </button>
@@ -348,7 +394,7 @@ function ClosingScreen({
       <div className="flex w-full flex-col gap-2">
         <button
           onClick={onRestart}
-          className="w-full rounded-lg bg-[#FC591B] px-4 py-3 text-[13px] font-medium text-canvas"
+          className="w-full rounded-lg bg-accent px-4 py-3 text-[13px] font-medium text-canvas"
         >
           重新开始
         </button>

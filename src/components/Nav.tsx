@@ -46,7 +46,7 @@ export default function Nav({ onOpenDemo }: Props) {
         <div className="hidden md:block">
           <button
             onClick={onOpenDemo}
-            className="group inline-flex items-center gap-1.5 rounded-md bg-[#FC591B] px-3.5 py-2 text-[13px] font-medium text-canvas"
+            className="group inline-flex items-center gap-1.5 rounded-md bg-accent px-3.5 py-2 text-[13px] font-medium text-canvas"
           >
             体验 Demo
             <ArrowUpRight className="h-3.5 w-3.5 opacity-70 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
@@ -80,7 +80,7 @@ export default function Nav({ onOpenDemo }: Props) {
                 setOpen(false);
                 onOpenDemo();
               }}
-              className="mt-2 inline-flex items-center justify-center gap-1.5 rounded-md bg-[#FC591B] px-3.5 py-2.5 text-sm font-medium text-canvas"
+              className="mt-2 inline-flex items-center justify-center gap-1.5 rounded-md bg-accent px-3.5 py-2.5 text-sm font-medium text-canvas"
             >
               体验 Demo
               <ArrowUpRight className="h-3.5 w-3.5" />

@@ -2,14 +2,16 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, Plus, Trash2 } from "lucide-react";
 import {
-  PRAISE_EXAMPLES,
   PRAISE_MAX_LENGTH,
   buildTimeLabel,
   createCard,
+  getGradient,
   loadCards,
   saveCards,
   type PraiseCard,
 } from "@/data/praise";
+import ZaizaiRive from "./ZaizaiRive";
+import VoiceInputBar from "./VoiceInputBar";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -28,6 +30,17 @@ type Props = {
   /** 返回 more 侧边栏 */
   onBack: () => void;
 };
+
+/* —— 首页在在气泡轮播示例句 ——
+ * 在在通过对话框说出，自动 3.5s 切换，循环。 */
+const ZAIZAI_BUBBLES = [
+  "可以留下一句很小的夸夸。",
+  "比如：今天看到一朵很好看的云。",
+  "比如：今天吃了一口饭。",
+  "比如：邻居对我笑了一下。",
+  "比如：今天撑到了现在。",
+  "也可以写别人给你的一点善意。",
+];
 
 export default function PraisePage({ onBack }: Props) {
   const [layer, setLayer] = useState<Layer>("home");
@@ -105,7 +118,8 @@ export default function PraisePage({ onBack }: Props) {
 }
 
 /* =========================================================
- * HomeView —— 主页：卡片流 + 悬浮「+」
+ * HomeView —— 主页：在在引导区 + 双列瀑布流 + 悬浮「+」
+ * 首页先是一个有在在陪着的小卡片库，而不是单纯的卡片列表。
  * ======================================================= */
 function HomeView({
   cards,
@@ -122,8 +136,8 @@ function HomeView({
 
   return (
     <div className="relative flex h-full flex-col bg-canvas">
-      {/* 顶部：返回 + 标题 + 副标题 */}
-      <div className="flex items-center gap-3 px-5 pt-14 pb-1">
+      {/* 顶部：返回 + 标题（不放副标题，避免和在在气泡重复） */}
+      <header className="flex items-center gap-3 px-5 pt-14 pb-1">
         <button
           onClick={onBack}
           aria-label="返回更多"
@@ -134,17 +148,22 @@ function HomeView({
         <h2 className="text-[17px] font-semibold tracking-tight text-ink">
           夸夸自己
         </h2>
-      </div>
-      <p className="px-5 pb-3 text-[13px] leading-relaxed text-ink-faint">
-        把今天一点点好的东西留下来。
-      </p>
+      </header>
 
-      {/* 卡片流 */}
-      <div className="flex-1 overflow-y-auto px-5 pb-24 pt-1">
+      {/* 在在引导区：在在 + 气泡（左右结构，与「记一下」一致） */}
+      <section className="flex items-start justify-center gap-3 px-5 pb-3 pt-3">
+        <ZaizaiRive className="h-20 w-20 shrink-0" />
+        <ZaizaiBubble items={ZAIZAI_BUBBLES} />
+      </section>
+
+      {/* 卡片 Feed：双列瀑布流，与引导区保持 24px 间距 */}
+      <section className="flex-1 overflow-y-auto px-5 pb-24 pt-6">
         {isEmpty ? (
-          <EmptyState onCreate={onCreate} />
+          <p className="mt-8 text-center text-[12.5px] leading-relaxed text-ink-faint/70">
+            还没有留下夸夸。
+          </p>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="columns-2 gap-3">
             {cards.map((c, i) => (
               <CardItem
                 key={c.id}
@@ -155,7 +174,7 @@ function HomeView({
             ))}
           </div>
         )}
-      </div>
+      </section>
 
       {/* 悬浮「+」按钮：右下角，轻量 */}
       <button
@@ -169,22 +188,57 @@ function HomeView({
   );
 }
 
-/* —— 空状态卡片：可点击进入新建页 —— */
-function EmptyState({ onCreate }: { onCreate: () => void }) {
+/* —— 在在说话气泡：复用「记一下」气泡样式，自动 3.5s 轮播 ——
+ * 左右结构下，气泡小尾巴指向左侧的在在。
+ * 进入新建页（组件卸载）时自动清理 interval。 */
+function ZaizaiBubble({ items }: { items: string[] }) {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (items.length <= 1) return;
+    const timer = setInterval(() => {
+      setIndex((prev) => (prev + 1) % items.length);
+    }, 3500);
+    return () => clearInterval(timer);
+  }, [items.length]);
+
   return (
-    <button
-      onClick={onCreate}
-      className="mt-6 w-full rounded-2xl border border-dashed border-line bg-white/50 px-6 py-10 text-center transition-colors hover:border-ink-faint"
-    >
-      <p className="text-[14px] font-medium text-ink-soft">还没有留下夸夸。</p>
-      <p className="mt-2 text-[12.5px] leading-relaxed text-ink-faint">
-        可以很小，比如：今天看到一朵很好看的云。
-      </p>
-    </button>
+    <div className="relative max-w-[200px] pt-2">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={index}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.3, ease }}
+        >
+          {/* 气泡主体：偏方正、轻圆角 */}
+          <div className="relative rounded-lg bg-line-soft px-4 py-2.5">
+            <p className="line-clamp-2 text-[12px] leading-relaxed text-ink-soft">
+              {items[index]}
+            </p>
+            {/* 小尾巴：指向左侧的在在 */}
+            <div className="absolute -left-1.5 top-3">
+              <svg
+                width="8"
+                height="12"
+                viewBox="0 0 8 12"
+                fill="none"
+                className="text-line-soft"
+              >
+                <path d="M0 6L8 0v12L0 6z" fill="currentColor" />
+              </svg>
+            </div>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    </div>
   );
 }
 
-/* —— 单张卡片：居中一句话 + 时间 —— */
+/* —— 单张卡片：Tolan Library 风格竖卡 ——
+ * 矩形竖卡、大圆角、柔和渐变背景、文字居中、日期弱化到底部。
+ * 双列下约占内容区 48%，min-h-[150px] 保证竖向卡片感。 */
 function CardItem({
   card,
   index,
@@ -194,23 +248,37 @@ function CardItem({
   index: number;
   onClick: () => void;
 }) {
+  const gradient = getGradient(card.gradientId);
   const timeLabel = buildTimeLabel(new Date(card.createdAt));
+
   return (
     <motion.button
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease, delay: Math.min(index * 0.04, 0.3) }}
       onClick={onClick}
-      className="w-full rounded-2xl border border-line bg-white px-6 py-7 text-left shadow-[0_2px_14px_-8px_rgba(0,0,0,0.08)] transition-colors hover:border-ink-faint"
+      className="mb-3 flex min-h-[150px] w-full flex-col justify-between break-inside-avoid rounded-3xl p-5 text-left transition-transform hover:scale-[1.02]"
+      style={{
+        background: `linear-gradient(140deg, ${gradient.from} 0%, ${gradient.to} 100%)`,
+      }}
     >
-      <p className="text-[15.5px] leading-relaxed text-ink">{card.text}</p>
-      <p className="mt-4 text-[11.5px] text-ink-faint">{timeLabel}</p>
+      {/* 主体文字：垂直居中 */}
+      <div className="flex flex-1 items-center justify-center py-3">
+        <p className="text-center text-[14.5px] leading-relaxed text-ink">
+          {card.text}
+        </p>
+      </div>
+      {/* 日期弱化到底部 */}
+      <p className="text-center text-[11px] text-ink/40">{timeLabel}</p>
     </motion.button>
   );
 }
 
 /* =========================================================
- * EditView —— 新建卡片页：可编辑卡片 + 示例句
+ * EditView —— 全屏沉浸式卡片编辑
+ * 整个内容区即一张渐变卡片；不滚动、无标题/说明/示例列表/底部大按钮。
+ * 结构：左上返回 / 右上保存 / 中央 textarea / 右下 mic
+ * 注：在在引导主体在首页，新建页不再放小在在，避免视觉竞争与小橙点问题。
  * ======================================================= */
 function EditView({
   onBack,
@@ -219,126 +287,75 @@ function EditView({
   onBack: () => void;
   onSave: (text: string) => void;
 }) {
-  const [value, setValue] = useState("");
-  const [touched, setTouched] = useState(false);
+  // 使用固定渐变 g1（暖粉）作为新建卡片背景
+  const gradient = getGradient("g1");
 
+  const [value, setValue] = useState("");
   const trimmed = value.trim();
-  const isEmpty = trimmed.length === 0;
-  const tooLong = value.length > PRAISE_MAX_LENGTH;
-  const canSave = !isEmpty && !tooLong;
+  const canSave = trimmed.length > 0 && value.length <= PRAISE_MAX_LENGTH;
 
   const submit = () => {
-    setTouched(true);
     if (!canSave) return;
     onSave(trimmed);
   };
 
   return (
-    <div className="relative flex h-full flex-col bg-canvas">
-      {/* 顶部：返回 + 标题 */}
-      <div className="flex items-center gap-3 px-5 pt-14 pb-2">
+    <div
+      className="relative flex h-full flex-col"
+      style={{
+        background: `linear-gradient(140deg, ${gradient.from} 0%, ${gradient.to} 100%)`,
+      }}
+    >
+      {/* 顶部：左返回 / 右保存 */}
+      <div className="flex items-center justify-between px-5 pt-14 pb-2">
         <button
           onClick={onBack}
           aria-label="返回主页"
-          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+          className="grid h-8 w-8 place-items-center rounded-full bg-white/50 text-ink-soft backdrop-blur-sm transition-colors hover:bg-white/70"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
-        <h2 className="text-[17px] font-semibold tracking-tight text-ink">
-          新建夸夸
-        </h2>
-      </div>
-
-      {/* 可滚动主体 */}
-      <div className="flex-1 overflow-y-auto px-5 pb-4 pt-2">
-        <p className="text-[14px] leading-relaxed text-ink">
-          写一句今天可以留下的话。
-        </p>
-        <p className="mt-2 text-[12.5px] leading-relaxed text-ink-faint">
-          不一定要夸自己，也可以是你看到的好东西、别人给你的一点善意。
-        </p>
-
-        {/* 可编辑卡片：用户直接在卡片里编辑 */}
-        <div className="mt-6 rounded-2xl border border-line bg-white px-6 py-7 shadow-[0_2px_14px_-8px_rgba(0,0,0,0.08)]">
-          <textarea
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            onBlur={() => setTouched(true)}
-            placeholder="比如：今天看到一朵很好看的云。"
-            autoFocus
-            rows={3}
-            className="w-full resize-none bg-transparent text-[15.5px] leading-relaxed text-ink placeholder:text-ink-faint focus:outline-none"
-          />
-          {/* 字数计数：接近上限时显示 */}
-          {value.length > PRAISE_MAX_LENGTH - 10 && (
-            <p
-              className={`mt-3 text-right text-[11px] ${
-                tooLong ? "text-[#B7583F]" : "text-ink-faint"
-              }`}
-            >
-              {value.length} / {PRAISE_MAX_LENGTH}
-            </p>
-          )}
-        </div>
-
-        {/* 轻提示：空 / 过长 */}
-        <div className="mt-3 min-h-[18px]">
-          {touched && isEmpty && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-[12px] leading-relaxed text-ink-faint"
-            >
-              先写几个字就可以。
-            </motion.p>
-          )}
-          {tooLong && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-[12px] leading-relaxed text-[#B7583F]"
-            >
-              这一张卡片短一点就好。
-            </motion.p>
-          )}
-        </div>
-
-        {/* 轻量示例句：纵向展示，点击填入 */}
-        <p className="mt-7 text-[11px] font-medium uppercase tracking-[0.16em] text-ink-faint">
-          可以照着写
-        </p>
-        <div className="mt-2.5 flex flex-col gap-2">
-          {PRAISE_EXAMPLES.map((ex) => (
-            <button
-              key={ex}
-              onClick={() => {
-                setValue(ex);
-                setTouched(true);
-              }}
-              className="rounded-xl border border-line bg-white px-4 py-3 text-left text-[13.5px] leading-relaxed text-ink-soft transition-colors hover:border-ink-faint hover:text-ink"
-            >
-              {ex}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 底部保存按钮 */}
-      <div className="px-5 pb-8">
         <button
           onClick={submit}
           disabled={!canSave}
-          className="w-full rounded-xl bg-[#FC591B] px-4 py-3 text-[13px] font-medium text-canvas transition-opacity disabled:opacity-30"
+          className="rounded-full bg-white/60 px-4 py-1.5 text-[13px] font-medium text-ink backdrop-blur-sm transition-opacity hover:bg-white/80 disabled:opacity-40"
         >
           保存
         </button>
+      </div>
+
+      {/* 中央可编辑文字区域：铺满，不滚动 */}
+      <div className="flex flex-1 items-center justify-center px-8">
+        <textarea
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && canSave) submit();
+          }}
+          placeholder="写一句今天可以留下的话。"
+          autoFocus
+          rows={4}
+          maxLength={PRAISE_MAX_LENGTH + 20}
+          className="w-full resize-none bg-transparent text-center text-[20px] leading-relaxed text-ink placeholder:text-ink/40 focus:outline-none"
+        />
+      </div>
+
+      {/* 底部中间：轻量语音入口（compact 模式，不显示输入框） */}
+      <div className="flex justify-center pb-10">
+        <VoiceInputBar
+          compact
+          value={value}
+          onChange={setValue}
+          onSend={() => {}}
+          canSend={false}
+        />
       </div>
     </div>
   );
 }
 
 /* =========================================================
- * DetailView —— 卡片详情页：全屏沉浸 + 轻呼吸动效
+ * DetailView —— 卡片详情页：整屏渐变沉浸 + 轻呼吸动效
  * ======================================================= */
 function DetailView({
   card,
@@ -359,47 +376,52 @@ function DetailView({
     );
   }
 
+  const gradient = getGradient(card.gradientId);
   const timeLabel = buildTimeLabel(new Date(card.createdAt));
 
   return (
-    <div className="relative flex h-full flex-col bg-canvas">
-      {/* 顶部：返回 + 删除 */}
+    <div
+      className="relative flex h-full flex-col"
+      style={{
+        background: `linear-gradient(140deg, ${gradient.from} 0%, ${gradient.to} 100%)`,
+      }}
+    >
+      {/* 顶部：左返回 / 右删除 */}
       <div className="flex items-center justify-between px-5 pt-14 pb-2">
         <button
           onClick={onBack}
           aria-label="返回主页"
-          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+          className="grid h-8 w-8 place-items-center rounded-full bg-white/50 text-ink-soft backdrop-blur-sm transition-colors hover:bg-white/70"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
         <button
           onClick={() => setConfirming(true)}
           aria-label="删除"
-          className="grid h-8 w-8 place-items-center rounded-full text-ink-faint transition-colors hover:bg-line-soft hover:text-ink"
+          className="grid h-8 w-8 place-items-center rounded-full bg-white/50 text-ink-faint backdrop-blur-sm transition-colors hover:bg-white/70 hover:text-ink"
         >
           <Trash2 className="h-4 w-4" strokeWidth={1.6} />
         </button>
       </div>
 
-      {/* 主体：大卡片 + 呼吸圆圈 */}
+      {/* 主体：大号文字居中 */}
       <div className="flex flex-1 flex-col items-center justify-center px-8">
-        {/* 大卡片展示用户原文 */}
-        <motion.div
+        <motion.p
           initial={{ opacity: 0, scale: 0.96, y: 8 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.4, ease }}
-          className="w-full rounded-2xl border border-line bg-white px-7 py-8 shadow-[0_4px_24px_-12px_rgba(0,0,0,0.08)]"
+          className="text-center text-[20px] leading-relaxed text-ink"
         >
-          <p className="text-[18px] leading-relaxed text-ink">{card.text}</p>
-          <p className="mt-5 text-[12px] text-ink-faint">{timeLabel}</p>
-        </motion.div>
+          {card.text}
+        </motion.p>
+        <p className="mt-4 text-[12px] text-ink/50">{timeLabel}</p>
 
         {/* 轻呼吸动效：缓慢放大缩小的圆圈 */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5, duration: 0.6, ease }}
-          className="mt-12"
+          className="mt-14"
         >
           <motion.div
             animate={{ scale: [0.85, 1.1, 0.85] }}
@@ -408,12 +430,12 @@ function DetailView({
               repeat: Infinity,
               ease: "easeInOut",
             }}
-            className="h-20 w-20 rounded-full border border-line bg-white/60"
+            className="h-20 w-20 rounded-full border border-ink/20 bg-white/40 backdrop-blur-sm"
           />
         </motion.div>
 
         {/* 提示文案 */}
-        <p className="mt-8 text-[13px] leading-relaxed text-ink-faint">
+        <p className="mt-8 text-[13px] leading-relaxed text-ink/60">
           停一下，吸一口气。
         </p>
       </div>
@@ -459,9 +481,6 @@ function DeleteConfirm({
         <div className="mb-5">
           <div className="text-[16px] font-semibold text-ink">
             要删掉这条夸夸吗？
-          </div>
-          <div className="mt-2 text-[13px] leading-relaxed text-ink-faint">
-            删除后就不能再看见了。
           </div>
         </div>
         <div className="flex flex-col gap-2.5">

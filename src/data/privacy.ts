@@ -27,24 +27,50 @@ export type BodyData = {
   height?: number;
 };
 
-/* —— 家人信息 —— */
-export type FamilyMember = {
-  id: string;
-  name: string;
-  /** 关系：自由文本，如 妈妈 / 爸爸 / 姐姐 */
-  relation: string;
-  /** 联系方式：手机号或其它 */
-  contact?: string;
+/* —— 联系人类型：家长 / 老师 统一存储 —— */
+export type ContactType = "guardian" | "teacher";
+
+/* —— 老师身份选项 —— */
+export type TeacherRole =
+  | "headTeacher"
+  | "psychology"
+  | "subject"
+  | "grade"
+  | "other";
+
+export const TEACHER_ROLE_LABEL: Record<TeacherRole, string> = {
+  headTeacher: "班主任",
+  psychology: "心理老师",
+  subject: "任课老师",
+  grade: "年级老师",
+  other: "其他",
 };
 
-/* —— 紧急联系人（最多 3 位）—— */
-export type EmergencyContact = {
+export const TEACHER_ROLE_OPTIONS: TeacherRole[] = [
+  "headTeacher",
+  "psychology",
+  "subject",
+  "grade",
+  "other",
+];
+
+/* —— 统一联系人结构 ——
+ * relationship 仅家长联系人使用（如 妈妈 / 爸爸 / 姐姐 / 其他亲属）。
+ * teacherRole 仅老师联系人使用。 */
+export type Contact = {
   id: string;
+  type: ContactType;
   name: string;
-  /** 电话 */
+  /** 关系：仅家长使用 */
+  relationship?: string;
+  /** 老师身份：仅老师使用 */
+  teacherRole?: TeacherRole;
   phone: string;
-  /** 关系 */
-  relation: string;
+  note?: string;
+  /** 是否紧急联系人：跨家长 / 老师全局最多 3 位 */
+  isEmergencyContact: boolean;
+  createdAt: string;
+  updatedAt?: string;
 };
 
 /* —— 服用安排 —— */
@@ -62,21 +88,11 @@ export type MedSchedule = {
   note?: string;
 };
 
-/* —— 隐私数据集合（仅用于类型组合，不整体持久化）—— */
-export type PrivacyData = {
-  basicProfile: BasicProfile;
-  bodyData: BodyData;
-  familyMembers: FamilyMember[];
-  emergencyContacts: EmergencyContact[];
-  medSchedules: MedSchedule[];
-};
-
 /* —— localStorage keys —— */
 const KEYS = {
   basicProfile: "zaiya_privacy_basic_profile",
   bodyData: "zaiya_privacy_body_data",
-  family: "zaiya_privacy_family",
-  emergency: "zaiya_privacy_emergency_contacts",
+  contacts: "zaiya_privacy_contacts",
   meds: "zaiya_privacy_med_schedules",
 } as const;
 
@@ -118,22 +134,13 @@ export function saveBodyData(b: BodyData): void {
   saveJSON(KEYS.bodyData, b);
 }
 
-/* —— 家人信息 —— */
-export function loadFamilyMembers(): FamilyMember[] {
-  const arr = loadJSON<FamilyMember[]>(KEYS.family, []);
+/* —— 联系人（家长 + 老师统一存储）—— */
+export function loadContacts(): Contact[] {
+  const arr = loadJSON<Contact[]>(KEYS.contacts, []);
   return Array.isArray(arr) ? arr : [];
 }
-export function saveFamilyMembers(list: FamilyMember[]): void {
-  saveJSON(KEYS.family, list);
-}
-
-/* —— 紧急联系人 —— */
-export function loadEmergencyContacts(): EmergencyContact[] {
-  const arr = loadJSON<EmergencyContact[]>(KEYS.emergency, []);
-  return Array.isArray(arr) ? arr : [];
-}
-export function saveEmergencyContacts(list: EmergencyContact[]): void {
-  saveJSON(KEYS.emergency, list);
+export function saveContacts(list: Contact[]): void {
+  saveJSON(KEYS.contacts, list);
 }
 
 /* —— 服用安排 —— */
@@ -145,7 +152,7 @@ export function saveMedSchedules(list: MedSchedule[]): void {
   saveJSON(KEYS.meds, list);
 }
 
-/* —— 紧急联系人上限 —— */
+/* —— 紧急联系人全局上限（家长 + 老师合并计算）—— */
 export const EMERGENCY_CONTACT_MAX = 3;
 
 /* —— 生成 id —— */
@@ -176,14 +183,16 @@ export function fillStatusLabel(s: FillStatus): string {
   return s === "filled" ? "已填写" : s === "partial" ? "部分填写" : "未填写";
 }
 
-/** 家人信息文案 */
-export function familyStatusLabel(list: FamilyMember[]): string {
-  return list.length > 0 ? `已设置 ${list.length} 人` : "未设置";
+/** 家长联系人文案 */
+export function guardianStatusLabel(list: Contact[]): string {
+  const n = list.filter((c) => c.type === "guardian").length;
+  return n > 0 ? `已设置 ${n} 人` : "未设置";
 }
 
-/** 紧急联系人文案 */
-export function emergencyStatusLabel(list: EmergencyContact[]): string {
-  return list.length > 0 ? `已设置 ${list.length} 人` : "未设置";
+/** 老师联系人文案 */
+export function teacherStatusLabel(list: Contact[]): string {
+  const n = list.filter((c) => c.type === "teacher").length;
+  return n > 0 ? `已设置 ${n} 人` : "未设置";
 }
 
 /** 服用安排文案 */
@@ -197,4 +206,14 @@ export function genderLabel(g?: Gender): string {
   if (g === "female") return "女";
   if (g === "other") return "其他";
   return "";
+}
+
+/* —— 紧急联系人计数 —— */
+export function countEmergencyContacts(list: Contact[]): number {
+  return list.filter((c) => c.isEmergencyContact).length;
+}
+
+/** 是否还能再设置紧急联系人 */
+export function canAddEmergencyContact(list: Contact[]): boolean {
+  return countEmergencyContacts(list) < EMERGENCY_CONTACT_MAX;
 }

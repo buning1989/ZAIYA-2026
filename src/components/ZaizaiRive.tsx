@@ -50,7 +50,7 @@ export default function ZaizaiRive({
     <div className={`relative ${className ?? ""}`}>
       {showFallback && (
         <div className="absolute inset-0 grid place-items-center">
-          <div className="h-full w-full rounded-full bg-[#FC591B]" />
+          <div className="h-full w-full rounded-full bg-accent" />
         </div>
       )}
       {/* scale(1.25) 放大实际可见主体，抵消 Rive 文件的透明边距 */}

@@ -5,12 +5,15 @@ import { Loader2, Mic, Send, Square, X } from "lucide-react";
 /**
  * 通用语音输入组件，统一「首页对话」与「记一下」的语音交互。
  *
- * 状态机：idle → recording → transcribing → idle（文本已填入）
+ * 状态机：idle → recording → transcribing → idle（文本已填入）/ failed（提示后回 idle）
  *
  * 不调用真实麦克风 / 语音识别 API；不跳页、不弹窗。
- * 转录结果为 mock 文本：【语音转文字占位】
+ * 转录结果为本地 mock 文本，不调用真实语音识别。
+ *
+ * compact 模式：只渲染一个轻量 mic 圆形按钮 + 状态反馈，不显示输入框 / 发送按钮，
+ * 适合「夸夸自己」这类主输入区已占据全屏、不需要底部聊天输入条的场景。
  */
-export type VoiceState = "idle" | "recording" | "transcribing";
+export type VoiceState = "idle" | "recording" | "transcribing" | "failed";
 
 export interface VoiceInputBarProps {
   value: string;
@@ -25,6 +28,16 @@ export interface VoiceInputBarProps {
   sendButtonClassName?: string;
   /** 外层容器自定义 className */
   className?: string;
+  /** 是否显示发送按钮，默认 true */
+  showSendButton?: boolean;
+  /** compact 模式：只渲染轻量 mic 按钮 + 状态反馈，不显示输入框 / 发送按钮 */
+  compact?: boolean;
+  /** compact 模式按钮尺寸：md（默认，h-10）/ sm（h-8，适合附加到短输入框） */
+  size?: "md" | "sm";
+  /** compact 模式录音态波形/失败态强调色（HEX/rgb），默认 #5F7050。用于融入主题色场景 */
+  tint?: string;
+  /** 转录完成后填入的 mock 文本，默认「我今天有点累，想先慢一点。」 */
+  mockText?: string;
 }
 
 export default function VoiceInputBar({
@@ -36,18 +49,30 @@ export default function VoiceInputBar({
   placeholder = "说点什么…",
   sendButtonClassName = "bg-accent text-canvas",
   className = "rounded-2xl border border-line bg-white p-2",
+  showSendButton = true,
+  compact = false,
+  size = "md",
+  tint,
+  mockText = "我今天有点累，想先慢一点。",
 }: VoiceInputBarProps) {
+  const accentColor = tint ?? "#5F7050";
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
 
   // 进入录制态
   const startRecording = () => setVoiceState("recording");
 
   // 停止录音 → 进入识别态 → 800–1200ms 后填入 mock 文本，回到 idle
+  // compact 模式下引入 ~15% 失败概率，演示「没听清」提示
   const stopRecording = () => {
     setVoiceState("transcribing");
     const delay = 800 + Math.random() * 400;
     window.setTimeout(() => {
-      onChange("【语音转文字占位】");
+      if (compact && Math.random() < 0.15) {
+        setVoiceState("failed");
+        window.setTimeout(() => setVoiceState("idle"), 2000);
+        return;
+      }
+      onChange(mockText);
       setVoiceState("idle");
     }, delay);
   };
@@ -57,6 +82,59 @@ export default function VoiceInputBar({
     setVoiceState("idle");
     onCancel?.();
   };
+
+  /* —— compact 模式：只渲染轻量 mic 圆形按钮 + 状态反馈 —— */
+  if (compact) {
+    const btnSize = size === "sm" ? "h-8 w-8" : "h-10 w-10";
+    const micSize = size === "sm" ? "h-4 w-4" : "h-5 w-5";
+    const barH = size === "sm" ? [3, 9, 3] : [4, 12, 4];
+    const barW = size === "sm" ? "w-[2px]" : "w-0.5";
+    const loaderSize = size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4";
+    const failedColor = tint ?? "#B7583F";
+    return (
+      <div className="relative flex items-center justify-center">
+        {/* 失败提示气泡 */}
+        {voiceState === "failed" && (
+          <span className="absolute -top-9 whitespace-nowrap rounded-full bg-ink/90 px-3 py-1 text-[11px] text-canvas">
+            没听清，可以再说一次
+          </span>
+        )}
+        <button
+          onClick={voiceState === "recording" ? stopRecording : startRecording}
+          aria-label={
+            voiceState === "recording" ? "停止录音" : "语音输入"
+          }
+          className={`grid ${btnSize} place-items-center rounded-full border border-line bg-white/70 text-ink-soft backdrop-blur-sm transition-colors hover:text-ink`}
+        >
+          {voiceState === "idle" && <Mic className={micSize} strokeWidth={1.8} />}
+          {voiceState === "recording" && (
+            <span className="flex items-end gap-0.5">
+              {[0, 1, 2].map((i) => (
+                <motion.span
+                  key={i}
+                  className={`rounded-full ${barW}`}
+                  animate={{ height: barH }}
+                  transition={{
+                    duration: 0.6,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: i * 0.1,
+                  }}
+                  style={{ height: barH[0], backgroundColor: accentColor }}
+                />
+              ))}
+            </span>
+          )}
+          {voiceState === "transcribing" && (
+            <Loader2 className={`${loaderSize} animate-spin text-ink-faint`} />
+          )}
+          {voiceState === "failed" && (
+            <Mic className={micSize} style={{ color: failedColor }} strokeWidth={1.8} />
+          )}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
@@ -120,16 +198,18 @@ export default function VoiceInputBar({
           >
             <Mic className="h-4 w-4" />
           </button>
-          <button
-            onClick={onSend}
-            aria-label="发送"
-            disabled={!canSend}
-            className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg transition-opacity ${sendButtonClassName} ${
-              canSend ? "opacity-100" : "opacity-30"
-            }`}
-          >
-            <Send className="h-4 w-4" />
-          </button>
+          {showSendButton && (
+            <button
+              onClick={onSend}
+              aria-label="发送"
+              disabled={!canSend}
+              className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg transition-opacity ${sendButtonClassName} ${
+                canSend ? "opacity-100" : "opacity-30"
+              }`}
+            >
+              <Send className="h-4 w-4" />
+            </button>
+          )}
         </>
       )}
 
@@ -142,18 +222,20 @@ export default function VoiceInputBar({
           >
             <Square className="h-3.5 w-3.5 fill-current" />
           </button>
-          <button
-            aria-label="发送"
-            disabled
-            className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg transition-opacity opacity-30 ${sendButtonClassName}`}
-          >
-            <Send className="h-4 w-4" />
-          </button>
+          {showSendButton && (
+            <button
+              aria-label="发送"
+              disabled
+              className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg transition-opacity opacity-30 ${sendButtonClassName}`}
+            >
+              <Send className="h-4 w-4" />
+            </button>
+          )}
         </>
       )}
 
       {/* transcribing 态：右侧发送按钮置灰 */}
-      {voiceState === "transcribing" && (
+      {voiceState === "transcribing" && showSendButton && (
         <button
           aria-label="发送"
           disabled
