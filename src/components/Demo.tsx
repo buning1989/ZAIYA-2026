@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, ArrowRight, Send, X } from "lucide-react";
+import { ChevronLeft, ArrowRight, Send } from "lucide-react";
 import ZaizaiRive from "./ZaizaiRive";
-import AppMainSurface from "./AppMainSurface";
+import AppMainSurface, { PhoneStatusBar } from "./AppMainSurface";
 
 type Props = { onClose: () => void };
 
@@ -35,23 +35,18 @@ export default function Demo({ onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-[100] grid place-items-center bg-canvas p-4">
-      {/* 手机边框（固定，不响应式） */}
-      <div className="w-full max-w-[340px]">
-        <div className="rounded-[44px] border-[10px] border-ink bg-ink p-1 shadow-2xl">
-          <div className="relative aspect-[9/18] overflow-hidden rounded-[36px] bg-canvas">
-            {/* 顶部状态栏：毛玻璃质感 */}
-            <div className="absolute left-0 right-0 top-0 z-10 flex items-center justify-between px-6 py-3 text-[11px] font-medium text-ink-soft">
-              <span>在呀</span>
-              <span>9:41</span>
-              {/* 关闭入口：手机内部右上角 */}
-              <button
-                onClick={onClose}
-                aria-label="关闭 Demo"
-                className="grid h-6 w-6 place-items-center rounded-full bg-white/50 backdrop-blur-xl border border-white/30 shadow-sm text-ink-faint transition-colors hover:text-ink"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
+      {/* 手机整体：高度驱动等比缩放，桌面约 390×780，移动端不溢出视口 */}
+      <div className="h-[min(780px,calc(100vh-32px))] aspect-[9/18]">
+        {/* 边框：轻薄、柔和圆角、轻阴影 */}
+        <div className="h-full w-full rounded-[40px] border-[7px] border-ink bg-ink p-[2px] shadow-[0_8px_40px_-12px_rgba(0,0,0,0.18)]">
+          <div className="relative h-full w-full overflow-hidden rounded-[33px] bg-canvas">
+            {/* 状态栏：首页由 AppMainSurface 自带（避免重叠）；非首页用 PhoneStatusBar + 关闭按钮 */}
+            {screen !== 1 && (
+              <PhoneStatusBar
+                showClose={screen > 1 && screen < 5}
+                onClose={onClose}
+              />
+            )}
 
             {/* 上一步（HomeScreen 为主界面入口态，不显示返回，与首页 Hero 一致） */}
             {screen > 1 && screen < 5 && (
@@ -74,7 +69,7 @@ export default function Demo({ onClose }: Props) {
                 className="absolute inset-0"
               >
                 {screen === 0 && <IntroScreen onNext={goNext} />}
-                {screen === 1 && <HomeScreen onNext={goNext} />}
+                {screen === 1 && <HomeScreen />}
                 {screen === 2 && <StoryScreen onNext={goNext} />}
                 {screen === 3 && <TimelineScreen onNext={goNext} />}
                 {screen === 4 && <ValidationScreen onNext={goNext} />}
@@ -90,43 +85,31 @@ export default function Demo({ onClose }: Props) {
   );
 }
 
-/* —— 屏 0：冷启动·在在出现 —— */
+/* —— 屏 0：应用打开开屏动画（无文案，仅 scale + opacity） —— */
 function IntroScreen({ onNext }: { onNext: () => void }) {
   useEffect(() => {
-    const t = setTimeout(onNext, 2000);
+    const t = setTimeout(onNext, 1100);
     return () => clearTimeout(t);
   }, [onNext]);
 
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-6 bg-line-soft px-8">
+    <div className="flex h-full items-center justify-center bg-canvas">
       <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
+        initial={{ opacity: 0, scale: 0.85 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 1, ease }}
+        transition={{ duration: 0.8, ease }}
       >
-        <ZaizaiRive className="h-40 w-40" />
+        <ZaizaiRive className="h-44 w-44" />
       </motion.div>
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.8, duration: 0.6 }}
-        className="text-[13px] text-ink-faint"
-      >
-        跟着小晨的一段日常
-      </motion.p>
     </div>
   );
 }
 
-/* —— 屏 1：主页呈现（复用 AppMainSurface，与首页 Hero 完全一致） —— */
-function HomeScreen({ onNext }: { onNext: () => void }) {
-  return (
-    <AppMainSurface
-      interactive
-      onPrimaryAction={onNext}
-      onButtonClick={() => onNext()}
-    />
-  );
+/* —— 屏 1：主页呈现（复用 AppMainSurface，与首页 Hero 共享组件） ——
+ *    右下角 AI对话 icon 进入首页内 dialog 模式；
+ *    左下角 Users（陪做）icon 进入首页内 presenceSelect 模式（共同在场）。 */
+function HomeScreen() {
+  return <AppMainSurface interactive variant="immersive" />;
 }
 
 /* —— 屏 2：故事推进（生活节点，不做治疗承诺） —— */
