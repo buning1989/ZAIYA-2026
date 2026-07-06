@@ -231,10 +231,18 @@ function RecordHome({
   return (
     <div className="flex h-full flex-col overflow-y-auto px-5 pb-8">
       {/* 在在 + 最近记录气泡 */}
-      <div className="flex flex-col items-center py-4">
-        <ZaizaiRive className="h-28 w-28" />
-        {bubbles.length > 0 && <RecentBubbles items={bubbles} />}
-      </div>
+      {bubbles.length > 0 ? (
+        // 有记录：左右结构，在在在左，气泡在右
+        <div className="flex items-start justify-center gap-3 py-4">
+          <ZaizaiRive className="h-20 w-20 shrink-0" />
+          <RecentBubbles items={bubbles} />
+        </div>
+      ) : (
+        // 无记录：居中显示在在
+        <div className="flex justify-center py-4">
+          <ZaizaiRive className="h-28 w-28" />
+        </div>
+      )}
 
       {/* 5 个记录类型入口 */}
       <div className="flex flex-col gap-2.5">
@@ -275,7 +283,7 @@ function RecentBubbles({ items }: { items: string[] }) {
   }, [items.length]);
 
   return (
-    <div className="relative mt-3 flex w-full justify-center">
+    <div className="relative max-w-[220px]">
       <AnimatePresence mode="wait">
         <motion.div
           key={index}
@@ -283,25 +291,24 @@ function RecentBubbles({ items }: { items: string[] }) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -4 }}
           transition={{ duration: 0.3, ease }}
-          className="relative max-w-[260px]"
         >
           {/* 气泡主体：偏方正、轻圆角 */}
-          <div className="rounded-lg bg-line-soft px-4 py-2.5">
-            <p className="text-[13px] leading-relaxed text-ink-soft">
+          <div className="relative rounded-lg bg-line-soft px-4 py-2.5">
+            <p className="line-clamp-2 text-[12px] leading-relaxed text-ink-soft">
               {items[index]}
             </p>
-          </div>
-          {/* 小尾巴：指向下方的在在 */}
-          <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2">
-            <svg
-              width="12"
-              height="8"
-              viewBox="0 0 12 8"
-              fill="none"
-              className="text-line-soft"
-            >
-              <path d="M6 8L0 0h12L6 8z" fill="currentColor" />
-            </svg>
+            {/* 小尾巴：指向左侧的在在 */}
+            <div className="absolute -left-1.5 top-3">
+              <svg
+                width="8"
+                height="12"
+                viewBox="0 0 8 12"
+                fill="none"
+                className="text-line-soft"
+              >
+                <path d="M0 6L8 0v12L0 6z" fill="currentColor" />
+              </svg>
+            </div>
           </div>
         </motion.div>
       </AnimatePresence>
