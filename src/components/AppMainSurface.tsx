@@ -17,6 +17,7 @@ import {
   Leaf,
 } from "lucide-react";
 import ZaizaiRive from "./ZaizaiRive";
+import VoiceInputBar from "./VoiceInputBar";
 import {
   PresenceSelectContent,
   PresenceRoomContent,
@@ -29,6 +30,7 @@ import {
   type MoreItemId,
 } from "./MoreMenu";
 import type { Answers, RecordEntry, RecordTypeId } from "@/data/record";
+import type { OrganizeHistoryEntry } from "@/data/organize";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -185,6 +187,10 @@ export default function AppMainSurface({
   // shortcutPromptDismissedAt 记录「暂不」时间戳，7 天内不再提示
   // hintVisibleForResult 控制当前完成页是否展示提示（满足条件时置 true）
   const [recordHistory, setRecordHistory] = useState<RecordEntry[]>([]);
+  // —— 「帮我整理」历史记录（跨页面持久，AppMainSurface 持有） ——
+  const [organizeHistory, setOrganizeHistory] = useState<
+    OrganizeHistoryEntry[]
+  >([]);
   const [shortcutPromptDismissedAt, setShortcutPromptDismissedAt] = useState<
     number | null
   >(null);
@@ -655,29 +661,15 @@ export default function AppMainSurface({
               transition={{ duration: 0.35, ease }}
               className="absolute inset-x-0 bottom-0 px-4 pb-6"
             >
-              <div className="flex items-center gap-2 rounded-xl border border-line bg-white p-2">
-                <input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && send()}
-                  placeholder="说点什么…"
-                  className="flex-1 bg-transparent px-1 text-[14px] text-ink placeholder:text-ink-faint focus:outline-none"
-                />
-                <button
-                  aria-label="语音"
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-ink-faint transition-colors hover:text-ink"
-                >
-                  <Mic className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={send}
-                  disabled={!input.trim() || sending}
-                  aria-label="发送"
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#FC591B] text-canvas transition-opacity disabled:opacity-30"
-                >
-                  <Send className="h-4 w-4" />
-                </button>
-              </div>
+              <VoiceInputBar
+                value={input}
+                onChange={setInput}
+                onSend={send}
+                canSend={input.trim().length > 0 && !sending}
+                placeholder="说点什么…"
+                sendButtonClassName="bg-[#FC591B] text-canvas"
+                className="rounded-xl border border-line bg-white p-2"
+              />
             </motion.div>
           </FeaturePageTransition>
         )}
@@ -897,6 +889,15 @@ export default function AppMainSurface({
               onRecordComplete={handleRecordComplete}
               onSaveFirst={handleSaveFirst}
               recordHistory={recordHistory}
+              organizeHistory={organizeHistory}
+              onSaveOrganizeToHistory={(entry) =>
+                setOrganizeHistory((prev) => [...prev, entry])
+              }
+              onDeleteOrganizeHistory={(id) =>
+                setOrganizeHistory((prev) =>
+                  prev.filter((e) => e.id !== id),
+                )
+              }
             />
           </motion.div>
         )}

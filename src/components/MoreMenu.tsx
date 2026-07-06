@@ -11,7 +11,12 @@ import {
 } from "lucide-react";
 import type { ForwardRefExoticComponent } from "react";
 import RecordFlow from "./RecordFlow";
+import LookbackPage from "./LookbackPage";
+import OrganizePage from "./OrganizePage";
+import PraisePage from "./PraisePage";
+import PrivacyPage from "./PrivacyPage";
 import type { Answers, RecordTypeId } from "@/data/record";
+import type { OrganizeHistoryEntry } from "@/data/organize";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -202,6 +207,9 @@ export function MoreDetailContent({
   onRecordComplete,
   onSaveFirst,
   recordHistory,
+  organizeHistory,
+  onSaveOrganizeToHistory,
+  onDeleteOrganizeHistory,
 }: {
   itemId: MoreItemId;
   onBack: () => void;
@@ -221,6 +229,12 @@ export function MoreDetailContent({
   }) => void;
   /** 记录历史，用于「记一下」主页最近记录气泡展示 */
   recordHistory?: import("@/data/record").RecordEntry[];
+  /** 「帮我整理」历史记录，由 AppMainSurface 持有，跨页面持久 */
+  organizeHistory?: OrganizeHistoryEntry[];
+  /** 保存整理单到历史 */
+  onSaveOrganizeToHistory?: (entry: OrganizeHistoryEntry) => void;
+  /** 删除整理单历史条目 */
+  onDeleteOrganizeHistory?: (id: string) => void;
 }) {
   // "记一下"：完整二级功能页，由 RecordFlow 接管
   if (itemId === "note") {
@@ -235,6 +249,33 @@ export function MoreDetailContent({
         recordHistory={recordHistory}
       />
     );
+  }
+
+  // "回头看看"：生活状态时间轴页面
+  if (itemId === "review") {
+    return <LookbackPage onBack={onBack} />;
+  }
+
+  // "帮我整理"：沟通准备单生成流程
+  if (itemId === "organize") {
+    return (
+      <OrganizePage
+        onBack={onBack}
+        organizeHistory={organizeHistory}
+        onSaveToHistory={onSaveOrganizeToHistory}
+        onDeleteHistory={onDeleteOrganizeHistory}
+      />
+    );
+  }
+
+  // "夸夸自己"：把今天一点点好的东西留下来（卡片库）
+  if (itemId === "praise") {
+    return <PraisePage onBack={onBack} />;
+  }
+
+  // "privacy"：我的隐私（资料 / 家人和联系人 / 服用信息）
+  if (itemId === "privacy") {
+    return <PrivacyPage onBack={onBack} />;
   }
 
   // "settings"：设置详情层（首页快捷入口开关在此）

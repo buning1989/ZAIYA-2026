@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import ZaizaiRive from "./ZaizaiRive";
+import VoiceInputBar from "./VoiceInputBar";
 import { PhoneStatusBar } from "./AppMainSurface";
 import {
   CUSTOM_INPUT_VALUE,
@@ -871,19 +872,11 @@ function DeleteConfirm({
   );
 }
 
-/* —— 自由输入框（按需展开） ——
- * 结构：左侧 ×（收起） + 中部 文本/波形/转录 + 右侧 语音/停止 + 发送
- *
- * 默认态（idle）：× + 文本输入 + 语音 icon + 发送（空时置灰，有内容高亮）
- * 录制态（recording）：× + 点状波形 + 停止按钮（无发送）
- * 识别态（transcribing）：× + "正在转录" + spinner（无发送）
- * 识别完成后回到 idle，识别文本已填入输入框，发送高亮
- *
- * × 始终收起自由输入框（同时取消语音状态）；最后一项不显示 ×（无收起概念）。
+/* —— 自由输入框（复用通用 VoiceInputBar） ——
+ * 封装 RecordFlow 特有逻辑：isLast 控制 × 显示与空发送。
+ * 语音状态机、录制态视觉、转录态、mock 结果均由 VoiceInputBar 统一处理。
  * 不调用真实麦克风 / 语音识别 API；不跳页、不弹窗。
  * 最后一项为「完成」按钮，允许空输入完成。 */
-type VoiceState = "idle" | "recording" | "transcribing";
-
 function FreeInputBox({
   value,
   onChange,
@@ -891,7 +884,6 @@ function FreeInputBox({
   onCollapse,
   isLast,
   placeholder,
-  confirmLabel,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -902,114 +894,18 @@ function FreeInputBox({
   placeholder?: string;
   confirmLabel?: string;
 }) {
-  const [voiceState, setVoiceState] = useState<VoiceState>("idle");
-
-  // 进入录制态
-  const startRecording = () => setVoiceState("recording");
-  // 停止录音 → 进入识别态 → 800–1200ms 后填入 mock 文本，回到 idle
-  const stopRecording = () => {
-    setVoiceState("transcribing");
-    const delay = 800 + Math.random() * 400;
-    window.setTimeout(() => {
-      onChange("【语音转文字占位】");
-      setVoiceState("idle");
-    }, delay);
-  };
-
-  // × 收起：取消语音状态 + 调用外部 collapse
-  const handleCollapse = () => {
-    setVoiceState("idle");
-    onCollapse();
-  };
-
   // 发送按钮置灰/高亮：最后一项始终可点（允许空完成）；其他项需有内容
   const canSend = isLast || value.trim().length > 0;
 
   return (
-    <div className="flex items-center gap-2 rounded-2xl border border-line bg-white p-2">
-      {/* 左侧：× 收起自由输入（最后一项不显示） */}
-      {!isLast && (
-        <button
-          onClick={handleCollapse}
-          aria-label="收起"
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-ink-faint transition-colors hover:text-ink"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      )}
-
-      {/* 中部：根据状态切换 文本输入 / 波形 / 正在转录 */}
-      <div className="flex flex-1 items-center">
-        {voiceState === "idle" && (
-          <input
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && canSend && onConfirm()}
-            placeholder={placeholder}
-            className="w-full bg-transparent px-2 text-[14px] text-ink placeholder:text-ink-faint focus:outline-none"
-          />
-        )}
-
-        {voiceState === "recording" && (
-          <div className="flex w-full items-center justify-center gap-1 py-1">
-            {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <motion.span
-                key={i}
-                className="w-1 rounded-full bg-ink-soft"
-                animate={{ height: [6, 16, 6] }}
-                transition={{
-                  duration: 0.8,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: i * 0.08,
-                }}
-                style={{ height: 6 }}
-              />
-            ))}
-          </div>
-        )}
-
-        {voiceState === "transcribing" && (
-          <div className="flex w-full items-center justify-center gap-2 py-1">
-            <Loader2 className="h-4 w-4 animate-spin text-ink-faint" />
-            <span className="text-[13px] text-ink-faint">正在转录</span>
-          </div>
-        )}
-      </div>
-
-      {/* 右侧：idle 显示 语音 + 发送；recording 显示 停止；transcribing 无操作 */}
-      {voiceState === "idle" && (
-        <>
-          <button
-            onClick={startRecording}
-            aria-label="语音"
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-ink-faint transition-colors hover:text-ink"
-          >
-            <Mic className="h-4 w-4" />
-          </button>
-          <button
-            onClick={onConfirm}
-            aria-label={confirmLabel ?? "发送"}
-            disabled={!canSend}
-            className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-accent text-canvas transition-opacity ${
-              canSend ? "opacity-100" : "opacity-30"
-            }`}
-          >
-            <Send className="h-4 w-4" />
-          </button>
-        </>
-      )}
-
-      {voiceState === "recording" && (
-        <button
-          onClick={stopRecording}
-          aria-label="停止录音"
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-ink text-canvas transition-opacity"
-        >
-          <Square className="h-3.5 w-3.5 fill-current" />
-        </button>
-      )}
-    </div>
+    <VoiceInputBar
+      value={value}
+      onChange={onChange}
+      onSend={onConfirm}
+      canSend={canSend}
+      onCancel={isLast ? undefined : onCollapse}
+      placeholder={placeholder}
+    />
   );
 }
 
@@ -1042,22 +938,12 @@ function RecordConfirmPage({
   onAbort: () => void;
 }) {
   const [supplement, setSupplement] = useState("");
-  const [voiceState, setVoiceState] = useState<VoiceState>("idle");
 
   // 修改 / 删除相关状态
   const [editing, setEditing] = useState(false);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-
-  const stopRecording = () => {
-    setVoiceState("transcribing");
-    const delay = 800 + Math.random() * 400;
-    window.setTimeout(() => {
-      setSupplement("【语音转文字占位】");
-      setVoiceState("idle");
-    }, delay);
-  };
 
   const handleComplete = () => {
     const text = supplement.trim();
@@ -1229,64 +1115,14 @@ function RecordConfirmPage({
       {/* 可选补充区 */}
       <div className="mt-5">
         <p className="text-[13px] text-ink-faint">想补一句也可以。</p>
-        <div className="mt-2 flex items-center gap-2 rounded-2xl border border-line bg-white p-2">
-          {voiceState === "idle" && (
-            <>
-              <input
-                value={supplement}
-                onChange={(e) => setSupplement(e.target.value)}
-                placeholder="自己写一句…"
-                className="w-full flex-1 bg-transparent px-2 text-[14px] text-ink placeholder:text-ink-faint focus:outline-none"
-              />
-              <button
-                onClick={() => setVoiceState("recording")}
-                aria-label="语音"
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-ink-faint transition-colors hover:text-ink"
-              >
-                <Mic className="h-4 w-4" />
-              </button>
-            </>
-          )}
-          {voiceState === "recording" && (
-            <>
-              <button
-                onClick={() => setVoiceState("idle")}
-                aria-label="取消语音"
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-ink-faint transition-colors hover:text-ink"
-              >
-                <X className="h-4 w-4" />
-              </button>
-              <div className="flex flex-1 items-center justify-center gap-1 py-1">
-                {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                  <motion.span
-                    key={i}
-                    className="w-1 rounded-full bg-ink-soft"
-                    animate={{ height: [6, 16, 6] }}
-                    transition={{
-                      duration: 0.8,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                      delay: i * 0.08,
-                    }}
-                    style={{ height: 6 }}
-                  />
-                ))}
-              </div>
-              <button
-                onClick={stopRecording}
-                aria-label="停止录音"
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-ink text-canvas"
-              >
-                <Square className="h-3.5 w-3.5 fill-current" />
-              </button>
-            </>
-          )}
-          {voiceState === "transcribing" && (
-            <div className="flex w-full items-center justify-center gap-2 py-1">
-              <Loader2 className="h-4 w-4 animate-spin text-ink-faint" />
-              <span className="text-[13px] text-ink-faint">正在转录</span>
-            </div>
-          )}
+        <div className="mt-2">
+          <VoiceInputBar
+            value={supplement}
+            onChange={setSupplement}
+            onSend={handleComplete}
+            canSend={true}
+            placeholder="自己写一句…"
+          />
         </div>
       </div>
 
