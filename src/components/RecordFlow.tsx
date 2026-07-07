@@ -247,7 +247,7 @@ function RecordHome({
           <button
             key={t.id}
             onClick={() => onPick(t.id)}
-            className="flex w-full items-center gap-4 rounded-2xl border border-line bg-card px-5 py-4 transition-colors hover:border-ink-faint"
+            className="flex w-full items-center gap-4 rounded-2xl border border-line bg-white px-5 py-4 transition-colors hover:border-ink-faint"
           >
             <t.Icon
               className="h-6 w-6 shrink-0 text-ink-soft"
@@ -667,7 +667,7 @@ function RecordWizard({
                           className={`flex h-14 items-center gap-3 rounded-2xl border px-5 text-left transition-colors ${
                             active
                               ? "border-ink bg-ink text-canvas"
-                              : "border-line bg-card text-ink hover:border-ink-faint"
+                              : "border-line bg-white text-ink hover:border-ink-faint"
                           } ${advancing ? "opacity-60" : ""}`}
                         >
                           {/* 左侧点状符号 */}
@@ -843,7 +843,7 @@ function DeleteConfirm({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95 }}
         transition={{ duration: 0.25, ease }}
-        className="w-full max-w-[260px] rounded-2xl bg-card p-5"
+        className="w-full max-w-[260px] rounded-2xl bg-white p-5"
         onClick={(e) => e.stopPropagation()}
       >
         <p className="text-center text-[14px] font-medium text-ink">
@@ -1011,7 +1011,7 @@ function RecordConfirmPage({
       </h2>
 
       {/* 摘要卡 */}
-      <div className="mt-4 rounded-2xl border border-line bg-card px-5 py-4">
+      <div className="mt-4 rounded-2xl border border-line bg-white px-5 py-4">
         {/* 头部：标题 + 右上角操作（默认仅「…」，编辑态显示「取消」） */}
         <div className="flex items-center justify-between">
           <div className="text-[11px] uppercase tracking-[0.16em] text-ink-faint">
@@ -1047,7 +1047,7 @@ function RecordConfirmPage({
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ duration: 0.18, ease }}
-                        className="absolute right-0 top-8 z-20 w-fit min-w-[96px] max-w-[160px] rounded-lg border border-line bg-card p-2.5 shadow-sm"
+                        className="absolute right-0 top-8 z-20 w-fit min-w-[96px] max-w-[160px] rounded-lg border border-line bg-white p-2.5 shadow-sm"
                       >
                         <button
                           onClick={() => {
@@ -1203,7 +1203,7 @@ function FieldEditSheet({
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ duration: 0.3, ease }}
-        className="rounded-t-2xl bg-card px-5 pb-6 pt-3"
+        className="rounded-t-2xl bg-white px-5 pb-6 pt-3"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 拖拽指示 */}
@@ -1225,7 +1225,7 @@ function FieldEditSheet({
                   className={`flex h-12 items-center gap-3 rounded-xl border px-4 text-left transition-colors ${
                     active
                       ? "border-ink bg-ink text-canvas"
-                      : "border-line bg-card text-ink hover:border-ink-faint"
+                      : "border-line bg-white text-ink hover:border-ink-faint"
                   }`}
                 >
                   <span
@@ -1250,7 +1250,7 @@ function FieldEditSheet({
           canSend={customText.trim().length > 0}
           placeholder="或自己写一句…"
           sendButtonClassName="bg-accent text-canvas"
-          className="mt-3 rounded-xl border border-line bg-card p-2"
+          className="mt-3 rounded-xl border border-line bg-white p-2"
         />
       </motion.div>
     </motion.div>
@@ -1282,7 +1282,7 @@ function DeleteRecordConfirm({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95 }}
         transition={{ duration: 0.25, ease }}
-        className="w-full max-w-[280px] rounded-2xl bg-card p-5"
+        className="w-full max-w-[280px] rounded-2xl bg-white p-5"
         onClick={(e) => e.stopPropagation()}
       >
         <p className="text-center text-[14px] font-medium text-ink">

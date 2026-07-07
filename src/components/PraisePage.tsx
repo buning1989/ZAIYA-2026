@@ -180,7 +180,7 @@ function HomeView({
       <button
         onClick={onCreate}
         aria-label="新建夸夸"
-        className="absolute bottom-7 right-5 z-20 grid h-11 w-11 place-items-center rounded-full border border-line bg-card text-ink shadow-[0_4px_18px_-6px_rgba(0,0,0,0.14)] transition-colors hover:border-ink-faint hover:text-ink"
+        className="absolute bottom-7 right-5 z-20 grid h-11 w-11 place-items-center rounded-full border border-line bg-white text-ink shadow-[0_4px_18px_-6px_rgba(0,0,0,0.14)] transition-colors hover:border-ink-faint hover:text-ink"
       >
         <Plus className="h-5 w-5" strokeWidth={1.8} />
       </button>
@@ -311,14 +311,14 @@ function EditView({
         <button
           onClick={onBack}
           aria-label="返回主页"
-          className="grid h-8 w-8 place-items-center rounded-full bg-card/50 text-ink-soft backdrop-blur-sm transition-colors hover:bg-card/70"
+          className="grid h-8 w-8 place-items-center rounded-full bg-white/50 text-ink-soft backdrop-blur-sm transition-colors hover:bg-white/70"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
         <button
           onClick={submit}
           disabled={!canSave}
-          className="rounded-full bg-card/60 px-4 py-1.5 text-[13px] font-medium text-ink backdrop-blur-sm transition-opacity hover:bg-card/80 disabled:opacity-40"
+          className="rounded-full bg-white/60 px-4 py-1.5 text-[13px] font-medium text-ink backdrop-blur-sm transition-opacity hover:bg-white/80 disabled:opacity-40"
         >
           保存
         </button>
@@ -391,14 +391,14 @@ function DetailView({
         <button
           onClick={onBack}
           aria-label="返回主页"
-          className="grid h-8 w-8 place-items-center rounded-full bg-card/50 text-ink-soft backdrop-blur-sm transition-colors hover:bg-card/70"
+          className="grid h-8 w-8 place-items-center rounded-full bg-white/50 text-ink-soft backdrop-blur-sm transition-colors hover:bg-white/70"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
         <button
           onClick={() => setConfirming(true)}
           aria-label="删除"
-          className="grid h-8 w-8 place-items-center rounded-full bg-card/50 text-ink-faint backdrop-blur-sm transition-colors hover:bg-card/70 hover:text-ink"
+          className="grid h-8 w-8 place-items-center rounded-full bg-white/50 text-ink-faint backdrop-blur-sm transition-colors hover:bg-white/70 hover:text-ink"
         >
           <Trash2 className="h-4 w-4" strokeWidth={1.6} />
         </button>
@@ -430,7 +430,7 @@ function DetailView({
               repeat: Infinity,
               ease: "easeInOut",
             }}
-            className="h-20 w-20 rounded-full border border-ink/20 bg-card/40 backdrop-blur-sm"
+            className="h-20 w-20 rounded-full border border-ink/20 bg-white/40 backdrop-blur-sm"
           />
         </motion.div>
 
@@ -472,7 +472,7 @@ function DeleteConfirm({
         onClick={onCancel}
       />
       <motion.div
-        className="absolute inset-x-0 bottom-0 z-[61] rounded-t-[20px] bg-card px-6 pb-8 pt-5"
+        className="absolute inset-x-0 bottom-0 z-[61] rounded-t-[20px] bg-white px-6 pb-8 pt-5"
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         exit={{ y: "100%" }}

@@ -55,7 +55,7 @@ function PlaceholderIcons({ count, offset = 0 }: { count: number; offset?: numbe
 
 function WidgetCard() {
   return (
-    <div className="col-start-3 row-start-1 col-span-2 row-span-2 grid place-items-center overflow-hidden rounded-[24px] border border-card/80 bg-card/90 shadow-[0_10px_28px_-18px_rgba(0,0,0,0.24)] backdrop-blur-md">
+    <div className="col-start-3 row-start-1 col-span-2 row-span-2 grid place-items-center overflow-hidden rounded-[24px] border border-white/80 bg-white/90 shadow-[0_10px_28px_-18px_rgba(0,0,0,0.24)] backdrop-blur-md">
       <ZaizaiRive className="h-36 w-36" animations={ZAIZAI_WAVE_ANIMATIONS} />
     </div>
   );

@@ -69,7 +69,7 @@ export function MoreContent({
   onClose: () => void;
 }) {
   return (
-    <div className="relative flex h-full flex-col bg-canvas">
+    <div className="relative flex h-full flex-col bg-white">
       {/* 上半部分：功能区 */}
       <nav className="flex-1 px-8 pt-16">
         <ul className="flex flex-col">
@@ -213,7 +213,7 @@ function SettingsDetail({
           </p>
           <button
             disabled
-            className="mt-8 rounded-xl border border-line bg-card px-6 py-3 text-[14px] text-ink-faint opacity-60"
+            className="mt-8 rounded-xl border border-line bg-white px-6 py-3 text-[14px] text-ink-faint opacity-60"
           >
             Demo 暂未开放
           </button>
@@ -286,7 +286,7 @@ function SettingsDetail({
           功能设置
         </div>
         <div className="mt-2 flex flex-col gap-2.5">
-          <div className="flex items-center justify-between rounded-2xl border border-line bg-card px-5 py-4">
+          <div className="flex items-center justify-between rounded-2xl border border-line bg-white px-5 py-4">
             <div className="flex-1 pr-3">
               <div className="text-[14px] font-medium text-ink">
                 记录快捷入口
@@ -297,7 +297,7 @@ function SettingsDetail({
             </div>
             <Switch checked={homeShortcut} onChange={setHomeShortcut} />
           </div>
-          <div className="flex items-center justify-between rounded-2xl border border-line bg-card px-5 py-4 opacity-60">
+          <div className="flex items-center justify-between rounded-2xl border border-line bg-white px-5 py-4 opacity-60">
             <div className="flex-1 pr-3">
               <div className="text-[14px] font-medium text-ink">
                 家长模式
@@ -314,7 +314,7 @@ function SettingsDetail({
         <div className="mt-8 text-[11px] font-medium uppercase tracking-[0.16em] text-ink-faint">
           账号与安全
         </div>
-        <div className="mt-2 rounded-2xl border border-line bg-card">
+        <div className="mt-2 rounded-2xl border border-line bg-white">
           <div className="flex items-center justify-between px-5 py-4">
             <div className="flex-1 pr-3">
               <div className="text-[14px] font-medium text-ink">应用锁</div>
@@ -337,7 +337,7 @@ function SettingsDetail({
         <div className="mt-8 text-[11px] font-medium uppercase tracking-[0.16em] text-ink-faint">
           关于与规则
         </div>
-        <div className="mt-2 rounded-2xl border border-line bg-card">
+        <div className="mt-2 rounded-2xl border border-line bg-white">
           <button
             onClick={() => setSubPage("privacy-policy")}
             className="flex w-full items-center px-5 py-4 text-left transition-colors hover:bg-line-soft/40"
@@ -452,7 +452,7 @@ function HelpFeedbackPage({ onBack }: { onBack: () => void }) {
         <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-ink-faint">
           常见问题
         </div>
-        <div className="mt-2 rounded-2xl border border-line bg-card">
+        <div className="mt-2 rounded-2xl border border-line bg-white">
           {faqs.map((q, i) => (
             <div key={q}>
               {i > 0 && <div className="mx-5 h-px bg-line" />}
@@ -467,7 +467,7 @@ function HelpFeedbackPage({ onBack }: { onBack: () => void }) {
         <div className="mt-8 text-[11px] font-medium uppercase tracking-[0.16em] text-ink-faint">
           提交反馈
         </div>
-        <div className="relative mt-2 rounded-2xl border border-line bg-card p-4">
+        <div className="relative mt-2 rounded-2xl border border-line bg-white p-4">
           {/* 文本输入 */}
           <textarea
             value={feedback}

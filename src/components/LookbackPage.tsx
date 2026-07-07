@@ -429,7 +429,7 @@ function ScenePanel({
       <TrendArea sceneKey={sceneKey} data={data} />
 
       {/* 详情列表主卡：白底，分隔线区分行 */}
-      <div className="mt-4 overflow-hidden rounded-[20px] border border-line-soft bg-card shadow-[0_1px_3px_-1px_rgba(0,0,0,0.04)]">
+      <div className="mt-4 overflow-hidden rounded-[20px] border border-line-soft bg-white shadow-[0_1px_3px_-1px_rgba(0,0,0,0.04)]">
         {reversed.map((d, ri) => {
           const originalIdx = days - 1 - ri;
           return (
@@ -1137,7 +1137,7 @@ function DetailSheet({
       />
       {/* 抽屉：支持下拉关闭 */}
       <motion.div
-        className="absolute inset-x-0 bottom-0 z-50 rounded-t-[24px] bg-card px-6 pb-8 pt-3 shadow-[0_-8px_30px_-12px_rgba(0,0,0,0.15)]"
+        className="absolute inset-x-0 bottom-0 z-50 rounded-t-[24px] bg-white px-6 pb-8 pt-3 shadow-[0_-8px_30px_-12px_rgba(0,0,0,0.15)]"
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
@@ -1187,7 +1187,7 @@ function DetailSheet({
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.96, y: -4 }}
                   transition={{ duration: 0.15, ease }}
-                  className="absolute right-0 top-8 z-10 w-28 overflow-hidden rounded-xl border border-black/5 bg-card py-1 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.18)]"
+                  className="absolute right-0 top-8 z-10 w-28 overflow-hidden rounded-xl border border-black/5 bg-white py-1 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.18)]"
                 >
                   <button
                     onClick={handleEdit}
@@ -1261,7 +1261,7 @@ function DeleteConfirm({
         onClick={onCancel}
       />
       <motion.div
-        className="absolute inset-x-0 bottom-0 z-[61] rounded-t-[20px] bg-card px-6 pb-8 pt-5"
+        className="absolute inset-x-0 bottom-0 z-[61] rounded-t-[20px] bg-white px-6 pb-8 pt-5"
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
@@ -1333,7 +1333,7 @@ function EditSheet({
         onClick={onCancel}
       />
       <motion.div
-        className="absolute inset-x-0 bottom-0 top-0 z-[71] flex flex-col bg-card"
+        className="absolute inset-x-0 bottom-0 top-0 z-[71] flex flex-col bg-white"
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
@@ -1546,7 +1546,7 @@ function TextInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className={`w-full rounded-xl border bg-card py-2.5 text-[14px] text-ink outline-none transition-colors focus:border-current ${
+        className={`w-full rounded-xl border bg-white py-2.5 text-[14px] text-ink outline-none transition-colors focus:border-current ${
           enableVoice ? "pl-3 pr-11" : "px-3"
         }`}
         style={{ borderColor: theme.softer, color: theme.text }}
@@ -1582,7 +1582,7 @@ function TimeInput({
       type="time"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-xl border bg-card px-3 py-2.5 text-[14px] text-ink outline-none transition-colors focus:border-current"
+      className="w-full rounded-xl border bg-white px-3 py-2.5 text-[14px] text-ink outline-none transition-colors focus:border-current"
       style={{ borderColor: theme.softer, color: theme.text }}
     />
   );
@@ -1642,7 +1642,7 @@ function TextArea({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         rows={3}
-        className={`w-full resize-none rounded-xl border bg-card py-2.5 text-[14px] text-ink outline-none transition-colors focus:border-current ${
+        className={`w-full resize-none rounded-xl border bg-white py-2.5 text-[14px] text-ink outline-none transition-colors focus:border-current ${
           enableVoice ? "pl-3 pr-3 pb-9" : "px-3 py-2.5"
         }`}
         style={{ borderColor: theme.softer, color: theme.text }}
