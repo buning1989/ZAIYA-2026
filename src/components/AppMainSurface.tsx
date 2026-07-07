@@ -1071,7 +1071,7 @@ function LongPressExit({ onExit }: { onExit: () => void }) {
     >
       {/* 进度填充 */}
       <div
-        className="absolute inset-y-0 left-0 bg-accent-soft"
+        className="absolute inset-y-0 left-0 bg-action-primary"
         style={{ width: `${progress}%` }}
       />
       <span className="relative">

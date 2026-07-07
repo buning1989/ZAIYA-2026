@@ -545,7 +545,7 @@ function SaveBar({
       <button
         onClick={handle}
         disabled={!canSave}
-        className="w-full rounded-xl bg-[#FC591B] px-4 py-3 text-[13px] font-medium text-canvas transition-opacity disabled:opacity-30"
+        className="w-full rounded-xl bg-ink px-4 py-3 text-[13px] font-medium text-canvas transition-opacity disabled:opacity-30"
       >
         {saved ? "已保存" : label}
       </button>
@@ -694,7 +694,7 @@ function BasicProfileEdit({
             />
           </FieldRow>
           {!ageValid && (
-            <p className="mt-2 px-1 text-[12px] text-[#B7583F]">
+            <p className="mt-2 px-1 text-[12px] text-risk-medium">
               请输入有效的年龄。
             </p>
           )}
@@ -752,7 +752,7 @@ function BodyDataEdit({
           </div>
         </div>
         {!heightValid && (
-          <p className="mt-2 px-1 text-[12px] text-[#B7583F]">
+          <p className="mt-2 px-1 text-[12px] text-risk-medium">
             请输入有效的身高。
           </p>
         )}
@@ -848,7 +848,7 @@ function ContactList({
                           {c.name}
                         </span>
                         {c.isEmergencyContact && (
-                          <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10.5px] font-medium text-[#B5421A]">
+                          <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10.5px] font-medium text-risk-high">
                             紧急联系人
                           </span>
                         )}
@@ -864,7 +864,7 @@ function ContactList({
                       </div>
                     </div>
                     <Trash2
-                      className="h-4 w-4 shrink-0 text-ink-faint transition-colors hover:text-[#B7583F]"
+                      className="h-4 w-4 shrink-0 text-ink-faint transition-colors hover:text-risk-medium"
                       strokeWidth={1.6}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -880,7 +880,7 @@ function ContactList({
                     onClick={() => handleToggleEmergency(c)}
                     className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-[13px] transition-colors ${
                       c.isEmergencyContact
-                        ? "bg-accent-soft text-[#B5421A]"
+                        ? "bg-accent-soft text-risk-high"
                         : "bg-line-soft text-ink-soft hover:bg-line"
                     }`}
                   >
@@ -941,7 +941,7 @@ function ContactList({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 4 }}
               transition={{ duration: 0.2, ease }}
-              className="mt-3 text-center text-[12px] text-[#B7583F]"
+              className="mt-3 text-center text-[12px] text-risk-medium"
             >
               最多设置 {EMERGENCY_CONTACT_MAX} 位紧急联系人。
             </motion.p>
@@ -1150,7 +1150,7 @@ function MedsList({
                     </div>
                   </div>
                   <Trash2
-                    className="h-4 w-4 shrink-0 text-ink-faint transition-colors hover:text-[#B7583F]"
+                    className="h-4 w-4 shrink-0 text-ink-faint transition-colors hover:text-risk-medium"
                     strokeWidth={1.6}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -1320,7 +1320,7 @@ function DeleteConfirm({
           <button
             onClick={onConfirm}
             className="w-full rounded-xl py-3 text-[15px] font-medium text-white transition-transform active:scale-[0.98]"
-            style={{ backgroundColor: "#C9A0A0" }}
+            style={{ backgroundColor: "var(--z-risk-medium)" }}
           >
             删除
           </button>

@@ -44,14 +44,14 @@ export type CardGradient = {
 };
 
 export const CARD_GRADIENTS: CardGradient[] = [
-  { id: "g1", from: "#FDE8E0", to: "#F5D5C8" }, // 暖粉
-  { id: "g2", from: "#E8F0E8", to: "#D5E5D5" }, // 淡绿
-  { id: "g3", from: "#E8E8F5", to: "#D5D5E8" }, // 淡紫
-  { id: "g4", from: "#FFF5E0", to: "#FFE8C8" }, // 暖黄
-  { id: "g5", from: "#E0F0F5", to: "#C8E0E8" }, // 淡青
-  { id: "g6", from: "#F5E8F0", to: "#E8D5E0" }, // 淡粉紫
-  { id: "g7", from: "#F0F0E0", to: "#E0E0C8" }, // 淡米
-  { id: "g8", from: "#E0E8F0", to: "#C8D5E0" }, // 淡蓝灰
+  { id: "g1", from: "#FBFCF5", to: "#F1F3E8" }, // 奶白 → 苔灰
+  { id: "g2", from: "#EEF1E2", to: "#D8E0CA" }, // 浅米 → 嫩芽线
+  { id: "g3", from: "#E6F0F1", to: "#B7D8D9" }, // 浅青 → 雾 teal
+  { id: "g4", from: "#FBF6E9", to: "#F2DDBB" }, // 暖米 → 奶油
+  { id: "g5", from: "#F4F8DD", to: "#D9E98C" }, // 浅柠 → 嫩芽
+  { id: "g6", from: "#F2EFF7", to: "#CDBFEA" }, // 浅藤 → 雾紫
+  { id: "g7", from: "#F6F8EF", to: "#E6DDC8" }, // 空间底 → 沙岩
+  { id: "g8", from: "#EDF4ED", to: "#B7D8B7" }, // 浅绿 → 草色
 ];
 
 /* —— 随机分配一个渐变 —— */

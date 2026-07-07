@@ -244,7 +244,7 @@ function CharacterCell({
           animate={controls}
           className={`relative rounded-2xl p-1.5 transition-colors ${
             highlight
-              ? "bg-accent-soft/40 ring-2 ring-accent shadow-[0_0_0_4px_rgba(252,89,27,0.08)]"
+              ? "bg-accent-soft/40 ring-2 ring-action-primary shadow-[0_0_0_4px_rgba(230,244,107,0.10)]"
               : ""
           }`}
         >

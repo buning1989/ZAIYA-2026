@@ -68,7 +68,7 @@ function WidgetSurface() {
       {/* 外层是真实裁切手机框：黑色边框包住屏幕，底部半屏渐隐 */}
       <div className="relative h-[440px] overflow-hidden rounded-t-[42px] bg-ink p-[7px] pb-0 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.14)]">
         <div className="relative h-full overflow-hidden rounded-t-[33px] bg-white">
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(248,248,247,0.9),rgba(255,255,255,1))]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(251,252,245,0.9),rgba(255,255,255,1))]" />
 
           {/* 状态栏 + 动态岛 */}
           <div className="relative z-20 flex items-center justify-between px-6 pt-3 pb-1 text-[11px] font-semibold text-ink-faint">

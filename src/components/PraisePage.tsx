@@ -487,7 +487,7 @@ function DeleteConfirm({
           <button
             onClick={onConfirm}
             className="w-full rounded-xl py-3 text-[15px] font-medium text-white transition-transform active:scale-[0.98]"
-            style={{ backgroundColor: "#C9A0A0" }}
+            style={{ backgroundColor: "var(--z-risk-medium)" }}
           >
             删除
           </button>

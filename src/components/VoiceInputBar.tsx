@@ -34,7 +34,7 @@ export interface VoiceInputBarProps {
   compact?: boolean;
   /** compact 模式按钮尺寸：md（默认，h-10）/ sm（h-8，适合附加到短输入框） */
   size?: "md" | "sm";
-  /** compact 模式录音态波形/失败态强调色（HEX/rgb），默认 #5F7050。用于融入主题色场景 */
+  /** compact 模式录音态波形/失败态强调色（HEX/rgb），默认 #27331F。用于融入主题色场景 */
   tint?: string;
   /** 转录完成后填入的 mock 文本，默认「我今天有点累，想先慢一点。」 */
   mockText?: string;
@@ -55,7 +55,7 @@ export default function VoiceInputBar({
   tint,
   mockText = "我今天有点累，想先慢一点。",
 }: VoiceInputBarProps) {
-  const accentColor = tint ?? "#5F7050";
+  const accentColor = tint ?? "#27331F";
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
 
   // 进入录制态
@@ -90,7 +90,7 @@ export default function VoiceInputBar({
     const barH = size === "sm" ? [3, 9, 3] : [4, 12, 4];
     const barW = size === "sm" ? "w-[2px]" : "w-0.5";
     const loaderSize = size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4";
-    const failedColor = tint ?? "#B7583F";
+    const failedColor = tint ?? "#D99C6B";
     return (
       <div className="relative flex items-center justify-center">
         {/* 失败提示气泡 */}

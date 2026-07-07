@@ -19,9 +19,11 @@ import {
 const ease = [0.22, 1, 0.36, 1] as const;
 
 /* —— 页面背景：安静米白 —— */
-const PAGE_BG = "#F7F5F2";
+const PAGE_BG = "#F6F8EF";
 
-/* —— 6 场景独立主题色（低饱和、生活记录感）—— */
+/* —— 6 场景独立主题色（低饱和、生活记录感）——
+ * 按 zaiya 五类颜色语义映射：status-mood / status-sleep / chart-line-3(饮食) /
+ * status-medicine / status-activity / chart-line-4(体重)。状态色只表达生活维度，不表达好坏。 */
 type Theme = {
   bg: string; // 场景面板底色（柔色卡片，不铺满）
   mark: string; // 主图形色：点、线、格、选中
@@ -32,46 +34,46 @@ type Theme = {
 
 const themes: Record<SceneKey, Theme> = {
   mood: {
-    bg: "#e6e2f2",
-    mark: "#8B7FB8",
-    text: "#3B3360",
-    soft: "rgba(139,127,184,0.16)",
-    softer: "rgba(139,127,184,0.10)",
+    bg: "#EFF1E5",
+    mark: "#A7B765",
+    text: "#27331F",
+    soft: "rgba(167,183,101,0.16)",
+    softer: "rgba(167,183,101,0.10)",
   },
   sleep: {
-    bg: "#e7ecff",
-    mark: "#6472B8",
-    text: "#2A2F58",
-    soft: "rgba(100,114,184,0.18)",
-    softer: "rgba(100,114,184,0.10)",
+    bg: "#E6F0F1",
+    mark: "#88C6CD",
+    text: "#27331F",
+    soft: "rgba(136,198,205,0.18)",
+    softer: "rgba(136,198,205,0.10)",
   },
   meals: {
-    bg: "#ffd9d1",
-    mark: "#B7583F",
-    text: "#4A1D12",
-    soft: "rgba(183,88,63,0.18)",
-    softer: "rgba(183,88,63,0.10)",
+    bg: "#FCF1E3",
+    mark: "#F2C98F",
+    text: "#27331F",
+    soft: "rgba(242,201,143,0.18)",
+    softer: "rgba(242,201,143,0.10)",
   },
   med: {
-    bg: "#ffe7bd",
-    mark: "#B88A3A",
-    text: "#4A3514",
-    soft: "rgba(184,138,58,0.18)",
-    softer: "rgba(184,138,58,0.10)",
+    bg: "#F4F8DD",
+    mark: "#D9E98C",
+    text: "#27331F",
+    soft: "rgba(217,233,140,0.20)",
+    softer: "rgba(217,233,140,0.12)",
   },
   activity: {
-    bg: "#d8ebe8",
-    mark: "#5F8F8A",
-    text: "#233B39",
-    soft: "rgba(95,143,138,0.18)",
-    softer: "rgba(95,143,138,0.10)",
+    bg: "#EDF4ED",
+    mark: "#B7D8B7",
+    text: "#27331F",
+    soft: "rgba(183,216,183,0.20)",
+    softer: "rgba(183,216,183,0.12)",
   },
   weight: {
-    bg: "#cfe3c4",
-    mark: "#6B8E5A",
-    text: "#2E3D24",
-    soft: "rgba(107,142,90,0.18)",
-    softer: "rgba(107,142,90,0.10)",
+    bg: "#F2EFF7",
+    mark: "#CDBFEA",
+    text: "#27331F",
+    soft: "rgba(205,191,234,0.18)",
+    softer: "rgba(205,191,234,0.10)",
   },
 };
 
@@ -385,7 +387,7 @@ function SceneTabs({
             <span
               className="text-[12px] font-medium transition-colors"
               style={{
-                color: active ? theme.text : "#9B9A97",
+                color: active ? theme.text : "#8B947D",
               }}
             >
               {s.label}
@@ -837,7 +839,7 @@ function DayRow({
       className="group flex w-full items-center gap-3 px-4 transition-colors hover:bg-line-soft/60"
       style={{
         height: ROW_H,
-        borderBottom: isLast ? "none" : "1px solid var(--color-line, #EEEAE4)",
+        borderBottom: isLast ? "none" : "1px solid var(--color-line, #D8E0CA)",
       }}
     >
       {/* 左：日期 + 星期 */}
@@ -1272,7 +1274,7 @@ function DeleteConfirm({
           <button
             onClick={onConfirm}
             className="w-full rounded-xl py-3 text-[15px] font-medium text-white transition-transform active:scale-[0.98]"
-            style={{ backgroundColor: "#C9A0A0" }}
+            style={{ backgroundColor: "var(--z-risk-medium)" }}
           >
             删除
           </button>
@@ -1608,7 +1610,7 @@ function SegmentedOptions<T extends string | number>({
             className="rounded-full px-4 py-2 text-[13px] transition-all"
             style={{
               backgroundColor: active ? theme.mark : "transparent",
-              color: active ? "#fff" : theme.text,
+              color: active ? "#27331F" : theme.text,
               border: `1px solid ${active ? theme.mark : theme.softer}`,
             }}
           >

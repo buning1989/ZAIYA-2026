@@ -3,16 +3,101 @@
 @tailwind utilities;
 
 :root {
+  /* Space / 空间 */
+  --z-space-bg: #F6F8EF;
+  --z-space-bg-soft: #EEF1E2;
+  --z-space-surface: #FBFCF5;
+  --z-space-surface-soft: #F1F3E8;
+  --z-space-line: #D8E0CA;
+
+  /* Text / 文字 */
+  --z-text-main: #27331F;
+  --z-text-secondary: #68735C;
+  --z-text-tertiary: #8B947D;
+
+  /* Action / 行动 */
+  --z-action-primary: #E6F46B;
+  --z-action-primary-text: #27331F;
+  --z-action-deep: #27331F;
+  --z-action-deep-text: #F8FAEF;
+
+  /* Status / 状态 */
+  --z-status-mood: #A7B765;
+  --z-status-sleep: #88C6CD;
+  --z-status-food: #F2DDBB;
+  --z-status-medicine: #D9E98C;
+  --z-status-activity: #B7D8B7;
+  --z-status-social: #CDBFEA;
+
+  /* Risk / 风险 */
+  --z-risk-low: #D7C8A3;
+  --z-risk-medium: #D99C6B;
+  --z-risk-high: #B9664A;
+  --z-risk-high-bg: #F7E6DD;
+
+  /* Chart / 图表 */
+  --z-chart-grid: #D8E0CA;
+  --z-chart-axis: #9BA58D;
+  --z-chart-line-1: #A7B765;
+  --z-chart-line-2: #88C6CD;
+  --z-chart-line-3: #F2C98F;
+  --z-chart-line-4: #CDBFEA;
+  --z-chart-fill-soft: rgba(167, 183, 101, 0.16);
+
   font-family: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
   line-height: 1.6;
   font-weight: 400;
-  color: #3A362E;
-  background-color: #FAF7F0;
+  color: var(--z-text-main);
+  background-color: var(--z-space-bg);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* 预留深夜色 token：当前 Demo 无模式切换入口，仅保留变量，不接交互 */
+[data-theme="night"] {
+  /* Space / 空间 */
+  --z-space-bg: #182015;
+  --z-space-bg-soft: #202A1B;
+  --z-space-surface: #26331F;
+  --z-space-surface-soft: #2D3A25;
+  --z-space-line: #61704A;
+
+  /* Text / 文字 */
+  --z-text-main: #F5EEDB;
+  --z-text-secondary: #C9C4B1;
+  --z-text-tertiary: #9EA48E;
+
+  /* Action / 行动 */
+  --z-action-primary: #D6E08E;
+  --z-action-primary-text: #22301A;
+  --z-action-deep: #D6E08E;
+  --z-action-deep-text: #22301A;
+
+  /* Status / 状态 */
+  --z-status-mood: #9BAA63;
+  --z-status-sleep: #8DBDC3;
+  --z-status-food: #C6AC73;
+  --z-status-medicine: #D6E08E;
+  --z-status-activity: #88A878;
+  --z-status-social: #A99BCC;
+
+  /* Risk / 风险 */
+  --z-risk-low: #B9A676;
+  --z-risk-medium: #C7835A;
+  --z-risk-high: #D69A78;
+  --z-risk-high-bg: #3A241C;
+
+  /* Chart / 图表 */
+  --z-chart-grid: rgba(214, 224, 142, 0.18);
+  --z-chart-axis: #9EA48E;
+  --z-chart-line-1: #D6E08E;
+  --z-chart-line-2: #8DBDC3;
+  --z-chart-line-3: #C6AC73;
+  --z-chart-line-4: #A99BCC;
+  --z-chart-fill-soft: rgba(214, 224, 142, 0.12);
 }
 
 html {
@@ -25,8 +110,8 @@ body {
 }
 
 ::selection {
-  background: #3A362E;
-  color: #FAF7F0;
+  background: var(--z-text-main);
+  color: var(--z-space-bg);
 }
 
 h1, h2, h3, h4 {
@@ -47,10 +132,10 @@ a {
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #D8D0BF;
-  border: 3px solid #FAF7F0;
+  background: #B9C2A8;
+  border: 3px solid var(--z-space-bg);
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #B3AB99;
+  background: #8B947D;
 }
