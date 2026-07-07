@@ -104,7 +104,7 @@ export default function VoiceInputBar({
           aria-label={
             voiceState === "recording" ? "停止录音" : "语音输入"
           }
-          className={`grid ${btnSize} place-items-center rounded-full border border-line bg-white/70 text-ink-soft backdrop-blur-sm transition-colors hover:text-ink`}
+          className={`grid ${btnSize} place-items-center rounded-full border border-line bg-card/70 text-ink-soft backdrop-blur-sm transition-colors hover:text-ink`}
         >
           {voiceState === "idle" && <Mic className={micSize} strokeWidth={1.8} />}
           {voiceState === "recording" && (

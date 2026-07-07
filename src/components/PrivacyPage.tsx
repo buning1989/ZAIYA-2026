@@ -432,7 +432,7 @@ function EntryRow({
   return (
     <button
       onClick={onClick}
-      className="flex w-full items-center justify-between rounded-2xl border border-line bg-white px-5 py-4 text-left transition-colors hover:border-ink-faint"
+      className="flex w-full items-center justify-between rounded-2xl border border-line bg-card px-5 py-4 text-left transition-colors hover:border-ink-faint"
     >
       <span className="text-[15px] font-medium text-ink">{label}</span>
       <div className="flex items-center gap-2">
@@ -481,7 +481,7 @@ function FieldRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-line bg-white px-5 py-4">
+    <div className="rounded-2xl border border-line bg-card px-5 py-4">
       <div className="text-[12px] text-ink-faint">{label}</div>
       <div className="mt-1.5">{children}</div>
     </div>
@@ -602,7 +602,7 @@ function BasicProfileEdit({
 
       <div className="flex-1 overflow-y-auto px-5 pb-4 pt-2">
         {/* 头像 */}
-        <div className="rounded-2xl border border-line bg-white px-5 py-4">
+        <div className="rounded-2xl border border-line bg-card px-5 py-4">
           <div className="text-[12px] text-ink-faint">头像</div>
           <div className="mt-3 flex items-center gap-4">
             <button
@@ -658,7 +658,7 @@ function BasicProfileEdit({
         </div>
 
         {/* 性别 */}
-        <div className="mt-2.5 rounded-2xl border border-line bg-white px-5 py-4">
+        <div className="mt-2.5 rounded-2xl border border-line bg-card px-5 py-4">
           <div className="text-[12px] text-ink-faint">性别</div>
           <div className="mt-2 flex gap-2">
             {(
@@ -674,7 +674,7 @@ function BasicProfileEdit({
                 className={`flex-1 rounded-xl border py-2.5 text-[14px] transition-colors ${
                   gender === opt.v
                     ? "border-ink bg-ink text-canvas"
-                    : "border-line bg-white text-ink-soft hover:border-ink-faint"
+                    : "border-line bg-card text-ink-soft hover:border-ink-faint"
                 }`}
               >
                 {opt.l}
@@ -739,7 +739,7 @@ function BodyDataEdit({
       <PageHeader title="身体资料" onBack={onBack} />
 
       <div className="flex-1 overflow-y-auto px-5 pb-4 pt-2">
-        <div className="rounded-2xl border border-line bg-white px-5 py-4">
+        <div className="rounded-2xl border border-line bg-card px-5 py-4">
           <div className="text-[12px] text-ink-faint">身高</div>
           <div className="mt-1.5 flex items-baseline gap-2">
             <TextInput
@@ -834,7 +834,7 @@ function ContactList({
             {list.map((c) => (
               <div
                 key={c.id}
-                className="rounded-2xl border border-line bg-white px-5 py-4"
+                className="rounded-2xl border border-line bg-card px-5 py-4"
               >
                 {/* 顶部：信息 + 删除 */}
                 <button
@@ -953,7 +953,7 @@ function ContactList({
       <button
         onClick={onAdd}
         aria-label={addLabel}
-        className="absolute bottom-7 right-5 z-20 grid h-11 w-11 place-items-center rounded-full border border-line bg-white text-ink shadow-[0_4px_18px_-6px_rgba(0,0,0,0.14)] transition-colors hover:border-ink-faint hover:text-ink"
+        className="absolute bottom-7 right-5 z-20 grid h-11 w-11 place-items-center rounded-full border border-line bg-card text-ink shadow-[0_4px_18px_-6px_rgba(0,0,0,0.14)] transition-colors hover:border-ink-faint hover:text-ink"
       >
         <Plus className="h-5 w-5" strokeWidth={1.8} />
       </button>
@@ -1056,7 +1056,7 @@ function ContactEdit({
               />
             </FieldRow>
           ) : (
-            <div className="rounded-2xl border border-line bg-white px-5 py-4">
+            <div className="rounded-2xl border border-line bg-card px-5 py-4">
               <div className="text-[12px] text-ink-faint">身份</div>
               <div className="mt-2 flex flex-wrap gap-2">
                 {TEACHER_ROLE_OPTIONS.map((r) => (
@@ -1066,7 +1066,7 @@ function ContactEdit({
                     className={`rounded-xl border px-3 py-2 text-[13px] transition-colors ${
                       teacherRole === r
                         ? "border-ink bg-ink text-canvas"
-                        : "border-line bg-white text-ink-soft hover:border-ink-faint"
+                        : "border-line bg-card text-ink-soft hover:border-ink-faint"
                     }`}
                   >
                     {TEACHER_ROLE_LABEL[r]}
@@ -1086,7 +1086,7 @@ function ContactEdit({
             />
           </FieldRow>
 
-          <div className="rounded-2xl border border-line bg-white px-5 py-4">
+          <div className="rounded-2xl border border-line bg-card px-5 py-4">
             <div className="text-[12px] text-ink-faint">备注</div>
             <textarea
               value={note}
@@ -1138,7 +1138,7 @@ function MedsList({
               <button
                 key={m.id}
                 onClick={() => onEdit(m.id)}
-                className="w-full rounded-2xl border border-line bg-white px-5 py-4 text-left transition-colors hover:border-ink-faint"
+                className="w-full rounded-2xl border border-line bg-card px-5 py-4 text-left transition-colors hover:border-ink-faint"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1 pr-3">
@@ -1167,7 +1167,7 @@ function MedsList({
       <button
         onClick={onAdd}
         aria-label="新增服用安排"
-        className="absolute bottom-7 right-5 z-20 grid h-11 w-11 place-items-center rounded-full border border-line bg-white text-ink shadow-[0_4px_18px_-6px_rgba(0,0,0,0.14)] transition-colors hover:border-ink-faint hover:text-ink"
+        className="absolute bottom-7 right-5 z-20 grid h-11 w-11 place-items-center rounded-full border border-line bg-card text-ink shadow-[0_4px_18px_-6px_rgba(0,0,0,0.14)] transition-colors hover:border-ink-faint hover:text-ink"
       >
         <Plus className="h-5 w-5" strokeWidth={1.8} />
       </button>
@@ -1260,7 +1260,7 @@ function MedsEdit({
               maxLength={30}
             />
           </FieldRow>
-          <div className="rounded-2xl border border-line bg-white px-5 py-4">
+          <div className="rounded-2xl border border-line bg-card px-5 py-4">
             <div className="text-[12px] text-ink-faint">备注</div>
             <textarea
               value={note}
@@ -1304,7 +1304,7 @@ function DeleteConfirm({
         onClick={onCancel}
       />
       <motion.div
-        className="absolute inset-x-0 bottom-0 z-[61] rounded-t-[20px] bg-white px-6 pb-8 pt-5"
+        className="absolute inset-x-0 bottom-0 z-[61] rounded-t-[20px] bg-card px-6 pb-8 pt-5"
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         exit={{ y: "100%" }}

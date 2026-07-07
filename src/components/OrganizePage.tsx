@@ -472,8 +472,8 @@ function AudienceStep({
               onClick={() => onSelect(a)}
               className={`flex items-start gap-3 rounded-2xl border px-4 py-4 text-left transition-colors ${
                 active
-                  ? "border-ink bg-white"
-                  : "border-line bg-white hover:border-ink-faint"
+                  ? "border-ink bg-card"
+                  : "border-line bg-card hover:border-ink-faint"
               }`}
             >
               <Icon
@@ -525,8 +525,8 @@ function RangeStep({
               onClick={() => onChange(opt.value)}
               className={`flex items-center justify-between rounded-2xl border px-4 py-4 transition-colors ${
                 active
-                  ? "border-ink bg-white"
-                  : "border-line bg-white hover:border-ink-faint"
+                  ? "border-ink bg-card"
+                  : "border-line bg-card hover:border-ink-faint"
               }`}
             >
               <span className="text-[15px] font-medium text-ink">
@@ -592,8 +592,8 @@ function SectionsStep({
               key={id}
               className={`rounded-2xl border px-4 py-3.5 transition-colors ${
                 checked
-                  ? "border-ink bg-white"
-                  : "border-line bg-white"
+                  ? "border-ink bg-card"
+                  : "border-line bg-card"
               }`}
             >
               <button
@@ -742,7 +742,7 @@ function PreviewStep({
       </div>
 
       {/* 第一层：一句话总览 */}
-      <div className="mt-3 rounded-2xl border border-line bg-white px-4 py-4">
+      <div className="mt-3 rounded-2xl border border-line bg-card px-4 py-4">
         <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-ink-faint">
           总览
         </div>
@@ -761,7 +761,7 @@ function PreviewStep({
             {summary.cards.map((card) => (
               <div
                 key={card.id}
-                className="rounded-2xl border border-line bg-white px-4 py-3.5"
+                className="rounded-2xl border border-line bg-card px-4 py-3.5"
               >
                 <div className="flex items-baseline justify-between gap-3">
                   <div className="text-[13.5px] font-medium text-ink">
@@ -793,7 +793,7 @@ function PreviewStep({
             return (
               <div
                 key={section.id}
-                className={`rounded-2xl border bg-white px-4 py-3.5 transition-opacity ${
+                className={`rounded-2xl border bg-card px-4 py-3.5 transition-opacity ${
                   hidden ? "border-line/60 opacity-50" : "border-line"
                 }`}
               >
@@ -970,7 +970,7 @@ function HistoryStep({
             .map((entry) => (
               <div
                 key={entry.id}
-                className="group rounded-2xl border border-line bg-white px-4 py-3.5"
+                className="group rounded-2xl border border-line bg-card px-4 py-3.5"
               >
                 <button
                   onClick={() => onView(entry)}
@@ -1053,7 +1053,7 @@ function HistoryDetailView({
         </div>
 
         {/* 总览 */}
-        <div className="mt-3 rounded-2xl border border-line bg-white px-4 py-4">
+        <div className="mt-3 rounded-2xl border border-line bg-card px-4 py-4">
           <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-ink-faint">
             总览
           </div>
@@ -1072,7 +1072,7 @@ function HistoryDetailView({
               {entry.generatedSummary.cards.map((card) => (
                 <div
                   key={card.id}
-                  className="rounded-2xl border border-line bg-white px-4 py-3.5"
+                  className="rounded-2xl border border-line bg-card px-4 py-3.5"
                 >
                   <div className="flex items-baseline justify-between gap-3">
                     <div className="text-[13.5px] font-medium text-ink">
@@ -1098,7 +1098,7 @@ function HistoryDetailView({
             {entry.generatedSummary.sections.map((section) => (
               <div
                 key={section.id}
-                className="rounded-2xl border border-line bg-white px-4 py-3.5"
+                className="rounded-2xl border border-line bg-card px-4 py-3.5"
               >
                 <div className="flex items-baseline justify-between gap-3">
                   <div className="text-[13.5px] font-medium text-ink">

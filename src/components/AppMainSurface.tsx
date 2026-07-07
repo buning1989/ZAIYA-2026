@@ -108,7 +108,7 @@ export function PhoneStatusBar({
         <button
           onClick={onClose}
           aria-label="关闭 Demo"
-          className="absolute right-5 top-12 z-20 grid h-7 w-7 place-items-center rounded-full bg-white/50 backdrop-blur-xl border border-white/30 shadow-sm text-ink-faint transition-colors hover:text-ink"
+          className="absolute right-5 top-12 z-20 grid h-7 w-7 place-items-center rounded-full bg-card/50 backdrop-blur-xl border border-line/30 shadow-sm text-ink-faint transition-colors hover:text-ink"
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -553,7 +553,7 @@ export default function AppMainSurface({
   const inRelief = mode === "reliefSelect" || mode === "reliefPractice";
 
   return (
-    <div className="relative h-full w-full bg-white">
+    <div className="relative h-full w-full bg-canvas">
       {/* iOS 风格状态栏 */}
       <PhoneStatusBar />
 
@@ -751,7 +751,7 @@ export default function AppMainSurface({
                 canSend={input.trim().length > 0 && !sending}
                 placeholder="说点什么…"
                 sendButtonClassName="bg-accent text-canvas"
-                className="rounded-xl border border-line bg-white p-2"
+                className="rounded-xl border border-line bg-card p-2"
               />
             </motion.div>
           </FeaturePageTransition>
@@ -782,7 +782,7 @@ export default function AppMainSurface({
                   <button
                     key={m.id}
                     onClick={() => selectRelief(m.id)}
-                    className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-line bg-white py-5 transition-colors hover:border-ink-faint"
+                    className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-line bg-card py-5 transition-colors hover:border-ink-faint"
                   >
                     <m.Icon className="h-7 w-7 text-ink-soft" strokeWidth={1.6} />
                     <span className="text-[13px] text-ink">{m.label}</span>
@@ -821,7 +821,7 @@ export default function AppMainSurface({
               )}
               <motion.div
                 animate={rhythmControls}
-                className="h-32 w-32 rounded-full border border-line bg-white/60"
+                className="h-32 w-32 rounded-full border border-line bg-card/60"
               />
               <p className="mt-6 max-w-[220px] text-center text-[13px] leading-relaxed text-ink-soft">
                 跟着圆慢一点。能停下来，就已经够了。
@@ -840,7 +840,7 @@ export default function AppMainSurface({
               <button
                 onClick={togglePause}
                 aria-label={paused ? "继续" : "暂停"}
-                className="grid h-11 w-11 place-items-center rounded-full border border-line bg-white text-ink transition-colors hover:border-ink-faint"
+                className="grid h-11 w-11 place-items-center rounded-full border border-line bg-card text-ink transition-colors hover:border-ink-faint"
               >
                 {paused ? (
                   <Play className="h-5 w-5" />
@@ -930,7 +930,7 @@ export default function AppMainSurface({
         {mode === "moreDetail" && moreDetailId && (
           <motion.div
             key="more-detail-layer"
-            className="absolute inset-0 z-[60] bg-white"
+            className="absolute inset-0 z-[60] bg-card"
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
@@ -1066,7 +1066,7 @@ function LongPressExit({ onExit }: { onExit: () => void }) {
       onPointerLeave={cancel}
       onPointerCancel={cancel}
       onContextMenu={(e) => e.preventDefault()}
-      className="relative flex h-10 w-48 select-none items-center justify-center overflow-hidden rounded-full border border-line bg-white text-[12px] text-ink-soft"
+      className="relative flex h-10 w-48 select-none items-center justify-center overflow-hidden rounded-full border border-line bg-card text-[12px] text-ink-soft"
       style={{ touchAction: "none" }}
     >
       {/* 进度填充 */}
