@@ -406,7 +406,7 @@ function HelpFeedbackPage({ onBack }: { onBack: () => void }) {
 
   const handleSubmit = () => {
     if (!canSubmit) return;
-    showToast("已收到你的反馈，Demo 阶段暂不做真实提交。");
+    showToast("已收到反馈，Demo 阶段暂不做真实提交");
     images.forEach((url) => URL.revokeObjectURL(url));
     setFeedback("");
     setImages([]);
@@ -420,16 +420,18 @@ function HelpFeedbackPage({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="relative flex h-full flex-col bg-canvas">
-      {/* Toast 固定在页面顶部，不随滚动漂移 */}
+      {/* Toast 固定在页面顶部居中，不随滚动漂移 */}
       {toastMsg && (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2 }}
-          className="pointer-events-none absolute left-1/2 top-14 z-20 -translate-x-1/2 whitespace-nowrap rounded-full bg-ink/90 px-3 py-1.5 text-[12px] text-canvas"
-        >
-          {toastMsg}
-        </motion.div>
+        <div className="pointer-events-none absolute inset-x-0 top-14 z-20 flex justify-center px-4">
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className="max-w-[85%] rounded-full bg-ink/90 px-3 py-1.5 text-center text-[12px] text-canvas"
+          >
+            {toastMsg}
+          </motion.div>
+        </div>
       )}
 
       <div className="flex items-center gap-3 px-5 pt-14 pb-2">
