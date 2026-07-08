@@ -34,24 +34,24 @@ export const PRAISE_EXAMPLES: string[] = [
 /* —— 输入规则 —— */
 export const PRAISE_MAX_LENGTH = 60;
 
-/* —— 卡片渐变定义 ——
- * Tolan Library 风格：柔和渐变背景，低饱和，不刺眼。
- * 每个渐变有唯一 id，创建卡片时随机分配一个，持久化后不再变化。 */
+/* —— 卡片纯色定义 ——
+ * 纯色背景，低饱和，不刺眼。
+ * 每个颜色有唯一 id，创建卡片时随机分配一个，持久化后不再变化。 */
 export type CardGradient = {
   id: string;
-  from: string; // 起始色
-  to: string; // 结束色
+  from: string; // 纯色（保留 from 字段以兼容现有类型）
+  to: string;   // 纯色（保留 to 字段以兼容现有类型）
 };
 
 export const CARD_GRADIENTS: CardGradient[] = [
-  { id: "g1", from: "#FBFCF5", to: "#F1F3E8" }, // 奶白 → 苔灰
-  { id: "g2", from: "#EEF1E2", to: "#D8E0CA" }, // 浅米 → 嫩芽线
-  { id: "g3", from: "#E6F0F1", to: "#B7D8D9" }, // 浅青 → 雾 teal
-  { id: "g4", from: "#FBF6E9", to: "#F2DDBB" }, // 暖米 → 奶油
-  { id: "g5", from: "#F4F8DD", to: "#D9E98C" }, // 浅柠 → 嫩芽
-  { id: "g6", from: "#F2EFF7", to: "#CDBFEA" }, // 浅藤 → 雾紫
-  { id: "g7", from: "#F6F8EF", to: "#E6DDC8" }, // 空间底 → 沙岩
-  { id: "g8", from: "#EDF4ED", to: "#B7D8B7" }, // 浅绿 → 草色
+  { id: "g1", from: "#F1F3E8", to: "#F1F3E8" }, // 苔灰绿
+  { id: "g2", from: "#EEF1E2", to: "#EEF1E2" }, // 浅米
+  { id: "g3", from: "#E6F0F1", to: "#E6F0F1" }, // 浅青
+  { id: "g4", from: "#FBF6E9", to: "#FBF6E9" }, // 暖米
+  { id: "g5", from: "#F4F8DD", to: "#F4F8DD" }, // 浅柠
+  { id: "g6", from: "#F2EFF7", to: "#F2EFF7" }, // 浅藤紫
+  { id: "g7", from: "#F6F8EF", to: "#F6F8EF" }, // 空间底
+  { id: "g8", from: "#EDF4ED", to: "#EDF4ED" }, // 浅绿
 ];
 
 /* —— 随机分配一个渐变 —— */

@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { CloudSun, Pill, Utensils, Moon, Footprints } from "lucide-react";
+import { CloudSun, Pill, Utensils, Moon, Footprints, Weight } from "lucide-react";
 
 /* —— "记一下" 记录类型配置（单页单项 Wizard）——
  * 仅本地 mock，不接后端 / LLM / 真实数据写入。
@@ -25,9 +25,10 @@ export type RecordTypeId =
   | "medication"
   | "food"
   | "sleep"
-  | "activity";
+  | "activity"
+  | "weight";
 
-export type StepInputType = "segmented" | "time" | "text";
+export type StepInputType = "segmented" | "time" | "text" | "number";
 
 export type StepOption = { label: string; value: string; abnormal?: boolean };
 
@@ -48,6 +49,20 @@ export type Step = {
   photoAllowed?: boolean;
   /** 该字段是否算"完整记录"的额外字段 */
   extra?: boolean;
+  /** segmented 选项是否多选（点击 toggle，需「下一步」确认，不自动推进） */
+  multi?: boolean;
+  /** 选项左侧是否用「月相」圆点表达（与 LookbackPage MoodBead 同步） */
+  moonPhase?: boolean;
+  /** 是否允许自由输入「没有合适的？自己写一句」。
+   *  单选 segmented 默认 true；需结构化的字段（情绪状态/服药状态/食量/睡眠时间等）设 false。
+   *  multi segmented 默认 false；如需补充说明设 true 并指定 customField。
+   *  number / text(isLast) 不受此字段影响。 */
+  allowCustom?: boolean;
+  /** 自由输入保存到独立字段（仅 multi + allowCustom 时生效，如情绪原因的 customReason）。
+   *  不指定则自由输入覆盖当前 field。 */
+  customField?: string;
+  /** 动态选项：依据已答字段返回选项，覆盖静态 options */
+  dynamicOptions?: (answers: Answers) => StepOption[];
 };
 
 export type RecordType = {
@@ -85,9 +100,13 @@ export const recordTypes: RecordType[] = [
     steps: [
       {
         id: "intensity",
-        question: "现在情绪强度大概是多少？",
+        question: "现在的情绪状态大概在哪儿？",
         field: "intensity",
         inputType: "segmented",
+        // 月相圆点：与 LookbackPage MoodBead 同步（1→空心 … 5→实心）
+        moonPhase: true,
+        // 情绪状态需进入趋势统计，保持 1–5 档结构化，不允许自由输入
+        allowCustom: false,
         options: [
           { label: "很低", value: "very_low", abnormal: true },
           { label: "偏低", value: "low", abnormal: true },
@@ -117,13 +136,14 @@ export const recordTypes: RecordType[] = [
         question: "可能和什么有关？",
         field: "triggers",
         inputType: "segmented",
-        options: [
-          { label: "人际", value: "people" },
-          { label: "身体", value: "body" },
-          { label: "睡眠", value: "sleep" },
-          { label: "工作/学习", value: "work" },
-          { label: "无明确原因", value: "none" },
-        ],
+        // 多选：点击 toggle，需「下一步」确认，不自动推进
+        multi: true,
+        // 保留自由输入作为补充说明，存入独立 customReason，不替代多选原因
+        allowCustom: true,
+        customField: "customReason",
+        // 动态原因词：依据前一步情绪状态（intensity）调整推荐词
+        dynamicOptions: (a) =>
+          getMoodTriggerOptions(a.intensity?.value ?? ""),
         nextStepId: "bodyReaction",
         extra: true,
       },
@@ -165,6 +185,8 @@ export const recordTypes: RecordType[] = [
         question: "今天药吃了吗？",
         field: "status",
         inputType: "segmented",
+        // 服药状态需结构化，不允许自由输入；后续感觉/补充页可保留
+        allowCustom: false,
         options: [
           { label: "已服", value: "taken" },
           { label: "未服", value: "not_taken" },
@@ -271,6 +293,8 @@ export const recordTypes: RecordType[] = [
         question: "吃了多少？",
         field: "amount",
         inputType: "segmented",
+        // 食量需结构化（没吃/吃了一点/正常/不舒服），不允许自由输入
+        allowCustom: false,
         options: [
           { label: "正常", value: "normal" },
           { label: "吃了一点", value: "little", abnormal: true },
@@ -349,6 +373,8 @@ export const recordTypes: RecordType[] = [
         question: "睡眠怎么样？",
         field: "quality",
         inputType: "segmented",
+        // 睡眠质量需结构化，不允许自由输入
+        allowCustom: false,
         options: [
           { label: "不好", value: "bad", abnormal: true },
           { label: "一般", value: "ok" },
@@ -379,6 +405,8 @@ export const recordTypes: RecordType[] = [
         question: "大概几点睡着的？",
         field: "sleepTime",
         inputType: "segmented",
+        // 入睡时间需结构化，不允许自由输入
+        allowCustom: false,
         options: [
           { label: "23 点前", value: "before_23" },
           { label: "23–24 点", value: "23_24" },
@@ -392,6 +420,8 @@ export const recordTypes: RecordType[] = [
         question: "早上几点醒的？",
         field: "wakeTime",
         inputType: "segmented",
+        // 起床时间需结构化，不允许自由输入
+        allowCustom: false,
         options: [
           { label: "6 点前", value: "before_6" },
           { label: "6–7 点", value: "6_7" },
@@ -405,6 +435,8 @@ export const recordTypes: RecordType[] = [
         question: "醒后状态？",
         field: "wakeState",
         inputType: "segmented",
+        // 醒后状态需结构化，不允许自由输入
+        allowCustom: false,
         options: [
           { label: "累", value: "tired" },
           { label: "昏沉", value: "groggy" },
@@ -454,6 +486,8 @@ export const recordTypes: RecordType[] = [
         question: "完成程度？",
         field: "completion",
         inputType: "segmented",
+        // 完成程度需结构化，不允许自由输入（自由输入仅用于活动内容 type）
+        allowCustom: false,
         options: [
           { label: "没开始", value: "none", abnormal: true },
           { label: "做了一点", value: "some" },
@@ -467,6 +501,8 @@ export const recordTypes: RecordType[] = [
         question: "身体变化？",
         field: "bodyChange",
         inputType: "segmented",
+        // 身体变化需结构化，不允许自由输入
+        allowCustom: false,
         options: [
           { label: "累", value: "tired" },
           { label: "轻松", value: "light" },
@@ -482,6 +518,8 @@ export const recordTypes: RecordType[] = [
         question: "情绪变化？",
         field: "moodChange",
         inputType: "segmented",
+        // 情绪变化需结构化，不允许自由输入
+        allowCustom: false,
         options: [
           { label: "更稳", value: "steady" },
           { label: "更闷", value: "stuffy" },
@@ -490,6 +528,34 @@ export const recordTypes: RecordType[] = [
         ],
         nextStepId: "note",
         extra: true,
+      },
+      {
+        id: "note",
+        question: "还想补一句的话，可以写在这里。",
+        field: "note",
+        inputType: "text",
+        isLast: true,
+        extra: true,
+      },
+    ],
+  },
+  {
+    id: "weight",
+    name: "体重",
+    Icon: Weight,
+    reminderAllowed: false,
+    hasCompletenessExtras: false,
+    mockRecentSummary: {
+      date: "7月5日",
+      text: "今天体重 51.5 kg。",
+    },
+    steps: [
+      {
+        id: "weightValue",
+        question: "今天的体重大约是多少？",
+        field: "weightValue",
+        inputType: "number",
+        nextStepId: "note",
       },
       {
         id: "note",
@@ -519,6 +585,62 @@ export function getNextStep(
     current.branches?.[selectedValue] ?? current.nextStepId;
   if (!targetId) return null;
   return allSteps.find((s) => s.id === targetId) ?? null;
+}
+
+/* —— 情绪原因推荐词：根据前一步情绪状态（intensity）动态调整 ——
+ * 假设映射（指令截断，待确认）：
+ *   低落档（很低/偏低）→ 偏消耗型原因
+ *   一般档            → 中性原因（原有 5 项）
+ *   高涨档（偏高/很高）→ 偏滋养型原因
+ * 多选时 value 以「|」拼接、label 以「、」拼接存入 AnswerEntry。 */
+const moodTriggerOptionsByIntensity: Record<string, StepOption[]> = {
+  very_low: [
+    { label: "身体累", value: "tired" },
+    { label: "没睡好", value: "sleep" },
+    { label: "人际摩擦", value: "people" },
+    { label: "孤单", value: "lonely" },
+    { label: "无明确原因", value: "none" },
+  ],
+  low: [
+    { label: "人际", value: "people" },
+    { label: "身体", value: "body" },
+    { label: "睡眠", value: "sleep" },
+    { label: "工作/学习", value: "work" },
+    { label: "无明确原因", value: "none" },
+  ],
+  normal: [
+    { label: "人际", value: "people" },
+    { label: "身体", value: "body" },
+    { label: "睡眠", value: "sleep" },
+    { label: "工作/学习", value: "work" },
+    { label: "无明确原因", value: "none" },
+  ],
+  high: [
+    { label: "开心的事", value: "happy" },
+    { label: "被肯定", value: "praised" },
+    { label: "进展顺利", value: "progress" },
+    { label: "身体轻松", value: "body_good" },
+    { label: "其他", value: "other" },
+  ],
+  very_high: [
+    { label: "开心的事", value: "happy" },
+    { label: "被肯定", value: "praised" },
+    { label: "进展顺利", value: "progress" },
+    { label: "身体轻松", value: "body_good" },
+    { label: "其他", value: "other" },
+  ],
+};
+
+export function getMoodTriggerOptions(intensityValue: string): StepOption[] {
+  return (
+    moodTriggerOptionsByIntensity[intensityValue] ??
+    moodTriggerOptionsByIntensity.normal
+  );
+}
+
+/* —— 解析 step 选项：优先动态选项，回退静态 options —— */
+export function resolveStepOptions(step: Step, answers: Answers): StepOption[] {
+  return step.dynamicOptions?.(answers) ?? step.options ?? [];
 }
 
 /* —— 答案条目结构 ——
@@ -592,6 +714,8 @@ export function isCompleteCoreRecord(
         filled("completion") &&
         (filled("bodyChange") || filled("moodChange"))
       );
+    case "weight":
+      return filled("weightValue");
     default:
       return false;
   }
@@ -601,7 +725,7 @@ export function isCompleteCoreRecord(
  * 仅用于记录确认页的摘要展示，不影响数据结构。 */
 export const summaryLabels: Record<RecordTypeId, Record<string, string>> = {
   mood: {
-    intensity: "情绪强度",
+    intensity: "情绪状态",
     emotionWords: "情绪",
     triggers: "原因",
     bodyReaction: "身体感受",
@@ -633,6 +757,9 @@ export const summaryLabels: Record<RecordTypeId, Record<string, string>> = {
     bodyChange: "身体",
     moodChange: "情绪",
   },
+  weight: {
+    weightValue: "体重",
+  },
 };
 
 /* —— 记录历史条目（本地 mock，不接后端） —— */
@@ -646,4 +773,21 @@ export type RecordEntry = {
   status: "basic" | "complete";
   /** 保存方式：saveFirst = 先保存；wizard = 走完流程 */
   savedBy?: "saveFirst" | "wizard";
+  /** 体重记录专用：保存时的体重值（KG），用于下次进入体重页时作为默认值 */
+  weight?: number;
 };
+
+/* —— 体重历史读取：返回最近一条带 weight 值的体重记录 ——
+ * 用于「记一下 - 体重」页默认值与调节器初始化。
+ * 若无任何体重历史 → 返回 null（页面将渲染普通手动输入框）。 */
+export function getLastWeightRecord(
+  history: RecordEntry[],
+): RecordEntry | null {
+  for (let i = history.length - 1; i >= 0; i--) {
+    const r = history[i];
+    if (r.type === "weight" && typeof r.weight === "number" && r.weight > 0) {
+      return r;
+    }
+  }
+  return null;
+}

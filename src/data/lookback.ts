@@ -15,6 +15,16 @@ export type MedState = "taken" | "missed" | "changed" | "unknown";
 
 export type ActivityLevel = 0 | 1 | 2 | 3;
 
+/* —— 单条情绪记录（日内可有多条）—— */
+export type MoodEntry = {
+  time: string; // "HH:MM"
+  mood: Mood;
+  moodWords: string[] | null;
+  moodTrigger: string | null;
+  moodBody: string | null;
+  moodNote: string | null;
+};
+
 export type DailyLookbackData = {
   date: string; // YYYY-MM-DD
   displayDate: string; // 7月1日
@@ -23,6 +33,7 @@ export type DailyLookbackData = {
   moodTrigger: string | null; // 触发事件
   moodBody: string | null; // 身体感受
   moodNote: string | null; // 补充说明
+  moodEntries: MoodEntry[] | null; // 日内多条情绪记录；null = 当天无记录
   sleepTime: string | null; // "23:10" / "00:40" / "01:30"
   wakeTime: string | null; // "08:10"
   sleepDurationMin: number | null; // 睡眠时长（分钟）
@@ -183,6 +194,52 @@ function buildDay(offset: number): DailyLookbackData {
     moodNote = derive(h, 24) < 0.4 ? moodNotePool[w1 % moodNotePool.length] : null;
   }
 
+  // 日内多条情绪记录：仅当 mood 非 null 时生成 1-3 条
+  let moodEntries: MoodEntry[] | null = null;
+  if (mood !== null) {
+    // 约 30% 概率只有 1 条，其余 2-3 条
+    const countRoll = derive(h, 25);
+    const entryCount = countRoll < 0.30 ? 1 : countRoll < 0.75 ? 2 : 3;
+    const timeSlots = [
+      // 早 / 午 / 晚三个时段的基础分钟数
+      [540, 660],   // 09:00-11:00
+      [780, 900],   // 13:00-15:00
+      [1200, 1320], // 20:00-22:00
+    ];
+    const entries: MoodEntry[] = [];
+    for (let ei = 0; ei < entryCount; ei++) {
+      const [tMin, tMax] = timeSlots[ei];
+      const t = tMin + Math.floor(derive(h, 70 + ei) * (tMax - tMin));
+      const ehh = Math.floor(t / 60);
+      const emm = t % 60;
+      const time = `${pad(ehh)}:${pad(emm)}`;
+      // 情绪值：围绕当天主 mood 小幅波动
+      const drift = Math.floor(derive(h, 80 + ei) * 3) - 1; // -1..1
+      const eMood = Math.max(1, Math.min(5, (mood as number) + drift)) as Mood;
+      // 情绪词
+      const ew1 = Math.floor(derive(h, 90 + ei * 2) * moodWordPool.length);
+      const ew2 = Math.floor(derive(h, 91 + ei * 2) * moodWordPool.length);
+      const eMoodWords = ew1 === ew2
+        ? [moodWordPool[ew1]]
+        : [moodWordPool[ew1], moodWordPool[ew2]];
+      // 触发事件 / 身体感受 / 补充说明（概率递减）
+      const eTrigger = derive(h, 100 + ei) < 0.5 ? moodTriggerPool[ew1 % moodTriggerPool.length] : null;
+      const eBody = derive(h, 110 + ei) < 0.4 ? moodBodyPool[ew2 % moodBodyPool.length] : null;
+      const eNote = derive(h, 120 + ei) < 0.3 ? moodNotePool[ew1 % moodNotePool.length] : null;
+      entries.push({
+        time,
+        mood: eMood,
+        moodWords: eMoodWords,
+        moodTrigger: eTrigger,
+        moodBody: eBody,
+        moodNote: eNote || null,
+      });
+    }
+    // 按时间升序
+    entries.sort((a, b) => a.time.localeCompare(b.time));
+    moodEntries = entries;
+  }
+
   // 入睡详情：仅当 sleepTime 非 null 时填充
   let wakeTime: string | null = null;
   let sleepDurationMin: number | null = null;
@@ -244,6 +301,7 @@ function buildDay(offset: number): DailyLookbackData {
     moodTrigger,
     moodBody,
     moodNote,
+    moodEntries,
     sleepTime,
     wakeTime,
     sleepDurationMin,

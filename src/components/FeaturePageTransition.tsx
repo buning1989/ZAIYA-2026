@@ -43,8 +43,8 @@ export default function FeaturePageTransition({
     _: unknown,
     info: { offset: { y: number }; velocity: { y: number } },
   ) => {
-    // 下滑超过 120px 或速度超过 300px/s 触发退出
-    if (info.offset.y > 120 || info.velocity.y > 300) {
+    // 下滑超过 80px 或速度超过 300px/s 触发退出
+    if (info.offset.y > 80 || info.velocity.y > 300) {
       onExit();
     }
     // 未达阈值时 framer-motion 自动 spring 回 animate 位置
@@ -68,7 +68,7 @@ export default function FeaturePageTransition({
       dragConstraints={{ top: 0, bottom: 0 }}
       dragElastic={{ top: 0, bottom: 0.15 }}
       onDragEnd={enableDragExit ? handleDragEnd : undefined}
-      className="absolute inset-0"
+      className="absolute inset-0 bg-white"
     >
       {children}
 
@@ -115,6 +115,41 @@ export function CloseButton({
         strokeLinecap="round"
       >
         <path d="M3 3l8 8M11 3l-8 8" />
+      </svg>
+    </button>
+  );
+}
+
+/**
+ * 底部中央收起按钮（向下箭头胶囊）。
+ * 用于生活节点选择页、练习选择页等底部退出入口。
+ * 位置：底部安全区上方约 24px。
+ * 样式：低存在感浅灰胶囊，不抢主内容注意力。
+ */
+export function CollapseButton({
+  onClick,
+  ariaLabel = "收起",
+}: {
+  onClick: () => void;
+  ariaLabel?: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={ariaLabel}
+      className="absolute inset-x-0 bottom-6 z-40 mx-auto grid h-10 w-14 place-items-center rounded-full bg-line-soft/60 text-ink-faint transition-colors hover:text-ink-soft active:bg-line-soft"
+    >
+      <svg
+        width="18"
+        height="10"
+        viewBox="0 0 18 10"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M2 2l7 6 7-6" />
       </svg>
     </button>
   );

@@ -9,21 +9,26 @@ import {
 } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  Check,
   ChevronLeft,
   ChevronRight,
   MoreHorizontal,
   Pencil,
-  Sparkles,
   Trash2,
+  Zap,
 } from "lucide-react";
-import ZaizaiRive from "./ZaizaiRive";
+import ZaizaiVideo from "./ZaizaiVideo";
 import VoiceInputBar from "./VoiceInputBar";
 import { PhoneStatusBar } from "./AppMainSurface";
+import { MoonPhaseIcon, type MoonPhaseLevel } from "./MoonPhaseIcon";
+import { calculateBMI, getUserProfile, addEnergy, getEnergy, FULL_RECORD_ENERGY_REWARD } from "@/data/userProfile";
 import {
   CUSTOM_INPUT_VALUE,
   getNextStep,
+  getLastWeightRecord,
   isCompleteCoreRecord,
   recordTypes,
+  resolveStepOptions,
   summaryLabels,
   type AnswerEntry,
   type Answers,
@@ -31,9 +36,66 @@ import {
   type RecordType,
   type RecordTypeId,
   type Step,
+  type StepOption,
 } from "@/data/record";
 
 const ease = [0.22, 1, 0.36, 1] as const;
+
+/* —— 月相图标（与 LookbackPage MoodBead 同步）—— */
+const intensityValueToLevel: Record<string, MoonPhaseLevel> = {
+  very_low: 1,
+  low: 2,
+  normal: 3,
+  high: 4,
+  very_high: 5,
+};
+
+type BmiStatus = "thin" | "normal" | "overweight" | "obesity";
+
+function parseWeightKg(value: string | undefined): number | null {
+  if (!value) return null;
+  const weight = Number(value);
+  if (!Number.isFinite(weight) || weight <= 0) return null;
+  return weight;
+}
+
+function getBmiStatus(bmi: number): {
+  status: BmiStatus;
+  label: string;
+  summary: string;
+  note: string;
+} {
+  if (bmi < 18.5) {
+    return {
+      status: "thin",
+      label: "偏瘦",
+      summary: "低于常用参考范围",
+      note: "可以结合近期饮食、睡眠和身体状态一起看。",
+    };
+  }
+  if (bmi < 25) {
+    return {
+      status: "normal",
+      label: "正常",
+      summary: "在常用参考范围内",
+      note: "这个数值处在常用 BMI 参考范围内。",
+    };
+  }
+  if (bmi < 30) {
+    return {
+      status: "overweight",
+      label: "偏胖",
+      summary: "高于常用参考范围",
+      note: "BMI 是筛查参考，可以和身体围度、活动状态一起看。",
+    };
+  }
+  return {
+    status: "obesity",
+    label: "明显偏胖",
+    summary: "明显高于常用参考范围",
+    note: "BMI 是筛查参考，必要时可以和专业人士一起判断。",
+  };
+}
 
 /* —— "记一下" 本地状态机 ——
  * 三状态：recordHome → recordWizard → recordResult
@@ -47,18 +109,20 @@ const ease = [0.22, 1, 0.36, 1] as const;
  *   - 完整记录触发能量奖励（前端 mock）
  *
  * 快捷入口配置已从记录页移除，迁移到「更多 → 设置 → 首页与快捷入口 → 记一下」。
- * 完成页在 mock 条件下（2–3 次完整记录）出现一次轻提示。
+ * 完成记录后直接回到记一下首页，并展示短暂保存提示。
  *
  * 全程本地 mock，不接后端 / LLM / 真实数据写入。 */
-type Layer = "home" | "wizard" | "result";
+type Layer = "home" | "wizard";
 
 type Props = {
   /** 返回 more 侧边栏（recordHome 顶部返回） */
   onBack: () => void;
-  /** 每次记录完成时回调，传递类型与是否完整，用于 AppMainSurface 历史记录与提示触发 */
+  /** 每次记录完成时回调，传递类型与是否完整，用于 AppMainSurface 历史记录与提示触发
+   *  weightValue：体重记录专用，传递当前体重值（KG），用于历史记录持久化 */
   onRecordComplete?: (e: {
     typeId: RecordTypeId;
     isComplete: boolean;
+    weightValue?: number;
   }) => void;
   /** 先保存：用户在 wizard 中途点击「先保存」，保存为 basic 记录并直接回首页
    *  不进入完成页、不展示能量、不触发快捷入口提示 */
@@ -66,7 +130,7 @@ type Props = {
     typeId: RecordTypeId;
     answers: Answers;
   }) => void;
-  /** 完成页低频提示：满足触发条件后由 AppMainSurface 控制 */
+  /** 保留给 AppMainSurface 的快捷入口控制；当前记录完成后不再展示独立结果页 */
   showShortcutHint: boolean;
   onAcceptShortcut: () => void;
   onDismissShortcutHint: () => void;
@@ -78,58 +142,163 @@ export default function RecordFlow({
   onBack,
   onRecordComplete,
   onSaveFirst,
-  showShortcutHint,
-  onAcceptShortcut,
-  onDismissShortcutHint,
   recordHistory = [],
 }: Props) {
   const [layer, setLayer] = useState<Layer>("home");
   const [typeId, setTypeId] = useState<RecordTypeId | null>(null);
+  const [savedMessage, setSavedMessage] = useState<string | null>(null);
 
-  // 保存反馈：基础记录 / 完整记录（含能量奖励）
-  const [resultComplete, setResultComplete] = useState(false);
-
-  // wizard 的 answers 上提：用于顶部「先记到这儿」入口的显示判断与触发
+  // wizard 的 answers 上提：用于顶部入口显示判断与「先记到这儿」部分保存
   const [wizardAnswers, setWizardAnswers] = useState<Answers>({});
+
+  // 是否已完成保存（success 态），用于返回按钮跳过放弃确认
+  const [isRecordSaved, setIsRecordSaved] = useState(false);
+  // 当前能量值（从 localStorage 读取，完成记录后累加刷新）
+  const [energyValue, setEnergyValue] = useState(() => getEnergy());
+  // 能量入口点击提示（wizard 层轻量 Toast，1.8s 自动淡出，不跳转空页面）
+  const [energyHint, setEnergyHint] = useState<string | null>(null);
+  // 上一次体重记录值（用于体重页默认填入 + 步进调节）
+  // 从 recordHistory 中读取最近一条带 weight 值的体重记录；无历史时为 null（页面渲染手动输入框）
+  const [lastWeight, setLastWeight] = useState<number | null>(
+    () => getLastWeightRecord(recordHistory)?.weight ?? null,
+  );
+
+  // 由 RecordWizard 上报的进度状态：用于顶部入口与返回确认分支
+  // hasCompletedFirstStep：已进入第二项及以后（第一项已完成）
+  // isFullRecordReady：已进入「这条记录已经完整了」确认页
+  const [hasCompletedFirstStep, setHasCompletedFirstStep] = useState(false);
+  const [isFullRecordReady, setIsFullRecordReady] = useState(false);
+  // 返回确认浮层模式：discard=二选一（继续填写/放弃并返回）；three=三选一（含先记到这儿）
+  const [dialogMode, setDialogMode] = useState<"discard" | "three" | null>(null);
 
   const type = typeId
     ? recordTypes.find((t) => t.id === typeId) ?? null
     : null;
 
-  const goHome = () => setLayer("home");
-
   const goWizard = (id: RecordTypeId) => {
     setTypeId(id);
     setWizardAnswers({});
+    setSavedMessage(null);
+    setIsRecordSaved(false);
+    setHasCompletedFirstStep(false);
+    setIsFullRecordReady(false);
+    setDialogMode(null);
     setLayer("wizard");
   };
 
-  // wizard 完成时调用：判断是否完整核心记录 + 进入 result 层 + 回调 AppMainSurface
+  // 顶部入口显示判断：已有至少 1 项有效输入
+  const hasAnyAnswer = Object.values(wizardAnswers).some(
+    (a) => a && (a.label?.trim() || a.value.trim()),
+  );
+  // 可部分保存：已完成第一项、未到确认页、未保存
+  const canSavePartial =
+    hasCompletedFirstStep && !isFullRecordReady && !isRecordSaved;
+
+  // wizard 完成时调用：保存后直接回到记一下首页，并给出轻提示
   const handleSave = (answers: Answers) => {
     const complete = typeId ? isCompleteCoreRecord(typeId, answers) : false;
-    setResultComplete(complete);
-    setLayer("result");
-    if (typeId) onRecordComplete?.({ typeId, isComplete: complete });
+    const savedTypeName = type?.name ?? "记录";
+    // 体重记录：保存本次体重值作为下一次默认值，并随回调持久化到历史
+    let weightValue: number | undefined;
+    if (typeId === "weight") {
+      const w = parseWeightKg(answers.weightValue?.value);
+      if (w !== null) {
+        weightValue = w;
+        setLastWeight(w);
+      }
+    }
+    if (typeId) onRecordComplete?.({ typeId, isComplete: complete, weightValue });
+    setSavedMessage(`${savedTypeName}记录已保存`);
+    backToRecordHome();
   };
 
-  // 先记到这儿：低能量退出，保存为 basic 记录，不进入完成页，直接回首页
-  const handleSaveFirst = () => {
-    if (!typeId) return;
-    onSaveFirst?.({ typeId, answers: wizardAnswers });
+  // 确认页「完成记录」：保存记录 + 发放完整记录能量奖励，但原地切换 success 态，不回首页
+  // 回首页由 success 态「回到记一下」按钮触发（onBackHome=backToRecordHome）
+  const handleCompleteRecord = (answers: Answers) => {
+    const complete = typeId ? isCompleteCoreRecord(typeId, answers) : false;
+    // 体重记录：保存本次体重值作为下一次默认值，并随回调持久化到历史
+    let weightValue: number | undefined;
+    if (typeId === "weight") {
+      const w = parseWeightKg(answers.weightValue?.value);
+      if (w !== null) {
+        weightValue = w;
+        setLastWeight(w);
+      }
+    }
+    if (typeId) onRecordComplete?.({ typeId, isComplete: complete, weightValue });
+    if (complete) {
+      const newEnergy = addEnergy(FULL_RECORD_ENERGY_REWARD);
+      setEnergyValue(newEnergy);
+    }
+    setIsRecordSaved(true);
+    // 不 setSavedMessage：完成反馈由 success 态承担，不再走 Toast
+    // 不 backToRecordHome：保持当前 wizard 层，RecordConfirmPage 内部切 phase=success
   };
 
+  // 「先记到这儿」：保存当前已完成内容为部分记录（不完整、不发完整能量、不进确认页），
+  // 交给父组件 onSaveFirst 处理（status: basic、退出到应用首页并展示轻反馈）
+  const handleSavePartial = () => {
+    setDialogMode(null);
+    if (typeId) onSaveFirst?.({ typeId, answers: wizardAnswers });
+  };
+
+  // 顶部返回按钮拦截：
+  //   已保存 → 直接回首页
+  //   确认页（记录已完整未最终保存）→ 二选一（无「先记到这儿」）
+  //   已完成第一项但未到确认页 → 三选一（含「先记到这儿」）
+  //   有未保存输入但未形成有效记录 → 二选一（无「先记到这儿」）
+  //   无任何填写 → 直接返回
   const handleBack = () => {
-    if (layer === "home") onBack();
-    else if (layer === "wizard") goHome();
-    // result 层无返回，只能通过完成按钮离开
+    if (layer === "home") {
+      onBack();
+      return;
+    }
+    if (isRecordSaved) {
+      backToRecordHome();
+      return;
+    }
+    if (isFullRecordReady) {
+      setDialogMode("discard");
+      return;
+    }
+    if (hasCompletedFirstStep) {
+      setDialogMode("three");
+      return;
+    }
+    if (hasAnyAnswer) {
+      setDialogMode("discard");
+      return;
+    }
+    backToRecordHome();
+  };
+
+  // 放弃未保存记录：清空状态返回首页
+  const handleDiscardAndGoHome = () => {
+    setDialogMode(null);
+    backToRecordHome();
   };
 
   const backToRecordHome = () => {
     setLayer("home");
     setTypeId(null);
-    setResultComplete(false);
     setWizardAnswers({});
+    setIsRecordSaved(false);
+    setHasCompletedFirstStep(false);
+    setIsFullRecordReady(false);
+    setDialogMode(null);
   };
+
+  // 接收 RecordWizard 上报的进度（stepStack 长度 / 是否进入确认页）
+  const handleProgressChange = useCallback(
+    (progress: {
+      hasCompletedFirstStep: boolean;
+      isFullRecordReady: boolean;
+    }) => {
+      setHasCompletedFirstStep(progress.hasCompletedFirstStep);
+      setIsFullRecordReady(progress.isFullRecordReady);
+    },
+    [],
+  );
 
   const title =
     layer === "home"
@@ -138,42 +307,71 @@ export default function RecordFlow({
         ? type?.name ?? "记一下"
         : "";
 
-  // 顶部「先记到这儿」显示条件：wizard 层 + 已有至少 1 项有效输入
-  const hasAnyAnswer = Object.values(wizardAnswers).some(
-    (a) => a && (a.label?.trim() || a.value.trim()),
-  );
-  const canSaveFirst = layer === "wizard" && hasAnyAnswer;
+  useEffect(() => {
+    if (!savedMessage) return;
+    const timer = window.setTimeout(() => setSavedMessage(null), 2200);
+    return () => window.clearTimeout(timer);
+  }, [savedMessage]);
+
+  useEffect(() => {
+    if (!energyHint) return;
+    const timer = window.setTimeout(() => setEnergyHint(null), 1800);
+    return () => window.clearTimeout(timer);
+  }, [energyHint]);
 
   return (
-    <div className="relative flex h-full flex-col bg-canvas">
+    <div className="relative flex h-full flex-col bg-white">
       <PhoneStatusBar />
 
-      {/* 顶部返回 + 标题 + 右上角「先记到这儿」弱入口（result 页不显示） */}
-      {layer !== "result" && (
-        <div className="flex items-center gap-3 px-5 pt-14 pb-2">
+      {/* 顶部返回 + 标题 + 右上角入口（能量 / 先记到这儿 / 空置） */}
+      <div className="relative flex items-center gap-3 bg-white px-5 pt-14 pb-2">
+        <button
+          onClick={handleBack}
+          aria-label="返回"
+          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+        >
+          <ChevronLeft className="h-6 w-6" />
+        </button>
+        <h2 className="flex-1 text-[17px] font-semibold tracking-tight text-ink">
+          {title}
+        </h2>
+        {layer === "wizard" && (isFullRecordReady || isRecordSaved) ? (
+          /* 确认页 / 已保存：能量入口（仅展示，点击提示 Demo 暂未开放） */
           <button
-            onClick={handleBack}
-            aria-label="返回"
-            className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+            onClick={() => setEnergyHint("能量可以用来兑换在在的小装扮，Demo 暂未开放。")}
+            className="flex items-center gap-1 rounded-full bg-[rgba(177,194,113,0.15)] px-2.5 py-1 text-[12px] font-medium text-[#2C3B27] transition-colors hover:bg-[rgba(177,194,113,0.25)]"
           >
-            <ChevronLeft className="h-6 w-6" />
+            <Zap className="h-3 w-3" />
+            <span>{energyValue}</span>
           </button>
-          <h2 className="flex-1 text-[17px] font-semibold tracking-tight text-ink">
-            {title}
-          </h2>
-          {canSaveFirst && (
-            <button
-              onClick={handleSaveFirst}
-              className="text-[12px] text-ink-faint underline-offset-4 transition-colors hover:text-ink-soft hover:underline"
+        ) : layer === "wizard" && canSavePartial ? (
+          /* 第二项及以后、未到确认页：先记到这儿（部分保存） */
+          <button
+            onClick={handleSavePartial}
+            className="text-[13px] font-medium text-ink-soft transition-colors hover:text-ink"
+          >
+            先记到这儿
+          </button>
+        ) : null}
+
+        {/* 能量入口点击提示：紧贴能量入口下方展开，1.8s 自动淡出；宽度受限可换行，不会被裁切 */}
+        <AnimatePresence>
+          {energyHint && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2, ease }}
+              className="pointer-events-none absolute right-5 top-full z-20 mt-1 max-w-[220px] rounded-2xl bg-[rgba(177,194,113,0.9)] px-3.5 py-2 text-left text-[12px] font-medium leading-relaxed text-white shadow-[0_6px_16px_rgba(44,59,39,0.18)]"
             >
-              先记到这儿
-            </button>
+              {energyHint}
+            </motion.div>
           )}
-        </div>
-      )}
+        </AnimatePresence>
+      </div>
 
       {/* 层级内容 */}
-      <div className="relative flex-1 overflow-hidden">
+      <div className="relative flex-1 overflow-hidden bg-white">
         <AnimatePresence mode="wait">
           <motion.div
             key={layer}
@@ -181,10 +379,14 @@ export default function RecordFlow({
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -16 }}
             transition={{ duration: 0.28, ease }}
-            className="absolute inset-0"
+            className="absolute inset-0 bg-white"
           >
             {layer === "home" && (
-              <RecordHome onPick={goWizard} recordHistory={recordHistory} />
+              <RecordHome
+                onPick={goWizard}
+                recordHistory={recordHistory}
+                savedMessage={savedMessage}
+              />
             )}
             {layer === "wizard" && type && (
               <RecordWizard
@@ -192,21 +394,99 @@ export default function RecordFlow({
                 answers={wizardAnswers}
                 setAnswers={setWizardAnswers}
                 onSave={handleSave}
+                onFinishRecord={handleCompleteRecord}
                 onAbort={backToRecordHome}
-              />
-            )}
-            {layer === "result" && (
-              <RecordResult
-                complete={resultComplete}
-                onBackHome={backToRecordHome}
-                showShortcutHint={showShortcutHint}
-                onAcceptShortcut={onAcceptShortcut}
-                onDismissShortcutHint={onDismissShortcutHint}
+                lastWeight={lastWeight}
+                onProgressChange={handleProgressChange}
               />
             )}
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {/* 返回确认浮层：discard=二选一（继续填写/放弃并返回）；three=三选一（含先记到这儿） */}
+      <AnimatePresence>
+        {dialogMode && (
+          <>
+            {/* 遮罩 */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 z-30 bg-ink/25"
+              onClick={() => setDialogMode(null)}
+            />
+            {/* 底部浮层 */}
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="absolute inset-x-0 bottom-0 z-40 rounded-t-2xl bg-white px-5 pb-8 pt-5 shadow-[0_-8px_24px_rgba(39,51,31,0.08)]"
+            >
+              {dialogMode === "three" ? (
+                <>
+                  <h3 className="text-center text-[16px] font-semibold tracking-tight text-ink">
+                    这条记录还没有完整保存
+                  </h3>
+                  <p className="mt-2 text-center text-[13px] leading-relaxed text-ink-faint">
+                    你可以继续填写，也可以先把已经记下的内容保存起来。
+                  </p>
+                  <div className="mt-5 flex flex-col gap-2.5">
+                    {/* 主按钮：继续填写 */}
+                    <button
+                      onClick={() => setDialogMode(null)}
+                      className="w-full rounded-xl bg-action-primary px-4 py-3 text-[14px] font-medium text-action-primary-text transition-opacity hover:opacity-90"
+                    >
+                      继续填写
+                    </button>
+                    {/* 次按钮：先记到这儿 */}
+                    <button
+                      onClick={handleSavePartial}
+                      className="w-full rounded-xl border border-line bg-white px-4 py-3 text-[14px] font-medium text-ink transition-colors hover:border-ink-faint"
+                    >
+                      先记到这儿
+                    </button>
+                    {/* 弱按钮：放弃并返回 */}
+                    <button
+                      onClick={handleDiscardAndGoHome}
+                      className="w-full rounded-xl px-4 py-3 text-[13px] text-ink-faint transition-colors hover:text-ink"
+                    >
+                      放弃并返回
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-center text-[16px] font-semibold tracking-tight text-ink">
+                    这条记录还没有保存
+                  </h3>
+                  <p className="mt-2 text-center text-[13px] leading-relaxed text-ink-faint">
+                    现在返回的话，刚才填写的内容不会被保存。
+                  </p>
+                  <div className="mt-5 flex flex-col gap-2.5">
+                    {/* 主按钮：继续填写 */}
+                    <button
+                      onClick={() => setDialogMode(null)}
+                      className="w-full rounded-xl bg-action-primary px-4 py-3 text-[14px] font-medium text-action-primary-text transition-opacity hover:opacity-90"
+                    >
+                      继续填写
+                    </button>
+                    {/* 弱按钮：放弃并返回 */}
+                    <button
+                      onClick={handleDiscardAndGoHome}
+                      className="w-full rounded-xl border border-line bg-white px-4 py-3 text-[13px] text-ink-faint transition-colors hover:text-ink"
+                    >
+                      放弃并返回
+                    </button>
+                  </div>
+                </>
+              )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -218,28 +498,44 @@ export default function RecordFlow({
 function RecordHome({
   onPick,
   recordHistory = [],
+  savedMessage,
 }: {
   onPick: (id: RecordTypeId) => void;
   recordHistory?: RecordEntry[];
+  savedMessage?: string | null;
 }) {
   // 从 recordHistory 提取最近 1-3 条气泡摘要
   const bubbles = buildRecentBubbles(recordHistory);
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto px-5 pb-8">
+    <div className="no-scrollbar flex h-full flex-col overflow-y-auto bg-white px-5 pb-8">
       {/* 在在 + 最近记录气泡 */}
       {bubbles.length > 0 ? (
         // 有记录：左右结构，在在在左，气泡在右
         <div className="flex items-start justify-center gap-3 py-4">
-          <ZaizaiRive className="h-20 w-20 shrink-0" />
+          <ZaizaiVideo className="h-20 w-20 shrink-0" />
           <RecentBubbles items={bubbles} />
         </div>
       ) : (
         // 无记录：居中显示在在
         <div className="flex justify-center py-4">
-          <ZaizaiRive className="h-28 w-28" />
+          <ZaizaiVideo className="h-28 w-28" />
         </div>
       )}
+
+      <AnimatePresence>
+        {savedMessage && (
+          <motion.p
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.22, ease }}
+            className="mb-3 text-center text-[13px] font-medium text-ink-soft"
+          >
+            {savedMessage}
+          </motion.p>
+        )}
+      </AnimatePresence>
 
       {/* 5 个记录类型入口 */}
       <div className="flex flex-col gap-2.5">
@@ -378,13 +674,25 @@ function RecordWizard({
   answers,
   setAnswers,
   onSave,
+  onFinishRecord,
   onAbort,
+  lastWeight,
+  onProgressChange,
 }: {
   type: RecordType;
   answers: Answers;
   setAnswers: Dispatch<SetStateAction<Answers>>;
   onSave: (answers: Answers) => void;
+  /** 确认页「完成记录」：保存+发能量，原地切 success 态，不回首页 */
+  onFinishRecord: (answers: Answers) => void;
   onAbort: () => void;
+  /** 上一次体重记录值（用于体重页默认填入 + 步进调节） */
+  lastWeight: number | null;
+  /** 上报进度给父组件，用于顶部入口与返回确认分支 */
+  onProgressChange?: (progress: {
+    hasCompletedFirstStep: boolean;
+    isFullRecordReady: boolean;
+  }) => void;
 }) {
   const initialStep = type.steps[0];
   const [stepStack, setStepStack] = useState<Step[]>([initialStep]);
@@ -405,8 +713,45 @@ function RecordWizard({
   const [revealedStepId, setRevealedStepId] = useState<string | null>(null);
   // 自动推进锁：延迟期间禁用选项点击，防止重复触发
   const [advancing, setAdvancing] = useState(false);
+  // 数字输入值（number 类型 step 专用）
+  const [numberValue, setNumberValue] = useState("");
+  // 体重页：点击数字进入手动编辑模式
+  const [editingWeight, setEditingWeight] = useState(false);
+  // 体重页：有历史记录时自动填入上一次体重作为默认值
+  useEffect(() => {
+    if (type.id === "weight" && lastWeight !== null) {
+      setNumberValue(lastWeight.toFixed(1));
+      setEditingWeight(false);
+    }
+  }, [type.id, lastWeight]);
+
+  const WEIGHT_STEP = 0.1;
+  const WEIGHT_MIN = 20;
+  const WEIGHT_MAX = 200;
+
+  const stepWeight = (delta: number) => {
+    const n = parseFloat(numberValue) || 0;
+    const next = Math.round((n + delta) * 10) / 10;
+    if (next < WEIGHT_MIN || next > WEIGHT_MAX) return;
+    setNumberValue(next.toFixed(1));
+    setInputText(next.toFixed(1));
+  };
+  // 多选项的本地选中值（仅 multi step 使用；切步时由 useEffect 重置）
+  const [multiSelected, setMultiSelected] = useState<string[]>([]);
 
   const currentAnswer: AnswerEntry | undefined = answers[current.field];
+  // 自由输入写入的目标字段：multi + customField 时为独立补充字段（如情绪原因的 customReason），
+  // 不替代多选值；其余情况覆盖当前 field
+  const customTargetField = current.customField ?? current.field;
+  const customAnswerEntry = answers[customTargetField];
+
+  // 当前 step 的选项（动态选项优先，回退静态 options）
+  const stepOptions: StepOption[] = resolveStepOptions(current, answers);
+  const isMulti = current.multi === true;
+  // 是否允许自由输入：单选默认允许（allowCustom !== false）；多选需显式 allowCustom === true
+  const customAllowed = isMulti
+    ? current.allowCustom === true
+    : current.allowCustom !== false;
 
   const writeAnswer = (field: string, entry: AnswerEntry) => {
     setAnswers((prev) => ({ ...prev, [field]: entry }));
@@ -431,17 +776,47 @@ function RecordWizard({
     }, 400);
   };
 
+  // 多选 toggle：点击切换选中，不自动推进
+  const toggleMulti = (value: string) => {
+    if (advancing) return;
+    setMultiSelected((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
+    );
+  };
+
+  // 多选确认：拼接 value（|）与 label（、）写入答案 + 停留 400ms + 进入下一项
+  const confirmMulti = () => {
+    if (advancing || multiSelected.length === 0) return;
+    const labels = multiSelected
+      .map((v) => stepOptions.find((o) => o.value === v)?.label ?? v)
+      .join("、");
+    const value = multiSelected.join("|");
+    writeAnswer(current.field, { type: "option", value, label: labels });
+    setRevealedStepId(null);
+    setAdvancing(true);
+    window.setTimeout(() => {
+      goNext(value);
+      setAdvancing(false);
+    }, 400);
+  };
+
   // 自由输入发送 → 写入 custom 答案 + 停留 400ms + 自动进入下一项
   // 最后一项（补一句）：发送后直接完成，不延迟
+  // multi + customField：自由输入作为补充说明，写入独立字段，不替代多选值，也不自动推进
   const sendInput = () => {
     const text = inputText.trim();
     if (!text || advancing) return;
-    writeAnswer(current.field, { type: "custom", value: text });
+    writeAnswer(customTargetField, { type: "custom", value: text });
     setInputText("");
     setEditingCustom(false);
     setRevealedStepId(null);
     if (current.isLast) {
-      onSave({ ...answers, [current.field]: { type: "custom", value: text } });
+      onSave({ ...answers, [customTargetField]: { type: "custom", value: text } });
+      return;
+    }
+    // multi + customField：补充说明，不替代多选值，也不自动推进
+    if (isMulti && current.customField) {
+      setCustomOpen(false);
       return;
     }
     setAdvancing(true);
@@ -486,8 +861,8 @@ function RecordWizard({
 
   // 修改 custom 答案：内容回填输入框 + 进入 editingCustom + 展开输入框
   const startEditCustom = () => {
-    if (currentAnswer?.type !== "custom") return;
-    setInputText(currentAnswer.value);
+    if (customAnswerEntry?.type !== "custom") return;
+    setInputText(customAnswerEntry.value);
     setEditingCustom(true);
     setCustomOpen(true);
     setRevealedStepId(null);
@@ -495,7 +870,7 @@ function RecordWizard({
 
   // 确认删除 custom 答案
   const confirmDelete = () => {
-    clearAnswer(current.field);
+    clearAnswer(customTargetField);
     setInputText("");
     setEditingCustom(false);
     setCustomOpen(false);
@@ -505,6 +880,26 @@ function RecordWizard({
 
   // 最后一项完成（补一句）：空输入也允许完成
   const finishLast = () => {
+    // number 类型：使用 numberValue
+    if (isNumber && numberValue.trim()) {
+      const finalAnswers = {
+        ...answers,
+        [current.field]: { type: "custom" as const, value: numberValue.trim() },
+      };
+      setAnswers(finalAnswers);
+      const next = getNextStep(current, numberValue.trim(), type.steps);
+      if (next) {
+        setStepStack((s) => [...s, next]);
+        setInputText("");
+        setNumberValue("");
+        setCustomOpen(false);
+        setEditingCustom(false);
+        setRevealedStepId(null);
+        return;
+      }
+      onSave(finalAnswers);
+      return;
+    }
     const text = inputText.trim();
     const finalAnswers = text
       ? { ...answers, [current.field]: { type: "custom" as const, value: text } }
@@ -514,14 +909,32 @@ function RecordWizard({
 
   const isLast = current.isLast;
   const isSegmented = current.inputType === "segmented";
-  const hasCustom = currentAnswer?.type === "custom";
+  const isNumber = current.inputType === "number";
+  const hasCustom = customAnswerEntry?.type === "custom";
+  const weightPreviewKg =
+    type.id === "weight" && isNumber ? parseWeightKg(numberValue) : null;
+  const bmiPreview =
+    weightPreviewKg !== null ? calculateBMI(weightPreviewKg, getUserProfile().heightCm) : null;
+  const bmiPreviewInfo =
+    bmiPreview !== null ? getBmiStatus(bmiPreview) : null;
 
-  // 输入框是否展示：最后一项默认展示；其他项点击弱入口后展示
-  const showInputBox = isLast || customOpen;
+  // 输入框是否展示：最后一项默认展示（number 类型除外，它有自己的保存按钮）；其他项点击弱入口后展开
+  const showInputBox = (isLast && !isNumber) || customOpen;
   // 是否已达到完整记录标准（最后一项时用于判断是否进入记录确认页）
   const isCompleteRecord = isCompleteCoreRecord(type.id, answers);
   // 最后一项且达到完整记录标准 → 进入记录确认页（不再作为必答题）
   const showConfirmPage = isLast && isCompleteRecord;
+
+  // 上报进度给父组件 RecordFlow：
+  //   hasCompletedFirstStep = stepStack.length > 1（已进入第二项及以后）
+  //   isFullRecordReady = showConfirmPage（已进入完整记录确认页）
+  // 父组件据此决定顶部右上角入口（能量 / 先记到这儿 / 空置）与返回确认浮层模式（二选一 / 三选一）
+  useEffect(() => {
+    onProgressChange?.({
+      hasCompletedFirstStep: stepStack.length > 1,
+      isFullRecordReady: showConfirmPage,
+    });
+  }, [stepStack.length, showConfirmPage, onProgressChange]);
 
   // —— 右滑返回上一项（pointer 事件，支持鼠标拖拽 + 触控） ——
   // 触发区域：仅主体内容区（问题 + 选项卡 / 内容卡），排除输入框、语音条、顶部操作区、删除确认等
@@ -596,26 +1009,39 @@ function RecordWizard({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [goPrev, showConfirmPage]);
 
+  // 多选项切步时：从已存答案回填 multiSelected（支持右滑返回保留选中）
+  useEffect(() => {
+    if (!isMulti) {
+      setMultiSelected([]);
+      return;
+    }
+    const a = answers[current.field];
+    setMultiSelected(
+      a?.type === "option" && a.value ? a.value.split("|").filter(Boolean) : [],
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current.id, isMulti]);
+
   return (
-    <div className="relative flex h-full flex-col">
+    <div className="relative flex h-full flex-col bg-white">
       {/* 在在（较小） */}
-      <div className="flex justify-center py-2">
-        <ZaizaiRive className="h-20 w-20" />
+      <div className="flex justify-center bg-white py-2">
+        <ZaizaiVideo className="h-20 w-20" />
       </div>
 
       {/* 顶部进度条（轻量，不显示数字/百分比文案，仅细线） */}
-      <div className="px-5 pb-3">
-        <div className="h-[3px] w-full overflow-hidden rounded-full bg-line-soft">
-          <motion.div
-            className="h-full rounded-full bg-ink"
-            initial={false}
-            animate={{
-              width: `${((stepIndex + 1) / totalSteps) * 100}%`,
-            }}
-            transition={{ duration: 0.3, ease }}
-          />
+      <div className="bg-white px-5 pb-3">
+          <div className="h-[3px] w-full overflow-hidden rounded-full bg-line-soft">
+            <motion.div
+              className="h-full rounded-full bg-ink"
+              initial={false}
+              animate={{
+                width: `${((stepIndex + 1) / totalSteps) * 100}%`,
+              }}
+              transition={{ duration: 0.3, ease }}
+            />
+          </div>
         </div>
-      </div>
 
       {/* —— 记录确认页（isLast 且达到完整记录标准） —— */}
       {showConfirmPage ? (
@@ -623,7 +1049,8 @@ function RecordWizard({
           type={type}
           answers={answers}
           setAnswers={setAnswers}
-          onComplete={onSave}
+          onFinishRecord={onFinishRecord}
+          onBackHome={onAbort}
           onAbort={onAbort}
         />
       ) : (
@@ -632,7 +1059,7 @@ function RecordWizard({
               右滑返回上一项的触发区域：仅此主体内容区。
               排除区域（input/textarea/button/[data-no-swipe]）在 isExcludedTarget 中过滤。 */}
           <div
-            className="flex flex-1 flex-col overflow-y-auto px-5"
+            className="no-scrollbar flex flex-1 flex-col overflow-y-auto bg-white px-5"
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
@@ -652,17 +1079,126 @@ function RecordWizard({
                   {current.question}
                 </p>
 
+                {/* 数字输入（number 项） */}
+                {isNumber && (
+                  <>
+                    {type.id === "weight" && lastWeight !== null && !editingWeight ? (
+                      /* —— 体重调节器：有历史记录时显示 + 0.1 KG / 当前体重 / - 0.1 KG —— */
+                      <div className="mt-9 flex flex-col items-center">
+                        {/* 上按钮：+ 0.1 KG（轻量胶囊） */}
+                        <button
+                          onClick={() => stepWeight(WEIGHT_STEP)}
+                          className="flex h-8 min-w-[92px] items-center justify-center rounded-full border border-[rgba(177,194,113,0.45)] bg-[rgba(177,194,113,0.10)] px-[14px] text-[13px] font-medium text-[rgba(44,59,39,0.72)] transition-transform active:scale-[0.96] active:bg-[rgba(177,194,113,0.18)]"
+                        >
+                          + {WEIGHT_STEP.toFixed(1)} KG
+                        </button>
+                        {/* 中间体重数字：可点击进入手动编辑 */}
+                        <button
+                          onClick={() => setEditingWeight(true)}
+                          className="my-[10px] flex items-baseline justify-center"
+                        >
+                          <span className="text-[34px] font-[650] leading-[42px] tracking-tight text-[#2C3B27]">
+                            {numberValue || "—"}
+                          </span>
+                          <span className="ml-1 text-[13px] font-medium text-[rgba(44,59,39,0.58)]">
+                            KG
+                          </span>
+                        </button>
+                        {/* 下按钮：- 0.1 KG（轻量胶囊） */}
+                        <button
+                          onClick={() => stepWeight(-WEIGHT_STEP)}
+                          className="flex h-8 min-w-[92px] items-center justify-center rounded-full border border-[rgba(177,194,113,0.45)] bg-[rgba(177,194,113,0.10)] px-[14px] text-[13px] font-medium text-[rgba(44,59,39,0.72)] transition-transform active:scale-[0.96] active:bg-[rgba(177,194,113,0.18)]"
+                        >
+                          - {WEIGHT_STEP.toFixed(1)} KG
+                        </button>
+                      </div>
+                    ) : (
+                      /* —— 手动输入：无历史记录 / 点击数字进入编辑 —— */
+                      <div className="mt-9 flex flex-col items-center">
+                        <div className="relative h-14 w-full max-w-[220px] rounded-xl border border-line bg-white shadow-[0_8px_24px_-20px_rgba(39,51,31,0.25)]">
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={numberValue}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              if (v === "" || /^\d*\.?\d{0,1}$/.test(v)) {
+                                setNumberValue(v);
+                                setInputText(v);
+                              }
+                            }}
+                            onBlur={() => {
+                              // 失焦校验：空值/无效 → 有历史则回退，无历史则留空；
+                              // 范围 20–200 → 钳制；保留一位小数
+                              const n = parseFloat(numberValue);
+                              if (!Number.isFinite(n)) {
+                                if (lastWeight !== null) {
+                                  const fallback = lastWeight.toFixed(1);
+                                  setNumberValue(fallback);
+                                  setInputText(fallback);
+                                }
+                              } else {
+                                const clamped = Math.min(
+                                  WEIGHT_MAX,
+                                  Math.max(WEIGHT_MIN, n),
+                                );
+                                const rounded = Math.round(clamped * 10) / 10;
+                                const formatted = rounded.toFixed(1);
+                                setNumberValue(formatted);
+                                setInputText(formatted);
+                              }
+                              setEditingWeight(false);
+                            }}
+                            placeholder="如：51.5"
+                            className="h-full w-full bg-transparent pl-12 pr-12 text-center text-[20px] font-medium tracking-normal text-ink outline-none placeholder:text-[15px] placeholder:text-ink-faint/35"
+                          />
+                          <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[13px] font-medium text-ink-faint">
+                            KG
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 辅助信息区：上次记录（仅调节器态）+ BMI（两态都有）；弱辅助，无卡片无边框 */}
+                    <div className="mt-[18px] flex flex-col items-center gap-[2px]">
+                      {type.id === "weight" &&
+                        lastWeight !== null &&
+                        !editingWeight && (
+                          <p className="text-[12px] leading-[20px] text-[rgba(44,59,39,0.48)]">
+                            上次记录：{lastWeight.toFixed(1)} KG
+                          </p>
+                        )}
+                      {bmiPreview !== null &&
+                        bmiPreviewInfo &&
+                        getUserProfile().heightCm && (
+                          <p className="text-[12px] leading-[20px] text-[rgba(44,59,39,0.48)]">
+                            <span>BMI {bmiPreview}</span>
+                            <span className="mx-1">·</span>
+                            <span>{bmiPreviewInfo.label}</span>
+                            <span className="mx-1">·</span>
+                            <span>身高 {getUserProfile().heightCm}cm</span>
+                          </p>
+                        )}
+                    </div>
+                  </>
+                )}
+
                 {/* 纵向选项卡列表（segmented 项：结构化选项 + 自定义选项卡同层级） */}
                 {isSegmented && (
                   <div className="mt-5 flex flex-col gap-2.5">
-                    {current.options?.map((opt) => {
-                      const active =
-                        currentAnswer?.type === "option" &&
-                        currentAnswer.value === opt.value;
+                    {stepOptions.map((opt) => {
+                      const active = isMulti
+                        ? multiSelected.includes(opt.value)
+                        : currentAnswer?.type === "option" &&
+                          currentAnswer.value === opt.value;
                       return (
                         <button
                           key={opt.value}
-                          onClick={() => selectOption(opt.value, opt.label)}
+                          onClick={() =>
+                            isMulti
+                              ? toggleMulti(opt.value)
+                              : selectOption(opt.value, opt.label)
+                          }
                           disabled={advancing}
                           className={`flex h-14 items-center gap-3 rounded-2xl border px-5 text-left transition-colors ${
                             active
@@ -670,39 +1206,78 @@ function RecordWizard({
                               : "border-line bg-white text-ink hover:border-ink-faint"
                           } ${advancing ? "opacity-60" : ""}`}
                         >
-                          {/* 左侧点状符号 */}
-                          <span
-                            className={`h-2 w-2 shrink-0 rounded-full ${
-                              active ? "bg-canvas" : "bg-ink-faint"
-                            }`}
-                          />
-                          <span className="text-[15px] font-medium tracking-tight">
+                          {/* 左侧指示符 */}
+                          {isMulti ? (
+                            // 多选：方框 + 选中打勾
+                            <span
+                              className={`grid h-[18px] w-[18px] shrink-0 place-items-center rounded-[5px] border ${
+                                active ? "border-canvas bg-canvas" : "border-ink-faint"
+                              }`}
+                            >
+                              {active && (
+                                <Check className="h-3 w-3 text-ink" strokeWidth={2.4} />
+                              )}
+                            </span>
+                          ) : current.moonPhase ? (
+                            // 月相图标（intensity 步，与 LookbackPage MoodBead 同步）
+                            <MoonPhaseIcon level={intensityValueToLevel[opt.value] ?? 3} />
+                          ) : (
+                            // 默认点状符号
+                            <span
+                              className={`h-2 w-2 shrink-0 rounded-full ${
+                                active ? "bg-white" : "bg-ink-faint"
+                              }`}
+                            />
+                          )}
+                          <span className="flex-1 text-[15px] font-medium tracking-tight">
                             {opt.label}
                           </span>
                         </button>
                       );
                     })}
 
-                    {/* 自定义选项卡：与结构化选项同层级，selected 态，右滑露出 修改/删除 */}
-                    {hasCustom && (
-                      <CustomAnswerCard
-                        text={currentAnswer.value}
-                        stepId={current.id}
-                        revealedStepId={revealedStepId}
-                        setRevealedStepId={setRevealedStepId}
-                        onEdit={startEditCustom}
-                        onDelete={() => setDeleteConfirmOpen(true)}
-                      />
+                    {/* 自定义选项卡 + 弱入口
+                        单选：allowCustom !== false（默认允许，结构化字段显式 false）
+                        多选：allowCustom === true 且指定 customField（如情绪原因补充，不替代多选值） */}
+                    {customAllowed && (
+                      <>
+                        {/* 自定义选项卡：与结构化选项同层级，selected 态，右滑露出 修改/删除 */}
+                        {hasCustom && (
+                          <CustomAnswerCard
+                            text={customAnswerEntry.value}
+                            stepId={current.id}
+                            revealedStepId={revealedStepId}
+                            setRevealedStepId={setRevealedStepId}
+                            onEdit={startEditCustom}
+                            onDelete={() => setDeleteConfirmOpen(true)}
+                          />
+                        )}
+
+                        {/* 弱入口：没有合适的？自己写一句
+                            仅无 custom answer 且未展开输入框时显示 */}
+                        {!hasCustom && !showInputBox && (
+                          <button
+                            onClick={openCustom}
+                            className="mt-2 self-center rounded-full border border-line bg-line-soft px-4 py-1.5 text-[12px] text-ink-faint transition-colors hover:border-ink-faint hover:text-ink-soft"
+                          >
+                            没有合适的？自己写一句
+                          </button>
+                        )}
+                      </>
                     )}
 
-                    {/* 弱入口：没有合适的？自己写一句
-                        仅无 custom answer 且未展开输入框时显示 */}
-                    {!hasCustom && !showInputBox && (
+                    {/* 多选确认按钮：选中至少 1 项后可继续 */}
+                    {isMulti && (
                       <button
-                        onClick={openCustom}
-                        className="mt-2 self-center rounded-full border border-line bg-line-soft px-4 py-1.5 text-[12px] text-ink-faint transition-colors hover:border-ink-faint hover:text-ink-soft"
+                        onClick={confirmMulti}
+                        disabled={advancing || multiSelected.length === 0}
+                        className={`mt-3 h-12 rounded-2xl px-4 text-[14px] font-medium transition-opacity ${
+                          multiSelected.length === 0 || advancing
+                            ? "bg-line-soft text-ink-faint"
+                            : "bg-action-primary text-action-primary-text hover:opacity-90"
+                        }`}
                       >
-                        没有合适的？自己写一句
+                        {multiSelected.length === 0 ? "选择原因后继续" : "下一步"}
                       </button>
                     )}
                   </div>
@@ -710,6 +1285,24 @@ function RecordWizard({
               </motion.div>
             </AnimatePresence>
           </div>
+
+          {/* 底部固定保存按钮：仅 number 项（体重），水平居中，贴底
+              与主体可滚动区分离，避免与辅助信息挤在一起 */}
+          {isNumber && (
+            <div className="flex justify-center bg-white px-5 pb-8 pt-3">
+              <button
+                onClick={finishLast}
+                disabled={!numberValue.trim()}
+                className={`h-12 w-full max-w-[220px] rounded-xl px-4 text-[14px] font-medium transition-opacity ${
+                  numberValue.trim()
+                    ? "bg-action-primary text-action-primary-text hover:opacity-90"
+                    : "bg-line-soft text-ink-faint"
+                }`}
+              >
+                保存
+              </button>
+            </div>
+          )}
 
           {/* 编辑态轻提示 */}
           {editingCustom && (
@@ -809,11 +1402,11 @@ function CustomAnswerCard({
         transition={{ duration: 0.25, ease }}
         className="relative flex h-14 items-center gap-3 rounded-2xl border border-ink bg-ink px-5 text-canvas"
       >
-        <span className="h-2 w-2 shrink-0 rounded-full bg-canvas" />
+        <span className="h-2 w-2 shrink-0 rounded-full bg-white" />
         <span className="line-clamp-1 flex-1 text-[15px] font-medium tracking-tight">
           {text}
         </span>
-        <span className="shrink-0 rounded-full bg-canvas/15 px-2 py-0.5 text-[10px] text-canvas/80">
+        <span className="shrink-0 rounded-full bg-white/15 px-2 py-0.5 text-[10px] text-canvas/80">
           自由
         </span>
       </motion.div>
@@ -852,7 +1445,7 @@ function DeleteConfirm({
         <div className="mt-4 flex gap-2">
           <button
             onClick={onCancel}
-            className="flex-1 rounded-lg border border-line bg-canvas px-4 py-2.5 text-[13px] font-medium text-ink"
+            className="flex-1 rounded-lg border border-line bg-white px-4 py-2.5 text-[13px] font-medium text-ink"
           >
             取消
           </button>
@@ -918,22 +1511,34 @@ function FreeInputBox({
  * 修改：直接写回 answers（父级 setAnswers），摘要卡即时更新；底部主按钮仍只有「完成记录」。
  * 删除：二次确认 → 丢弃草稿 → onAbort 返回 recordHome，不进入完成页 / 不触发能量。
  *
- * 点击「完成记录」→ onComplete(finalAnswers) → handleSave 判断 isComplete → 进入 result 层
+ * 点击「完成记录」→ onComplete(finalAnswers) → handleSave 判断 isComplete → 保存并回到 recordHome
  * 补充内容写入最后一项的 field（note），不影响 isCompleteCoreRecord 判断。 */
 function RecordConfirmPage({
   type,
   answers,
   setAnswers,
-  onComplete,
+  onFinishRecord,
+  onBackHome,
   onAbort,
 }: {
   type: RecordType;
   answers: Answers;
   setAnswers: Dispatch<SetStateAction<Answers>>;
-  onComplete: (answers: Answers) => void;
+  /** 点击「完成记录」：保存记录 + 发放能量，原地切换 completion 流程，不回首页 */
+  onFinishRecord: (answers: Answers) => void;
+  /** 完成流程后「回到记一下」：返回记一下入口页 */
+  onBackHome: () => void;
+  /** 删除流程：丢弃草稿返回 recordHome */
   onAbort: () => void;
 }) {
+  // 补充说明输入框文本（仅用于输入态；发送后写入 answers[lastStep.field] 并清空）
   const [supplement, setSupplement] = useState("");
+  // 是否正在编辑补充说明（点击「修改补充」后展开输入框）
+  const [editingSupplement, setEditingSupplement] = useState(false);
+  // 完成反馈流程：confirm → toast → done
+  const [completionPhase, setCompletionPhase] = useState<
+    "confirm" | "toast" | "done"
+  >("confirm");
 
   // 修改 / 删除相关状态
   const [editing, setEditing] = useState(false);
@@ -941,16 +1546,38 @@ function RecordConfirmPage({
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
-  const handleComplete = () => {
+  // 最后一步（isLast）的 field，补充说明写入此字段
+  const lastStep = type.steps[type.steps.length - 1];
+  // 当前已保存的补充说明（从 answers 派生）
+  const savedNote =
+    answers[lastStep.field]?.type === "custom"
+      ? answers[lastStep.field]!.value
+      : "";
+
+  // 发送补充说明：仅写入 answers 草稿，不触发完成记录、不发能量、不切流程
+  const handleSaveSupplement = () => {
     const text = supplement.trim();
-    const lastStep = type.steps[type.steps.length - 1];
-    const finalAnswers = text
-      ? {
-          ...answers,
-          [lastStep.field]: { type: "custom" as const, value: text },
-        }
-      : answers;
-    onComplete(finalAnswers);
+    if (!text) return;
+    setAnswers((prev) => ({
+      ...prev,
+      [lastStep.field]: { type: "custom" as const, value: text },
+    }));
+    setSupplement("");
+    setEditingSupplement(false);
+  };
+
+  // 点击「修改补充」：回填已保存的补充说明到输入框，展开编辑态
+  const handleEditSupplement = () => {
+    setSupplement(savedNote);
+    setEditingSupplement(true);
+  };
+
+  // 完成记录：保存（含补充说明）+ 发放能量 + 进入完成反馈流程
+  // 补充说明已由 handleSaveSupplement 写入 answers，这里直接用当前 answers
+  const handleComplete = () => {
+    onFinishRecord(answers);
+    setCompletionPhase("toast");
+    window.setTimeout(() => setCompletionPhase("done"), 1300);
   };
 
   // 摘要卡：从 steps 中提取已填写的非 isLast 字段，附带 step 引用以读取 options
@@ -963,7 +1590,25 @@ function RecordConfirmPage({
       label: labels[s.field] ?? s.question,
       value: answers[s.field]!.label || answers[s.field]!.value,
       answer: answers[s.field]!,
+      // 动态选项解析（如情绪原因词依据情绪状态变化）+ 多选标记
+      options: resolveStepOptions(s, answers),
+      multi: s.multi === true,
     }));
+  // 自由输入补充说明（multi + customField，如情绪原因的 customReason）：只读展示，不参与编辑
+  const customSupplements = type.steps
+    .filter(
+      (s) => s.customField && answers[s.customField]?.type === "custom",
+    )
+    .map((s) => ({
+      field: s.customField!,
+      value: answers[s.customField!]!.value,
+    }));
+  const weightSummaryKg =
+    type.id === "weight" ? parseWeightKg(answers.weightValue?.value) : null;
+  const bmiSummary =
+    weightSummaryKg !== null ? calculateBMI(weightSummaryKg, getUserProfile().heightCm) : null;
+  const bmiSummaryInfo =
+    bmiSummary !== null ? getBmiStatus(bmiSummary) : null;
 
   // 当前编辑的字段对象
   const currentEdit = editingField
@@ -1003,8 +1648,92 @@ function RecordConfirmPage({
   const now = new Date();
   const timeStr = `今天 ${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
 
+  // —— 完成反馈 Toast（inline 覆盖在确认页顶部，不切换独立页面）——
+  // toast：实色能量胶囊，贴顶部展示，1.3s 自动消失，不与下方摘要卡重叠
+  // done：底部按钮切换为「回到记一下」
+  if (completionPhase !== "confirm") {
+    return (
+      <div className="no-scrollbar relative flex flex-1 flex-col overflow-y-auto bg-white px-5">
+        {/* 主标题 */}
+        <h2 className="pt-4 text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
+          这条记录已经完整了
+        </h2>
+
+        {/* 摘要卡 */}
+        <div className="mt-4 rounded-2xl border border-line bg-white px-5 py-4">
+          <div className="text-[11px] uppercase tracking-[0.16em] text-ink-faint">
+            已记录
+          </div>
+          <div className="mt-2 flex flex-col gap-1.5">
+            {summaryItems.map((item) => (
+              <div
+                key={item.field}
+                className="flex gap-2 text-[13px] leading-relaxed"
+              >
+                <span className="shrink-0 text-ink-faint">{item.label}：</span>
+                <span className="text-ink">
+                  {item.value}{item.field === "weightValue" ? " KG" : ""}
+                </span>
+              </div>
+            ))}
+            {customSupplements.map((it) => (
+              <div
+                key={it.field}
+                className="flex gap-2 text-[13px] leading-relaxed"
+              >
+                <span className="shrink-0 text-ink-faint">补充：</span>
+                <span className="text-ink">{it.value}</span>
+              </div>
+            ))}
+            {savedNote && (
+              <div className="flex gap-2 text-[13px] leading-relaxed">
+                <span className="shrink-0 text-ink-faint">补充：</span>
+                <span className="text-ink">{savedNote}</span>
+              </div>
+            )}
+            {bmiSummary !== null && bmiSummaryInfo && getUserProfile().heightCm && (
+              <div className="flex gap-2 text-[13px] leading-relaxed">
+                <span className="shrink-0 text-ink-faint">BMI：</span>
+                <span className="text-ink">{bmiSummary} {bmiSummaryInfo.label}</span>
+              </div>
+            )}
+            <div className="flex gap-2 text-[13px] leading-relaxed">
+              <span className="shrink-0 text-ink-faint">时间：</span>
+              <span className="text-ink">{timeStr}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 底部按钮区 */}
+        <div className="mt-auto pb-6 pt-4">
+          <button
+            onClick={onBackHome}
+            className="w-full rounded-xl bg-action-primary px-4 py-3 text-[14px] font-medium text-action-primary-text transition-opacity hover:opacity-90"
+          >
+            回到记一下
+          </button>
+        </div>
+
+        {/* 能量 Toast：贴顶部实色胶囊，不与摘要卡重叠，1.3s 后原地淡出 */}
+        <AnimatePresence>
+          {completionPhase === "toast" && (
+            <motion.div
+              initial={{ opacity: 0, y: -8, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.96 }}
+              transition={{ duration: 0.25, ease }}
+              className="absolute left-1/2 top-3 z-30 -translate-x-1/2 whitespace-nowrap rounded-full border border-[rgba(177,194,113,0.4)] bg-[#EEF2E4] px-4 py-2 text-[14px] font-semibold tracking-tight text-[#2C3B27] shadow-[0_6px_16px_rgba(44,59,39,0.12)]"
+            >
+              记录收好了 · +{FULL_RECORD_ENERGY_REWARD} 能量
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-1 flex-col overflow-y-auto px-5">
+    <div className="no-scrollbar flex flex-1 flex-col overflow-y-auto bg-white px-5">
       {/* 主标题 */}
       <h2 className="pt-4 text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
         这条记录已经完整了
@@ -1096,9 +1825,34 @@ function RecordConfirmPage({
                 className="flex gap-2 text-[13px] leading-relaxed"
               >
                 <span className="shrink-0 text-ink-faint">{item.label}：</span>
-                <span className="text-ink">{item.value}</span>
+                <span className="text-ink">
+                  {item.value}{item.field === "weightValue" ? " KG" : ""}
+                </span>
               </div>
             ),
+          )}
+          {/* 自由输入补充说明（如情绪原因的 customReason）：只读展示，不可编辑 */}
+          {customSupplements.map((it) => (
+            <div
+              key={it.field}
+              className="flex gap-2 text-[13px] leading-relaxed"
+            >
+              <span className="shrink-0 text-ink-faint">补充：</span>
+              <span className="text-ink">{it.value}</span>
+            </div>
+          ))}
+          {/* 补充说明（lastStep 字段）：确认态展示，编辑态不展示（由下方输入区管理） */}
+          {!editing && savedNote && (
+            <div className="flex gap-2 text-[13px] leading-relaxed">
+              <span className="shrink-0 text-ink-faint">补充：</span>
+              <span className="text-ink">{savedNote}</span>
+            </div>
+          )}
+          {bmiSummary !== null && bmiSummaryInfo && getUserProfile().heightCm && (
+            <div className="flex gap-2 text-[13px] leading-relaxed">
+              <span className="shrink-0 text-ink-faint">BMI：</span>
+              <span className="text-ink">{bmiSummary} {bmiSummaryInfo.label}</span>
+            </div>
           )}
           {/* 时间字段（仅展示，不可编辑） */}
           <div className="flex gap-2 text-[13px] leading-relaxed">
@@ -1108,25 +1862,38 @@ function RecordConfirmPage({
         </div>
       </div>
 
-      {/* 可选补充区 */}
+      {/* 可选补充区：方案 A
+          - 无补充说明 / 编辑态：显示输入框，发送后写入 answers 草稿
+          - 已有补充说明且非编辑态：显示「补充说明已添加 + 修改补充」入口 */}
       <div className="mt-5">
-        <p className="text-[13px] text-ink-faint">想补一句也可以。</p>
-        <div className="mt-2">
-          <VoiceInputBar
-            value={supplement}
-            onChange={setSupplement}
-            onSend={handleComplete}
-            canSend={true}
-            placeholder="自己写一句…"
-          />
-        </div>
+        {savedNote && !editingSupplement ? (
+          <div className="flex items-center justify-between rounded-xl border border-line bg-line-soft/30 px-4 py-3">
+            <span className="text-[13px] text-ink-faint">补充说明已添加</span>
+            <button
+              onClick={handleEditSupplement}
+              className="text-[13px] font-medium text-ink-soft underline underline-offset-4 transition-colors hover:text-ink"
+            >
+              修改补充
+            </button>
+          </div>
+        ) : (
+          <div className="mt-2">
+            <VoiceInputBar
+              value={supplement}
+              onChange={setSupplement}
+              onSend={handleSaveSupplement}
+              canSend={supplement.trim().length > 0}
+              placeholder="想补一句也可以..."
+            />
+          </div>
+        )}
       </div>
 
       {/* 底部主按钮：完成记录（始终可点） */}
       <div className="mt-auto pb-6 pt-4">
         <button
           onClick={handleComplete}
-          className="w-full rounded-xl bg-accent px-4 py-3 text-[14px] font-medium text-canvas transition-opacity hover:opacity-90"
+          className="w-full rounded-xl bg-action-primary px-4 py-3 text-[14px] font-medium text-action-primary-text transition-opacity hover:opacity-90"
         >
           完成记录
         </button>
@@ -1161,8 +1928,9 @@ function RecordConfirmPage({
 
 /* —— 字段编辑底部浮层 ——
  * 从底部弹出，只修改当前字段：
- *   - 枚举字段：纵向选项列表（点击立即写回 + 关闭浮层）
- *   - 自由输入字段 / 枚举字段自定义覆盖：底部文本输入框 + 发送按钮
+ *   - 枚举字段（单选）：纵向选项列表（点击立即写回 + 关闭浮层）
+ *   - 枚举字段（多选）：toggle 选择 + 「完成」按钮，拼接 value/label 写回
+ *   - 自由输入字段 / 枚举字段自定义覆盖：底部文本输入框 + 发送按钮（多选项不提供）
  * 选择 / 发送后立即写回 answers（父级 setAnswers），摘要卡即时刷新。 */
 function FieldEditSheet({
   item,
@@ -1176,18 +1944,38 @@ function FieldEditSheet({
     label: string;
     value: string;
     answer: AnswerEntry;
+    options: StepOption[];
+    multi: boolean;
   };
   onPickOption: (value: string, label: string) => void;
   onSaveCustom: (text: string) => void;
   onClose: () => void;
 }) {
-  const options = item.step.options ?? [];
+  const options = item.options;
+  const isMulti = item.multi;
+  const isMoon = item.step.moonPhase === true;
   const currentOptionValue =
     item.answer.type === "option" ? item.answer.value : null;
+
+  // 多选本地状态：从已存答案回填（value 以 | 拼接）
+  const [multiSelected, setMultiSelected] = useState<string[]>(() =>
+    isMulti && item.answer.type === "option" && item.answer.value
+      ? item.answer.value.split("|").filter(Boolean)
+      : [],
+  );
   // 自定义文本初始值：当前已是 custom 答案时回填，否则空
   const [customText, setCustomText] = useState(
     item.answer.type === "custom" ? item.answer.value : "",
   );
+
+  // 多选确认：拼接 value（|）与 label（、）写回 + 关闭浮层
+  const confirmMulti = () => {
+    if (multiSelected.length === 0) return;
+    const labels = multiSelected
+      .map((v) => options.find((o) => o.value === v)?.label ?? v)
+      .join("、");
+    onPickOption(multiSelected.join("|"), labels);
+  };
 
   return (
     <motion.div
@@ -1217,22 +2005,47 @@ function FieldEditSheet({
         {options.length > 0 && (
           <div className="flex flex-col gap-2">
             {options.map((opt) => {
-              const active = currentOptionValue === opt.value;
+              const active = isMulti
+                ? multiSelected.includes(opt.value)
+                : currentOptionValue === opt.value;
               return (
                 <button
                   key={opt.value}
-                  onClick={() => onPickOption(opt.value, opt.label)}
+                  onClick={() =>
+                    isMulti
+                      ? setMultiSelected((prev) =>
+                          prev.includes(opt.value)
+                            ? prev.filter((v) => v !== opt.value)
+                            : [...prev, opt.value],
+                        )
+                      : onPickOption(opt.value, opt.label)
+                  }
                   className={`flex h-12 items-center gap-3 rounded-xl border px-4 text-left transition-colors ${
                     active
                       ? "border-ink bg-ink text-canvas"
                       : "border-line bg-white text-ink hover:border-ink-faint"
                   }`}
                 >
-                  <span
-                    className={`h-2 w-2 shrink-0 rounded-full ${
-                      active ? "bg-canvas" : "bg-ink-faint"
-                    }`}
-                  />
+                  {/* 左侧指示符 */}
+                  {isMulti ? (
+                    <span
+                      className={`grid h-[18px] w-[18px] shrink-0 place-items-center rounded-[5px] border ${
+                        active ? "border-canvas bg-canvas" : "border-ink-faint"
+                      }`}
+                    >
+                      {active && (
+                        <Check className="h-3 w-3 text-ink" strokeWidth={2.4} />
+                      )}
+                    </span>
+                  ) : isMoon ? (
+                    <MoonPhaseIcon level={intensityValueToLevel[opt.value] ?? 3} size={16} />
+                  ) : (
+                    <span
+                      className={`h-2 w-2 shrink-0 rounded-full ${
+                        active ? "bg-white" : "bg-ink-faint"
+                      }`}
+                    />
+                  )}
                   <span className="text-[14px] font-medium tracking-tight">
                     {opt.label}
                   </span>
@@ -1242,16 +2055,33 @@ function FieldEditSheet({
           </div>
         )}
 
-        {/* 自定义文本输入：用于自由输入字段，或对枚举字段自定义覆盖 */}
-        <VoiceInputBar
-          value={customText}
-          onChange={setCustomText}
-          onSend={() => onSaveCustom(customText)}
-          canSend={customText.trim().length > 0}
-          placeholder="或自己写一句…"
-          sendButtonClassName="bg-accent text-canvas"
-          className="mt-3 rounded-xl border border-line bg-white p-2"
-        />
+        {/* 多选确认按钮 */}
+        {isMulti && (
+          <button
+            onClick={confirmMulti}
+            disabled={multiSelected.length === 0}
+            className={`mt-3 h-11 w-full rounded-xl px-4 text-[14px] font-medium transition-opacity ${
+              multiSelected.length === 0
+                ? "bg-line-soft text-ink-faint"
+                : "bg-action-primary text-action-primary-text hover:opacity-90"
+            }`}
+          >
+            {multiSelected.length === 0 ? "选择后完成" : "完成"}
+          </button>
+        )}
+
+        {/* 自定义文本输入：用于自由输入字段，或对枚举字段自定义覆盖（多选项不提供） */}
+        {!isMulti && (
+          <VoiceInputBar
+            value={customText}
+            onChange={setCustomText}
+            onSend={() => onSaveCustom(customText)}
+            canSend={customText.trim().length > 0}
+            placeholder="或自己写一句…"
+            sendButtonClassName="bg-action-primary text-action-primary-text"
+            className="mt-3"
+          />
+        )}
       </motion.div>
     </motion.div>
   );
@@ -1291,7 +2121,7 @@ function DeleteRecordConfirm({
         <div className="mt-4 flex gap-2">
           <button
             onClick={onCancel}
-            className="flex-1 rounded-lg border border-line bg-canvas px-4 py-2.5 text-[13px] font-medium text-ink"
+            className="flex-1 rounded-lg border border-line bg-white px-4 py-2.5 text-[13px] font-medium text-ink"
           >
             取消
           </button>
@@ -1304,120 +2134,5 @@ function DeleteRecordConfirm({
         </div>
       </motion.div>
     </motion.div>
-  );
-}
-
-/* —— 第三层：recordResult ——
- * 基础记录：已记下。
- * 完整记录：这条记录完整了，获得 5 点能量。
- * 能量用途占位文案：可用于兑换在在装扮、房间小物件、轻社交礼物。
- * 不显示：还差几条 / 连续天数 / 分数 / 趋势 / 评价性反馈。
- *
- * 主按钮只有「返回记一下」，不再有并列的「回到首页」。
- *
- * 快捷入口提示：满足触发条件后在主按钮下方低优先级展示
- *   文案：「最近经常用到「记一下」，要不要放到首页？」
- *   操作：放到首页 / 暂不（7 天内不再提示）
- *   点击「放到首页」→ 开启快捷入口 + 显示「已放到首页」轻反馈 */
-function RecordResult({
-  complete,
-  onBackHome,
-  showShortcutHint,
-  onAcceptShortcut,
-  onDismissShortcutHint,
-}: {
-  complete: boolean;
-  onBackHome: () => void;
-  showShortcutHint: boolean;
-  onAcceptShortcut: () => void;
-  onDismissShortcutHint: () => void;
-}) {
-  // 「已放到首页」轻反馈
-  const [placed, setPlaced] = useState(false);
-
-  const handlePlace = () => {
-    onAcceptShortcut();
-    setPlaced(true);
-  };
-
-  return (
-    <div className="flex h-full flex-col items-center justify-center gap-6 px-8">
-      <ZaizaiRive className="h-28 w-28" />
-
-      {complete ? (
-        <>
-          <h2 className="text-[17px] font-semibold tracking-tight text-ink">
-            这条记录完整了
-          </h2>
-          <div className="flex items-center gap-2 rounded-full bg-line-soft px-5 py-2">
-            <Sparkles className="h-4 w-4 text-ink-soft" strokeWidth={1.6} />
-            <span className="text-[14px] font-medium text-ink">
-              获得 5 点能量
-            </span>
-          </div>
-          <p className="text-center text-[12px] leading-relaxed text-ink-faint">
-            可用于兑换在在装扮、房间小物件、轻社交礼物。
-          </p>
-        </>
-      ) : (
-        <h2 className="text-[17px] font-semibold tracking-tight text-ink">
-          已记下
-        </h2>
-      )}
-
-      {/* 主按钮：只有「返回记一下」 */}
-      <button
-        onClick={onBackHome}
-        className="w-full rounded-lg bg-accent px-4 py-3 text-[13px] font-medium text-canvas"
-      >
-        返回"记一下"
-      </button>
-
-      {/* 已放到首页轻反馈（点击后短暂展示） */}
-      <AnimatePresence>
-        {placed && (
-          <motion.p
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25, ease }}
-            className="text-[12px] text-ink-faint"
-          >
-            已放到首页
-          </motion.p>
-        )}
-      </AnimatePresence>
-
-      {/* 快捷入口提示：低优先级，在主按钮下方 */}
-      <AnimatePresence>
-        {showShortcutHint && !placed && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 4 }}
-            transition={{ duration: 0.28, ease }}
-            className="w-full rounded-2xl border border-line bg-line-soft px-5 py-4"
-          >
-            <p className="text-center text-[13px] leading-relaxed text-ink-soft">
-              最近经常用到「记一下」，要不要放到首页？
-            </p>
-            <div className="mt-3 flex gap-2">
-              <button
-                onClick={handlePlace}
-                className="flex-1 rounded-lg bg-accent px-4 py-2.5 text-[13px] font-medium text-canvas"
-              >
-                放到首页
-              </button>
-              <button
-                onClick={onDismissShortcutHint}
-                className="flex-1 rounded-lg border border-line bg-canvas px-4 py-2.5 text-[13px] font-medium text-ink"
-              >
-                暂不
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
   );
 }

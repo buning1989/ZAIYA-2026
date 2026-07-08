@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ArrowRight, Send } from "lucide-react";
-import ZaizaiRive from "./ZaizaiRive";
+import ZaizaiVideo from "./ZaizaiVideo";
 import AppMainSurface, { PhoneStatusBar } from "./AppMainSurface";
 
 type Props = { onClose: () => void };
@@ -79,13 +79,13 @@ export default function Demo({ onClose }: Props) {
       aria-modal="true"
       aria-label="在呀 Demo 演示"
       tabIndex={-1}
-      className="fixed inset-0 z-[100] grid place-items-center bg-canvas p-4 focus:outline-none"
+      className="fixed inset-0 z-[100] grid place-items-center bg-white p-4 focus:outline-none"
     >
       {/* 手机整体：宽高双约束，桌面约 390×780，移动端不裁边 */}
       <div className="aspect-[9/18] w-[min(390px,calc(100vw-32px),calc(50vh-16px))]">
         {/* 边框：轻薄、柔和圆角、轻阴影 */}
         <div className="h-full w-full rounded-[40px] border-[7px] border-ink bg-ink p-[2px] shadow-[0_8px_40px_-12px_rgba(0,0,0,0.18)]">
-          <div className="relative h-full w-full overflow-hidden rounded-[33px] bg-canvas">
+          <div className="no-scrollbar relative h-full w-full overflow-hidden rounded-[33px] bg-white">
             {/* 状态栏：首页由 AppMainSurface 自带（避免重叠）；非首页用 PhoneStatusBar + 关闭按钮 */}
             {screen !== 1 && (
               <PhoneStatusBar
@@ -139,13 +139,13 @@ function IntroScreen({ onNext }: { onNext: () => void }) {
   }, [onNext]);
 
   return (
-    <div className="flex h-full items-center justify-center bg-canvas">
+    <div className="flex h-full items-center justify-center bg-white">
       <motion.div
         initial={{ opacity: 0, scale: 0.85 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8, ease }}
       >
-        <ZaizaiRive className="h-44 w-44" />
+        <ZaizaiVideo className="h-44 w-44" />
       </motion.div>
     </div>
   );
@@ -183,7 +183,7 @@ function StoryScreen({ onNext }: { onNext: () => void }) {
 
       {/* 在在在场 */}
       <div className="flex flex-1 items-center justify-center">
-        <ZaizaiRive
+        <ZaizaiVideo
           className={`h-44 w-44 transition-opacity ${
             current.who === "zaizai" ? "opacity-100" : "opacity-70"
           }`}
@@ -228,7 +228,7 @@ function TimelineScreen({ onNext }: { onNext: () => void }) {
   const items = tab === "user" ? timelineUser : timelineBrief;
 
   return (
-    <div className="flex h-full flex-col bg-canvas">
+    <div className="flex h-full flex-col bg-white">
       <div className="px-6 pt-14">
         <div className="text-[11px] uppercase tracking-[0.16em] text-ink-faint">
           时间线
@@ -247,7 +247,7 @@ function TimelineScreen({ onNext }: { onNext: () => void }) {
               onClick={() => setTab(t.key)}
               className={`flex-1 rounded-md px-3 py-2 text-[12px] font-medium transition-colors ${
                 tab === t.key
-                  ? "bg-canvas text-ink shadow-sm"
+                  ? "bg-white text-ink shadow-sm"
                   : "text-ink-soft"
               }`}
             >
@@ -258,7 +258,7 @@ function TimelineScreen({ onNext }: { onNext: () => void }) {
       </div>
 
       {/* 时间线条目 */}
-      <div className="flex-1 overflow-y-auto px-6 py-6">
+      <div className="no-scrollbar flex-1 overflow-y-auto px-6 py-6">
         <div className="flex flex-col">
           {items.map((item, i) => (
             <motion.div
@@ -281,7 +281,7 @@ function TimelineScreen({ onNext }: { onNext: () => void }) {
       <div className="p-6">
         <button
           onClick={onNext}
-          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-accent px-4 py-3 text-[13px] font-medium text-canvas"
+          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-action-primary px-4 py-3 text-[13px] font-medium text-action-primary-text"
         >
           继续
           <ArrowRight className="h-4 w-4" />
@@ -318,7 +318,7 @@ function ValidationScreen({ onNext }: { onNext: () => void }) {
   };
 
   return (
-    <div className="flex h-full flex-col bg-canvas px-6 pt-14">
+    <div className="flex h-full flex-col bg-white px-6 pt-14">
       <div className="text-[11px] uppercase tracking-[0.16em] text-ink-faint">
         验证点
       </div>
@@ -328,7 +328,7 @@ function ValidationScreen({ onNext }: { onNext: () => void }) {
 
       {/* 在在动画 */}
       <div className="flex flex-1 items-center justify-center">
-        <ZaizaiRive className="h-40 w-40" />
+        <ZaizaiVideo className="h-40 w-40" />
       </div>
 
       {/* 回复（浮在场景里） */}
@@ -344,7 +344,7 @@ function ValidationScreen({ onNext }: { onNext: () => void }) {
 
       {/* 输入区 */}
       <div className="pb-8">
-        <div className="flex items-center gap-2 rounded-xl border border-line bg-canvas p-2">
+        <div className="flex items-center gap-2 rounded-xl border border-line bg-white p-2">
           <input
             value={value}
             onChange={(e) => setValue(e.target.value)}
@@ -357,7 +357,7 @@ function ValidationScreen({ onNext }: { onNext: () => void }) {
             onClick={submit}
             disabled={loading || !!reply || !value.trim()}
             aria-label="发送"
-            className="grid h-9 w-9 place-items-center rounded-lg bg-accent text-canvas transition-opacity disabled:opacity-30"
+            className="grid h-9 w-9 place-items-center rounded-lg bg-action-primary text-action-primary-text transition-opacity disabled:opacity-30"
           >
             <Send className="h-4 w-4" />
           </button>
@@ -387,20 +387,20 @@ function ClosingScreen({
 }) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-8 bg-line-soft px-10">
-      <ZaizaiRive className="h-40 w-40" />
+      <ZaizaiVideo className="h-40 w-40" />
       <p className="text-center text-[16px] leading-relaxed text-ink">
         在呀不替代医生或咨询师。它把起床、吃饭、睡眠、情绪波动这些生活节点留下来，让下一次复诊或沟通前，状态更容易被看见。
       </p>
       <div className="flex w-full flex-col gap-2">
         <button
           onClick={onRestart}
-          className="w-full rounded-lg bg-accent px-4 py-3 text-[13px] font-medium text-canvas"
+          className="w-full rounded-lg bg-action-primary px-4 py-3 text-[13px] font-medium text-action-primary-text"
         >
           重新开始
         </button>
         <button
           onClick={onClose}
-          className="w-full rounded-lg border border-line bg-canvas px-4 py-3 text-[13px] font-medium text-ink"
+          className="w-full rounded-lg border border-line bg-white px-4 py-3 text-[13px] font-medium text-ink"
         >
           关闭
         </button>

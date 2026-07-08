@@ -39,7 +39,7 @@ export default function ClinicalFramework() {
         <div className="mt-14 grid gap-px overflow-hidden rounded-xl border border-line bg-line md:grid-cols-3">
           {frameworks.map((f, i) => (
             <Reveal key={f.code} delay={i * 0.08}>
-              <div className="flex h-full flex-col gap-3 bg-canvas p-8">
+              <div className="flex h-full flex-col gap-3 bg-white p-8">
                 <div className="font-display text-[40px] font-semibold tracking-tightest text-ink">
                   {f.code}
                 </div>

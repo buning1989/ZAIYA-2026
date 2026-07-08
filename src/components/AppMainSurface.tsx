@@ -4,7 +4,6 @@ import {
   Menu,
   MessageCircle,
   Pause,
-  Play,
   BookOpen,
   Users,
   Wind,
@@ -15,19 +14,20 @@ import {
   Leaf,
   ChevronLeft,
 } from "lucide-react";
-import ZaizaiRive from "./ZaizaiRive";
 import VoiceInputBar from "./VoiceInputBar";
 import {
   PresenceSelectContent,
   PresenceRoomContent,
   type SceneId,
 } from "./PresenceRoom";
-import FeaturePageTransition, { CloseButton } from "./FeaturePageTransition";
+import FeaturePageTransition, { CollapseButton } from "./FeaturePageTransition";
 import {
   MoreContent,
   MoreDetailContent,
   type MoreItemId,
 } from "./MoreMenu";
+import ZaizaiVideo, { ZAIZAI_RELIEF_VIDEO_SRC } from "./ZaizaiVideo";
+import ZaiyaWakeAnimation from "./ZaiyaWakeAnimation";
 import type { Answers, RecordEntry, RecordTypeId } from "@/data/record";
 import type { OrganizeHistoryEntry } from "@/data/organize";
 
@@ -121,7 +121,7 @@ export function PhoneStatusBar({
  * home：默认首页结构（在在居中 + 四角图标）
  * dialog：在在上移到中上部并固定，下方展开对话内容区，底部出现输入区
  * reliefSelect：在在上移，首页 icon 弱化，下方出现 2×3 缓解方法选择区
- * reliefPractice：在在保留，中部出现节奏动画，底部出现控制区（暂停 / 长按退出）
+ * reliefPractice：在在保留，中部出现节奏动画，底部仅一个暂停按钮；暂停态展开继续 / 回主页
  * presenceSelect：在在上移到中上部并保留气泡，下方出现 4 个场景卡片（共同在场）
  * presenceRoom：在在缩小保留在顶部，下方出现 6 个角色位 + 轻互动按钮 */
 type SurfaceMode =
@@ -192,6 +192,8 @@ export default function AppMainSurface({
   const [reliefMethod, setReliefMethod] = useState<ReliefMethodId | null>(null);
   const [paused, setPaused] = useState(false);
   const rhythmControls = useAnimationControls();
+  // —— 一次性下滑提示：首次进入练习态时短暂显示，淡出后不再强提示 ——
+  const [showSwipeHint, setShowSwipeHint] = useState(false);
 
   // —— 共同在场状态 ——
   const [presenceScene, setPresenceScene] = useState<SceneId | null>(null);
@@ -234,7 +236,19 @@ export default function AppMainSurface({
   // recordHistory 追踪每次记录的类型/时间/是否完整/来源
   // shortcutPromptDismissedAt 记录「暂不」时间戳，7 天内不再提示
   // hintVisibleForResult 控制当前完成页是否展示提示（满足条件时置 true）
-  const [recordHistory, setRecordHistory] = useState<RecordEntry[]>([]);
+  // 初始含一条 mock 体重历史记录（55.0 KG），用于「记一下 - 体重」页调节器默认值
+  const [recordHistory, setRecordHistory] = useState<RecordEntry[]>(() => [
+    {
+      id: "mock-weight-history",
+      type: "weight",
+      weight: 55.0,
+      completedAt: Date.parse("2026-07-07T20:00:00+08:00"),
+      isComplete: true,
+      entrySource: "more",
+      status: "complete",
+      savedBy: "wizard",
+    },
+  ]);
   // —— 「帮我整理」历史记录（跨页面持久，AppMainSurface 持有） ——
   const [organizeHistory, setOrganizeHistory] = useState<
     OrganizeHistoryEntry[]
@@ -331,9 +345,11 @@ export default function AppMainSurface({
   };
 
   // 由 RecordFlow 在每次完成时回调
+  // weightValue：体重记录专用，保存当前体重值（KG），用于下次进入体重页的默认值
   const handleRecordComplete = (e: {
     typeId: RecordTypeId;
     isComplete: boolean;
+    weightValue?: number;
   }) => {
     const entry: RecordEntry = {
       id: Math.random().toString(36).slice(2),
@@ -343,6 +359,9 @@ export default function AppMainSurface({
       entrySource: recordEntrySource,
       status: "complete",
       savedBy: "wizard",
+      ...(e.typeId === "weight" && typeof e.weightValue === "number"
+        ? { weight: e.weightValue }
+        : {}),
     };
     const newHistory = [...recordHistory, entry];
     setRecordHistory(newHistory);
@@ -455,6 +474,28 @@ export default function AppMainSurface({
     };
   }, [mode, rhythmControls]);
 
+  // 一次性下滑提示：仅首次进入练习态时显示 1.5s，localStorage 持久化「已展示」标记。
+  // 不每次强提示，避免成为页面噪音。
+  useEffect(() => {
+    if (mode !== "reliefPractice") return;
+    let shown = false;
+    try {
+      shown =
+        window.localStorage.getItem("zaiya_relief_swipe_hint_shown") === "true";
+    } catch {
+      // 忽略读取失败
+    }
+    if (shown) return;
+    setShowSwipeHint(true);
+    try {
+      window.localStorage.setItem("zaiya_relief_swipe_hint_shown", "true");
+    } catch {
+      // 忽略写入失败
+    }
+    const t = window.setTimeout(() => setShowSwipeHint(false), 1500);
+    return () => window.clearTimeout(t);
+  }, [mode]);
+
   // 本地模拟发送：不接 LLM / API，仅样式与反馈
   const send = () => {
     const text = input.trim();
@@ -486,17 +527,20 @@ export default function AppMainSurface({
     setPaused(false);
   };
 
-  const togglePause = () => {
-    if (paused) {
-      setPaused(false);
-      rhythmControls.start({
-        scale: [0.9, 1.15, 0.9],
-        transition: { duration: 8, repeat: Infinity, ease: "easeInOut" },
-      });
-    } else {
-      setPaused(true);
-      rhythmControls.stop();
-    }
+  // 进入暂停态：停止节奏动画，展示暂停态操作（继续练习 / 回到主页）。
+  // 不直接退出页面，也不在主练习页同时出现多个退出按钮。
+  const enterPause = () => {
+    setPaused(true);
+    rhythmControls.stop();
+  };
+
+  // 继续练习：关闭暂停态，恢复节奏动画。
+  const resumePractice = () => {
+    setPaused(false);
+    rhythmControls.start({
+      scale: [0.9, 1.15, 0.9],
+      transition: { duration: 8, repeat: Infinity, ease: "easeInOut" },
+    });
   };
 
   // 在在尺寸：必须给出明确宽高，否则 Rive canvas 会塌陷为 0
@@ -507,6 +551,11 @@ export default function AppMainSurface({
   const resolvedZaizaiClassName =
     zaizaiClassName ??
     (variant === "immersive" ? "h-[22vh] w-[22vh]" : "h-64 w-64");
+
+  // 正念练习页主视觉在在尺寸（与隐私页装饰视频分离，独立管理）
+  // 容器 120px → ZaizaiVideo 内部 video h-[170%] ≈ 204px，配合 scale 1 显示约 200px
+  // 满足"容器宽度 190–210px"要求；不超过内容宽度 58%（390×0.58≈226px）
+  const mindfulnessZaizaiClassName = "h-[120px] w-[120px]";
 
   // 核心按钮：preview 仅瞬时反馈；interactive 触发回调
   // id 0 = AI对话 → 进入首页内对话模式（不跳转下一屏）
@@ -567,13 +616,20 @@ export default function AppMainSurface({
 
       {/* 在在 + 气泡：home 居中(top 38%)；非 home 上移到中上部(top 15%)并固定。
           presenceRoom 下在在完全退出（不渲染），让共同场成为唯一视觉主体，
-          避免“AI 陪着看别人”的双中心感。inset-x-0 让容器撑满宽度 */}
+          避免“AI 陪着看别人”的双中心感。inset-x-0 让容器撑满宽度
+          reliefPractice 模式：top 16% + scale 1，主视觉在在尺寸独立管理，
+          不与 reliefSelect 共用 scale 0.65，避免压缩练习圆形空间 */}
       <motion.div
         className="absolute inset-x-0 z-10 flex flex-col items-center"
         initial={false}
         animate={{
-          top: mode === "home" ? "38%" : "15%",
-          scale: mode === "home" ? 1 : 0.65,
+          top:
+            mode === "home"
+              ? "38%"
+              : mode === "reliefPractice"
+                ? "16%"
+                : "15%",
+          scale: mode === "home" ? 1 : mode === "reliefPractice" ? 1 : 0.65,
         }}
         transition={{
           type: "spring",
@@ -583,7 +639,15 @@ export default function AppMainSurface({
       >
         {mode !== "presenceRoom" && (
           <div className="relative">
-            <ZaizaiRive className={resolvedZaizaiClassName} />
+            {mode === "reliefPractice" ? (
+              <ZaizaiVideo
+                className={mindfulnessZaizaiClassName}
+                src={ZAIZAI_RELIEF_VIDEO_SRC}
+                shadow={false}
+              />
+            ) : (
+              <ZaiyaWakeAnimation variant="phone-app" />
+            )}
           </div>
         )}
       </motion.div>
@@ -610,7 +674,7 @@ export default function AppMainSurface({
 
       {/* home 模式：四角图标；非 home 模式（dialog / reliefSelect / reliefPractice）淡出并禁用点击 */}
       <div
-        className={`absolute inset-0 transition-opacity duration-300 ${
+        className={`absolute inset-0 bg-white transition-opacity duration-300 ${
           mode === "home" ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
       >
@@ -690,8 +754,6 @@ export default function AppMainSurface({
             pageKey="dialog"
             onExit={closeDialog}
           >
-            <CloseButton onClick={closeDialog} ariaLabel="关闭对话" />
-
             {/* 对话内容区：位于在在下方、输入区上方，可滚动 */}
             <motion.div
               ref={scrollRef}
@@ -699,7 +761,7 @@ export default function AppMainSurface({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 12 }}
               transition={{ duration: 0.35, ease, delay: 0.05 }}
-              className="absolute inset-x-0 overflow-y-auto px-6"
+              className="no-scrollbar absolute inset-x-0 overflow-y-auto px-6"
               style={{ top: "44%", bottom: "92px" }}
             >
               {messages.length === 0 ? (
@@ -736,23 +798,44 @@ export default function AppMainSurface({
               )}
             </motion.div>
 
-            {/* 输入区：文字输入 / 语音 / 发送 */}
+            {/* 输入区：收起按钮 + 文字输入 / 语音 / 发送 */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.35, ease }}
-              className="absolute inset-x-0 bottom-0 px-4 pb-6"
+              className="absolute inset-x-0 bottom-0 flex items-center gap-2.5 px-4 pb-6"
             >
-              <VoiceInputBar
-                value={input}
-                onChange={setInput}
-                onSend={send}
-                canSend={input.trim().length > 0 && !sending}
-                placeholder="说点什么…"
-                sendButtonClassName="bg-accent text-canvas"
-                className="rounded-xl border border-line bg-white p-2"
-              />
+              {/* 左侧收起按钮：独立圆形，向下箭头 */}
+              <button
+                onClick={closeDialog}
+                aria-label="收起对话"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-line bg-white text-ink-faint transition-colors hover:text-ink-soft active:bg-line-soft"
+              >
+                <svg
+                  width="16"
+                  height="10"
+                  viewBox="0 0 18 10"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M2 2l7 6 7-6" />
+                </svg>
+              </button>
+              <div className="flex-1">
+                <VoiceInputBar
+                  value={input}
+                  onChange={setInput}
+                  onSend={send}
+                  canSend={input.trim().length > 0 && !sending}
+                  placeholder="说点什么…"
+                  sendButtonClassName="bg-action-primary text-action-primary-text"
+                  className="rounded-xl border border-line bg-white p-2"
+                />
+              </div>
             </motion.div>
           </FeaturePageTransition>
         )}
@@ -766,8 +849,6 @@ export default function AppMainSurface({
             pageKey="reliefSelect"
             onExit={() => setMode("home")}
           >
-            <CloseButton onClick={() => setMode("home")} ariaLabel="关闭缓解" />
-
             {/* 选择区：2×3 网格，3 启用 + 3 占位（结构预留扩展到 6 个） */}
             <motion.div
               initial={{ opacity: 0, y: 16 }}
@@ -790,11 +871,16 @@ export default function AppMainSurface({
                 ))}
               </div>
             </motion.div>
+
+            {/* 底部中央收起按钮 */}
+            <CollapseButton onClick={() => setMode("home")} ariaLabel="收起缓解" />
           </FeaturePageTransition>
         )}
       </AnimatePresence>
 
-      {/* reliefPractice 模式：练习节奏区 + 底部控制区（首页内展开，非独立页面） */}
+      {/* reliefPractice 模式：练习节奏区 + 底部单一暂停控件（首页内展开，非独立页面）
+          * 信息层级精简：主练习页只保留一个暂停按钮；
+          * 退出/收起入口统一收进「暂停态」处理；下滑手势返回主页（语义为「收起练习」）。 */}
       <AnimatePresence>
         {mode === "reliefPractice" && (
           <FeaturePageTransition
@@ -802,63 +888,96 @@ export default function AppMainSurface({
             pageKey="reliefPractice"
             onExit={exitRelief}
           >
-            <CloseButton onClick={exitRelief} ariaLabel="关闭练习" />
-
-            {/* 中部练习节奏区域：在在下方，圆形轻微放大缩小（非真实呼吸算法） */}
+            {/* 中部练习节奏区域：在在下方，圆形轻微放大缩小（非真实呼吸算法）。
+                中心练习圆形保持视觉主体地位，标题 / 圆形 / 引导文案 / 暂停按钮之间留出呼吸感。
+                top 35%：在在底部（约 295px）与圆形顶部（约 309px）保持 ~14-22px 间距，
+                圆形中心（约 373px）接近页面视觉中心（390px）。 */}
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 16 }}
               transition={{ duration: 0.35, ease, delay: 0.05 }}
               className="absolute inset-x-0 flex flex-col items-center"
-              style={{ top: "46%" }}
+              style={{ top: "35%" }}
             >
-              {/* 当前方法名（极简，仅标示所选方法） */}
+              {/* 标题：当前方法名（极简，仅标示所选方法） */}
               {reliefMethod && (
-                <span className="mb-5 text-[12px] tracking-wide text-ink-faint">
+                <span className="mb-5 text-[13px] tracking-wide text-ink-soft">
                   {reliefMethods.find((m) => m.id === reliefMethod)?.label}
                 </span>
               )}
+              {/* 中心区域：正念练习视觉圆形 */}
               <motion.div
                 animate={rhythmControls}
                 className="h-32 w-32 rounded-full border border-line bg-white/60"
               />
-              <p className="mt-6 max-w-[220px] text-center text-[13px] leading-relaxed text-ink-soft">
+              {/* 引导文案：一句当前练习提示，圆形下方 32px 呼吸感 */}
+              <p className="mt-8 max-w-[220px] text-center text-[13px] leading-relaxed text-ink-soft">
                 跟着圆慢一点。能停下来，就已经够了。
               </p>
             </motion.div>
 
-            {/* 底部控制区：暂停 / 继续 · 长按退出 · 弱化结束入口 */}
+            {/* 一次性轻提示：首次进入时显示「下滑可以回到主页」，1.5s 后自动淡出，不常驻。
+                字号小、颜色浅，不占据主要视觉层级。 */}
+            <AnimatePresence>
+              {showSwipeHint && (
+                <motion.div
+                  key="swipe-hint"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.4, ease }}
+                  className="pointer-events-none absolute inset-x-0 z-20 flex justify-center px-8"
+                  style={{ bottom: "120px" }}
+                >
+                  <p className="text-[12px] text-ink-faint">下滑可以回到主页</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* 底部控制区：练习中仅一个暂停按钮；暂停态展开「继续练习 / 回到主页」。
+                不在主练习页同时出现多个退出按钮。 */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.35, ease }}
-              className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-4 px-6 pb-8"
+              className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-8"
             >
-              {/* 暂停 / 继续 */}
-              <button
-                onClick={togglePause}
-                aria-label={paused ? "继续" : "暂停"}
-                className="grid h-11 w-11 place-items-center rounded-full border border-line bg-white text-ink transition-colors hover:border-ink-faint"
-              >
-                {paused ? (
-                  <Play className="h-5 w-5" />
-                ) : (
+              {!paused ? (
+                /* 练习中：唯一可见控件——暂停按钮（圆形，44px，不强主色）。
+                   点击后进入暂停态，不直接退出页面。 */
+                <button
+                  onClick={enterPause}
+                  aria-label="暂停"
+                  className="grid h-11 w-11 place-items-center rounded-full border border-line bg-white text-ink-soft transition-colors hover:border-ink-faint hover:text-ink"
+                >
                   <Pause className="h-5 w-5" />
-                )}
-              </button>
-
-              {/* 长按 3 秒退出：主要退出方式，满 3 秒返回 home，松手取消 */}
-              <LongPressExit onExit={exitRelief} />
-
-              {/* 弱化的结束入口：弱化以避免误触，同样返回 home */}
-              <button
-                onClick={exitRelief}
-                className="text-[12px] text-ink-faint underline-offset-4 transition-colors hover:text-ink-soft hover:underline"
-              >
-                结束练习
-              </button>
+                </button>
+              ) : (
+                /* 暂停态：底部轻量面板。
+                   「继续练习」为主操作，视觉权重最高；「回到主页」为次级操作，语义为收起练习页。
+                   不使用「关闭」「退出」这类偏工具化文案。 */
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25, ease }}
+                  className="flex flex-col items-center gap-3"
+                >
+                  <button
+                    onClick={resumePractice}
+                    className="h-11 w-40 rounded-full bg-ink text-canvas text-[14px] font-medium tracking-wide transition-opacity hover:opacity-90"
+                  >
+                    继续练习
+                  </button>
+                  <button
+                    onClick={exitRelief}
+                    className="text-[13px] text-ink-faint underline-offset-4 transition-colors hover:text-ink-soft hover:underline"
+                  >
+                    回到主页
+                  </button>
+                </motion.div>
+              )}
             </motion.div>
           </FeaturePageTransition>
         )}
@@ -979,13 +1098,13 @@ export default function AppMainSurface({
         {mode === "verify" && pendingProtectedItem && (
           <motion.div
             key="verify-layer"
-            className="absolute inset-0 z-[70] bg-canvas"
+            className="absolute inset-0 z-[70] bg-white"
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ duration: 0.32, ease }}
           >
-            <div className="relative flex h-full flex-col bg-canvas">
+            <div className="relative flex h-full flex-col bg-white">
               {/* 顶部：返回 + 标题 */}
               <div className="flex items-center gap-3 px-5 pt-14 pb-2">
                 <button
@@ -1007,7 +1126,7 @@ export default function AppMainSurface({
                 </p>
                 <button
                   onClick={confirmAppLockVerify}
-                  className="mt-8 rounded-xl bg-ink px-6 py-3 text-[14px] font-medium text-white transition-opacity hover:opacity-90"
+                  className="mt-8 rounded-xl bg-action-primary px-6 py-3 text-[14px] font-medium text-action-primary-text transition-opacity hover:opacity-90"
                 >
                   验证并进入
                 </button>
@@ -1016,67 +1135,6 @@ export default function AppMainSurface({
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
-  );
-}
-
-/* —— 长按退出：按住累积进度，满 3 秒触发 onExit；松手 / 离开 / 取消则归零 ——
- * 仅本地交互反馈，不涉及任何真实干预逻辑。 */
-function LongPressExit({ onExit }: { onExit: () => void }) {
-  const [progress, setProgress] = useState(0);
-  const rafRef = useRef<number | null>(null);
-  const startRef = useRef(0);
-  const doneRef = useRef(false);
-
-  const tick = () => {
-    const elapsed = Date.now() - startRef.current;
-    const p = Math.min(100, (elapsed / 3000) * 100);
-    setProgress(p);
-    if (p >= 100) {
-      doneRef.current = true;
-      onExit();
-      return;
-    }
-    rafRef.current = requestAnimationFrame(tick);
-  };
-
-  const start = () => {
-    if (doneRef.current) return;
-    startRef.current = Date.now();
-    setProgress(0);
-    rafRef.current = requestAnimationFrame(tick);
-  };
-
-  const cancel = () => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    setProgress(0);
-  };
-
-  useEffect(
-    () => () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    },
-    []
-  );
-
-  return (
-    <div
-      onPointerDown={start}
-      onPointerUp={cancel}
-      onPointerLeave={cancel}
-      onPointerCancel={cancel}
-      onContextMenu={(e) => e.preventDefault()}
-      className="relative flex h-10 w-48 select-none items-center justify-center overflow-hidden rounded-full border border-line bg-white text-[12px] text-ink-soft"
-      style={{ touchAction: "none" }}
-    >
-      {/* 进度填充 */}
-      <div
-        className="absolute inset-y-0 left-0 bg-action-primary"
-        style={{ width: `${progress}%` }}
-      />
-      <span className="relative">
-        {progress > 0 ? "保持按住…" : "长按 3 秒退出"}
-      </span>
     </div>
   );
 }

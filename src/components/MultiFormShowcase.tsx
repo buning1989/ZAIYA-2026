@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import ZaizaiRive, { ZAIZAI_WAVE_ANIMATIONS } from "./ZaizaiRive";
+import ZaizaiVideo from "./ZaizaiVideo";
 import AppMainSurface from "./AppMainSurface";
+import ZaiyaWakeAnimation from "./ZaiyaWakeAnimation";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -13,7 +14,7 @@ const SURFACE_DURATION = 4200;
 function PhoneFrame({ children }: { children: React.ReactNode }) {
   return (
     <div className="rounded-[40px] border-[7px] border-ink bg-ink shadow-[0_8px_40px_-12px_rgba(0,0,0,0.18)]">
-      <div className="relative aspect-[9/19] overflow-hidden rounded-[33px] bg-canvas">
+      <div className="relative aspect-[9/19] overflow-hidden rounded-[33px] bg-white">
         {children}
       </div>
     </div>
@@ -56,7 +57,7 @@ function PlaceholderIcons({ count, offset = 0 }: { count: number; offset?: numbe
 function WidgetCard() {
   return (
     <div className="col-start-3 row-start-1 col-span-2 row-span-2 grid place-items-center overflow-hidden rounded-[24px] border border-white/80 bg-white/90 shadow-[0_10px_28px_-18px_rgba(0,0,0,0.24)] backdrop-blur-md">
-      <ZaizaiRive className="h-36 w-36" animations={ZAIZAI_WAVE_ANIMATIONS} />
+      <ZaiyaWakeAnimation variant="desktop-widget" />
     </div>
   );
 }
@@ -114,14 +115,14 @@ function WatchSurface() {
         {/* 表壳：轻薄边框，接近方形的轻微竖向比例 */}
         <div className="relative aspect-[4/5] overflow-hidden rounded-[38px] border-[6px] border-ink bg-ink shadow-[0_8px_40px_-12px_rgba(0,0,0,0.22)]">
           {/* 表盘屏幕 */}
-          <div className="relative h-full overflow-hidden rounded-[32px] bg-canvas">
+          <div className="relative h-full overflow-hidden rounded-[32px] bg-white">
             {/* 时间 */}
             <div className="absolute left-0 right-0 top-5 text-center text-[13px] font-semibold tracking-wide text-ink-soft">
               20:00
             </div>
             {/* 在在居中偏下，放大 */}
             <div className="absolute inset-0 grid place-items-center pt-6">
-              <ZaizaiRive className="h-36 w-36" animations={ZAIZAI_WAVE_ANIMATIONS} />
+              <ZaiyaWakeAnimation variant="watch" />
             </div>
           </div>
         </div>

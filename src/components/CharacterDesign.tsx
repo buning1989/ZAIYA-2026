@@ -1,6 +1,6 @@
 import Reveal from "./Reveal";
 import SectionHeading from "./SectionHeading";
-import ZaizaiRive from "./ZaizaiRive";
+import ZaizaiVideo from "./ZaizaiVideo";
 
 const principles = [
   { label: "非人非动物", text: "不指向现实物种，避免用户把它理解成宠物、医生或权威角色。" },
@@ -15,9 +15,9 @@ export default function CharacterDesign() {
         <div className="grid gap-14 md:grid-cols-[1fr_1fr] md:gap-20 md:items-start">
           {/* 在在动画 */}
           <Reveal>
-            <div className="aspect-square rounded-2xl border border-line bg-line-soft">
+            <div className="aspect-square rounded-2xl border border-line bg-white">
               <div className="grid h-full place-items-center">
-                <ZaizaiRive className="h-44 w-44" />
+                <ZaizaiVideo className="h-44 w-44" />
               </div>
             </div>
           </Reveal>

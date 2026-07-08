@@ -20,7 +20,7 @@ export default function Team() {
         <div className="mt-12 grid gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-2">
           {team.map((m, i) => (
             <Reveal key={m.name} delay={i * 0.08}>
-              <div className="flex h-full flex-col bg-canvas p-8">
+              <div className="flex h-full flex-col bg-white p-8">
                 <div className="flex items-center gap-6">
                   <img
                     src={m.avatar}

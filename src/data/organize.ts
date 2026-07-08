@@ -61,7 +61,7 @@ export const ORGANIZE_AUDIENCE_CONFIG: Record<
     freeTextMode: "original",
   },
   professional: {
-    label: "给专业人士看",
+    label: "给医生看",
     desc: "适合复诊、咨询或其他专业沟通前使用。",
     defaultSections: [
       "mood",
@@ -76,7 +76,7 @@ export const ORGANIZE_AUDIENCE_CONFIG: Record<
     freeTextMode: "summary",
   },
   parent: {
-    label: "给家长看",
+    label: "给家人看",
     desc: "只整理你愿意让家人理解的部分。",
     defaultSections: ["mood", "sleep", "diet", "dataCompleteness"],
     freeTextMode: "hidden",
@@ -886,6 +886,43 @@ export function buildPlainText(params: {
   return lines.join("\n");
 }
 
+/* —— 整理单快照（App 内详情 + 导出报告共用同一份数据）——
+ * 保存时生成，之后不再重新计算。
+ * appViewSections: App 内详情页渲染用（与创建预览页结构一致）
+ * exportConfig: 导出医生报告时的配置（可包含更完整信息） */
+export type SheetSnapshot = {
+  title: string;
+  audience: OrganizeAudience;
+  audienceLabel: string;
+  range: OrganizeRange;
+  generatedAt: number;
+  savedAt: number;
+  /** App 内详情页渲染用：与创建预览页结构一致 */
+  appViewSections: SectionDetail[];
+  /** 用户选择放入的模块 ID 列表 */
+  includedSectionIds: (OrganizeSectionId | "supplement")[];
+  /** 自由文本展示模式 */
+  textMode: FreeTextMode;
+  /** 关键指标（医生版使用） */
+  metrics: {
+    overview: string;
+    cards: GeneratedCard[];
+  };
+  /** 一句话总览 */
+  summary: string;
+  /** 导出配置：导出医生报告时使用 */
+  exportConfig: {
+    /** 导出时是否包含趋势图 */
+    includeTrends: boolean;
+    /** 导出时是否包含边界说明 */
+    includeBoundaryNote: boolean;
+  };
+  /** 补充文本（原始输入） */
+  supplementText: string;
+  /** 用户选择的区块（原始选择） */
+  selectedSections: OrganizeSectionId[];
+};
+
 /* —— 历史记录条目 —— */
 export type OrganizeHistoryEntry = {
   id: string;
@@ -897,4 +934,64 @@ export type OrganizeHistoryEntry = {
   supplementText: string;
   generatedSummary: GeneratedSummary;
   createdAt: number;
+  /** 整理单快照：App 内详情 + 导出报告共用 */
+  sheetSnapshot?: SheetSnapshot;
 };
+
+/* —— 生成整理单快照 ——
+ * 保存时调用，生成固定快照供 App 内详情和导出报告使用。 */
+export function buildSheetSnapshot(params: {
+  title: string;
+  audience: OrganizeAudience;
+  audienceLabel: string;
+  range: OrganizeRange;
+  selectedSections: OrganizeSectionId[];
+  supplementText: string;
+  freeTextMode: FreeTextMode;
+  generatedSummary: GeneratedSummary;
+  savedAt?: number;
+}): SheetSnapshot {
+  const {
+    title,
+    audience,
+    audienceLabel,
+    range,
+    selectedSections,
+    supplementText,
+    freeTextMode,
+    generatedSummary,
+    savedAt = Date.now(),
+  } = params;
+
+  // 提取用户选择放入的模块 ID（排除 hidden 的）
+  const includedSectionIds = generatedSummary.sections
+    .map((s) => s.id)
+    .filter((id) => {
+      // freeText 根据 textMode 判断
+      if (id === "freeText" && freeTextMode === "hidden") return false;
+      return true;
+    });
+
+  return {
+    title,
+    audience,
+    audienceLabel,
+    range,
+    generatedAt: savedAt,
+    savedAt,
+    appViewSections: generatedSummary.sections,
+    includedSectionIds,
+    textMode: freeTextMode,
+    metrics: {
+      overview: generatedSummary.overview,
+      cards: generatedSummary.cards,
+    },
+    summary: generatedSummary.overview,
+    exportConfig: {
+      includeTrends: true,
+      includeBoundaryNote: true,
+    },
+    supplementText,
+    selectedSections,
+  };
+}

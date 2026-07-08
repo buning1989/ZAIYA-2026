@@ -15,31 +15,32 @@ import {
   EMERGENCY_CONTACT_MAX,
   TEACHER_ROLE_LABEL,
   TEACHER_ROLE_OPTIONS,
-  basicProfileStatus,
-  bodyDataStatus,
   canAddEmergencyContact,
   countEmergencyContacts,
-  fillStatusLabel,
   genId,
   guardianStatusLabel,
-  loadBasicProfile,
-  loadBodyData,
   loadContacts,
   loadMedSchedules,
   medsStatusLabel,
-  saveBasicProfile,
-  saveBodyData,
   saveContacts,
   saveMedSchedules,
   teacherStatusLabel,
-  type BasicProfile,
-  type BodyData,
   type Contact,
   type ContactType,
-  type Gender,
   type MedSchedule,
   type TeacherRole,
 } from "@/data/privacy";
+import {
+  calculateBMI,
+  getBMIRemark,
+  getUserProfile,
+  saveBasicInfo,
+  saveBodyInfo,
+  type BasicInfo,
+  type BodyInfo,
+  type Gender,
+  type UserProfile,
+} from "@/data/userProfile";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -75,15 +76,21 @@ export default function PrivacyPage({ onBack }: Props) {
   const [layer, setLayer] = useState<Layer>("home");
 
   // —— 各类数据（localStorage 持久化）——
-  const [basicProfile, setBasicProfile] = useState<BasicProfile>({});
-  const [bodyData, setBodyData] = useState<BodyData>({});
+  const [profile, setProfile] = useState<UserProfile>(() => {
+    const p = getUserProfile();
+    // 还原为 UserProfile 结构（去掉 flat 顶层字段）
+    return {
+      id: p.id,
+      profileCompleted: p.profileCompleted,
+      basicInfo: p.basicInfo,
+      bodyInfo: p.bodyInfo,
+    };
+  });
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [medSchedules, setMedSchedules] = useState<MedSchedule[]>([]);
 
   // 初始加载
   useEffect(() => {
-    setBasicProfile(loadBasicProfile());
-    setBodyData(loadBodyData());
     setContacts(loadContacts());
     setMedSchedules(loadMedSchedules());
   }, []);
@@ -92,13 +99,13 @@ export default function PrivacyPage({ onBack }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // —— 持久化 helper ——
-  const persistBasic = (next: BasicProfile) => {
-    setBasicProfile(next);
-    saveBasicProfile(next);
+  const persistBasic = (next: BasicInfo) => {
+    const updated = saveBasicInfo(next);
+    setProfile(updated);
   };
-  const persistBody = (next: BodyData) => {
-    setBodyData(next);
-    saveBodyData(next);
+  const persistBody = (next: BodyInfo) => {
+    const updated = saveBodyInfo(next);
+    setProfile(updated);
   };
   const persistContacts = (next: Contact[]) => {
     setContacts(next);
@@ -154,7 +161,7 @@ export default function PrivacyPage({ onBack }: Props) {
   };
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-canvas">
+    <div className="relative h-full w-full overflow-hidden bg-white">
       <AnimatePresence mode="wait">
         <motion.div
           key={layer}
@@ -166,8 +173,7 @@ export default function PrivacyPage({ onBack }: Props) {
         >
           {layer === "home" && (
             <HomeView
-              basicProfile={basicProfile}
-              bodyData={bodyData}
+              profile={profile}
               contacts={contacts}
               medSchedules={medSchedules}
               onBack={onBack}
@@ -177,7 +183,7 @@ export default function PrivacyPage({ onBack }: Props) {
 
           {layer === "basicProfile" && (
             <BasicProfileEdit
-              value={basicProfile}
+              value={profile.basicInfo}
               onBack={backToHome}
               onSave={(next) => {
                 persistBasic(next);
@@ -188,7 +194,7 @@ export default function PrivacyPage({ onBack }: Props) {
 
           {layer === "bodyData" && (
             <BodyDataEdit
-              value={bodyData}
+              value={profile.bodyInfo}
               onBack={backToHome}
               onSave={(next) => {
                 persistBody(next);
@@ -327,24 +333,23 @@ export default function PrivacyPage({ onBack }: Props) {
  * HomeView —— 一级页：3 分组 5 入口 + 状态
  * ======================================================= */
 function HomeView({
-  basicProfile,
-  bodyData,
+  profile,
   contacts,
   medSchedules,
   onBack,
   onEnter,
 }: {
-  basicProfile: BasicProfile;
-  bodyData: BodyData;
+  profile: UserProfile;
   contacts: Contact[];
   medSchedules: MedSchedule[];
   onBack: () => void;
   onEnter: (l: Layer) => void;
 }) {
+  const profileStatus = profile.profileCompleted ? "已填写" : "未填写";
   return (
-    <div className="relative flex h-full flex-col bg-canvas">
-      {/* 顶部：返回 + 标题 */}
-      <div className="flex items-center gap-3 px-5 pt-14 pb-2">
+    <div className="relative flex h-full flex-col bg-white">
+      {/* 顶部：返回 + 标题 + 右上角视频 */}
+      <div className="relative flex items-center gap-3 px-5 pt-14 pb-2">
         <button
           onClick={onBack}
           aria-label="返回更多"
@@ -355,20 +360,34 @@ function HomeView({
         <h2 className="text-[17px] font-semibold tracking-tight text-ink">
           我的隐私
         </h2>
+        {/* 右上角装饰视频：标题区氛围装饰，非功能入口。
+            尺寸独立管理（w-12 h-12 = 48×48），与正念页主视觉在在分离。
+            top 88px：标题行内，状态栏下方；right 36px：内收到内容区内侧。
+            pointer-events-none + z-10：不拦截点击，不遮挡卡片（卡片 z-auto 在下层）。 */}
+        <div className="pointer-events-none absolute right-9 top-[88px] z-10">
+          <video
+            src="/assets/zaiya/privacy-peek-transparent.webm"
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="h-12 w-12 object-contain"
+          />
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 pb-8 pt-3">
+      <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-8 pt-6">
         {/* 分组 1：我的资料 */}
         <SectionLabel>我的资料</SectionLabel>
         <div className="mt-2 flex flex-col gap-2.5">
           <EntryRow
             label="基础资料"
-            status={fillStatusLabel(basicProfileStatus(basicProfile))}
+            status={profileStatus}
             onClick={() => onEnter("basicProfile")}
           />
           <EntryRow
             label="身体资料"
-            status={fillStatusLabel(bodyDataStatus(bodyData))}
+            status={profileStatus}
             onClick={() => onEnter("bodyData")}
           />
         </div>
@@ -545,7 +564,7 @@ function SaveBar({
       <button
         onClick={handle}
         disabled={!canSave}
-        className="w-full rounded-xl bg-ink px-4 py-3 text-[13px] font-medium text-canvas transition-opacity disabled:opacity-30"
+        className="w-full rounded-xl bg-action-primary px-4 py-3 text-[13px] font-medium text-action-primary-text transition-opacity disabled:opacity-30"
       >
         {saved ? "已保存" : label}
       </button>
@@ -561,20 +580,23 @@ function BasicProfileEdit({
   onBack,
   onSave,
 }: {
-  value: BasicProfile;
+  value: BasicInfo;
   onBack: () => void;
-  onSave: (next: BasicProfile) => void;
+  onSave: (next: BasicInfo) => void;
 }) {
   const [nickname, setNickname] = useState(value.nickname ?? "");
+  const [birthDate, setBirthDate] = useState(value.birthDate ?? "");
   const [gender, setGender] = useState<Gender | "">(value.gender ?? "");
   const [age, setAge] = useState(value.age !== undefined ? String(value.age) : "");
+  const [grade, setGrade] = useState(value.grade ?? "");
+  const [city, setCity] = useState(value.city ?? "");
   const [avatar, setAvatar] = useState<string | undefined>(value.avatar);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const ageNum = age.trim() === "" ? undefined : Number(age);
   const ageValid = age.trim() === "" || (ageNum !== undefined && ageNum > 0 && ageNum < 150);
 
-  const canSave = ageValid && (nickname.trim() !== "" || gender !== "" || avatar !== undefined || age.trim() !== "");
+  const canSave = ageValid && (nickname.trim() !== "" || gender !== "" || avatar !== undefined || age.trim() !== "" || birthDate.trim() !== "" || grade.trim() !== "" || city.trim() !== "");
 
   const handleAvatar = (file?: File) => {
     if (!file) return;
@@ -587,20 +609,23 @@ function BasicProfileEdit({
 
   const submit = () => {
     if (!canSave) return;
-    const next: BasicProfile = {
+    const next: BasicInfo = {
+      nickname: nickname.trim() || "未填写",
+      birthDate: birthDate.trim() || "",
+      age: ageNum ?? 0,
+      gender: gender || "other",
+      grade: grade.trim() || "",
+      city: city.trim() || "",
       avatar,
-      nickname: nickname.trim() || undefined,
-      gender: gender || undefined,
-      age: ageNum,
     };
     onSave(next);
   };
 
   return (
-    <div className="relative flex h-full flex-col bg-canvas">
+    <div className="relative flex h-full flex-col bg-white">
       <PageHeader title="基础资料" onBack={onBack} />
 
-      <div className="flex-1 overflow-y-auto px-5 pb-4 pt-2">
+      <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-4 pt-2">
         {/* 头像 */}
         <div className="rounded-2xl border border-line bg-white px-5 py-4">
           <div className="text-[12px] text-ink-faint">头像</div>
@@ -657,6 +682,35 @@ function BasicProfileEdit({
           </FieldRow>
         </div>
 
+        {/* 出生日期 */}
+        <div className="mt-2.5">
+          <FieldRow label="出生日期">
+            <input
+              type="date"
+              value={birthDate}
+              onChange={(e) => setBirthDate(e.target.value)}
+              className="w-full bg-transparent text-[15px] text-ink focus:outline-none"
+            />
+          </FieldRow>
+        </div>
+
+        {/* 年龄 */}
+        <div className="mt-2.5">
+          <FieldRow label="年龄">
+            <TextInput
+              value={age}
+              onChange={setAge}
+              placeholder="年龄"
+              type="number"
+            />
+          </FieldRow>
+          {!ageValid && (
+            <p className="mt-2 px-1 text-[12px] text-risk-medium">
+              请输入有效的年龄。
+            </p>
+          )}
+        </div>
+
         {/* 性别 */}
         <div className="mt-2.5 rounded-2xl border border-line bg-white px-5 py-4">
           <div className="text-[12px] text-ink-faint">性别</div>
@@ -683,21 +737,28 @@ function BasicProfileEdit({
           </div>
         </div>
 
-        {/* 年龄 */}
+        {/* 年级 */}
         <div className="mt-2.5">
-          <FieldRow label="年龄">
+          <FieldRow label="年级">
             <TextInput
-              value={age}
-              onChange={setAge}
-              placeholder="年龄"
-              type="number"
+              value={grade}
+              onChange={setGrade}
+              placeholder="如 初三"
+              maxLength={20}
             />
           </FieldRow>
-          {!ageValid && (
-            <p className="mt-2 px-1 text-[12px] text-risk-medium">
-              请输入有效的年龄。
-            </p>
-          )}
+        </div>
+
+        {/* 城市 */}
+        <div className="mt-2.5">
+          <FieldRow label="城市">
+            <TextInput
+              value={city}
+              onChange={setCity}
+              placeholder="如 北京"
+              maxLength={20}
+            />
+          </FieldRow>
         </div>
       </div>
 
@@ -707,38 +768,56 @@ function BasicProfileEdit({
 }
 
 /* =========================================================
- * BodyDataEdit —— 身体资料编辑（身高）
+ * BodyDataEdit —— 身体资料编辑（身高 / 体重 / BMI）
  * ======================================================= */
 function BodyDataEdit({
   value,
   onBack,
   onSave,
 }: {
-  value: BodyData;
+  value: BodyInfo;
   onBack: () => void;
-  onSave: (next: BodyData) => void;
+  onSave: (next: BodyInfo) => void;
 }) {
-  const [height, setHeight] = useState(
-    value.height !== undefined ? String(value.height) : "",
-  );
+  const [height, setHeight] = useState(value.heightCm !== undefined ? String(value.heightCm) : "");
+  const [weight, setWeight] = useState(value.weightKg !== undefined ? String(value.weightKg) : "");
 
-  const heightNum =
-    height.trim() === "" ? undefined : Number(height);
+  const heightNum = height.trim() === "" ? undefined : Number(height);
   const heightValid =
     height.trim() === "" ||
     (heightNum !== undefined && heightNum > 50 && heightNum < 300);
-  const canSave = heightValid && height.trim() !== "";
+
+  const weightNum = weight.trim() === "" ? undefined : Number(weight);
+  const weightValid =
+    weight.trim() === "" ||
+    (weightNum !== undefined && weightNum > 10 && weightNum < 500);
+
+  const canSave = heightValid && weightValid && height.trim() !== "";
+
+  // BMI 实时预览：当前输入的身高 + 体重
+  const previewBmi =
+    heightNum !== undefined && weightNum !== undefined
+      ? calculateBMI(weightNum, heightNum)
+      : null;
+  const previewRemark = previewBmi !== null ? getBMIRemark(previewBmi) : null;
 
   const submit = () => {
     if (!canSave) return;
-    onSave({ height: heightNum });
+    const today = new Date().toISOString().slice(0, 10);
+    onSave({
+      heightCm: heightNum ?? 0,
+      weightKg: weightNum ?? 0,
+      heightUpdatedAt: today,
+      weightUpdatedAt: today,
+    });
   };
 
   return (
-    <div className="relative flex h-full flex-col bg-canvas">
+    <div className="relative flex h-full flex-col bg-white">
       <PageHeader title="身体资料" onBack={onBack} />
 
-      <div className="flex-1 overflow-y-auto px-5 pb-4 pt-2">
+      <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-4 pt-2">
+        {/* 身高 */}
         <div className="rounded-2xl border border-line bg-white px-5 py-4">
           <div className="text-[12px] text-ink-faint">身高</div>
           <div className="mt-1.5 flex items-baseline gap-2">
@@ -755,6 +834,36 @@ function BodyDataEdit({
           <p className="mt-2 px-1 text-[12px] text-risk-medium">
             请输入有效的身高。
           </p>
+        )}
+
+        {/* 体重 */}
+        <div className="mt-2.5 rounded-2xl border border-line bg-white px-5 py-4">
+          <div className="text-[12px] text-ink-faint">体重</div>
+          <div className="mt-1.5 flex items-baseline gap-2">
+            <TextInput
+              value={weight}
+              onChange={setWeight}
+              placeholder="体重"
+              type="number"
+            />
+            <span className="text-[13px] text-ink-faint">kg</span>
+          </div>
+        </div>
+        {!weightValid && (
+          <p className="mt-2 px-1 text-[12px] text-risk-medium">
+            请输入有效的体重。
+          </p>
+        )}
+
+        {/* BMI 实时预览 */}
+        {previewBmi !== null && previewRemark !== null && (
+          <div className="mt-2.5 rounded-2xl border border-line bg-white px-5 py-4">
+            <div className="text-[12px] text-ink-faint">BMI</div>
+            <div className="mt-1.5 flex items-baseline gap-2">
+              <span className="text-[15px] font-medium text-ink">{previewBmi}</span>
+              <span className="text-[13px] text-ink-soft">（{previewRemark}）</span>
+            </div>
+          </div>
         )}
       </div>
 
@@ -821,10 +930,10 @@ function ContactList({
   };
 
   return (
-    <div className="relative flex h-full flex-col bg-canvas">
+    <div className="relative flex h-full flex-col bg-white">
       <PageHeader title={title} onBack={onBack} />
 
-      <div className="flex-1 overflow-y-auto px-5 pb-24 pt-2">
+      <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-24 pt-2">
         {list.length === 0 ? (
           <p className="mt-6 text-center text-[13px] text-ink-faint">
             {emptyText}
@@ -953,7 +1062,7 @@ function ContactList({
       <button
         onClick={onAdd}
         aria-label={addLabel}
-        className="absolute bottom-7 right-5 z-20 grid h-11 w-11 place-items-center rounded-full border border-line bg-white text-ink shadow-[0_4px_18px_-6px_rgba(0,0,0,0.14)] transition-colors hover:border-ink-faint hover:text-ink"
+        className="absolute bottom-7 right-5 z-20 grid h-11 w-11 place-items-center rounded-full border border-action-primary bg-action-primary text-action-primary-text shadow-[0_4px_18px_-6px_rgba(0,0,0,0.14)] transition-opacity hover:opacity-90"
       >
         <Plus className="h-5 w-5" strokeWidth={1.8} />
       </button>
@@ -1032,10 +1141,10 @@ function ContactEdit({
   };
 
   return (
-    <div className="relative flex h-full flex-col bg-canvas">
+    <div className="relative flex h-full flex-col bg-white">
       <PageHeader title={title} onBack={onBack} />
 
-      <div className="flex-1 overflow-y-auto px-5 pb-4 pt-2">
+      <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-4 pt-2">
         <div className="flex flex-col gap-2.5">
           <FieldRow label="姓名">
             <TextInput
@@ -1124,10 +1233,10 @@ function MedsList({
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   return (
-    <div className="relative flex h-full flex-col bg-canvas">
+    <div className="relative flex h-full flex-col bg-white">
       <PageHeader title="服用安排" onBack={onBack} />
 
-      <div className="flex-1 overflow-y-auto px-5 pb-24 pt-2">
+      <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-24 pt-2">
         {list.length === 0 ? (
           <p className="mt-6 text-center text-[13px] text-ink-faint">
             还没有添加服用安排。
@@ -1167,7 +1276,7 @@ function MedsList({
       <button
         onClick={onAdd}
         aria-label="新增服用安排"
-        className="absolute bottom-7 right-5 z-20 grid h-11 w-11 place-items-center rounded-full border border-line bg-white text-ink shadow-[0_4px_18px_-6px_rgba(0,0,0,0.14)] transition-colors hover:border-ink-faint hover:text-ink"
+        className="absolute bottom-7 right-5 z-20 grid h-11 w-11 place-items-center rounded-full border border-action-primary bg-action-primary text-action-primary-text shadow-[0_4px_18px_-6px_rgba(0,0,0,0.14)] transition-opacity hover:opacity-90"
       >
         <Plus className="h-5 w-5" strokeWidth={1.8} />
       </button>
@@ -1220,13 +1329,13 @@ function MedsEdit({
   };
 
   return (
-    <div className="relative flex h-full flex-col bg-canvas">
+    <div className="relative flex h-full flex-col bg-white">
       <PageHeader
         title={schedule ? "编辑服用安排" : "新增服用安排"}
         onBack={onBack}
       />
 
-      <div className="flex-1 overflow-y-auto px-5 pb-4 pt-2">
+      <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-4 pt-2">
         <div className="flex flex-col gap-2.5">
           <FieldRow label="名称">
             <TextInput

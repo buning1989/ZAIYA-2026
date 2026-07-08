@@ -33,7 +33,7 @@ export default function Hero({ onOpenDemo }: Props) {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease }}
-              className="inline-flex items-center gap-2 rounded-full border border-line bg-canvas px-3 py-1 text-[12px] text-ink-soft"
+              className="inline-flex items-center gap-2 rounded-full border border-line bg-white px-3 py-1 text-[12px] text-ink-soft"
             >
               <span className="h-1.5 w-1.5 rounded-full bg-accent" />
               面向社会功能受损青少年的 AI 健康生活管理助手
@@ -68,14 +68,14 @@ export default function Hero({ onOpenDemo }: Props) {
           >
             <button
               onClick={onOpenDemo}
-              className="group inline-flex items-center gap-2 rounded-md bg-accent px-5 py-3 text-sm font-medium text-canvas"
+              className="group inline-flex items-center gap-2 rounded-md bg-[#E6F46B] px-5 py-3 text-sm font-medium text-black"
             >
-              <Play className="h-4 w-4 fill-canvas" />
+              <Play className="h-4 w-4 fill-black" />
               开始体验 Demo
             </button>
             <a
               href="#problem"
-              className="group inline-flex items-center gap-2 rounded-md border border-line bg-canvas px-5 py-3 text-sm font-medium text-ink transition-colors hover:bg-line-soft"
+              className="group inline-flex items-center gap-2 rounded-md border border-line bg-white px-5 py-3 text-sm font-medium text-ink transition-colors hover:bg-line-soft"
             >
               <BookOpen className="h-4 w-4 text-ink-faint" />
               查看产品逻辑

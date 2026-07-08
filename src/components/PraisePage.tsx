@@ -10,7 +10,7 @@ import {
   saveCards,
   type PraiseCard,
 } from "@/data/praise";
-import ZaizaiRive from "./ZaizaiRive";
+import ZaizaiVideo from "./ZaizaiVideo";
 import VoiceInputBar from "./VoiceInputBar";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -83,7 +83,7 @@ export default function PraisePage({ onBack }: Props) {
   };
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-canvas">
+    <div className="relative h-full w-full overflow-hidden bg-white">
       <AnimatePresence mode="wait">
         <motion.div
           key={layer}
@@ -135,7 +135,7 @@ function HomeView({
   const isEmpty = cards.length === 0;
 
   return (
-    <div className="relative flex h-full flex-col bg-canvas">
+    <div className="relative flex h-full flex-col bg-white">
       {/* 顶部：返回 + 标题（不放副标题，避免和在在气泡重复） */}
       <header className="flex items-center gap-3 px-5 pt-14 pb-1">
         <button
@@ -152,12 +152,12 @@ function HomeView({
 
       {/* 在在引导区：在在 + 气泡（左右结构，与「记一下」一致） */}
       <section className="flex items-start justify-center gap-3 px-5 pb-3 pt-3">
-        <ZaizaiRive className="h-20 w-20 shrink-0" />
+        <ZaizaiVideo className="h-20 w-20 shrink-0" />
         <ZaizaiBubble items={ZAIZAI_BUBBLES} />
       </section>
 
       {/* 卡片 Feed：双列瀑布流，与引导区保持 24px 间距 */}
-      <section className="flex-1 overflow-y-auto px-5 pb-24 pt-6">
+      <section className="no-scrollbar flex-1 overflow-y-auto px-5 pb-24 pt-6">
         {isEmpty ? (
           <p className="mt-8 text-center text-[12.5px] leading-relaxed text-ink-faint/70">
             还没有留下夸夸。
@@ -180,7 +180,7 @@ function HomeView({
       <button
         onClick={onCreate}
         aria-label="新建夸夸"
-        className="absolute bottom-7 right-5 z-20 grid h-11 w-11 place-items-center rounded-full border border-line bg-white text-ink shadow-[0_4px_18px_-6px_rgba(0,0,0,0.14)] transition-colors hover:border-ink-faint hover:text-ink"
+        className="absolute bottom-7 right-5 z-20 grid h-11 w-11 place-items-center rounded-full border border-action-primary bg-action-primary text-action-primary-text shadow-[0_4px_18px_-6px_rgba(0,0,0,0.14)] transition-opacity hover:opacity-90"
       >
         <Plus className="h-5 w-5" strokeWidth={1.8} />
       </button>
@@ -318,7 +318,7 @@ function EditView({
         <button
           onClick={submit}
           disabled={!canSave}
-          className="rounded-full bg-white/60 px-4 py-1.5 text-[13px] font-medium text-ink backdrop-blur-sm transition-opacity hover:bg-white/80 disabled:opacity-40"
+          className="rounded-full bg-action-primary px-4 py-1.5 text-[13px] font-medium text-action-primary-text backdrop-blur-sm transition-opacity hover:opacity-90 disabled:opacity-40"
         >
           保存
         </button>
@@ -370,7 +370,7 @@ function DetailView({
 
   if (!card) {
     return (
-      <div className="flex h-full items-center justify-center bg-canvas">
+      <div className="flex h-full items-center justify-center bg-white">
         <p className="text-[13px] text-ink-faint">这张已经不在了。</p>
       </div>
     );

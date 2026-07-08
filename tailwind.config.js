@@ -25,8 +25,10 @@ export default {
         "ink-soft": "#68735C",
         "ink-faint": "#8B947D",
         /* Action / 行动 */
-        accent: "#27331F",
-        "accent-soft": "#F1F3E8",
+        accent: "#5F745F",
+        "accent-soft": "#EEF3ED",
+        "accent-pressed": "#536652",
+        "accent-disabled": "#D8DDD6",
         "action-primary": "#E6F46B",
         "action-primary-text": "#27331F",
         "action-deep": "#27331F",

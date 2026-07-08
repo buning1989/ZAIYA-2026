@@ -13,7 +13,7 @@ export default function App() {
   const [demoOpen, setDemoOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-canvas font-body text-ink antialiased">
+    <div className="min-h-screen bg-white font-body text-ink antialiased">
       <div aria-hidden={demoOpen}>
         <Nav onOpenDemo={() => setDemoOpen(true)} />
         <main>

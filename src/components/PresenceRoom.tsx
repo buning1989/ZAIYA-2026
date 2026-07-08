@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import PresenceCharacterRive from "./PresenceCharacterRive";
 import { presenceCharacters, type PresenceCharacter } from "@/data/presenceCharacters";
-import { CloseButton } from "./FeaturePageTransition";
+import { CloseButton, CollapseButton } from "./FeaturePageTransition";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -79,9 +79,6 @@ export function PresenceSelectContent({
       transition={{ duration: 0.3, ease }}
       className="absolute inset-0"
     >
-      {/* 关闭：统一右上角 × */}
-      <CloseButton onClick={onClose} ariaLabel="关闭共同在场" />
-
       {/* 场景卡片：位于 ZaiZai 下方 */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
@@ -96,7 +93,7 @@ export function PresenceSelectContent({
             <button
               key={s.id}
               onClick={() => onSelect(s.id)}
-              className="flex flex-col items-start gap-2 rounded-2xl border border-line bg-canvas p-4 text-left transition-colors hover:border-ink-faint"
+              className="flex flex-col items-start gap-2 rounded-2xl border border-line bg-white p-4 text-left transition-colors hover:border-ink-faint"
             >
               <s.Icon className="h-6 w-6 text-ink-soft" strokeWidth={1.6} />
               <div>
@@ -109,6 +106,9 @@ export function PresenceSelectContent({
           ))}
         </div>
       </motion.div>
+
+      {/* 底部中央收起按钮 */}
+      <CollapseButton onClick={onClose} ariaLabel="收起共同在场" />
     </motion.div>
   );
 }
@@ -197,7 +197,7 @@ export function PresenceRoomContent({
         exit={{ opacity: 0, y: 16 }}
         transition={{ duration: 0.3, ease, delay: 0.15 }}
         onClick={trigger}
-        className="absolute inset-x-6 bottom-8 inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-canvas px-4 py-3 text-[13px] font-medium text-ink transition-colors hover:border-ink-faint"
+        className="absolute inset-x-6 bottom-8 inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-white px-4 py-3 text-[13px] font-medium text-ink transition-colors hover:border-ink-faint"
       >
         <config.action.Icon className="h-4 w-4 text-ink-soft" strokeWidth={1.8} />
         {config.action.label}

@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
+import { MoonPhaseIcon } from "./MoonPhaseIcon";
 import VoiceInputBar from "./VoiceInputBar";
 import {
   lookbackData,
@@ -11,15 +12,17 @@ import {
   type DailyLookbackData,
   type LookbackRange,
   type Mood,
+  type MoodEntry,
   type ActivityLevel,
   type MedState,
   type MealState,
 } from "@/data/lookback";
+import { calculateBMI, getBMIRemark, getUserProfile } from "@/data/userProfile";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-/* —— 页面背景：安静米白 —— */
-const PAGE_BG = "#F6F8EF";
+/* —— 页面背景：纯净白 —— */
+const PAGE_BG = "#FFFFFF";
 
 /* —— 6 场景独立主题色（低饱和、生活记录感）——
  * 按 zaiya 五类颜色语义映射：status-mood / status-sleep / chart-line-3(饮食) /
@@ -88,6 +91,19 @@ const scenes: { key: SceneKey; label: string }[] = [
   { key: "weight", label: "体重" },
 ];
 
+/* —— 统一字号规则：各模块卡片和列表共用（避免各模块独立字号）—— */
+const reviewTypography = {
+  cardTitle: 14,
+  cardMeta: 11,
+  chartAxisLabel: 10,
+  listDate: 14,
+  listWeekday: 10,
+  listContent: 13,
+  listSecondary: 12,
+} as const;
+
+const tx = reviewTypography;
+
 /* —— 每日记录行高度：不低于 48px —— */
 const ROW_H = 52;
 
@@ -151,6 +167,7 @@ export default function LookbackPage({ onBack }: { onBack: () => void }) {
         patch.moodTrigger = null;
         patch.moodBody = null;
         patch.moodNote = null;
+        patch.moodEntries = null;
         break;
       case "sleep":
         patch.sleepTime = null;
@@ -326,7 +343,7 @@ export default function LookbackPage({ onBack }: { onBack: () => void }) {
 }
 
 /* =========================================================
- * RangeTabs
+ * RangeTabs —— 时间范围切换（中性灰白，不跟随场景主题色）
  * ======================================================= */
 function RangeTabs({
   value,
@@ -341,20 +358,26 @@ function RangeTabs({
     { key: 30, label: "近 30 天" },
   ];
   return (
-    <div className="flex gap-1 rounded-lg bg-line-soft p-1">
-      {tabs.map((t) => (
-        <button
-          key={t.key}
-          onClick={() => onChange(t.key)}
-          className={`flex-1 rounded-md px-3 py-1.5 text-[12px] font-medium transition-colors ${
-            value === t.key
-              ? "bg-canvas text-ink shadow-sm"
-              : "text-ink-soft hover:text-ink"
-          }`}
-        >
-          {t.label}
-        </button>
-      ))}
+    <div
+      className="flex gap-1 rounded-lg p-1"
+      style={{ backgroundColor: "#F3F3F1" }}
+    >
+      {tabs.map((t) => {
+        const active = value === t.key;
+        return (
+          <button
+            key={t.key}
+            onClick={() => onChange(t.key)}
+            className={`flex-1 rounded-md px-3 py-1.5 text-[12px] font-medium transition-colors ${
+              active
+                ? "bg-white text-ink shadow-sm"
+                : "text-ink-faint hover:text-ink-soft"
+            }`}
+          >
+            {t.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -424,7 +447,7 @@ function ScenePanel({
   const days = data.length;
 
   return (
-    <div className="h-full overflow-y-auto px-4 pb-4 pt-1">
+    <div className="no-scrollbar h-full overflow-y-auto px-4 pb-4 pt-1">
       {/* 趋势区：非卡片，轻量信息区块（浅背景区分，不再套卡） */}
       <TrendArea sceneKey={sceneKey} data={data} />
 
@@ -478,10 +501,10 @@ function TrendArea({
 
       {/* 起止日期：仅显示开始与结束 */}
       <div className="mt-2 flex items-center justify-between">
-        <span className="text-[10px]" style={{ color: theme.text, opacity: 0.5 }}>
+        <span style={{ fontSize: tx.chartAxisLabel, color: theme.text, opacity: 0.5 }}>
           {compactDate(first.displayDate)}
         </span>
-        <span className="text-[10px]" style={{ color: theme.text, opacity: 0.5 }}>
+        <span style={{ fontSize: tx.chartAxisLabel, color: theme.text, opacity: 0.5 }}>
           {compactDate(last.displayDate)}
         </span>
       </div>
@@ -534,7 +557,8 @@ function MoodTrend({ data }: { data: DailyLookbackData[] }) {
   const theme = themes.mood;
   const days = data.length;
   const H = 80;
-  const padY = 10;
+  // 上下保留 20px 呼吸空间，避免曲线贴近卡片边缘，视觉重心居中
+  const padY = 20;
   const usable = H - padY * 2;
 
   const points = data.map((d, i) => {
@@ -606,6 +630,9 @@ function SleepTrend({ data }: { data: DailyLookbackData[] }) {
   return (
     <div className="relative h-full w-full">
       <svg className="absolute inset-0 h-full w-full" viewBox={`0 0 100 ${H}`} preserveAspectRatio="none">
+        {/* 早/晚参考线：浅色横线，不抢主趋势线 */}
+        <line x1="0" y1={padY} x2="100" y2={padY} stroke={theme.mark} strokeWidth="1" vectorEffect="non-scaling-stroke" opacity={0.12} />
+        <line x1="0" y1={H - padY} x2="100" y2={H - padY} stroke={theme.mark} strokeWidth="1" vectorEffect="non-scaling-stroke" opacity={0.12} />
         {segments.map((seg, si) => (
           <path
             key={si}
@@ -638,9 +665,9 @@ function SleepTrend({ data }: { data: DailyLookbackData[] }) {
             />
           ),
       )}
-      {/* 两端弱提示：早/晚 */}
-      <span className="absolute left-0 top-0 text-[8px]" style={{ color: theme.text, opacity: 0.35 }}>早</span>
-      <span className="absolute left-0 bottom-0 text-[8px]" style={{ color: theme.text, opacity: 0.35 }}>晚</span>
+      {/* 两端弱提示：早/晚（对齐参考线高度） */}
+      <span className="absolute left-0 -translate-y-1/2" style={{ top: padY, fontSize: tx.chartAxisLabel, color: theme.text, opacity: 0.35 }}>早</span>
+      <span className="absolute left-0 -translate-y-1/2" style={{ top: H - padY, fontSize: tx.chartAxisLabel, color: theme.text, opacity: 0.35 }}>晚</span>
     </div>
   );
 }
@@ -844,16 +871,16 @@ function DayRow({
     >
       {/* 左：日期 + 星期 */}
       <div className="w-12 shrink-0 text-left">
-        <div className="text-[12px] font-medium text-ink">
+        <div className="font-medium text-ink" style={{ fontSize: tx.listDate }}>
           {day.displayDate.replace("月", "/").replace("日", "")}
         </div>
-        <div className="text-[9px] text-ink-faint">
+        <div className="text-ink-faint" style={{ fontSize: tx.listWeekday }}>
           {weekday(day.date)}
         </div>
       </div>
 
       {/* 中：场景可视化 */}
-      <div className="flex-1">
+      <div className="flex h-full flex-1 items-center">
         {sceneKey === "mood" && <MoodRow day={day} />}
         {sceneKey === "sleep" && <SleepRow day={day} />}
         {sceneKey === "meals" && <MealsRow day={day} />}
@@ -889,43 +916,78 @@ function compactDate(display: string): string {
 }
 
 /* =========================================================
- * 1. MoodRow —— 每日情绪刻度（细轨道，静态信息，非 slider）
+ * 1. MoodRow —— 日内情绪珠串（月相式点列）
+ * - 每次记录用一个圆点，从左到右表示当天从早到晚
+ * - 圆点填充程度表达情绪值 1-5（月相式）
+ * - 靠左对齐，与其他模块列表行信息起点一致
+ * - 未记录：显示「未记录」
  * ======================================================= */
 function MoodRow({ day }: { day: DailyLookbackData }) {
   const theme = themes.mood;
-  if (day.mood === null) {
+  const entries = day.moodEntries;
+
+  if (day.mood === null || !entries || entries.length === 0) {
     return <EmptyRow text="未记录" />;
   }
-  // 1-5 刻度，细轨道 + 静态点
+
   return (
-    <div className="flex items-center gap-2.5">
-      <div className="relative h-[2px] flex-1 rounded-full" style={{ backgroundColor: theme.soft }}>
-        {/* 5 个刻度位：极淡静态标记 */}
-        {[0, 1, 2, 3, 4].map((i) => (
-          <div
-            key={i}
-            className="absolute top-1/2 h-[3px] w-[3px] -translate-y-1/2 rounded-full"
-            style={{
-              left: `${(i / 4) * 100}%`,
-              transform: "translate(-50%, -50%)",
-              backgroundColor: theme.text,
-              opacity: 0.18,
-            }}
-          />
-        ))}
-        {/* 当前点位：小而克制，无光晕 */}
+    <div className="flex h-full min-h-[44px] w-full items-center">
+      <MoodBeadRail
+        entries={entries}
+        theme={theme}
+        size={14}
+        gap={8}
+      />
+    </div>
+  );
+}
+
+/* —— 月相式情绪圆点：1-5 用真实月相轮廓表达 —— */
+function MoodBead({ mood, theme, size = 10 }: { mood: Mood; theme: Theme; size?: number }) {
+  return <MoonPhaseIcon level={mood} color={theme.mark} size={size} />;
+}
+
+function MoodBeadRail({
+  entries,
+  theme,
+  size,
+  gap,
+  className,
+  showTime = false,
+}: {
+  entries: MoodEntry[];
+  theme: Theme;
+  size: number;
+  gap: number;
+  className?: string;
+  showTime?: boolean;
+}) {
+  return (
+    <div className={`relative flex items-start justify-center ${className ?? ""}`} style={{ gap }}>
+      {entries.length > 1 && (
         <div
-          className="absolute top-1/2 h-[8px] w-[8px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+          className="absolute h-[1px]"
           style={{
-            left: `${((day.mood! - 1) / 4) * 100}%`,
-            backgroundColor: theme.mark,
-            opacity: 0.85,
+            left: size / 2,
+            right: size / 2,
+            top: size / 2,
+            backgroundColor: theme.text,
+            opacity: 0.08,
           }}
         />
-      </div>
-      <span className="w-8 shrink-0 text-right text-[11px] font-medium" style={{ color: theme.text, opacity: 0.7 }}>
-        {moodLabel[day.mood as Mood]}
-      </span>
+      )}
+      {entries.map((e, i) => (
+        <div key={i} className="relative z-[1] flex min-w-[34px] flex-col items-center gap-1.5">
+          <span className="grid rounded-full bg-white" style={{ padding: 2 }}>
+            <MoodBead mood={e.mood} theme={theme} size={size} />
+          </span>
+          {showTime && (
+            <span className="text-[10px]" style={{ color: theme.text, opacity: 0.45 }}>
+              {e.time}
+            </span>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
@@ -941,7 +1003,7 @@ function SleepRow({ day }: { day: DailyLookbackData }) {
   const ratio = sleepToRatio(day.sleepTime);
   return (
     <div className="flex items-center gap-2.5">
-      <span className="text-[9px]" style={{ color: theme.text, opacity: 0.4 }}>早</span>
+      <span style={{ fontSize: tx.chartAxisLabel, color: theme.text, opacity: 0.4 }}>早</span>
       <div className="relative h-[2px] flex-1 rounded-full" style={{ backgroundColor: theme.soft }}>
         <div
           className="absolute top-1/2 h-[8px] w-[8px] -translate-x-1/2 -translate-y-1/2 rounded-full"
@@ -952,8 +1014,8 @@ function SleepRow({ day }: { day: DailyLookbackData }) {
           }}
         />
       </div>
-      <span className="text-[9px]" style={{ color: theme.text, opacity: 0.4 }}>晚</span>
-      <span className="w-12 shrink-0 text-right text-[11px] font-medium" style={{ color: theme.text, opacity: 0.7 }}>
+      <span style={{ fontSize: tx.chartAxisLabel, color: theme.text, opacity: 0.4 }}>晚</span>
+      <span className="w-12 shrink-0 text-right font-medium" style={{ fontSize: tx.listContent, color: theme.text, opacity: 0.7 }}>
         {day.sleepTime}
       </span>
     </div>
@@ -981,7 +1043,7 @@ function MealsRow({ day }: { day: DailyLookbackData }) {
               : { backgroundColor: theme.soft };
         return (
           <div key={it.label} className="flex items-center gap-1.5">
-            <span className="text-[10px]" style={{ color: theme.text, opacity: 0.5 }}>{it.label}</span>
+            <span style={{ fontSize: tx.chartAxisLabel, color: theme.text, opacity: 0.5 }}>{it.label}</span>
             <div className="h-[9px] w-[9px] rounded-full" style={style} />
           </div>
         );
@@ -1012,7 +1074,7 @@ function MedRow({ day }: { day: DailyLookbackData }) {
                 : { backgroundColor: theme.softer };
         return (
           <div key={it.label} className="flex items-center gap-1.5">
-            <span className="text-[10px]" style={{ color: theme.text, opacity: 0.5 }}>{it.label}</span>
+            <span style={{ fontSize: tx.chartAxisLabel, color: theme.text, opacity: 0.5 }}>{it.label}</span>
             <div className="h-[12px] w-[12px] rounded-[3px]" style={style} />
           </div>
         );
@@ -1045,7 +1107,7 @@ function ActivityRow({ day }: { day: DailyLookbackData }) {
           }}
         />
       </div>
-      <span className="text-[11px]" style={{ color: theme.text, opacity: 0.7 }}>
+      <span style={{ fontSize: tx.listContent, color: theme.text, opacity: 0.7 }}>
         {activityLabel[lvl]}
       </span>
     </div>
@@ -1053,19 +1115,26 @@ function ActivityRow({ day }: { day: DailyLookbackData }) {
 }
 
 /* =========================================================
- * 6. WeightRow —— 每日体重记录
+ * 6. WeightRow —— 每日体重记录 + BMI
  * ======================================================= */
 function WeightRow({ day }: { day: DailyLookbackData }) {
   const theme = themes.weight;
   if (day.weight === null) {
     return <EmptyRow text="未记录" />;
   }
+  const profile = getUserProfile();
+  const bmi = calculateBMI(day.weight, profile.heightCm);
+  const annotation = getBMIRemark(bmi);
   return (
     <div className="flex items-baseline gap-1">
-      <span className="text-[14px] font-medium" style={{ color: theme.text }}>
+      <span className="font-medium" style={{ fontSize: tx.listContent, color: theme.text }}>
         {day.weight}
       </span>
-      <span className="text-[10px]" style={{ color: theme.text, opacity: 0.5 }}>kg</span>
+      <span style={{ fontSize: tx.chartAxisLabel, color: theme.text, opacity: 0.5 }}>kg</span>
+      <span style={{ fontSize: tx.chartAxisLabel, color: theme.text, opacity: 0.3 }}>·</span>
+      <span style={{ fontSize: tx.listSecondary, color: theme.text, opacity: 0.6 }}>
+        BMI {bmi}（{annotation}）
+      </span>
     </div>
   );
 }
@@ -1073,7 +1142,188 @@ function WeightRow({ day }: { day: DailyLookbackData }) {
 /* —— 空状态行：淡化占位，不等同于 0 —— */
 function EmptyRow({ text }: { text: string }) {
   return (
-    <span className="text-[11px] text-ink-faint/40">{text}</span>
+    <span className="text-ink-faint/40" style={{ fontSize: tx.cardMeta }}>{text}</span>
+  );
+}
+
+/* =========================================================
+ * MoodDetailContent —— 情绪单日详情内容（折叠项列表）
+ * - 顶部：轻量情绪珠串概览（非卡片图表）
+ * - 每条记录：折叠项（收起态显示时间/情绪值/情绪词，展开态显示详情）
+ * - 默认展开最新一条
+ * - 空字段不逐行显示「未记录」，底部统一提示
+ * ======================================================= */
+function MoodDetailContent({
+  day,
+  theme,
+}: {
+  day: DailyLookbackData;
+  theme: Theme;
+}) {
+  const entries = day.moodEntries;
+  // 默认展开最后一条（最新）
+  const [expandedIdx, setExpandedIdx] = useState<number | null>(
+    entries && entries.length > 0 ? entries.length - 1 : null,
+  );
+
+  if (!entries || entries.length === 0) {
+    return (
+      <div className="py-8 text-center text-[13px]" style={{ color: theme.text, opacity: 0.4 }}>
+        未记录
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* 当天情绪走势：放大并居中，突出日内月相变化 */}
+      <div className="mb-5">
+        <div className="text-center text-[12px] font-medium" style={{ color: theme.text, opacity: 0.62 }}>
+          情绪走势
+        </div>
+        <div className="relative mt-3 flex min-h-[54px] items-center justify-center">
+          <MoodBeadRail entries={entries} theme={theme} size={28} gap={20} showTime />
+        </div>
+      </div>
+
+      {/* 折叠记录列表 */}
+      <div className="flex flex-col" style={{ gap: 0 }}>
+        {entries.map((entry, idx) => (
+          <MoodRecordAccordion
+            key={idx}
+            entry={entry}
+            theme={theme}
+            isExpanded={expandedIdx === idx}
+            onToggle={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
+            isLast={idx === entries.length - 1}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* —— 情绪记录折叠项 —— */
+function MoodRecordAccordion({
+  entry,
+  theme,
+  isExpanded,
+  onToggle,
+  isLast,
+}: {
+  entry: MoodEntry;
+  theme: Theme;
+  isExpanded: boolean;
+  onToggle: () => void;
+  isLast: boolean;
+}) {
+  // 收集有内容的字段
+  const fields: { label: string; value: string }[] = [];
+  if (entry.moodWords && entry.moodWords.length > 0) {
+    fields.push({ label: "情绪词", value: entry.moodWords.join("、") });
+  }
+  if (entry.moodTrigger) {
+    fields.push({ label: "触发事件", value: entry.moodTrigger });
+  }
+  if (entry.moodBody) {
+    fields.push({ label: "身体感受", value: entry.moodBody });
+  }
+  if (entry.moodNote) {
+    fields.push({ label: "补充说明", value: entry.moodNote });
+  }
+
+  // 统计空字段数
+  const allFields = ["moodWords", "moodTrigger", "moodBody", "moodNote"];
+  const emptyCount = allFields.filter((f) => {
+    const v = entry[f as keyof MoodEntry];
+    return !v || (Array.isArray(v) && v.length === 0);
+  }).length;
+  const hasEmptyFields = emptyCount > 0;
+
+  return (
+    <div
+      style={{
+        borderBottom: isLast ? "none" : `1px solid ${theme.softer}`,
+      }}
+    >
+      {/* 收起态/头部：时间 + 情绪值 + 情绪词 + 展开箭头 */}
+      <button
+        onClick={onToggle}
+        className="flex w-full items-center gap-3 py-3 text-left transition-colors hover:bg-line-soft/40"
+      >
+        {/* 时间 */}
+        <span className="w-12 shrink-0 text-[13px] font-medium" style={{ color: theme.text, opacity: 0.7 }}>
+          {entry.time}
+        </span>
+        {/* 情绪值 */}
+        <span className="shrink-0 text-[13px] font-medium" style={{ color: theme.text }}>
+          {moodLabel[entry.mood as Mood]}
+        </span>
+        {/* 情绪词（收起态显示，展开态隐藏） */}
+        {!isExpanded && entry.moodWords && entry.moodWords.length > 0 && (
+          <span className="flex-1 truncate text-[12px]" style={{ color: theme.text, opacity: 0.5 }}>
+            {entry.moodWords.join("、")}
+          </span>
+        )}
+        {/* 展开箭头 */}
+        <ChevronRight
+          className="ml-auto h-3.5 w-3.5 shrink-0 transition-transform"
+          style={{
+            color: theme.text,
+            opacity: 0.4,
+            transform: isExpanded ? "rotate(90deg)" : "none",
+          }}
+        />
+      </button>
+
+      {/* 展开态：详情字段 */}
+      <AnimatePresence initial={false}>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease }}
+            className="overflow-hidden"
+          >
+            <div className="pb-3 pl-[60px]">
+              {/* 情绪值（详情中也展示） */}
+              <div className="mb-2 flex items-baseline gap-2">
+                <span className="text-[12px]" style={{ color: theme.text, opacity: 0.5 }}>情绪</span>
+                <span className="text-[13px] font-medium" style={{ color: theme.text }}>
+                  {moodLabel[entry.mood as Mood]}
+                </span>
+              </div>
+              {/* 有内容的字段 */}
+              {fields.length > 0 ? (
+                <div className="flex flex-col gap-2">
+                  {fields.map((f, i) => (
+                    <div key={i} className="flex flex-col gap-0.5">
+                      <span className="text-[12px]" style={{ color: theme.text, opacity: 0.5 }}>
+                        {f.label}
+                      </span>
+                      <span className="text-[13px]" style={{ color: theme.text }}>
+                        {f.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-[12px]" style={{ color: theme.text, opacity: 0.4 }}>
+                  仅记录了情绪值
+                </div>
+              )}
+              {/* 空字段统一提示 */}
+              {hasEmptyFields && fields.length > 0 && (
+                <div className="mt-2 text-[11px]" style={{ color: theme.text, opacity: 0.35 }}>
+                  其余字段未记录
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -1135,9 +1385,9 @@ function DetailSheet({
         transition={{ duration: 0.25, ease }}
         onClick={onClose}
       />
-      {/* 抽屉：支持下拉关闭 */}
+      {/* 抽屉：固定高度 + 内部滚动 + 下拉关闭 */}
       <motion.div
-        className="absolute inset-x-0 bottom-0 z-50 rounded-t-[24px] bg-white px-6 pb-8 pt-3 shadow-[0_-8px_30px_-12px_rgba(0,0,0,0.15)]"
+        className="absolute inset-x-0 bottom-0 z-50 flex max-h-[82vh] flex-col rounded-t-[24px] bg-white shadow-[0_-8px_30px_-12px_rgba(0,0,0,0.15)]"
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
@@ -1154,17 +1404,27 @@ function DetailSheet({
         }}
       >
         {/* 把手：仅顶部拖拽短条 */}
-        <div className="mx-auto mb-4 h-1 w-9 rounded-full" style={{ backgroundColor: theme.soft }} />
+        <div className="mx-auto mt-3 mb-3 h-1 w-9 shrink-0 rounded-full" style={{ backgroundColor: theme.soft }} />
 
-        {/* 标题区：左 日期+星期 / 右 仅 ··· */}
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-baseline gap-2">
-            <span className="text-[15px] font-semibold" style={{ color: theme.text }}>
-              {day.displayDate}
-            </span>
-            <span className="text-[11px]" style={{ color: theme.text, opacity: 0.5 }}>
-              {weekday(day.date)}
-            </span>
+        {/* 标题区：左 日期+星期+摘要 / 右 仅 ··· */}
+        <div className="mb-3 flex shrink-0 items-start justify-between px-6">
+          <div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-[15px] font-semibold" style={{ color: theme.text }}>
+                {day.displayDate}
+              </span>
+              <span className="text-[11px]" style={{ color: theme.text, opacity: 0.5 }}>
+                {weekday(day.date)}
+              </span>
+            </div>
+            {/* 情绪场景：当天记录次数摘要 */}
+            {sceneKey === "mood" && (
+              <div className="mt-1 text-[11px]" style={{ color: theme.text, opacity: 0.45 }}>
+                {day.moodEntries && day.moodEntries.length > 0
+                  ? `当天共 ${day.moodEntries.length} 次记录`
+                  : "未记录"}
+              </div>
+            )}
           </div>
 
           <div className="relative" ref={menuRef}>
@@ -1207,22 +1467,29 @@ function DetailSheet({
           </div>
         </div>
 
-        {/* 字段列表 */}
-        <div className="flex flex-col divide-y" style={{ borderColor: theme.softer }}>
-          {rows.map((r, i) => (
-            <div
-              key={i}
-              className="flex items-baseline justify-between gap-4 py-3"
-              style={{ borderTop: i === 0 ? "none" : `1px solid ${theme.softer}` }}
-            >
-              <span className="text-[13px]" style={{ color: theme.text, opacity: 0.6 }}>
-                {r.k}
-              </span>
-              <span className="text-right text-[14px]" style={{ color: theme.text }}>
-                {r.v}
-              </span>
+        {/* 内容区：可滚动 */}
+        <div className="no-scrollbar flex-1 overflow-y-auto px-6 pb-8">
+          {sceneKey === "mood" ? (
+            <MoodDetailContent day={day} theme={theme} />
+          ) : (
+            /* 字段列表（非情绪场景） */
+            <div className="flex flex-col divide-y" style={{ borderColor: theme.softer }}>
+              {rows.map((r, i) => (
+                <div
+                  key={i}
+                  className="flex items-baseline justify-between gap-4 py-3"
+                  style={{ borderTop: i === 0 ? "none" : `1px solid ${theme.softer}` }}
+                >
+                  <span className="text-[13px]" style={{ color: theme.text, opacity: 0.6 }}>
+                    {r.k}
+                  </span>
+                  <span className="text-right text-[14px]" style={{ color: theme.text }}>
+                    {r.v}
+                  </span>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       </motion.div>
 
@@ -1363,7 +1630,7 @@ function EditSheet({
         </div>
 
         {/* 表单内容区：可滚动 */}
-        <div className="flex-1 overflow-y-auto px-5 py-4">
+        <div className="no-scrollbar flex-1 overflow-y-auto px-5 py-4">
           {sceneKey === "mood" && (
             <MoodEditForm form={form} setField={setField} theme={theme} day={day} />
           )}
@@ -1449,14 +1716,30 @@ function buildPatch(
   form: EditFormState,
 ): Partial<DailyLookbackData> {
   switch (sceneKey) {
-    case "mood":
-      return {
+    case "mood": {
+      const moodPatch: Partial<DailyLookbackData> = {
         mood: form.mood,
         moodWords: form.moodWords ? form.moodWords.split(/[、,，]/).map((s) => s.trim()).filter(Boolean) : null,
         moodTrigger: form.moodTrigger || null,
         moodBody: form.moodBody || null,
         moodNote: form.moodNote || null,
       };
+      // 同步更新 moodEntries：编辑时重建为单条记录（简化处理）
+      if (form.mood !== null) {
+        const words = form.moodWords ? form.moodWords.split(/[、,，]/).map((s) => s.trim()).filter(Boolean) : null;
+        moodPatch.moodEntries = [{
+          time: "12:00",
+          mood: form.mood,
+          moodWords: words,
+          moodTrigger: form.moodTrigger || null,
+          moodBody: form.moodBody || null,
+          moodNote: form.moodNote || null,
+        }];
+      } else {
+        moodPatch.moodEntries = null;
+      }
+      return moodPatch;
+    }
     case "sleep": {
       const sleepTime = form.sleepTime || null;
       const wakeTime = form.wakeTime || null;
@@ -1956,14 +2239,28 @@ function buildDetailRows(
   day: DailyLookbackData,
 ): { k: string; v: string }[] {
   switch (sceneKey) {
-    case "mood":
-      return [
-        { k: "情绪", v: day.mood !== null ? moodLabel[day.mood as Mood] : "未记录" },
-        { k: "情绪词", v: day.moodWords?.join("、") ?? "未记录" },
-        { k: "触发事件", v: day.moodTrigger ?? "未记录" },
-        { k: "身体感受", v: day.moodBody ?? "未记录" },
-        { k: "补充说明", v: day.moodNote ?? "—" },
-      ];
+    case "mood": {
+      // 日内多条情绪记录：每条记录展开为一组字段
+      const entries = day.moodEntries;
+      if (!entries || entries.length === 0) {
+        return [{ k: "情绪", v: "未记录" }];
+      }
+      // 多条记录时，每条记录独立展示
+      const rows: { k: string; v: string }[] = [];
+      entries.forEach((entry, idx) => {
+        const prefix = entries.length > 1 ? `${entry.time} ` : "";
+        rows.push({ k: `${prefix}情绪`, v: moodLabel[entry.mood as Mood] });
+        rows.push({ k: `${prefix}情绪词`, v: entry.moodWords?.join("、") ?? "未记录" });
+        rows.push({ k: `${prefix}触发事件`, v: entry.moodTrigger ?? "未记录" });
+        rows.push({ k: `${prefix}身体感受`, v: entry.moodBody ?? "未记录" });
+        rows.push({ k: `${prefix}补充说明`, v: entry.moodNote ?? "—" });
+        // 多条记录之间加分行（空行）
+        if (idx < entries.length - 1) {
+          rows.push({ k: "", v: "" });
+        }
+      });
+      return rows;
+    }
     case "sleep": {
       const duration =
         day.sleepDurationMin !== null
@@ -1996,10 +2293,18 @@ function buildDetailRows(
         { k: "活动内容", v: day.activityContent ?? "—" },
         { k: "补充说明", v: day.activityNote ?? "—" },
       ];
-    case "weight":
+    case "weight": {
+      if (day.weight === null) {
+        return [{ k: "体重", v: "未记录" }];
+      }
+      const profile = getUserProfile();
+      const bmi = calculateBMI(day.weight, profile.heightCm);
+      const annotation = getBMIRemark(bmi);
       return [
-        { k: "体重", v: day.weight !== null ? `${day.weight} kg` : "未记录" },
+        { k: "体重", v: `${day.weight} kg` },
+        { k: "BMI", v: `${bmi}（${annotation}）` },
       ];
+    }
   }
 }
 

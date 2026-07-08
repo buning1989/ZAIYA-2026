@@ -56,7 +56,7 @@ const bottomMenuItems: {
   Icon: ForwardRefExoticComponent<LucideProps>;
 }[] = [
   { id: "help", label: "帮助与反馈", Icon: HelpCircle },
-  { id: "settings", label: "设置", Icon: Settings },
+  { id: "settings", label: "应用设置", Icon: Settings },
 ];
 
 /* —— 更多侧边栏内容 ——
@@ -194,7 +194,7 @@ function SettingsDetail({
   /* —— 子页面：账号注销确认 —— */
   if (subPage === "deletion") {
     return (
-      <div className="relative flex h-full flex-col bg-canvas">
+      <div className="relative flex h-full flex-col bg-white">
         <div className="flex items-center gap-3 px-5 pt-14 pb-2">
           <button
             onClick={() => setSubPage(null)}
@@ -225,7 +225,7 @@ function SettingsDetail({
   /* —— 子页面：应用隐私条款 —— */
   if (subPage === "privacy-policy") {
     return (
-      <div className="relative flex h-full flex-col bg-canvas">
+      <div className="relative flex h-full flex-col bg-white">
         <div className="flex items-center gap-3 px-5 pt-14 pb-2">
           <button
             onClick={() => setSubPage(null)}
@@ -238,7 +238,7 @@ function SettingsDetail({
             应用隐私条款
           </h2>
         </div>
-        <div className="flex-1 overflow-y-auto px-6 pt-6" />
+        <div className="no-scrollbar flex-1 overflow-y-auto px-6 pt-6" />
       </div>
     );
   }
@@ -246,7 +246,7 @@ function SettingsDetail({
   /* —— 子页面：用户协议 —— */
   if (subPage === "user-agreement") {
     return (
-      <div className="relative flex h-full flex-col bg-canvas">
+      <div className="relative flex h-full flex-col bg-white">
         <div className="flex items-center gap-3 px-5 pt-14 pb-2">
           <button
             onClick={() => setSubPage(null)}
@@ -259,14 +259,14 @@ function SettingsDetail({
             用户协议
           </h2>
         </div>
-        <div className="flex-1 overflow-y-auto px-6 pt-6" />
+        <div className="no-scrollbar flex-1 overflow-y-auto px-6 pt-6" />
       </div>
     );
   }
 
   /* —— 设置主页 —— */
   return (
-    <div className="relative flex h-full flex-col bg-canvas">
+    <div className="relative flex h-full flex-col bg-white">
       <div className="flex items-center gap-3 px-5 pt-14 pb-2">
         <button
           onClick={onBack}
@@ -280,7 +280,7 @@ function SettingsDetail({
         </h2>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 pt-4 pb-8">
+      <div className="no-scrollbar flex-1 overflow-y-auto px-5 pt-4 pb-8">
         {/* 第一组：功能设置 */}
         <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-ink-faint">
           功能设置
@@ -289,7 +289,7 @@ function SettingsDetail({
           <div className="flex items-center justify-between rounded-2xl border border-line bg-white px-5 py-4">
             <div className="flex-1 pr-3">
               <div className="text-[14px] font-medium text-ink">
-                记录快捷入口
+                记一下快捷入口
               </div>
               <p className="mt-1 text-[12px] leading-relaxed text-ink-faint">
                 开启后，首页右上角出现「记一下」入口。
@@ -342,7 +342,7 @@ function SettingsDetail({
             onClick={() => setSubPage("privacy-policy")}
             className="flex w-full items-center px-5 py-4 text-left transition-colors hover:bg-line-soft/40"
           >
-            <span className="text-[14px] text-ink">应用隐私条款</span>
+            <span className="text-[14px] text-ink">隐私条款</span>
           </button>
           <div className="mx-5 h-px bg-line" />
           <button
@@ -419,7 +419,7 @@ function HelpFeedbackPage({ onBack }: { onBack: () => void }) {
   ];
 
   return (
-    <div className="relative flex h-full flex-col bg-canvas">
+    <div className="relative flex h-full flex-col bg-white">
       {/* Toast 固定在页面顶部居中，不随滚动漂移 */}
       {toastMsg && (
         <div className="pointer-events-none absolute inset-x-0 top-14 z-20 flex justify-center px-4">
@@ -447,7 +447,7 @@ function HelpFeedbackPage({ onBack }: { onBack: () => void }) {
         </h2>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 pt-4 pb-8">
+      <div className="no-scrollbar flex-1 overflow-y-auto px-5 pt-4 pb-8">
         {/* 常见问题 */}
         <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-ink-faint">
           常见问题
@@ -503,7 +503,7 @@ function HelpFeedbackPage({ onBack }: { onBack: () => void }) {
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   aria-label="添加图片"
-                  className="grid h-16 w-16 place-items-center rounded-xl border border-dashed border-line text-ink-faint transition-colors hover:border-ink-soft hover:text-ink-soft"
+                  className="grid h-16 w-16 place-items-center rounded-xl border border-action-primary bg-action-primary text-action-primary-text transition-opacity hover:opacity-90"
                 >
                   <Plus className="h-5 w-5" strokeWidth={1.8} />
                 </button>
@@ -518,7 +518,7 @@ function HelpFeedbackPage({ onBack }: { onBack: () => void }) {
                 onClick={() => fileInputRef.current?.click()}
                 aria-label="上传图片"
                 disabled={images.length >= 3}
-                className="grid h-9 w-9 place-items-center rounded-lg text-ink-faint transition-colors hover:text-ink disabled:opacity-30"
+                className="grid h-9 w-9 place-items-center rounded-lg bg-action-primary text-action-primary-text transition-opacity hover:opacity-90 disabled:opacity-30"
               >
                 <ImagePlus className="h-5 w-5" strokeWidth={1.8} />
               </button>
@@ -535,7 +535,7 @@ function HelpFeedbackPage({ onBack }: { onBack: () => void }) {
             <button
               onClick={handleSubmit}
               disabled={!canSubmit}
-              className="rounded-xl bg-ink px-4 py-2 text-[13px] font-medium text-white transition-opacity disabled:opacity-30"
+              className="rounded-xl bg-action-primary px-4 py-2 text-[13px] font-medium text-action-primary-text transition-opacity disabled:opacity-30"
             >
               提交
             </button>

@@ -18,6 +18,9 @@
   /* Action / 行动 */
   --z-action-primary: #E6F46B;
   --z-action-primary-text: #27331F;
+  --z-action-pressed: #536652;
+  --z-action-disabled: #D8DDD6;
+  --z-action-subtle: #EEF3ED;
   --z-action-deep: #27331F;
   --z-action-deep-text: #F8FAEF;
 
@@ -56,6 +59,22 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.bg-action-primary {
+  background-color: var(--z-action-primary);
+}
+
+.border-action-primary {
+  border-color: var(--z-action-primary);
+}
+
+.text-action-primary-text {
+  color: var(--z-action-primary-text);
+}
+
+.ring-action-primary {
+  --tw-ring-color: var(--z-action-primary);
+}
+
 /* 预留深夜色 token：当前 Demo 无模式切换入口，仅保留变量，不接交互 */
 [data-theme="night"] {
   /* Space / 空间 */
@@ -71,8 +90,8 @@
   --z-text-tertiary: #9EA48E;
 
   /* Action / 行动 */
-  --z-action-primary: #D6E08E;
-  --z-action-primary-text: #22301A;
+  --z-action-primary: #E6F46B;
+  --z-action-primary-text: #27331F;
   --z-action-deep: #D6E08E;
   --z-action-deep-text: #22301A;
 
@@ -126,16 +145,32 @@ a {
   text-decoration: none;
 }
 
-/* thin, restrained scrollbar */
-::-webkit-scrollbar {
+/* thin, restrained scrollbar — 仅作用于根级滚动条（落地页主体），
+   不影响手机模拟区域内部滚动容器（内部统一使用 .no-scrollbar） */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
-::-webkit-scrollbar-thumb {
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
   background: #B9C2A8;
   border: 3px solid var(--z-space-bg);
   border-radius: 999px;
 }
-::-webkit-scrollbar-thumb:hover {
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover {
   background: #8B947D;
+}
+
+/* 手机模拟区域内部滚动容器统一隐藏原生滚动条：
+   保留滚动能力（鼠标滚轮 / 触控板 / 触摸滑动），仅视觉上不显示轨道与滑块 */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
