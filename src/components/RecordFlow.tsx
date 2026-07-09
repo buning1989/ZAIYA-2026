@@ -19,6 +19,9 @@ import {
 } from "lucide-react";
 import ZaizaiVideo from "./ZaizaiVideo";
 import VoiceInputBar from "./VoiceInputBar";
+import MoodRecordWizard, {
+  type MoodRecordWizardHandle,
+} from "./MoodRecordWizard";
 import { PhoneStatusBar } from "./AppMainSurface";
 import { MoonPhaseIcon, type MoonPhaseLevel } from "./MoonPhaseIcon";
 import { calculateBMI, getUserProfile, addEnergy, getEnergy, FULL_RECORD_ENERGY_REWARD } from "@/data/userProfile";
@@ -168,8 +171,13 @@ export default function RecordFlow({
   // isFullRecordReady：已进入「这条记录已经完整了」确认页
   const [hasCompletedFirstStep, setHasCompletedFirstStep] = useState(false);
   const [isFullRecordReady, setIsFullRecordReady] = useState(false);
+  // 情绪向导当前步骤（1-5），用于顶部「1/5」提示与返回拦截
+  const [moodInternalStep, setMoodInternalStep] = useState(1);
   // 返回确认浮层模式：discard=二选一（继续填写/放弃并返回）；three=三选一（含先记到这儿）
   const [dialogMode, setDialogMode] = useState<"discard" | "three" | null>(null);
+
+  // 情绪向导 ref：用于拦截顶部返回按钮，优先走内部「上一步」
+  const moodWizardRef = useRef<MoodRecordWizardHandle>(null);
 
   const type = typeId
     ? recordTypes.find((t) => t.id === typeId) ?? null
@@ -182,6 +190,7 @@ export default function RecordFlow({
     setIsRecordSaved(false);
     setHasCompletedFirstStep(false);
     setIsFullRecordReady(false);
+    setMoodInternalStep(1);
     setDialogMode(null);
     setLayer("wizard");
   };
@@ -253,6 +262,10 @@ export default function RecordFlow({
       onBack();
       return;
     }
+    // 情绪向导：优先尝试内部返回（上一步 / 退出安全流程）
+    if (typeId === "mood" && moodWizardRef.current?.goBackInternal()) {
+      return;
+    }
     if (isRecordSaved) {
       backToRecordHome();
       return;
@@ -285,6 +298,7 @@ export default function RecordFlow({
     setIsRecordSaved(false);
     setHasCompletedFirstStep(false);
     setIsFullRecordReady(false);
+    setMoodInternalStep(1);
     setDialogMode(null);
   };
 
@@ -293,9 +307,13 @@ export default function RecordFlow({
     (progress: {
       hasCompletedFirstStep: boolean;
       isFullRecordReady: boolean;
+      moodInternalStep?: number;
     }) => {
       setHasCompletedFirstStep(progress.hasCompletedFirstStep);
       setIsFullRecordReady(progress.isFullRecordReady);
+      if (progress.moodInternalStep !== undefined) {
+        setMoodInternalStep(progress.moodInternalStep);
+      }
     },
     [],
   );
@@ -334,6 +352,14 @@ export default function RecordFlow({
         </button>
         <h2 className="flex-1 text-[17px] font-semibold tracking-tight text-ink">
           {title}
+          {layer === "wizard" &&
+            typeId === "mood" &&
+            !isFullRecordReady &&
+            !isRecordSaved && (
+              <span className="ml-2 text-[12px] font-normal text-ink-faint">
+                {moodInternalStep}/5
+              </span>
+            )}
         </h2>
         {layer === "wizard" && (isFullRecordReady || isRecordSaved) ? (
           /* 确认页 / 已保存：能量入口（仅展示，点击提示 Demo 暂未开放） */
@@ -388,7 +414,19 @@ export default function RecordFlow({
                 savedMessage={savedMessage}
               />
             )}
-            {layer === "wizard" && type && (
+            {layer === "wizard" && type && typeId === "mood" && (
+              <MoodRecordWizard
+                ref={moodWizardRef}
+                type={type}
+                answers={wizardAnswers}
+                setAnswers={setWizardAnswers}
+                onSave={handleSave}
+                onFinishRecord={handleCompleteRecord}
+                onAbort={backToRecordHome}
+                onProgressChange={handleProgressChange}
+              />
+            )}
+            {layer === "wizard" && type && typeId !== "mood" && (
               <RecordWizard
                 type={type}
                 answers={wizardAnswers}
@@ -1648,8 +1686,8 @@ function RecordConfirmPage({
   const now = new Date();
   const timeStr = `今天 ${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
 
-  // —— 完成反馈 Toast（inline 覆盖在确认页顶部，不切换独立页面）——
-  // toast：实色能量胶囊，贴顶部展示，1.3s 自动消失，不与下方摘要卡重叠
+  // —— 完成反馈 Toast（inline 覆盖在确认页中央，不切换独立页面）——
+  // toast：实色能量胶囊，居中弹出，1.3s 后原地淡出
   // done：底部按钮切换为「回到记一下」
   if (completionPhase !== "confirm") {
     return (
@@ -1714,17 +1752,25 @@ function RecordConfirmPage({
           </button>
         </div>
 
-        {/* 能量 Toast：贴顶部实色胶囊，不与摘要卡重叠，1.3s 后原地淡出 */}
+        {/* 能量 Toast：居中弹出，避免压在标题/摘要卡之间 */}
         <AnimatePresence>
           {completionPhase === "toast" && (
             <motion.div
-              initial={{ opacity: 0, y: -8, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -8, scale: 0.96 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               transition={{ duration: 0.25, ease }}
-              className="absolute left-1/2 top-3 z-30 -translate-x-1/2 whitespace-nowrap rounded-full border border-[rgba(177,194,113,0.4)] bg-[#EEF2E4] px-4 py-2 text-[14px] font-semibold tracking-tight text-[#2C3B27] shadow-[0_6px_16px_rgba(44,59,39,0.12)]"
+              className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center"
             >
-              记录收好了 · +{FULL_RECORD_ENERGY_REWARD} 能量
+              <motion.div
+                initial={{ scale: 0.96 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0.96 }}
+                transition={{ duration: 0.25, ease }}
+                className="whitespace-nowrap rounded-full border border-[rgba(177,194,113,0.4)] bg-[#EEF2E4] px-4 py-2 text-[14px] font-semibold tracking-tight text-[#2C3B27] shadow-[0_6px_16px_rgba(44,59,39,0.12)]"
+              >
+                记录收好了 · +{FULL_RECORD_ENERGY_REWARD} 能量
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>

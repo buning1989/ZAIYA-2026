@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import ZaizaiVideo from "./ZaizaiVideo";
 import AppMainSurface from "./AppMainSurface";
 import ZaiyaWakeAnimation from "./ZaiyaWakeAnimation";
 
@@ -26,7 +25,7 @@ function AppSurface() {
   return (
     <div className="mx-auto w-full max-w-[320px]">
       <PhoneFrame>
-        <AppMainSurface previewMode zaizaiClassName="h-72 w-72" />
+        <AppMainSurface previewMode />
       </PhoneFrame>
     </div>
   );
@@ -56,8 +55,11 @@ function PlaceholderIcons({ count, offset = 0 }: { count: number; offset?: numbe
 
 function WidgetCard() {
   return (
-    <div className="col-start-3 row-start-1 col-span-2 row-span-2 grid place-items-center overflow-hidden rounded-[24px] border border-white/80 bg-white/90 shadow-[0_10px_28px_-18px_rgba(0,0,0,0.24)] backdrop-blur-md">
+    <div className="col-start-3 row-start-1 col-span-2 row-span-2 flex flex-col items-center justify-center gap-1.5 overflow-hidden rounded-[24px] border border-white/80 bg-white/90 px-3 shadow-[0_10px_28px_-18px_rgba(0,0,0,0.24)] backdrop-blur-md">
       <ZaiyaWakeAnimation variant="desktop-widget" />
+      <p className="whitespace-nowrap text-[11px] font-medium leading-none tracking-normal text-ink-soft">
+        在在轻轻叫你
+      </p>
     </div>
   );
 }
@@ -93,7 +95,7 @@ function WidgetSurface() {
           </div>
 
           {/* 桌面占位网格：固定单元尺寸，widget 严格占据 2x2 */}
-          <div className="relative z-10 mt-8 grid grid-cols-[repeat(4,68px)] grid-flow-dense auto-rows-[68px] justify-center gap-[13px] px-6">
+          <div className="relative z-10 mt-6 grid grid-cols-[repeat(4,68px)] grid-flow-dense auto-rows-[68px] justify-center gap-[13px] px-6">
             <PlaceholderIcons count={2} />
             <WidgetCard />
             <PlaceholderIcons count={10} offset={2} />
@@ -116,12 +118,12 @@ function WatchSurface() {
         <div className="relative aspect-[4/5] overflow-hidden rounded-[38px] border-[6px] border-ink bg-ink shadow-[0_8px_40px_-12px_rgba(0,0,0,0.22)]">
           {/* 表盘屏幕 */}
           <div className="relative h-full overflow-hidden rounded-[32px] bg-white">
-            {/* 时间 */}
-            <div className="absolute left-0 right-0 top-5 text-center text-[13px] font-semibold tracking-wide text-ink-soft">
+            {/* 时间：手表表盘的主信息，字号接近日常 glance 的阅读比例 */}
+            <div className="absolute left-0 right-0 top-8 text-center text-[30px] font-semibold leading-none tracking-normal text-ink">
               20:00
             </div>
-            {/* 在在居中偏下，放大 */}
-            <div className="absolute inset-0 grid place-items-center pt-6">
+            {/* 在在按 GIF 主体视觉中心定位，不按透明画布居中 */}
+            <div className="absolute left-1/2 top-[58%] -translate-x-1/2 -translate-y-1/2">
               <ZaiyaWakeAnimation variant="watch" />
             </div>
           </div>

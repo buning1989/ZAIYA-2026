@@ -97,77 +97,9 @@ export const recordTypes: RecordType[] = [
       date: "7月4日",
       text: "情绪偏低，下午有一阵特别闷，与人际有关。",
     },
-    steps: [
-      {
-        id: "intensity",
-        question: "现在的情绪状态大概在哪儿？",
-        field: "intensity",
-        inputType: "segmented",
-        // 月相圆点：与 LookbackPage MoodBead 同步（1→空心 … 5→实心）
-        moonPhase: true,
-        // 情绪状态需进入趋势统计，保持 1–5 档结构化，不允许自由输入
-        allowCustom: false,
-        options: [
-          { label: "很低", value: "very_low", abnormal: true },
-          { label: "偏低", value: "low", abnormal: true },
-          { label: "一般", value: "normal" },
-          { label: "偏高", value: "high" },
-          { label: "很高", value: "very_high" },
-        ],
-        nextStepId: "emotionWords",
-      },
-      {
-        id: "emotionWords",
-        question: "更接近哪种情绪？",
-        field: "emotionWords",
-        inputType: "segmented",
-        options: [
-          { label: "难过", value: "sad" },
-          { label: "烦躁", value: "upset" },
-          { label: "紧张", value: "nervous" },
-          { label: "空", value: "empty" },
-          { label: "稳", value: "steady" },
-        ],
-        nextStepId: "triggers",
-        extra: true,
-      },
-      {
-        id: "triggers",
-        question: "可能和什么有关？",
-        field: "triggers",
-        inputType: "segmented",
-        // 多选：点击 toggle，需「下一步」确认，不自动推进
-        multi: true,
-        // 保留自由输入作为补充说明，存入独立 customReason，不替代多选原因
-        allowCustom: true,
-        customField: "customReason",
-        // 动态原因词：依据前一步情绪状态（intensity）调整推荐词
-        dynamicOptions: (a) =>
-          getMoodTriggerOptions(a.intensity?.value ?? ""),
-        nextStepId: "bodyReaction",
-        extra: true,
-      },
-      {
-        id: "bodyReaction",
-        question: "身体有什么反应吗？",
-        field: "bodyReaction",
-        inputType: "segmented",
-        options: [
-          ...bodyFeelingOptions,
-          { label: "还好", value: "ok" },
-        ],
-        nextStepId: "note",
-        extra: true,
-      },
-      {
-        id: "note",
-        question: "还想补一句的话，可以写在这里。",
-        field: "note",
-        inputType: "text",
-        isLast: true,
-        extra: true,
-      },
-    ],
+    // 情绪类型使用独立的 MoodRecordWizard 组件渲染（动态层级选择），
+    // 不走通用 wizard step 系统，steps 留空。
+    steps: [],
   },
   {
     id: "medication",
@@ -587,57 +519,6 @@ export function getNextStep(
   return allSteps.find((s) => s.id === targetId) ?? null;
 }
 
-/* —— 情绪原因推荐词：根据前一步情绪状态（intensity）动态调整 ——
- * 假设映射（指令截断，待确认）：
- *   低落档（很低/偏低）→ 偏消耗型原因
- *   一般档            → 中性原因（原有 5 项）
- *   高涨档（偏高/很高）→ 偏滋养型原因
- * 多选时 value 以「|」拼接、label 以「、」拼接存入 AnswerEntry。 */
-const moodTriggerOptionsByIntensity: Record<string, StepOption[]> = {
-  very_low: [
-    { label: "身体累", value: "tired" },
-    { label: "没睡好", value: "sleep" },
-    { label: "人际摩擦", value: "people" },
-    { label: "孤单", value: "lonely" },
-    { label: "无明确原因", value: "none" },
-  ],
-  low: [
-    { label: "人际", value: "people" },
-    { label: "身体", value: "body" },
-    { label: "睡眠", value: "sleep" },
-    { label: "工作/学习", value: "work" },
-    { label: "无明确原因", value: "none" },
-  ],
-  normal: [
-    { label: "人际", value: "people" },
-    { label: "身体", value: "body" },
-    { label: "睡眠", value: "sleep" },
-    { label: "工作/学习", value: "work" },
-    { label: "无明确原因", value: "none" },
-  ],
-  high: [
-    { label: "开心的事", value: "happy" },
-    { label: "被肯定", value: "praised" },
-    { label: "进展顺利", value: "progress" },
-    { label: "身体轻松", value: "body_good" },
-    { label: "其他", value: "other" },
-  ],
-  very_high: [
-    { label: "开心的事", value: "happy" },
-    { label: "被肯定", value: "praised" },
-    { label: "进展顺利", value: "progress" },
-    { label: "身体轻松", value: "body_good" },
-    { label: "其他", value: "other" },
-  ],
-};
-
-export function getMoodTriggerOptions(intensityValue: string): StepOption[] {
-  return (
-    moodTriggerOptionsByIntensity[intensityValue] ??
-    moodTriggerOptionsByIntensity.normal
-  );
-}
-
 /* —— 解析 step 选项：优先动态选项，回退静态 options —— */
 export function resolveStepOptions(step: Step, answers: Answers): StepOption[] {
   return step.dynamicOptions?.(answers) ?? step.options ?? [];
@@ -676,11 +557,8 @@ export function isCompleteCoreRecord(
 
   switch (typeId) {
     case "mood":
-      return (
-        filled("intensity") &&
-        filled("emotionWords") &&
-        (filled("triggers") || filled("bodyReaction"))
-      );
+      // 情绪类型使用独立 MoodRecordWizard，完整记录 = 已选一级情绪
+      return filled("primaryMood");
     case "food": {
       const abnormalAmount = ["吃了一点", "没吃", "不舒服"].includes(
         labelOf("amount") ?? "",
@@ -725,10 +603,11 @@ export function isCompleteCoreRecord(
  * 仅用于记录确认页的摘要展示，不影响数据结构。 */
 export const summaryLabels: Record<RecordTypeId, Record<string, string>> = {
   mood: {
-    intensity: "情绪状态",
-    emotionWords: "情绪",
-    triggers: "原因",
-    bodyReaction: "身体感受",
+    primaryMood: "情绪",
+    feeling: "感受",
+    reasons: "原因",
+    specialCategory: "特殊情况",
+    specialDetails: "具体表现",
   },
   medication: {
     status: "服药",

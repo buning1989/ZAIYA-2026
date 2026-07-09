@@ -4,30 +4,49 @@
  *   desktop-widget  桌面小组件卡片
  *   watch           手表表盘
  *
- * GIF 画布 640×1138（9:16），主体（窗帘+在在）只占画布中部一部分，
- * 上下与左右都有透明边距。因此不能直接以画布尺寸为准，
- * 需要在外层容器内用 transform scale 放大主体到目标可见宽度。
- *
- * 三个 variant 独立设置容器尺寸 + scale，互不影响：
- *   - 容器尺寸控制占位（不撑大父级布局）
- *   - scale 控制主体可见尺寸（以可见主体边界为准）
- *   - object-contain + 居中，保持原始宽高比，不裁切不拉伸
+ * GIF 画布 640×1138（9:16 竖向），主体（窗帘+在在）只占画布中部一部分。
+ * 透明帧 union bbox 约为 x=102..561, y=309..767，布局时按主体视觉中心校正，
+ * 不直接用整张 9:16 画布中心作为对齐基准。
+ * 采用 slot + media 两层结构：
+ *   - slotClass：外层占位，控制组件在页面中的视觉占位，不撑大父级布局
+ *   - mediaClass：内层 GIF 本体按 9:16 竖向展示，保证完整显示窗帘/在在主体
+ *   - scale：微调可见主体大小
+ *   - y：微调垂直位置
+ * 外层 overflow-visible，不裁切竖向动画；三个 variant 独立调参互不影响。
  */
 type ZaiyaWakeAnimationVariant = "phone-app" | "desktop-widget" | "watch";
 
 const VARIANT_CONFIG: Record<
   ZaiyaWakeAnimationVariant,
-  { container: string; scale: number }
+  {
+    slotClass: string;
+    mediaClass: string;
+    scale: number;
+    y?: number;
+  }
 > = {
-  // 首页主视觉：主体宽度约 150–170px
-  // 容器 176px × 314px（保持 9:16），scale 1.45 → 主体约 160px
-  "phone-app": { container: "h-[176px] w-[314px]", scale: 1.45 },
-  // 桌面小组件：主体宽度约 78–90px，不撑大白色卡片
-  // 容器 84px × 150px，scale 1.4 → 主体约 84px
-  "desktop-widget": { container: "h-[84px] w-[150px]", scale: 1.4 },
-  // 手表表盘：主体宽度约 90–105px，表盘中央清晰可见
-  // 容器 96px × 170px，scale 1.5 → 主体约 96px
-  watch: { container: "h-[96px] w-[170px]", scale: 1.5 },
+  "phone-app": {
+    // 首页视觉占位：略放大，配合 AppMainSurface 的光学居中位置
+    slotClass: "h-[190px] w-[190px]",
+    // GIF 本体按 9:16 竖向显示
+    mediaClass: "h-[338px] w-[190px]",
+    scale: 1.12,
+    y: 10,
+  },
+  "desktop-widget": {
+    // 小组件卡片内占位，留出一行互动文案
+    slotClass: "h-[72px] w-[72px]",
+    mediaClass: "h-[128px] w-[72px]",
+    scale: 1.08,
+    y: 4,
+  },
+  watch: {
+    // 手表表盘中占位：与大号时间形成表盘比例
+    slotClass: "h-[108px] w-[108px]",
+    mediaClass: "h-[178px] w-[100px]",
+    scale: 1.08,
+    y: 6,
+  },
 };
 
 export default function ZaiyaWakeAnimation({
@@ -37,17 +56,21 @@ export default function ZaiyaWakeAnimation({
   variant: ZaiyaWakeAnimationVariant;
   className?: string;
 }) {
-  const { container, scale } = VARIANT_CONFIG[variant];
+  const { slotClass, mediaClass, scale, y = 0 } = VARIANT_CONFIG[variant];
+
   return (
     <div
-      className={`relative grid place-items-center overflow-hidden ${container} ${className}`}
+      className={`pointer-events-none relative grid place-items-center overflow-visible ${slotClass} ${className}`}
     >
       <img
         src="/assets/zaiya/wake-up.gif"
         alt="在在起床"
         draggable={false}
-        className="h-full w-full object-contain select-none"
-        style={{ transform: `scale(${scale})` }}
+        className={`block max-w-none select-none object-contain ${mediaClass}`}
+        style={{
+          transform: `translateY(${y}px) scale(${scale})`,
+          transformOrigin: "center center",
+        }}
       />
     </div>
   );

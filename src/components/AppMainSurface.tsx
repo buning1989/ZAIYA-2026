@@ -177,7 +177,6 @@ export default function AppMainSurface({
   interactive = false,
   variant = "hero",
   onButtonClick,
-  zaizaiClassName,
 }: Props) {
   const [active, setActive] = useState<number | null>(null);
 
@@ -543,15 +542,6 @@ export default function AppMainSurface({
     });
   };
 
-  // 在在尺寸：必须给出明确宽高，否则 Rive canvas 会塌陷为 0
-  // 父容器是 absolute inset-x-0（无明确高度），不能用百分比，必须用 vh 或 px
-  // immersive（Demo 手机 ~390×780）：h-[22vh] w-[22vh] ≈ 172px，占屏幕高度 ~22%
-  // hero 用 h-64 w-64
-  // presenceRoom 下在在已退出不渲染，无需尺寸
-  const resolvedZaizaiClassName =
-    zaizaiClassName ??
-    (variant === "immersive" ? "h-[22vh] w-[22vh]" : "h-64 w-64");
-
   // 正念练习页主视觉在在尺寸（与隐私页装饰视频分离，独立管理）
   // 容器 120px → ZaizaiVideo 内部 video h-[170%] ≈ 204px，配合 scale 1 显示约 200px
   // 满足"容器宽度 190–210px"要求；不超过内容宽度 58%（390×0.58≈226px）
@@ -625,7 +615,9 @@ export default function AppMainSurface({
         animate={{
           top:
             mode === "home"
-              ? "38%"
+              ? variant === "immersive"
+                ? "38%"
+                : "34%"
               : mode === "reliefPractice"
                 ? "16%"
                 : "15%",
