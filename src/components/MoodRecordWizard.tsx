@@ -5,16 +5,15 @@ import {
   useState,
 } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, ChevronLeft } from "lucide-react";
+import { Check, ChevronDown, ChevronLeft } from "lucide-react";
+import VoiceInputBar from "./VoiceInputBar";
 import { MoonPhaseIcon } from "./MoonPhaseIcon";
 import { FULL_RECORD_ENERGY_REWARD } from "@/data/userProfile";
 import {
   primaryMoods,
-  feelingOptionsByScore,
-  reasonOptions,
   specialSituationCategories,
-  MUTUALLY_EXCLUSIVE_REASON,
-  findSpecialCategoryById,
+  getSecondaryGroupsForPolarity,
+  findGroupByWord,
   type PrimaryMood,
 } from "@/data/moodOptions";
 import type { Answers, RecordType } from "@/data/record";
@@ -24,9 +23,12 @@ const ease = [0.22, 1, 0.36, 1] as const;
 type Step = 1 | 2 | 3 | 4 | 5;
 type Phase = "form" | "toast" | "done" | "safety";
 
-const AUTO_ADVANCE_DELAY = 280;
+/* 选项超过阈值时折叠，默认展示前 VISIBLE 个，剩余放入「更多」 */
+const COLLAPSE_THRESHOLD = 12;
+const COLLAPSE_VISIBLE = 10;
 
 export interface MoodRecordWizardHandle {
+  /** 尝试内部返回（上一步 / 退出安全流程）。返回 true 表示已处理，父级不再拦截。 */
   goBackInternal: () => boolean;
 }
 
@@ -49,19 +51,23 @@ const MoodRecordWizard = forwardRef<MoodRecordWizardHandle, Props>(
     { answers, setAnswers, onFinishRecord, onAbort, onProgressChange },
     ref,
   ) {
+    // —— 内部状态 ——
     const [step, setStep] = useState<Step>(1);
     const [primaryMood, setPrimaryMood] = useState<PrimaryMood | null>(null);
-    const [feeling, setFeeling] = useState<string | null>(null);
-    const [feelingCustom, setFeelingCustom] = useState("");
-    const [feelingInputMode, setFeelingInputMode] = useState(false);
-    const [reasons, setReasons] = useState<string[]>([]);
-    const [reasonCustom, setReasonCustom] = useState("");
-    const [reasonInputMode, setReasonInputMode] = useState(false);
-    const [specialCategoryId, setSpecialCategoryId] = useState<string | null>(
+    const [secondaryMood, setSecondaryMood] = useState<string | null>(null);
+    const [tertiarySelected, setTertiarySelected] = useState<string[]>([]);
+    const [specialSelected, setSpecialSelected] = useState<
+      Record<string, string[]>
+    >({});
+    const [expandedSpecialId, setExpandedSpecialId] = useState<string | null>(
       null,
     );
-    const [specialDetails, setSpecialDetails] = useState<string[]>([]);
+    const [note, setNote] = useState("");
     const [phase, setPhase] = useState<Phase>("form");
+
+    // "更多" 展开状态（每步独立，进入新步时重置）
+    const [showAllSecondary, setShowAllSecondary] = useState(false);
+    const [showAllTertiary, setShowAllTertiary] = useState(false);
 
     // —— 暴露给父组件：内部返回 ——
     useImperativeHandle(ref, () => ({
@@ -78,6 +84,31 @@ const MoodRecordWizard = forwardRef<MoodRecordWizardHandle, Props>(
         return false;
       },
     }));
+
+    // —— 派生数据 ——
+    const secondaryGroup = secondaryMood
+      ? findGroupByWord(secondaryMood)
+      : null;
+    const availableGroups = primaryMood
+      ? getSecondaryGroupsForPolarity(primaryMood.polarity)
+      : [];
+    const allSecondaryWords = availableGroups.flatMap((g) => g.words);
+    const tertiaryPrompt = secondaryGroup?.tertiaryPrompt ?? null;
+    const tertiaryOptions = secondaryGroup?.tertiaryOptions ?? [];
+
+    const secondaryNeedsCollapse =
+      allSecondaryWords.length > COLLAPSE_THRESHOLD;
+    const visibleSecondaryWords = showAllSecondary
+      ? allSecondaryWords
+      : allSecondaryWords.slice(0, COLLAPSE_VISIBLE);
+    const hiddenSecondaryCount =
+      allSecondaryWords.length - COLLAPSE_VISIBLE;
+
+    const tertiaryNeedsCollapse = tertiaryOptions.length > COLLAPSE_THRESHOLD;
+    const visibleTertiaryOptions = showAllTertiary
+      ? tertiaryOptions
+      : tertiaryOptions.slice(0, COLLAPSE_VISIBLE);
+    const hiddenTertiaryCount = tertiaryOptions.length - COLLAPSE_VISIBLE;
 
     // —— 进度上报 ——
     useEffect(() => {
@@ -98,159 +129,144 @@ const MoodRecordWizard = forwardRef<MoodRecordWizardHandle, Props>(
           label: primaryMood.label,
         };
       }
-      if (feeling) {
-        newAnswers.feeling = { type: "option", value: feeling, label: feeling };
-      } else if (feelingCustom.trim()) {
-        newAnswers.feeling = {
-          type: "custom",
-          value: feelingCustom.trim(),
-        };
-      }
-      if (reasons.length > 0 || reasonCustom.trim()) {
-        const all = [...reasons];
-        if (reasonCustom.trim()) all.push(reasonCustom.trim());
-        newAnswers.reasons = {
+      if (secondaryMood && secondaryGroup) {
+        newAnswers.secondaryMood = {
           type: "option",
-          value: all.join("|"),
-          label: all.join("、"),
+          value: secondaryGroup.id,
+          label: secondaryMood,
         };
       }
-      if (specialCategoryId) {
-        const cat = findSpecialCategoryById(specialCategoryId);
-        if (cat) {
-          newAnswers.specialCategory = {
-            type: "option",
-            value: cat.id,
-            label: cat.entry,
-          };
+      if (tertiarySelected.length > 0) {
+        newAnswers.tertiaryCause = {
+          type: "option",
+          value: tertiarySelected.join("|"),
+          label: tertiarySelected.join("、"),
+        };
+      }
+      Object.entries(specialSelected).forEach(([catId, opts]) => {
+        if (opts.length > 0) {
+          const cat = specialSituationCategories.find((c) => c.id === catId);
+          if (cat) {
+            newAnswers[`special_${catId}`] = {
+              type: "option",
+              value: opts.join("|"),
+              label: `${cat.entry}：${opts.join("、")}`,
+            };
+          }
         }
-      }
-      if (specialDetails.length > 0) {
-        newAnswers.specialDetails = {
-          type: "option",
-          value: specialDetails.join("|"),
-          label: specialDetails.join("、"),
-        };
+      });
+      if (note.trim()) {
+        newAnswers.note = { type: "custom", value: note };
       }
       setAnswers(newAnswers);
     }, [
       primaryMood,
-      feeling,
-      feelingCustom,
-      reasons,
-      reasonCustom,
-      specialCategoryId,
-      specialDetails,
+      secondaryMood,
+      secondaryGroup,
+      tertiarySelected,
+      specialSelected,
+      note,
       setAnswers,
     ]);
 
-    // —— 派生数据 ——
-    const feelingOptions = primaryMood
-      ? feelingOptionsByScore[primaryMood.score]
-      : [];
-    const selectedCategory = specialCategoryId
-      ? findSpecialCategoryById(specialCategoryId)
-      : null;
+    // —— 选择处理（含状态重置） ——
 
-    // —— 步骤 1：选一级情绪（单选自动进入） ——
+    // 切换一级：清空二级 + 三级（不清空特殊情况、备注）
     const handleSelectPrimary = (mood: PrimaryMood) => {
-      if (primaryMood?.label === mood.label) return;
-      setPrimaryMood(mood);
-      // 修改一级：清空二级（感受）和三级（原因），不清空特殊情况
-      setFeeling(null);
-      setFeelingCustom("");
-      setFeelingInputMode(false);
-      setReasons([]);
-      setReasonCustom("");
-      setReasonInputMode(false);
-      setTimeout(() => setStep(2), AUTO_ADVANCE_DELAY);
-    };
-
-    // —— 步骤 2：选感受（单选自动进入） ——
-    const handleSelectFeeling = (word: string) => {
-      setFeeling(word);
-      setFeelingCustom("");
-      setFeelingInputMode(false);
-      // 修改二级：清空三级（原因）
-      setReasons([]);
-      setReasonCustom("");
-      setReasonInputMode(false);
-      setTimeout(() => setStep(3), AUTO_ADVANCE_DELAY);
-    };
-
-    const handleFeelingCustomConfirm = () => {
-      if (!feelingCustom.trim()) return;
-      setFeeling(null);
-      setReasons([]);
-      setReasonCustom("");
-      setTimeout(() => setStep(3), AUTO_ADVANCE_DELAY);
-    };
-
-    // —— 步骤 3：选原因（多选 + 互斥） ——
-    const handleToggleReason = (reason: string) => {
-      setReasons((prev) => {
-        if (reason === MUTUALLY_EXCLUSIVE_REASON) {
-          return prev.includes(reason) ? [] : [MUTUALLY_EXCLUSIVE_REASON];
-        }
-        const withoutMutex = prev.filter(
-          (r) => r !== MUTUALLY_EXCLUSIVE_REASON,
-        );
-        return withoutMutex.includes(reason)
-          ? withoutMutex.filter((r) => r !== reason)
-          : [...withoutMutex, reason];
-      });
-    };
-
-    const canProceedReasons = reasons.length > 0 || reasonCustom.trim().length > 0;
-
-    // —— 步骤 4：选特殊情况大类（单选 → 进入细项 / 暂不补充 → 确认） ——
-    const handleSelectSpecialCategory = (catId: string) => {
-      const cat = findSpecialCategoryById(catId);
-      if (!cat) return;
-      if (cat.isSafetyFlow) {
-        setPhase("safety");
+      if (primaryMood?.label === mood.label) {
+        setPrimaryMood(null);
         return;
       }
-      // 切换大类时清空旧细项
-      setSpecialCategoryId(catId);
-      setSpecialDetails([]);
-      setTimeout(() => setStep(5), AUTO_ADVANCE_DELAY);
+      setPrimaryMood(mood);
+      setSecondaryMood(null);
+      setTertiarySelected([]);
+      setShowAllSecondary(false);
+      setShowAllTertiary(false);
     };
 
-    const handleSkipSpecial = () => {
-      setSpecialCategoryId(null);
-      setSpecialDetails([]);
-      goToConfirm();
+    // 切换二级：清空三级（不清空特殊情况、备注）
+    const handleSelectSecondary = (word: string) => {
+      if (secondaryMood === word) {
+        setSecondaryMood(null);
+        return;
+      }
+      setSecondaryMood(word);
+      setTertiarySelected([]);
+      setShowAllTertiary(false);
     };
 
-    // —— 步骤 5：选特殊情况细项（多选 → 完成 → 确认） ——
-    const handleToggleSpecialDetail = (option: string) => {
-      setSpecialDetails((prev) =>
+    const handleToggleTertiary = (option: string) => {
+      setTertiarySelected((prev) =>
         prev.includes(option)
           ? prev.filter((o) => o !== option)
           : [...prev, option],
       );
     };
 
-    // —— 进入确认页 ——
-    const goToConfirm = () => {
-      onFinishRecord(answers);
-      setPhase("toast");
-      setTimeout(() => setPhase("done"), 1300);
+    const handleToggleSpecialOption = (catId: string, option: string) => {
+      setSpecialSelected((prev) => {
+        const current = prev[catId] ?? [];
+        const next = current.includes(option)
+          ? current.filter((o) => o !== option)
+          : [...current, option];
+        return { ...prev, [catId]: next };
+      });
     };
 
-    const handleCompleteFromDetails = () => {
-      goToConfirm();
+    const handleSpecialCategoryClick = (catId: string) => {
+      setExpandedSpecialId(expandedSpecialId === catId ? null : catId);
     };
 
-    // —— 摘要数据 ——
+    const handleSelfHarmClick = () => {
+      setPhase("safety");
+    };
+
+    // —— 步骤导航（底部按钮） ——
+    const canProceed = (() => {
+      if (step === 1) return primaryMood !== null;
+      if (step === 2) return secondaryMood !== null;
+      if (step === 3) return tertiarySelected.length > 0;
+      return true; // step 4、5 可跳过
+    })();
+
+    const buttonLabel = (() => {
+      if (step === 5) return "完成";
+      if (step === 4) {
+        const hasSpecial = Object.values(specialSelected).some(
+          (o) => o.length > 0,
+        );
+        return hasSpecial ? "下一步" : "跳过";
+      }
+      return "下一步";
+    })();
+
+    const handleNext = () => {
+      if (!canProceed && step <= 3) return;
+      if (step === 5) {
+        // 完成：保存 + 进入 toast
+        onFinishRecord(answers);
+        setPhase("toast");
+        setTimeout(() => setPhase("done"), 1300);
+        return;
+      }
+      setStep((step + 1) as Step);
+      if (step + 1 === 2) setShowAllSecondary(false);
+      if (step + 1 === 3) setShowAllTertiary(false);
+    };
+
+    // —— 摘要数据（Toast / Done 页用） ——
+    const specialEntries = Object.entries(specialSelected)
+      .filter(([, opts]) => opts.length > 0)
+      .map(([catId, opts]) => {
+        const cat = specialSituationCategories.find((c) => c.id === catId);
+        return cat ? { entry: cat.entry, selectedOptions: opts } : null;
+      })
+      .filter(
+        (x): x is { entry: string; selectedOptions: string[] } => x !== null,
+      );
+
     const now = new Date();
     const timeStr = `今天 ${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
-    const feelingDisplay = feeling ?? (feelingCustom.trim() || null);
-    const reasonDisplay = [
-      ...reasons,
-      ...(reasonCustom.trim() ? [reasonCustom.trim()] : []),
-    ];
 
     // —— 通用 chip 样式 ——
     const chipClass = (selected: boolean) =>
@@ -321,6 +337,7 @@ const MoodRecordWizard = forwardRef<MoodRecordWizardHandle, Props>(
             这条记录已经完整了
           </h2>
 
+          {/* 摘要卡 */}
           <div className="mt-4 rounded-2xl border border-line bg-white px-5 py-4">
             <div className="text-[11px] uppercase tracking-[0.16em] text-ink-faint">
               已记录
@@ -338,26 +355,35 @@ const MoodRecordWizard = forwardRef<MoodRecordWizardHandle, Props>(
                   </span>
                 </div>
               )}
-              {feelingDisplay && (
+              {secondaryMood && (
                 <div className="flex gap-2 text-[13px] leading-relaxed">
-                  <span className="shrink-0 text-ink-faint">感受：</span>
-                  <span className="text-ink">{feelingDisplay}</span>
+                  <span className="shrink-0 text-ink-faint">更接近：</span>
+                  <span className="text-ink">{secondaryMood}</span>
                 </div>
               )}
-              {reasonDisplay.length > 0 && (
+              {tertiarySelected.length > 0 && (
                 <div className="flex gap-2 text-[13px] leading-relaxed">
                   <span className="shrink-0 text-ink-faint">原因：</span>
-                  <span className="text-ink">{reasonDisplay.join("、")}</span>
+                  <span className="text-ink">
+                    {tertiarySelected.join("、")}
+                  </span>
                 </div>
               )}
-              {selectedCategory && (
-                <div className="flex gap-2 text-[13px] leading-relaxed">
+              {specialEntries.map((entry) => (
+                <div
+                  key={entry.entry}
+                  className="flex gap-2 text-[13px] leading-relaxed"
+                >
                   <span className="shrink-0 text-ink-faint">特殊情况：</span>
                   <span className="text-ink">
-                    {selectedCategory.entry}
-                    {specialDetails.length > 0 &&
-                      `：${specialDetails.join("、")}`}
+                    {entry.entry}：{entry.selectedOptions.join("、")}
                   </span>
+                </div>
+              ))}
+              {note.trim() && (
+                <div className="flex gap-2 text-[13px] leading-relaxed">
+                  <span className="shrink-0 text-ink-faint">备注：</span>
+                  <span className="text-ink">{note.trim()}</span>
                 </div>
               )}
               <div className="flex gap-2 text-[13px] leading-relaxed">
@@ -367,6 +393,7 @@ const MoodRecordWizard = forwardRef<MoodRecordWizardHandle, Props>(
             </div>
           </div>
 
+          {/* 底部按钮区 */}
           <div className="mt-auto pb-6 pt-4">
             {phase === "done" && (
               <button
@@ -378,6 +405,7 @@ const MoodRecordWizard = forwardRef<MoodRecordWizardHandle, Props>(
             )}
           </div>
 
+          {/* 能量 Toast */}
           <AnimatePresence>
             {phase === "toast" && (
               <motion.div
@@ -407,11 +435,11 @@ const MoodRecordWizard = forwardRef<MoodRecordWizardHandle, Props>(
               exit={{ opacity: 0, x: -16 }}
               transition={{ duration: 0.22, ease }}
             >
-              {/* —— Step 1：情绪状态（卡片单选，自动进入） —— */}
+              {/* —— Step 1：一级情绪 —— */}
               {step === 1 && (
                 <div className="pt-4">
                   <p className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
-                    现在的情绪状态大概在哪儿？
+                    今天整体怎么样？
                   </p>
                   <div className="mt-6 flex flex-col gap-2.5">
                     {primaryMoods.map((mood) => {
@@ -446,139 +474,87 @@ const MoodRecordWizard = forwardRef<MoodRecordWizardHandle, Props>(
                 </div>
               )}
 
-              {/* —— Step 2：更接近的感受（胶囊单选，自动进入） —— */}
+              {/* —— Step 2：二级情绪 —— */}
               {step === 2 && primaryMood && (
                 <div className="pt-4">
+                  <div className="mb-5 flex items-center justify-center gap-1.5 text-[12px] text-ink-faint">
+                    <MoonPhaseIcon
+                      level={primaryMood.score as 1 | 2 | 3 | 4 | 5}
+                      size={12}
+                    />
+                    <span>已选：{primaryMood.label}</span>
+                  </div>
                   <p className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
-                    &ldquo;{primaryMood.label}&rdquo;更接近哪种感觉？
+                    更接近哪种感觉？
                   </p>
-                  {!feelingInputMode ? (
-                    <>
-                      <div className="mt-6 flex flex-wrap justify-center gap-2.5">
-                        {feelingOptions.map((word) => (
-                          <button
-                            key={word}
-                            onClick={() => handleSelectFeeling(word)}
-                            className={chipClass(feeling === word)}
-                          >
-                            {word}
-                          </button>
-                        ))}
-                      </div>
+                  <div className="mt-6 flex flex-wrap justify-center gap-2.5">
+                    {visibleSecondaryWords.map((word) => (
                       <button
-                        onClick={() => setFeelingInputMode(true)}
-                        className="mt-5 w-full text-center text-[13px] text-ink-faint transition-colors hover:text-ink-soft"
+                        key={word}
+                        onClick={() => handleSelectSecondary(word)}
+                        className={chipClass(secondaryMood === word)}
                       >
-                        没有合适的？自己写一句
+                        {word}
                       </button>
-                    </>
-                  ) : (
-                    <div className="mt-6">
-                      <input
-                        type="text"
-                        value={feelingCustom}
-                        onChange={(e) => setFeelingCustom(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") handleFeelingCustomConfirm();
-                        }}
-                        autoFocus
-                        placeholder="写一句你的感受..."
-                        className="w-full rounded-xl border border-line bg-white px-4 py-3 text-[14px] text-ink placeholder:text-ink-faint focus:border-[rgba(177,194,113,0.6)] focus:outline-none"
-                      />
-                      <div className="mt-3 flex justify-center gap-3">
-                        <button
-                          onClick={() => {
-                            setFeelingInputMode(false);
-                            setFeelingCustom("");
-                          }}
-                          className="text-[13px] text-ink-faint transition-colors hover:text-ink"
-                        >
-                          取消
-                        </button>
-                        <button
-                          onClick={handleFeelingCustomConfirm}
-                          disabled={!feelingCustom.trim()}
-                          className={`text-[13px] font-medium transition-opacity ${
-                            feelingCustom.trim()
-                              ? "text-[#2C3B27]"
-                              : "text-ink-faint opacity-50"
-                          }`}
-                        >
-                          确定
-                        </button>
-                      </div>
-                    </div>
+                    ))}
+                  </div>
+                  {secondaryNeedsCollapse && !showAllSecondary && (
+                    <button
+                      onClick={() => setShowAllSecondary(true)}
+                      className="mt-4 w-full rounded-xl border border-dashed border-line bg-line-soft/30 px-4 py-2.5 text-[13px] text-ink-faint transition-colors hover:border-ink-faint hover:text-ink-soft"
+                    >
+                      更多（{hiddenSecondaryCount}）
+                    </button>
                   )}
                 </div>
               )}
 
-              {/* —— Step 3：可能相关原因（胶囊多选，底部按钮） —— */}
-              {step === 3 && (
+              {/* —— Step 3：三级原因 —— */}
+              {step === 3 && tertiaryPrompt && (
                 <div className="pt-4">
-                  <p className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
-                    可能和哪些有关？
-                  </p>
-                  {!reasonInputMode ? (
-                    <>
-                      <div className="mt-6 flex flex-wrap justify-center gap-2.5">
-                        {reasonOptions.map((reason) => (
-                          <button
-                            key={reason}
-                            onClick={() => handleToggleReason(reason)}
-                            className={chipClass(reasons.includes(reason))}
-                          >
-                            {reasons.includes(reason) && (
-                              <Check className="h-3.5 w-3.5" strokeWidth={2.4} />
-                            )}
-                            {reason}
-                          </button>
-                        ))}
-                      </div>
-                      <button
-                        onClick={() => setReasonInputMode(true)}
-                        className="mt-5 w-full text-center text-[13px] text-ink-faint transition-colors hover:text-ink-soft"
-                      >
-                        没有合适的？自己写一句
-                      </button>
-                    </>
-                  ) : (
-                    <div className="mt-6">
-                      <input
-                        type="text"
-                        value={reasonCustom}
-                        onChange={(e) => setReasonCustom(e.target.value)}
-                        autoFocus
-                        placeholder="写一个原因..."
-                        className="w-full rounded-xl border border-line bg-white px-4 py-3 text-[14px] text-ink placeholder:text-ink-faint focus:border-[rgba(177,194,113,0.6)] focus:outline-none"
-                      />
-                      <div className="mt-3 flex justify-center gap-3">
-                        <button
-                          onClick={() => {
-                            setReasonInputMode(false);
-                            setReasonCustom("");
-                          }}
-                          className="text-[13px] text-ink-faint transition-colors hover:text-ink"
-                        >
-                          取消
-                        </button>
-                        <button
-                          onClick={() => setReasonInputMode(false)}
-                          disabled={!reasonCustom.trim()}
-                          className={`text-[13px] font-medium transition-opacity ${
-                            reasonCustom.trim()
-                              ? "text-[#2C3B27]"
-                              : "text-ink-faint opacity-50"
-                          }`}
-                        >
-                          确定
-                        </button>
-                      </div>
+                  {secondaryMood && (
+                    <div className="mb-5 text-center text-[12px] text-ink-faint">
+                      已选：{secondaryMood}
                     </div>
+                  )}
+                  <p className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
+                    {tertiaryPrompt}
+                  </p>
+                  <p className="mt-2 text-center text-[12px] text-ink-faint">
+                    可以多选
+                  </p>
+                  <div className="mt-6 flex flex-wrap justify-center gap-2.5">
+                    {visibleTertiaryOptions.map((option) => {
+                      const selected = tertiarySelected.includes(option);
+                      return (
+                        <button
+                          key={option}
+                          onClick={() => handleToggleTertiary(option)}
+                          className={chipClass(selected)}
+                        >
+                          {selected && (
+                            <Check
+                              className="h-3.5 w-3.5"
+                              strokeWidth={2.4}
+                            />
+                          )}
+                          {option}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {tertiaryNeedsCollapse && !showAllTertiary && (
+                    <button
+                      onClick={() => setShowAllTertiary(true)}
+                      className="mt-4 w-full rounded-xl border border-dashed border-line bg-line-soft/30 px-4 py-2.5 text-[13px] text-ink-faint transition-colors hover:border-ink-faint hover:text-ink-soft"
+                    >
+                      更多（{hiddenTertiaryCount}）
+                    </button>
                   )}
                 </div>
               )}
 
-              {/* —— Step 4：特殊情况大类（卡片单选 → 细项页 / 暂不补充 → 确认） —— */}
+              {/* —— Step 4：特殊情况（大类 → 展开具体表现） —— */}
               {step === 4 && (
                 <div className="pt-4">
                   <p className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
@@ -589,48 +565,113 @@ const MoodRecordWizard = forwardRef<MoodRecordWizardHandle, Props>(
                   </p>
                   <div className="mt-6 flex flex-col gap-2">
                     {specialSituationCategories.map((cat) => {
-                      const isSafety = cat.isSafetyFlow;
+                      // 自伤/危险想法 → 独立安全流程
+                      if (cat.isSafetyFlow) {
+                        return (
+                          <button
+                            key={cat.id}
+                            onClick={handleSelfHarmClick}
+                            className="flex items-center justify-between rounded-xl border border-[rgba(200,120,100,0.3)] bg-[rgba(200,120,100,0.05)] px-4 py-3 text-left transition-colors hover:border-[rgba(200,120,100,0.5)]"
+                          >
+                            <span className="text-[14px] font-medium text-ink-soft">
+                              {cat.entry}
+                            </span>
+                            <ChevronDown className="h-4 w-4 text-ink-faint" />
+                          </button>
+                        );
+                      }
+                      // 普通特殊情况大类 → 展开/收起具体表现
+                      const isExpanded = expandedSpecialId === cat.id;
+                      const selectedOpts = specialSelected[cat.id] ?? [];
                       return (
-                        <button
+                        <div
                           key={cat.id}
-                          onClick={() => handleSelectSpecialCategory(cat.id)}
-                          className={`flex h-12 items-center justify-between rounded-xl border px-4 text-left transition-all active:scale-[0.99] ${
-                            isSafety
-                              ? "border-[rgba(200,120,100,0.3)] bg-[rgba(200,120,100,0.05)] text-ink-soft hover:border-[rgba(200,120,100,0.5)]"
-                              : "border-line bg-white text-ink hover:border-ink-faint"
-                          }`}
+                          className="overflow-hidden rounded-xl border border-line bg-white"
                         >
-                          <span className="text-[14px] font-medium">
-                            {cat.entry}
-                          </span>
-                        </button>
+                          <button
+                            onClick={() =>
+                              handleSpecialCategoryClick(cat.id)
+                            }
+                            className="flex w-full items-center justify-between px-4 py-3 text-left"
+                          >
+                            <span className="text-[14px] font-medium text-ink-soft">
+                              {cat.entry}
+                              {selectedOpts.length > 0 && (
+                                <span className="ml-2 text-[12px] text-[#2C3B27]">
+                                  已选 {selectedOpts.length}
+                                </span>
+                              )}
+                            </span>
+                            <ChevronDown
+                              className={`h-4 w-4 text-ink-faint transition-transform ${
+                                isExpanded ? "rotate-180" : ""
+                              }`}
+                            />
+                          </button>
+                          <AnimatePresence>
+                            {isExpanded && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.25, ease }}
+                                className="overflow-hidden"
+                              >
+                                <div className="flex flex-wrap gap-2 px-4 pb-4">
+                                  {cat.options.map((option) => {
+                                    const selected = selectedOpts.includes(
+                                      option,
+                                    );
+                                    return (
+                                      <button
+                                        key={option}
+                                        onClick={() =>
+                                          handleToggleSpecialOption(
+                                            cat.id,
+                                            option,
+                                          )
+                                        }
+                                        className={chipClass(selected)}
+                                      >
+                                        {selected && (
+                                          <Check
+                                            className="h-3.5 w-3.5"
+                                            strokeWidth={2.4}
+                                          />
+                                        )}
+                                        {option}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
                       );
                     })}
                   </div>
                 </div>
               )}
 
-              {/* —— Step 5：特殊情况细项（胶囊多选，底部"完成"） —— */}
-              {step === 5 && selectedCategory && (
+              {/* —— Step 5：备注 —— */}
+              {step === 5 && (
                 <div className="pt-4">
                   <p className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
-                    关于&ldquo;{selectedCategory.entry}&rdquo;，更接近哪些情况？
+                    想补一句吗？
                   </p>
-                  <div className="mt-6 flex flex-wrap justify-center gap-2.5">
-                    {selectedCategory.options.map((option) => (
-                      <button
-                        key={option}
-                        onClick={() => handleToggleSpecialDetail(option)}
-                        className={chipClass(
-                          specialDetails.includes(option),
-                        )}
-                      >
-                        {specialDetails.includes(option) && (
-                          <Check className="h-3.5 w-3.5" strokeWidth={2.4} />
-                        )}
-                        {option}
-                      </button>
-                    ))}
+                  <p className="mt-2 text-center text-[12px] text-ink-faint">
+                    可以跳过
+                  </p>
+                  <div className="mt-6">
+                    <VoiceInputBar
+                      value={note}
+                      onChange={setNote}
+                      onSend={() => {}}
+                      canSend={false}
+                      showSendButton={false}
+                      placeholder="想写点什么吗..."
+                    />
                   </div>
                 </div>
               )}
@@ -638,37 +679,19 @@ const MoodRecordWizard = forwardRef<MoodRecordWizardHandle, Props>(
           </AnimatePresence>
         </div>
 
-        {/* 底部按钮：仅多选页显示 */}
+        {/* 底部按钮：所有步骤都有 */}
         <div className="bg-white px-5 pb-6 pt-3">
-          {step === 3 && (
-            <button
-              onClick={() => setStep(4)}
-              disabled={!canProceedReasons}
-              className={`w-full rounded-xl px-4 py-3 text-[14px] font-medium transition-opacity ${
-                canProceedReasons
-                  ? "bg-action-primary text-action-primary-text hover:opacity-90"
-                  : "bg-line-soft text-ink-faint"
-              }`}
-            >
-              下一步
-            </button>
-          )}
-          {step === 4 && (
-            <button
-              onClick={handleSkipSpecial}
-              className="w-full rounded-xl border border-line bg-white px-4 py-3 text-[14px] font-medium text-ink-soft transition-colors hover:border-ink-faint"
-            >
-              暂不补充
-            </button>
-          )}
-          {step === 5 && (
-            <button
-              onClick={handleCompleteFromDetails}
-              className="w-full rounded-xl bg-action-primary px-4 py-3 text-[14px] font-medium text-action-primary-text transition-opacity hover:opacity-90"
-            >
-              完成
-            </button>
-          )}
+          <button
+            onClick={handleNext}
+            disabled={!canProceed && step <= 3}
+            className={`w-full rounded-xl px-4 py-3 text-[14px] font-medium transition-opacity ${
+              canProceed || step > 3
+                ? "bg-action-primary text-action-primary-text hover:opacity-90"
+                : "bg-line-soft text-ink-faint"
+            }`}
+          >
+            {buttonLabel}
+          </button>
         </div>
       </div>
     );

@@ -1,16 +1,16 @@
 /* —— 情绪记录模块配置数据 ——
+ * 数据源：《情绪记录模块_对应关系表.html》
  *
  * 层级关系（一页一个判断）：
- *   一级情绪状态（5 档卡片，单选自动进入）
- *     → 更接近的感受（胶囊单选，按一级动态展示 6–8 个候选项）
- *       → 可能相关原因（胶囊多选，通用原因 + "无明确原因"互斥）
- *   特殊情况大类（卡片单选 → 进入细项页 / "暂不补充"直接确认）
- *     → 特殊情况细项（胶囊多选）
+ *   一级情绪（5 档卡片，绑定分值与极性）
+ *     → 二级情绪词（按极性分组：负向 / 正向，chip 样式）
+ *       → 三级追问（动态题干 + 多选选项，由二级所属分组决定）
+ *   特殊情况（独立补充项，大类 → 展开具体表现，多选可跳过）
  *   自伤/危险想法（独立安全流程，不作为普通 mood 标签）
  *
  * 组件只读取本文件配置并渲染，不在此处写死 UI 逻辑。 */
 
-/* —— 一级情绪状态 —— */
+/* —— 一级情绪 —— */
 export type PrimaryMoodScore = 1 | 2 | 3 | 4 | 5;
 export type PrimaryMoodPolarity = "negative" | "positive";
 
@@ -21,37 +21,166 @@ export type PrimaryMood = {
 };
 
 export const primaryMoods: PrimaryMood[] = [
-  { label: "很低", score: 1, polarity: "negative" },
-  { label: "偏低", score: 2, polarity: "negative" },
+  { label: "很糟", score: 1, polarity: "negative" },
+  { label: "不太好", score: 2, polarity: "negative" },
   { label: "一般", score: 3, polarity: "positive" },
-  { label: "偏高", score: 4, polarity: "positive" },
-  { label: "很高", score: 5, polarity: "positive" },
+  { label: "还行", score: 4, polarity: "positive" },
+  { label: "很好", score: 5, polarity: "positive" },
 ];
 
-/* —— 第二步：更接近的感受（按一级分数动态展示 6–8 个候选项） —— */
-export const feelingOptionsByScore: Record<PrimaryMoodScore, string[]> = {
-  1: ["很累", "空掉了", "委屈", "害怕", "烦躁", "不想动", "说不上来"],
-  2: ["低落", "疲惫", "烦", "紧绷", "委屈", "还可以", "说不上来"],
-  3: ["普通", "平静", "还可以", "没什么特别", "有点乱", "说不上来"],
-  4: ["有精神", "轻松", "期待", "兴奋", "有点躁", "停不下来", "说不上来"],
-  5: ["很好", "轻松", "安心", "开心", "有力量", "想做点事", "说不上来"],
+/* —— 二级情绪分组（含三级追问） ——
+ * 每个分组包含：id、极性、二级词列表、三级题干、三级选项 */
+export type SecondaryMoodGroup = {
+  id: string;
+  polarity: PrimaryMoodPolarity;
+  words: string[];
+  tertiaryPrompt: string;
+  tertiaryOptions: string[];
 };
 
-/* —— 第三步：可能相关的原因（通用多选，"无明确原因"与其他互斥） —— */
-export const reasonOptions: string[] = [
-  "睡眠",
-  "身体",
-  "学习/工作",
-  "人际",
-  "家庭",
-  "突发事情",
-  "无明确原因",
+export const secondaryMoodGroups: SecondaryMoodGroup[] = [
+  {
+    id: "anxiety",
+    polarity: "negative",
+    words: ["焦虑", "紧张", "害怕", "恐慌"],
+    tertiaryPrompt: "在焦虑/害怕什么？",
+    tertiaryOptions: [
+      "上学/返校",
+      "上班/实习",
+      "考试/作业/论文",
+      "项目/绩效/截止日期",
+      "见人/社交",
+      "被评价",
+      "家人反应",
+      "伴侣关系",
+      "身体不舒服",
+      "吃药/复诊",
+      "未来会变糟",
+      "钱/生活压力",
+      "不知道怕什么",
+    ],
+  },
+  {
+    id: "anger",
+    polarity: "negative",
+    words: ["烦躁", "生气", "不服", "抗拒"],
+    tertiaryPrompt: "什么让你烦/生气/抗拒？",
+    tertiaryOptions: [
+      "被催",
+      "被控制",
+      "被安排",
+      "被打断",
+      "被误解",
+      "沟通不顺",
+      "环境太吵",
+      "任务太多",
+      "规则/流程",
+      "对方态度",
+      "自己做不到",
+      "不想配合",
+      "说不上来",
+    ],
+  },
+  {
+    id: "sadness",
+    polarity: "negative",
+    words: ["难过", "失落", "绝望", "委屈", "羞耻", "自责", "没用", "失败"],
+    tertiaryPrompt: "什么让你难过/委屈/自责？",
+    tertiaryOptions: [
+      "被误解",
+      "被责备",
+      "被比较",
+      "没被支持",
+      "关系变淡",
+      "和家人冲突",
+      "和朋友冲突",
+      "和伴侣冲突",
+      "做不到某件事",
+      "觉得自己不够好",
+      "想到过去",
+      "一个人待着",
+      "没人理解",
+      "说不上来",
+    ],
+  },
+  {
+    id: "exhaustion",
+    polarity: "negative",
+    words: [
+      "疲惫",
+      "无力",
+      "提不起劲",
+      "困",
+      "麻木",
+      "空",
+      "发呆",
+      "想躲起来",
+      "不想说话",
+      "不想见人",
+    ],
+    tertiaryPrompt: "什么最消耗你/让你没感觉？",
+    tertiaryOptions: [
+      "起床",
+      "洗漱",
+      "吃饭",
+      "出门",
+      "上课/学习",
+      "上班/工作",
+      "做任务",
+      "回消息",
+      "跟人打交道",
+      "维持关系",
+      "怕让人失望",
+      "被要求回应",
+      "整理房间",
+      "睡眠混乱",
+      "身体没力",
+      "手机停不下",
+      "说不上来",
+    ],
+  },
+  {
+    id: "calm",
+    polarity: "positive",
+    words: ["平静", "普通", "还可以", "平稳", "说不上来"],
+    tertiaryPrompt: "和什么有关？",
+    tertiaryOptions: [
+      "今天没什么特别的事",
+      "作息还算稳定",
+      "学习/工作正常推进",
+      "和家人还行",
+      "和别人接触不多",
+      "身体感觉一般",
+      "一个人待着",
+      "手机/刷视频",
+      "说不上来",
+    ],
+  },
+  {
+    id: "positive",
+    polarity: "positive",
+    words: ["轻松", "安心", "踏实", "开心", "满足", "有希望", "有动力", "自在"],
+    tertiaryPrompt: "什么让你变好一些？",
+    tertiaryOptions: [
+      "睡得还行",
+      "吃了饭",
+      "完成了一点事",
+      "出门/走动了",
+      "有人陪",
+      "被理解",
+      "没吵架",
+      "学习/工作推进了",
+      "洗澡/收拾了",
+      "独处很舒服",
+      "按时吃药/复诊",
+      "有一点掌控感",
+      "说不上来",
+    ],
+  },
 ];
 
-export const MUTUALLY_EXCLUSIVE_REASON = "无明确原因";
-
 /* —— 特殊情况大类 ——
- * 独立于前三步，大类单选 → 进入细项页。
+ * 独立于一级/二级/三级，随时可填，允许多选。
  * isSafetyFlow = true 的条目走独立安全流程，不设普通选项。 */
 export type SpecialSituationCategory = {
   id: string;
@@ -177,16 +306,21 @@ export const specialSituationCategories: SpecialSituationCategory[] = [
 
 /* —— 辅助函数 —— */
 
+/** 根据一级情绪极性获取对应的二级分组 */
+export function getSecondaryGroupsForPolarity(
+  polarity: PrimaryMoodPolarity,
+): SecondaryMoodGroup[] {
+  return secondaryMoodGroups.filter((g) => g.polarity === polarity);
+}
+
+/** 根据二级情绪词查找所属分组 */
+export function findGroupByWord(word: string): SecondaryMoodGroup | null {
+  return secondaryMoodGroups.find((g) => g.words.includes(word)) ?? null;
+}
+
 /** 根据 primaryMood label 获取 PrimaryMood 对象 */
 export function findPrimaryMoodByLabel(label: string): PrimaryMood | null {
   return primaryMoods.find((m) => m.label === label) ?? null;
-}
-
-/** 根据 specialCategory id 获取大类对象 */
-export function findSpecialCategoryById(
-  id: string,
-): SpecialSituationCategory | null {
-  return specialSituationCategories.find((c) => c.id === id) ?? null;
 }
 
 /* —— 结构化情绪记录数据 —— */
@@ -197,18 +331,17 @@ export type MoodRecord = {
     label: string;
     score: PrimaryMoodScore;
   };
-  feeling: {
-    label: string | null;
-    customText: string | null;
+  secondaryMood: {
+    label: string;
+    groupId: string;
   } | null;
-  reasons: {
-    selected: string[];
-    customText: string | null;
+  tertiaryCause: {
+    prompt: string;
+    selectedOptions: string[];
   } | null;
-  specialCategory: {
+  specialSituations: Array<{
     entry: string;
-    categoryId: string;
-  } | null;
-  specialDetails: string[];
-  isPartial?: boolean;
+    selectedOptions: string[];
+  }>;
+  note?: string;
 };
