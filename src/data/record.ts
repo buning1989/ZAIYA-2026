@@ -604,10 +604,10 @@ export function isCompleteCoreRecord(
 export const summaryLabels: Record<RecordTypeId, Record<string, string>> = {
   mood: {
     primaryMood: "情绪",
-    secondaryMood: "更接近",
-    tertiaryCause: "原因",
-    special: "特殊情况",
-    note: "备注",
+    feeling: "感受",
+    reasons: "原因",
+    specialCategory: "特殊情况",
+    specialDetails: "具体表现",
   },
   medication: {
     status: "服药",
