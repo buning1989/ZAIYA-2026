@@ -1,0 +1,150 @@
+/* —— 「帮我整理」共享 UI 组件 —— */
+import { motion } from "framer-motion";
+import { Check } from "lucide-react";
+
+const ease = [0.22, 1, 0.36, 1] as const;
+
+/** 细进度条 + 步骤计数（1/5 — 5/5） */
+export function StepProgress({ current, total }: { current: number; total: number }) {
+  const pct = Math.min(100, (current / total) * 100);
+  return (
+    <div className="flex items-center gap-2 px-5 pb-2">
+      <div className="h-1 flex-1 overflow-hidden rounded-full bg-line-soft">
+        <motion.div
+          className="h-full rounded-full bg-accent"
+          initial={false}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.3, ease }}
+        />
+      </div>
+      <span className="text-[11px] font-medium tabular-nums text-ink-faint">
+        {current}/{total}
+      </span>
+    </div>
+  );
+}
+
+/** 小节标题（统一弱化样式） */
+export function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-ink-faint">
+      {children}
+    </div>
+  );
+}
+
+/** 选中标记（行动绿色勾选） */
+export function SelectMark({ checked }: { checked: boolean }) {
+  return (
+    <span
+      className={`mt-0.5 grid shrink-0 place-items-center rounded-[5px] border transition-colors ${
+        checked
+          ? "border-accent bg-accent text-white"
+          : "border-line bg-white"
+      }`}
+      style={{ height: 18, width: 18 }}
+    >
+      {checked && <Check className="h-3 w-3" strokeWidth={3} />}
+    </span>
+  );
+}
+
+/** 来源标签：系统整理不显示，本人补充保留标签 */
+export function SourceTag({
+  sourceType,
+}: {
+  sourceType: "system_summary" | "user_added";
+}) {
+  if (sourceType === "system_summary") return null;
+  return (
+    <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-medium text-accent-pressed">
+      本人补充
+    </span>
+  );
+}
+
+/** 底部固定主按钮 */
+export function PrimaryButton({
+  children,
+  onClick,
+  disabled,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="inline-flex w-full items-center justify-center rounded-lg bg-action-primary px-4 py-3 text-[13px] font-medium text-action-primary-text transition-opacity disabled:opacity-30"
+    >
+      {children}
+    </button>
+  );
+}
+
+/** 底部固定次级按钮 */
+export function SecondaryButton({
+  children,
+  onClick,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="inline-flex w-full items-center justify-center rounded-lg border border-line bg-white px-4 py-3 text-[13px] font-medium text-ink"
+    >
+      {children}
+    </button>
+  );
+}
+
+/** 通用底部 sheet（轻量确认面板） */
+export function BottomSheet({
+  onClose,
+  children,
+}: {
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <>
+      <motion.div
+        className="absolute inset-0 z-[60] bg-black/30"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2, ease }}
+        onClick={onClose}
+      />
+      <motion.div
+        className="absolute inset-x-0 bottom-0 z-[61] rounded-t-[20px] bg-white px-6 pb-8 pt-5"
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", stiffness: 320, damping: 32 }}
+      >
+        <div className="mx-auto mb-4 h-1 w-9 rounded-full bg-line" />
+        {children}
+      </motion.div>
+    </>
+  );
+}
+
+/** 居中 toast 反馈 */
+export function Toast({ message }: { message: string }) {
+  return (
+    <motion.div
+      className="pointer-events-none absolute left-1/2 top-20 z-[70] -translate-x-1/2 rounded-full bg-ink/85 px-4 py-2 text-[12px] text-white"
+      initial={{ opacity: 0, y: -6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -6 }}
+      transition={{ duration: 0.2, ease }}
+    >
+      {message}
+    </motion.div>
+  );
+}

@@ -1,997 +1,685 @@
-/* —— 「帮我整理」数据与生成逻辑（本地 mock，不接后端 / LLM）——
+/* —— 「帮我整理」沟通材料整理模块（本地 mock，不接后端 / LLM）——
  *
- * 定位：把用户已有记录 + 本次主动补充整理成一份可检查、可删改、可选择分享的沟通准备单。
- *   - 不是诊断报告，不是 AI 心理分析
- *   - 整理单内容只来自三类来源：日常记录、本次补充、简单统计
- *   - 所有对外版本必须经过用户预览确认
- *   - 用户可决定给谁看、看哪些、隐藏哪些
+ * 定位：把用户已有记录整理成需要向他人说明的重点信息，
+ *   并由用户确认哪些内容可以被对方看见。沟通材料仅作为流程完成后的结果。
  *
- * 数据源：复用 lookback.ts 的 mock 数据（不另造一套字段）。
- * 不在 mock 数据中强行加入学习、出勤、家庭、社交、考试、返校等结构化字段。 */
+ * 核心原则：
+ *   - 不做诊断、治疗建议、用药建议、因果解释或风险等级判断
+ *   - 所有进入最终材料的沟通重点和特殊情况都必须由用户确认
+ *   - 未选择、已删除或未授权的信息不进入最终材料
+ *   - 通用 communicationTarget 结构，不写死医生
+ *
+ * 数据源：本文件内统一 Mock（小晨数据），不分散硬编码。
+ * 不再依赖 lookbackData，避免两套数据模型冲突。 */
 
-import { lookbackData, type DailyLookbackData } from "./lookback";
+/* =========================================================
+ * 数据模型
+ * ======================================================= */
 
-/* —— 整理对象 —— */
-export type OrganizeAudience = "self" | "professional" | "parent" | "school";
+/** 沟通对象类型（可扩展：医生、家长、学校、心理咨询师等） */
+export type CommunicationTargetType =
+  | "doctor"
+  | "parent"
+  | "school"
+  | "counselor";
 
-/* —— 整理内容区块 —— */
-export type OrganizeSectionId =
-  | "mood"
-  | "sleep"
-  | "diet"
-  | "medication"
-  | "bodyFeeling"
-  | "weight"
-  | "freeText"
-  | "dataCompleteness";
-
-/* —— 自由文本展示模式 ——
- * original: 显示原文
- * summary:  仅显示摘要
- * hidden:   不包含 */
-export type FreeTextMode = "original" | "summary" | "hidden";
-
-/* —— 时间范围（天）—— */
-export type OrganizeRange = 7 | 14 | 30;
-
-/* —— 受众配置：默认勾选区块 + 自由文本模式 ——
- * 字段名按产品逻辑保持一致；实际取值由本文件统一管理。 */
-export const ORGANIZE_AUDIENCE_CONFIG: Record<
-  OrganizeAudience,
-  {
-    label: string;
-    desc: string;
-    defaultSections: OrganizeSectionId[];
-    freeTextMode: FreeTextMode;
-  }
-> = {
-  self: {
-    label: "给自己看",
-    desc: "先帮自己看清这段时间发生了什么。",
-    defaultSections: [
-      "mood",
-      "sleep",
-      "diet",
-      "medication",
-      "bodyFeeling",
-      "weight",
-      "freeText",
-      "dataCompleteness",
-    ],
-    freeTextMode: "original",
-  },
-  professional: {
-    label: "给医生看",
-    desc: "适合复诊、咨询或其他专业沟通前使用。",
-    defaultSections: [
-      "mood",
-      "sleep",
-      "diet",
-      "medication",
-      "bodyFeeling",
-      "weight",
-      "freeText",
-      "dataCompleteness",
-    ],
-    freeTextMode: "summary",
-  },
-  parent: {
-    label: "给家人看",
-    desc: "只整理你愿意让家人理解的部分。",
-    defaultSections: ["mood", "sleep", "diet", "dataCompleteness"],
-    freeTextMode: "hidden",
-  },
-  school: {
-    label: "给老师 / 学校看",
-    desc: "只整理和学校沟通必要相关的内容。",
-    defaultSections: ["dataCompleteness"],
-    freeTextMode: "hidden",
-  },
-};
-
-/* —— 区块展示信息 —— */
-export const SECTION_META: Record<
-  OrganizeSectionId,
-  { label: string; hint: string }
-> = {
-  mood: { label: "情绪波动", hint: "情绪强度与情绪词记录" },
-  sleep: { label: "睡眠情况", hint: "入睡时间与醒后感受" },
-  diet: { label: "饮食记录", hint: "三餐与饭后感受" },
-  medication: { label: "服用记录", hint: "服用状态与改动说明" },
-  bodyFeeling: { label: "身体感受", hint: "情绪或饭后的身体反应" },
-  weight: { label: "体重变化", hint: "体重记录波动" },
-  freeText: { label: "自由文本", hint: "日常记录中写下的补充" },
-  dataCompleteness: { label: "数据完整度", hint: "各类记录的覆盖情况" },
-};
-
-/* —— 「补充未记录信息」步骤文案（按受众）——
- * 该步骤是可选补充，不是必填问卷：让用户在生成整理单前，
- * 补一句"日常记录里没有，但这次沟通可能需要带上的话"。 */
-export const SUPPLEMENT_STEP_CONFIG: Record<
-  OrganizeAudience,
-  { title: string; desc: string; placeholder: string }
-> = {
-  self: {
-    title: "有没有想补给自己看的话？",
-    desc: "可以补一句这段时间你不想漏掉的事。",
-    placeholder: "写一句就可以，也可以不写",
-  },
-  professional: {
-    title: "有没有想带去说的一句话？",
-    desc: "日常记录里不一定都有。这里可以补一句你想让对方知道的事。",
-    placeholder: "比如：最近最困扰的事、想问的问题、当面不太好说的话",
-  },
-  parent: {
-    title: "有没有希望家人先知道的一句话？",
-    desc: "可以写你愿意让家人理解的部分，不需要把所有事都写出来。",
-    placeholder: "比如：最近哪里比较难、希望家人少追问什么",
-  },
-  school: {
-    title: "有没有需要老师知道的一点情况？",
-    desc: "只写和学校沟通必要相关的内容。私密内容可以不写。",
-    placeholder: "比如：请假、作业、返校中需要说明的一点情况",
-  },
-};
-
-/* —— 时间范围选项 —— */
-export const RANGE_OPTIONS: {
-  value: OrganizeRange;
-  label: string;
-  default?: boolean;
-}[] = [
-  { value: 7, label: "最近 7 天" },
-  { value: 14, label: "最近 14 天", default: true },
-  { value: 30, label: "最近 30 天" },
-];
-
-/* —— 风险关键词检测（用于敏感内容提醒，不会自动剔除）—— */
-const RISK_PATTERN =
-  /自杀|自残|自伤|割腕|跳楼|不想活|想死|死掉|结束生命|活不下去|伤害自己|了结/;
-
-export function hasSensitiveContent(text: string): boolean {
-  return RISK_PATTERN.test(text);
+/** 沟通对象配置 */
+export interface CommunicationTargetConfig {
+  targetType: CommunicationTargetType;
+  targetLabel: string;
+  desc: string;
+  /** Demo 阶段是否可选 */
+  available: boolean;
 }
 
-/* —— 数据统计：基于 lookbackData 生成结构化统计 ——
- * 只统计已有记录的字段，不做推断。 */
-export type RangeStats = {
-  totalDays: number;
-  recordedDays: number; // 至少有一类记录的天数
-  mood: {
-    lowDays: number; // mood <= 2
-    midDays: number; // mood === 3
-    highDays: number; // mood >= 4
-    noRecordDays: number;
-    topWords: { word: string; count: number }[];
-    triggers: { trigger: string; count: number }[];
-  };
-  sleep: {
-    lateDays: number; // 入睡在 23:00 之后
-    veryLateDays: number; // 入睡在 01:00 之后
-    noRecordDays: number;
-    nightWakeDays: number;
-    avgSleepTimeLabel: string | null; // 中位入睡时间段文案
-  };
-  diet: {
-    missedBreakfast: number;
-    missedLunch: number;
-    missedDinner: number;
-    noRecordDays: number; // 三餐全未记录的天数
-    afterFeelingDays: number;
-  };
-  medication: {
-    takenDays: number; // 早或晚至少一次 taken
-    missedDays: number;
-    changedDays: number;
-    noRecordDays: number;
-  };
-  bodyFeeling: {
-    mentionedDays: number; // 有身体感受记录的天数
-    topFeelings: { feeling: string; count: number }[];
-  };
-  weight: {
-    recordedDays: number;
-    values: { date: string; displayDate: string; weight: number }[];
-    delta: number | null; // 末值 - 首值
-  };
-  freeText: {
-    items: { date: string; displayDate: string; text: string; kind: "mood" | "activity" | "meal" }[];
-  };
-};
+/** 沟通重点来源类型 */
+export type TopicSourceType = "system_summary" | "user_added";
 
-export function computeRangeStats(range: OrganizeRange): RangeStats {
-  const data: DailyLookbackData[] = lookbackData[range];
-  const totalDays = data.length;
-
-  let moodLow = 0,
-    moodMid = 0,
-    moodHigh = 0,
-    moodNone = 0;
-  const wordCount: Record<string, number> = {};
-  const triggerCount: Record<string, number> = {};
-
-  let sleepLate = 0,
-    sleepVeryLate = 0,
-    sleepNone = 0,
-    nightWakeDays = 0;
-  const sleepHourBuckets: Record<string, number> = {};
-
-  let missedB = 0,
-    missedL = 0,
-    missedD = 0,
-    dietNone = 0,
-    afterFeelingDays = 0;
-
-  let medTaken = 0,
-    medMissed = 0,
-    medChanged = 0,
-    medNone = 0;
-
-  let bodyMentioned = 0;
-  const bodyCount: Record<string, number> = {};
-
-  let weightRecorded = 0;
-  const weightValues: RangeStats["weight"]["values"] = [];
-  const weightDeltas: number[] = [];
-
-  const freeTextItems: RangeStats["freeText"]["items"] = [];
-
-  let recordedDays = 0;
-
-  for (const d of data) {
-    let dayHasRecord = false;
-
-    // 情绪
-    if (d.mood === null) {
-      moodNone++;
-    } else {
-      dayHasRecord = true;
-      if (d.mood <= 2) moodLow++;
-      else if (d.mood === 3) moodMid++;
-      else moodHigh++;
-      if (d.moodWords) {
-        for (const w of d.moodWords) {
-          wordCount[w] = (wordCount[w] ?? 0) + 1;
-        }
-      }
-      if (d.moodTrigger) {
-        triggerCount[d.moodTrigger] = (triggerCount[d.moodTrigger] ?? 0) + 1;
-      }
-    }
-
-    // 睡眠
-    if (d.sleepTime === null) {
-      sleepNone++;
-    } else {
-      dayHasRecord = true;
-      const [h] = d.sleepTime.split(":").map(Number);
-      if (h >= 1 && h < 6) {
-        sleepVeryLate++;
-        sleepLate++;
-      } else if (h >= 23 || h === 0) {
-        sleepLate++;
-      }
-      const bucket =
-        h >= 1 && h < 6
-          ? "1 点后"
-          : h === 0
-            ? "0–1 点"
-            : h === 23
-              ? "23–24 点"
-              : "23 点前";
-      sleepHourBuckets[bucket] = (sleepHourBuckets[bucket] ?? 0) + 1;
-      if (d.nightWake) nightWakeDays++;
-    }
-
-    // 饮食
-    const dietAllUnknown =
-      d.meals.breakfast === "unknown" &&
-      d.meals.lunch === "unknown" &&
-      d.meals.dinner === "unknown";
-    if (dietAllUnknown) {
-      dietNone++;
-    } else {
-      dayHasRecord = true;
-      if (d.meals.breakfast === "no") missedB++;
-      if (d.meals.lunch === "no") missedL++;
-      if (d.meals.dinner === "no") missedD++;
-      if (d.mealFeeling) afterFeelingDays++;
-    }
-
-    // 服用
-    const medAllUnknown =
-      d.medication.morning === "unknown" && d.medication.evening === "unknown";
-    if (medAllUnknown) {
-      medNone++;
-    } else {
-      dayHasRecord = true;
-      if (
-        d.medication.morning === "taken" ||
-        d.medication.evening === "taken"
-      )
-        medTaken++;
-      if (
-        d.medication.morning === "missed" ||
-        d.medication.evening === "missed"
-      )
-        medMissed++;
-      if (
-        d.medication.morning === "changed" ||
-        d.medication.evening === "changed"
-      )
-        medChanged++;
-    }
-
-    // 身体感受（来自情绪和饮食记录）
-    const feelings: string[] = [];
-    if (d.moodBody) feelings.push(d.moodBody);
-    if (d.mealFeeling && d.mealFeeling !== "还好" && d.mealFeeling !== "没什么特别")
-      feelings.push(d.mealFeeling);
-    if (feelings.length > 0) {
-      bodyMentioned++;
-      for (const f of feelings) {
-        bodyCount[f] = (bodyCount[f] ?? 0) + 1;
-      }
-    }
-
-    // 体重
-    if (d.weight !== null) {
-      dayHasRecord = true;
-      weightRecorded++;
-      weightValues.push({
-        date: d.date,
-        displayDate: d.displayDate,
-        weight: d.weight,
-      });
-      weightDeltas.push(d.weight);
-    }
-
-    // 自由文本（日常记录中的补充说明）
-    if (d.moodNote) {
-      freeTextItems.push({
-        date: d.date,
-        displayDate: d.displayDate,
-        text: d.moodNote,
-        kind: "mood",
-      });
-    }
-    if (d.activityContent) {
-      freeTextItems.push({
-        date: d.date,
-        displayDate: d.displayDate,
-        text: d.activityContent,
-        kind: "activity",
-      });
-    }
-    if (d.activityNote) {
-      freeTextItems.push({
-        date: d.date,
-        displayDate: d.displayDate,
-        text: d.activityNote,
-        kind: "activity",
-      });
-    }
-
-    if (dayHasRecord) recordedDays++;
-  }
-
-  // 中位入睡时间段
-  let avgSleepTimeLabel: string | null = null;
-  const bucketOrder = ["23 点前", "23–24 点", "0–1 点", "1 点后"];
-  let maxBucket = 0;
-  for (const b of bucketOrder) {
-    if ((sleepHourBuckets[b] ?? 0) > maxBucket) {
-      maxBucket = sleepHourBuckets[b] ?? 0;
-      avgSleepTimeLabel = b;
-    }
-  }
-  if (maxBucket === 0) avgSleepTimeLabel = null;
-
-  // 体重 delta
-  let weightDelta: number | null = null;
-  if (weightDeltas.length >= 2) {
-    weightDelta =
-      Math.round((weightDeltas[weightDeltas.length - 1] - weightDeltas[0]) * 10) /
-      10;
-  }
-
-  return {
-    totalDays,
-    recordedDays,
-    mood: {
-      lowDays: moodLow,
-      midDays: moodMid,
-      highDays: moodHigh,
-      noRecordDays: moodNone,
-      topWords: Object.entries(wordCount)
-        .map(([word, count]) => ({ word, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 3),
-      triggers: Object.entries(triggerCount)
-        .map(([trigger, count]) => ({ trigger, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 3),
-    },
-    sleep: {
-      lateDays: sleepLate,
-      veryLateDays: sleepVeryLate,
-      noRecordDays: sleepNone,
-      nightWakeDays,
-      avgSleepTimeLabel,
-    },
-    diet: {
-      missedBreakfast: missedB,
-      missedLunch: missedL,
-      missedDinner: missedD,
-      noRecordDays: dietNone,
-      afterFeelingDays,
-    },
-    medication: {
-      takenDays: medTaken,
-      missedDays: medMissed,
-      changedDays: medChanged,
-      noRecordDays: medNone,
-    },
-    bodyFeeling: {
-      mentionedDays: bodyMentioned,
-      topFeelings: Object.entries(bodyCount)
-        .map(([feeling, count]) => ({ feeling, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 3),
-    },
-    weight: {
-      recordedDays: weightRecorded,
-      values: weightValues,
-      delta: weightDelta,
-    },
-    freeText: { items: freeTextItems },
-  };
-}
-
-/* —— 重点卡片 —— */
-export type GeneratedCard = {
+/** 沟通重点（一条系统整理结果或用户补充） */
+export interface CommunicationTopic {
   id: string;
   title: string;
-  text: string;
-  source: "daily" | "supplement";
+  content: string;
+  sourceType: TopicSourceType;
+  /** 依据摘要条目（系统整理结果用）；用户补充为 ["用户主动表达的问题"] */
+  evidenceSummary: string[];
+  selected: boolean;
+  edited: boolean;
+  deleted: boolean;
+  /** 是否允许进入最终材料（未选择 / 已删除 / 未授权 = false） */
+  allowedInMaterial: boolean;
+}
+
+/** 特殊情况披露决定 */
+export type DisclosureDecision = "pending" | "include" | "exclude";
+
+/** 特殊情况披露 */
+export interface SpecialDisclosure {
+  exists: boolean;
+  count: number;
+  /** 概要说明（只陈述事实） */
+  summary: string;
+  /** 详情条目（用户主动展开后显示） */
+  detailRecords: string[];
+  decision: DisclosureDecision;
+  /** 是否经过二次确认 */
+  confirmed: boolean;
+  allowedInMaterial: boolean;
+}
+
+/** 沟通整理会话 */
+export interface CommunicationSession {
+  id: string;
+  targetType: CommunicationTargetType;
+  targetLabel: string;
+  /** 时间段选择 key */
+  rangeKey: RangeKey;
+  /** 自定义开始日期（YYYY-MM-DD） */
+  startDate: string;
+  endDate: string;
+  totalDays: number;
+  recordedDays: number;
+  /** 已覆盖的记录类型 */
+  recordCategories: string[];
+  communicationTopics: CommunicationTopic[];
+  specialDisclosure: SpecialDisclosure;
+  status: "in_progress" | "completed";
+  createdAt: number;
+}
+
+/** 时间段选项 key */
+export type RangeKey = "7" | "14" | "30" | "custom";
+
+/** 历史条目：完成的会话持久化形式 */
+export interface OrganizeHistoryEntry {
+  id: string;
+  targetType: CommunicationTargetType;
+  targetLabel: string;
+  startDate: string;
+  endDate: string;
+  totalDays: number;
+  recordedDays: number;
+  /** 已确认沟通重点数量 */
+  topicCount: number;
+  /** 特殊情况是否纳入 */
+  disclosureIncluded: boolean;
+  /** 完成的会话快照（用于详情页 / 完整材料渲染） */
+  session: CommunicationSession;
+  createdAt: number;
+}
+
+/* =========================================================
+ * 沟通对象配置（Demo 仅开放医生）
+ * ======================================================= */
+
+export const COMMUNICATION_TARGETS: CommunicationTargetConfig[] = [
+  {
+    targetType: "doctor",
+    targetLabel: "精神科医生",
+    desc: "用于就诊或复诊时说明近期情况",
+    available: true,
+  },
+  {
+    targetType: "parent",
+    targetLabel: "家长或支持者",
+    desc: "向家人或支持者说明近况",
+    available: false,
+  },
+  {
+    targetType: "school",
+    targetLabel: "学校或老师",
+    desc: "与学校或老师沟通时使用",
+    available: false,
+  },
+  {
+    targetType: "counselor",
+    targetLabel: "心理咨询师",
+    desc: "与心理咨询师沟通时使用",
+    available: false,
+  },
+];
+
+/* =========================================================
+ * 时间段选项与覆盖信息
+ * ======================================================= */
+
+export const RANGE_OPTIONS: {
+  value: RangeKey;
+  label: string;
+}[] = [
+  { value: "7", label: "最近 7 天" },
+  { value: "14", label: "最近 14 天" },
+  { value: "30", label: "最近 30 天" },
+  { value: "custom", label: "自定义时间" },
+];
+
+/** 默认自定义时间段（Demo 主路径预填） */
+export const DEFAULT_CUSTOM_RANGE = {
+  startDate: "2026-06-15",
+  endDate: "2026-07-17",
 };
 
-/* —— 详细摘要区块 ——
- * id 用于区块标识；"supplement" 为本次补充独立区块，不在 defaultSections 配置中。 */
-export type SectionDetail = {
-  id: OrganizeSectionId | "supplement";
+/** 记录类型覆盖（统一 Mock 源） */
+export const RECORD_CATEGORIES = [
+  "睡眠",
+  "情绪",
+  "饮食",
+  "用药",
+  "身体感受",
+  "学校与家庭",
+];
+
+/** 获取时间段的覆盖信息 */
+export function getCoverage(rangeKey: RangeKey): {
+  totalDays: number;
+  recordedDays: number;
+  startDate: string;
+  endDate: string;
+} {
+  switch (rangeKey) {
+    case "custom":
+      return {
+        totalDays: 33,
+        recordedDays: 24,
+        startDate: DEFAULT_CUSTOM_RANGE.startDate,
+        endDate: DEFAULT_CUSTOM_RANGE.endDate,
+      };
+    case "7":
+      return {
+        totalDays: 7,
+        recordedDays: 7,
+        startDate: "2026-07-11",
+        endDate: "2026-07-17",
+      };
+    case "14":
+      return {
+        totalDays: 14,
+        recordedDays: 12,
+        startDate: "2026-07-04",
+        endDate: "2026-07-17",
+      };
+    case "30":
+      return {
+        totalDays: 30,
+        recordedDays: 22,
+        startDate: "2026-06-18",
+        endDate: "2026-07-17",
+      };
+  }
+}
+
+/* =========================================================
+ * 沟通重点 Mock 数据（5 条系统整理结果，来自小晨记录）
+ * ======================================================= */
+
+export function createMockTopics(): CommunicationTopic[] {
+  return [
+    {
+      id: "topic-1",
+      title: "吃药之后白天特别困",
+      content: "上午第二三节课基本撑不住，趴过好几次。不知道是不是药的原因。",
+      sourceType: "system_summary",
+      evidenceSummary: [
+        "33 天内有 18 天记录白天困倦",
+        "相关记录主要集中在上午",
+        "当前记录用药为舍曲林 50mg，每日一次",
+        "24 个记录日中漏服 4 次",
+      ],
+      selected: false,
+      edited: false,
+      deleted: false,
+      allowedInMaterial: false,
+    },
+    {
+      id: "topic-2",
+      title: "最近还是很难睡着",
+      content: "基本都要一两点，脑子停不下来。有一天试了数呼吸的方法，好像有一点点用。",
+      sourceType: "system_summary",
+      evidenceSummary: [
+        "多数记录日在 00:30—02:00 入睡",
+        "最晚一次为 03:10",
+        "11 天存在深夜反复思考相关记录",
+        "7 月 4 日完成一次呼吸/接地练习",
+      ],
+      selected: false,
+      edited: false,
+      deleted: false,
+      allowedInMaterial: false,
+    },
+    {
+      id: "topic-3",
+      title: "有几天早上没去成学校",
+      content: "不是不想去，是出门前那种难受劲儿上来，动不了。",
+      sourceType: "system_summary",
+      evidenceSummary: [
+        "33 天内有 4 天未到校",
+        "日期为 6 月 22 日、6 月 29 日、7 月 8 日、7 月 13 日",
+        "4 个未到校日均有晨起困难相关记录",
+      ],
+      selected: false,
+      edited: false,
+      deleted: false,
+      allowedInMaterial: false,
+    },
+    {
+      id: "topic-4",
+      title: "和爸妈一说上学的事就容易吵",
+      content: "尤其是关于上学的事。他们觉得我在找借口。",
+      sourceType: "system_summary",
+      evidenceSummary: [
+        "33 天内有 6 次与父母冲突记录",
+        "内容主要与是否到校、是否在找借口有关",
+        "多数发生在晚间",
+      ],
+      selected: false,
+      edited: false,
+      deleted: false,
+      allowedInMaterial: false,
+    },
+    {
+      id: "topic-5",
+      title: "想问医生：我这样算是在变好吗？",
+      content: "自己感觉不出来。有的地方好像松了一点，有的地方还是老样子。",
+      sourceType: "system_summary",
+      evidenceSummary: ["用户主动表达的问题"],
+      selected: false,
+      edited: false,
+      deleted: false,
+      allowedInMaterial: false,
+    },
+  ];
+}
+
+/* =========================================================
+ * 特殊情况披露 Mock 数据
+ * ======================================================= */
+
+export function createMockDisclosure(): SpecialDisclosure {
+  return {
+    exists: true,
+    count: 2,
+    summary:
+      "所选时间段内有 2 条深夜记录包含消极念头表达。请确认是否将相关内容纳入本次沟通材料。",
+    detailRecords: [
+      "2026 年 6 月 24 日凌晨出现“撑不下去”类表达",
+      "2026 年 7 月 6 日凌晨出现“撑不下去”类表达",
+      "两次记录中均无自伤行为或计划",
+      "33 天内无自伤相关记录",
+      "2026 年 7 月 4 日凌晨主动完成一次呼吸/接地练习，记录为“还是睡不着，但好一点点”",
+    ],
+    decision: "pending",
+    confirmed: false,
+    allowedInMaterial: false,
+  };
+}
+
+/* =========================================================
+ * 其他记录概览 Mock 数据（完整材料用）
+ * ======================================================= */
+
+export interface OtherRecordSection {
+  id: string;
   title: string;
-  source: "daily" | "supplement" | "insufficient";
-  text: string;
-  /** freeText 区块使用：原文条目（仅 original 模式展示） */
-  rawItems?: { date: string; displayDate: string; text: string; kind: string }[];
-  /** freeText 区块使用：摘要文案（仅 summary 模式展示） */
-  summaryText?: string;
-  /** 是否含敏感词，需用户确认 */
-  sensitive?: boolean;
-};
+  items: string[];
+}
 
-/* —— 整理单生成结果 —— */
-export type GeneratedSummary = {
-  overview: string;
-  cards: GeneratedCard[];
-  sections: SectionDetail[];
-};
+export const OTHER_RECORD_SECTIONS: OtherRecordSection[] = [
+  {
+    id: "medication",
+    title: "用药与身体感受",
+    items: [
+      "舍曲林 50mg，每日一次",
+      "24 个记录日中规律服用 20 天",
+      "漏服 4 次：6/19、6/28、7/3、7/11",
+      "白天困倦记录 18 天",
+      "头晕记录 2 次：6/20、7/5",
+    ],
+  },
+  {
+    id: "sleep",
+    title: "睡眠",
+    items: [
+      "多数入睡时间为 00:30—02:00",
+      "最晚为 03:10",
+      "7/9、7/10、7/14 在 0 点前入睡",
+      "11 天存在深夜反复思考记录",
+      "起床困难记录贯穿整个时间段",
+    ],
+  },
+  {
+    id: "diet-weight",
+    title: "饮食与体重",
+    items: [
+      "体重：49.5kg（6/16）→ 48.7kg（7/12）",
+      "24 个记录日中仅 3 天有早餐记录",
+      "6 月下旬连续 4 天仅一餐",
+      "7 月以来进食记录频次略有回升",
+      "33 天内有 9 次含糖或含咖啡因饮品记录",
+    ],
+  },
+  {
+    id: "mood-behavior",
+    title: "情绪与行为",
+    items: [
+      "记录内容以疲惫、低落、烦躁为主",
+      "晚 9 点后至凌晨的记录密度高于白天",
+      "期末考试前后记录密度上升",
+      "5 天打开应用但未产生记录",
+    ],
+  },
+  {
+    id: "school-family",
+    title: "学校与家庭",
+    items: [
+      "4 天未到校：6/22、6/29、7/8、7/13",
+      "6 次与父母冲突记录",
+      "仅 1 条同伴相关记录",
+      "除上学外共有 2 次出门记录",
+    ],
+  },
+];
 
-/* —— 生成整理单预览 ——
- * 输入：受众、范围、已选区块、补充文本、自由文本模式
- * 输出：一句话总览 + 重点卡片 + 详细摘要
- *
- * 规则：
- *   - 没有数据的区块显示「记录不足」提示，不隐藏到完全看不见
- *   - 不使用诊断 / 治疗建议 / 用药建议等表达
- *   - 补充内容标注为「本次补充」
- *   - 涉及自伤 / 危机表达时不自动放入，标记 sensitive 让用户确认
- */
-export function generateSummary(params: {
-  audience: OrganizeAudience;
-  range: OrganizeRange;
-  selectedSections: OrganizeSectionId[];
-  supplementText: string;
-  freeTextMode: FreeTextMode;
-}): GeneratedSummary {
-  const { audience, range, selectedSections, supplementText, freeTextMode } =
-    params;
-  const stats = computeRangeStats(range);
-  const rangeLabel = `最近 ${range} 天`;
+/** 完整材料中的相关记录范围（确认沟通内容页用） */
+export const RECORD_SCOPE_LABELS = [
+  "用药与身体感受",
+  "睡眠",
+  "情绪与行为",
+  "学校与家庭",
+  "饮食与体重",
+];
 
-  /* —— 第一层：一句话总览 —— */
-  const overviewParts: string[] = [];
-  overviewParts.push(
-    `${rangeLabel}中，共有 ${stats.recordedDays} 天记录`,
+/** 材料说明文案 */
+export const MATERIAL_DESCRIPTION =
+  "本材料整理自 2026 年 6 月 15 日至 7 月 17 日共 33 天的应用内自我记录，其中 24 天存在记录。";
+
+/** 免责声明 */
+export const DISCLAIMER =
+  "本材料由『在呀』应用根据用户自我记录整理生成，经用户本人确认后导出。内容为用户主观记录与应用使用状态数据，未经临床核实，不构成任何诊断或治疗建议。";
+
+/* =========================================================
+ * 会话与历史构建
+ * ======================================================= */
+
+/** 创建初始会话（开始整理时调用） */
+export function createInitialSession(): CommunicationSession {
+  const cov = getCoverage("30");
+  return {
+    id: Math.random().toString(36).slice(2),
+    targetType: "doctor",
+    targetLabel: "",
+    rangeKey: "30",
+    startDate: cov.startDate,
+    endDate: cov.endDate,
+    totalDays: cov.totalDays,
+    recordedDays: cov.recordedDays,
+    recordCategories: [...RECORD_CATEGORIES],
+    communicationTopics: createMockTopics(),
+    specialDisclosure: createMockDisclosure(),
+    status: "in_progress",
+    createdAt: Date.now(),
+  };
+}
+
+/** 重新计算 allowedInMaterial：只有 selected 且未 deleted 的才允许进入材料 */
+export function recomputeTopicPermissions(topics: CommunicationTopic[]): CommunicationTopic[] {
+  return topics.map((t) => ({
+    ...t,
+    allowedInMaterial: t.selected && !t.deleted,
+  }));
+}
+
+/** 获取进入最终材料的沟通重点 */
+export function getMaterialTopics(session: CommunicationSession): CommunicationTopic[] {
+  return session.communicationTopics.filter(
+    (t) => t.allowedInMaterial && !t.deleted,
   );
-  if (selectedSections.includes("mood") && stats.mood.lowDays > 0) {
-    overviewParts.push(`情绪低分集中在 ${stats.mood.lowDays} 天`);
-  }
-  if (selectedSections.includes("sleep") && stats.sleep.lateDays > 0) {
-    overviewParts.push(`睡眠记录显示有 ${stats.sleep.lateDays} 天入睡较晚`);
-  }
-  if (
-    selectedSections.includes("medication") &&
-    stats.medication.takenDays > 0
-  ) {
-    overviewParts.push(`服用记录有 ${stats.medication.takenDays} 天确认`);
-  }
-  const overview =
-    overviewParts.join("；") + "。";
-
-  /* —— 第二层：重点卡片（最多 3–5 张） —— */
-  const cards: GeneratedCard[] = [];
-
-  // 优先级 1：持续多日出现（睡眠晚、情绪低）
-  if (
-    selectedSections.includes("sleep") &&
-    stats.sleep.lateDays >= 3 &&
-    stats.sleep.noRecordDays < stats.totalDays
-  ) {
-    cards.push({
-      id: "sleep-rhythm",
-      title: "睡眠节律",
-      text: `记录显示，这 ${range} 天中有 ${stats.sleep.lateDays} 天入睡较晚。`,
-      source: "daily",
-    });
-  }
-
-  if (
-    selectedSections.includes("mood") &&
-    stats.mood.lowDays >= 2 &&
-    stats.mood.noRecordDays < stats.totalDays
-  ) {
-    cards.push({
-      id: "mood-low",
-      title: "情绪波动",
-      text: `记录显示，有 ${stats.mood.lowDays} 天出现较低情绪记录。`,
-      source: "daily",
-    });
-  }
-
-  // 优先级 2：饮食缺失（影响生活节律）
-  if (
-    selectedSections.includes("diet") &&
-    stats.diet.missedBreakfast + stats.diet.missedLunch + stats.diet.missedDinner >=
-      3
-  ) {
-    const missedTotal =
-      stats.diet.missedBreakfast + stats.diet.missedLunch + stats.diet.missedDinner;
-    cards.push({
-      id: "diet-missed",
-      title: "饮食节律",
-      text: `记录显示，这 ${range} 天中共有 ${missedTotal} 餐次记录为未吃。`,
-      source: "daily",
-    });
-  }
-
-  // 优先级 3：本次补充
-  const supplementTrim = supplementText.trim();
-  if (selectedSections.includes("freeText") && supplementTrim) {
-    const sensitive = hasSensitiveContent(supplementTrim);
-    cards.push({
-      id: "supplement",
-      title: audience === "professional" ? "想带去沟通的内容" : "本次补充",
-      text: sensitive
-        ? "用户在本次补充中写下了 1 条比较敏感的内容，需要先确认是否放入当前版本。"
-        : `用户在本次补充中写下了 ${countSentences(supplementTrim)} 条想沟通的内容。`,
-      source: "supplement",
-    });
-  }
-
-  // 优先级 4：服药确认（仅 self / professional 默认展示）
-  if (
-    selectedSections.includes("medication") &&
-    stats.medication.takenDays > 0 &&
-    cards.length < 4
-  ) {
-    cards.push({
-      id: "med-taken",
-      title: "服用记录",
-      text: `记录显示，这 ${range} 天中有 ${stats.medication.takenDays} 天确认服药。`,
-      source: "daily",
-    });
-  }
-
-  /* —— 第三层：详细摘要 —— */
-  const sections: SectionDetail[] = [];
-
-  if (selectedSections.includes("mood")) {
-    if (stats.mood.noRecordDays === stats.totalDays) {
-      sections.push({
-        id: "mood",
-        title: SECTION_META.mood.label,
-        source: "insufficient",
-        text: "这段时间没有足够的情绪记录，暂不整理这一项。",
-      });
-    } else {
-      const parts: string[] = [];
-      parts.push(
-        `记录显示，这 ${range} 天中有 ${stats.mood.lowDays} 天情绪偏低、${stats.mood.midDays} 天一般、${stats.mood.highDays} 天偏稳。`,
-      );
-      if (stats.mood.topWords.length > 0) {
-        parts.push(
-          `较常出现的情绪词：${stats.mood.topWords.map((w) => w.word).join("、")}。`,
-        );
-      }
-      if (stats.mood.triggers.length > 0) {
-        parts.push(
-          `较常提到的触发事件：${stats.mood.triggers.map((t) => t.trigger).join("、")}。`,
-        );
-      }
-      sections.push({
-        id: "mood",
-        title: SECTION_META.mood.label,
-        source: "daily",
-        text: parts.join(""),
-      });
-    }
-  }
-
-  if (selectedSections.includes("sleep")) {
-    if (stats.sleep.noRecordDays === stats.totalDays) {
-      sections.push({
-        id: "sleep",
-        title: SECTION_META.sleep.label,
-        source: "insufficient",
-        text: "这段时间没有足够的睡眠记录，暂不整理这一项。",
-      });
-    } else {
-      const parts: string[] = [];
-      parts.push(
-        `记录显示，这 ${range} 天中有 ${stats.sleep.lateDays} 天入睡较晚，其中 ${stats.sleep.veryLateDays} 天入睡在 1 点后。`,
-      );
-      if (stats.sleep.avgSleepTimeLabel) {
-        parts.push(`较常出现的入睡时间段：${stats.sleep.avgSleepTimeLabel}。`);
-      }
-      if (stats.sleep.nightWakeDays > 0) {
-        parts.push(`有 ${stats.sleep.nightWakeDays} 天记录到夜醒。`);
-      }
-      sections.push({
-        id: "sleep",
-        title: SECTION_META.sleep.label,
-        source: "daily",
-        text: parts.join(""),
-      });
-    }
-  }
-
-  if (selectedSections.includes("diet")) {
-    if (stats.diet.noRecordDays === stats.totalDays) {
-      sections.push({
-        id: "diet",
-        title: SECTION_META.diet.label,
-        source: "insufficient",
-        text: "这段时间没有足够的饮食记录，暂不整理这一项。",
-      });
-    } else {
-      const parts: string[] = [];
-      parts.push(
-        `记录显示，早餐缺失 ${stats.diet.missedBreakfast} 天，午餐缺失 ${stats.diet.missedLunch} 天，晚餐缺失 ${stats.diet.missedDinner} 天。`,
-      );
-      if (stats.diet.afterFeelingDays > 0) {
-        parts.push(`有 ${stats.diet.afterFeelingDays} 天记录了饭后感受。`);
-      }
-      sections.push({
-        id: "diet",
-        title: SECTION_META.diet.label,
-        source: "daily",
-        text: parts.join(""),
-      });
-    }
-  }
-
-  if (selectedSections.includes("medication")) {
-    if (stats.medication.noRecordDays === stats.totalDays) {
-      sections.push({
-        id: "medication",
-        title: SECTION_META.medication.label,
-        source: "insufficient",
-        text: "这段时间没有足够的服用记录，暂不整理这一项。",
-      });
-    } else {
-      const parts: string[] = [];
-      parts.push(
-        `记录显示，这 ${range} 天中有 ${stats.medication.takenDays} 天确认服药。`,
-      );
-      if (stats.medication.missedDays > 0) {
-        parts.push(`有 ${stats.medication.missedDays} 天记录到漏服。`);
-      }
-      if (stats.medication.changedDays > 0) {
-        parts.push(`有 ${stats.medication.changedDays} 天记录到方案改动。`);
-      }
-      sections.push({
-        id: "medication",
-        title: SECTION_META.medication.label,
-        source: "daily",
-        text: parts.join(""),
-      });
-    }
-  }
-
-  if (selectedSections.includes("bodyFeeling")) {
-    if (stats.bodyFeeling.mentionedDays === 0) {
-      sections.push({
-        id: "bodyFeeling",
-        title: SECTION_META.bodyFeeling.label,
-        source: "insufficient",
-        text: "这段时间没有足够的身体感受记录，暂不整理这一项。",
-      });
-    } else {
-      const parts: string[] = [];
-      parts.push(
-        `记录显示，有 ${stats.bodyFeeling.mentionedDays} 天提到了身体感受。`,
-      );
-      if (stats.bodyFeeling.topFeelings.length > 0) {
-        parts.push(
-          `较常出现的身体感受：${stats.bodyFeeling.topFeelings.map((f) => f.feeling).join("、")}。`,
-        );
-      }
-      sections.push({
-        id: "bodyFeeling",
-        title: SECTION_META.bodyFeeling.label,
-        source: "daily",
-        text: parts.join(""),
-      });
-    }
-  }
-
-  if (selectedSections.includes("weight")) {
-    if (stats.weight.recordedDays === 0) {
-      sections.push({
-        id: "weight",
-        title: SECTION_META.weight.label,
-        source: "insufficient",
-        text: "这段时间没有体重记录，暂不整理这一项。",
-      });
-    } else {
-      const parts: string[] = [];
-      parts.push(`记录显示，有 ${stats.weight.recordedDays} 天记录了体重。`);
-      if (
-        stats.weight.delta !== null &&
-        stats.weight.values.length >= 2
-      ) {
-        const first = stats.weight.values[0].weight;
-        const last = stats.weight.values[stats.weight.values.length - 1].weight;
-        parts.push(
-          `记录范围内体重从 ${first} kg 变化到 ${last} kg。`,
-        );
-      }
-      sections.push({
-        id: "weight",
-        title: SECTION_META.weight.label,
-        source: "daily",
-        text: parts.join(""),
-      });
-    }
-  }
-
-  if (selectedSections.includes("freeText")) {
-    if (freeTextMode === "hidden") {
-      // 不包含 — 不展示该区块，但占位提示
-      sections.push({
-        id: "freeText",
-        title: SECTION_META.freeText.label,
-        source: "insufficient",
-        text: "当前版本未包含自由文本内容。",
-      });
-    } else if (freeTextMode === "summary") {
-      const items = stats.freeText.items;
-      if (items.length === 0) {
-        sections.push({
-          id: "freeText",
-          title: SECTION_META.freeText.label,
-          source: "insufficient",
-          text: "这段时间没有自由文本记录，暂不整理这一项。",
-        });
-      } else {
-        const summary = `记录显示，这段时间共写下 ${items.length} 条自由文本补充，较常涉及日常活动与情绪说明。`;
-        sections.push({
-          id: "freeText",
-          title: SECTION_META.freeText.label,
-          source: "daily",
-          text: summary,
-          summaryText: summary,
-        });
-      }
-    } else {
-      // original
-      const items = stats.freeText.items;
-      if (items.length === 0) {
-        sections.push({
-          id: "freeText",
-          title: SECTION_META.freeText.label,
-          source: "insufficient",
-          text: "这段时间没有自由文本记录，暂不整理这一项。",
-        });
-      } else {
-        const sensitive = items.some((i) => hasSensitiveContent(i.text));
-        sections.push({
-          id: "freeText",
-          title: SECTION_META.freeText.label,
-          source: "daily",
-          text: `记录显示，这段时间共写下 ${items.length} 条自由文本补充。`,
-          rawItems: items.map((i) => ({
-            date: i.date,
-            displayDate: i.displayDate,
-            text: i.text,
-            kind: i.kind,
-          })),
-          sensitive,
-        });
-      }
-    }
-  }
-
-  if (selectedSections.includes("dataCompleteness")) {
-    const totalSlots = stats.totalDays * 5; // 5 类核心记录
-    const filledSlots =
-      (stats.totalDays - stats.mood.noRecordDays) +
-      (stats.totalDays - stats.sleep.noRecordDays) +
-      (stats.totalDays - stats.diet.noRecordDays) +
-      (stats.totalDays - stats.medication.noRecordDays) +
-      stats.weight.recordedDays;
-    const ratio = totalSlots === 0 ? 0 : Math.round((filledSlots / totalSlots) * 100);
-    sections.push({
-      id: "dataCompleteness",
-      title: SECTION_META.dataCompleteness.label,
-      source: "daily",
-      text: `这段时间各类记录覆盖度约 ${ratio}%。其中情绪记录 ${stats.totalDays - stats.mood.noRecordDays} 天、睡眠记录 ${stats.totalDays - stats.sleep.noRecordDays} 天、饮食记录 ${stats.totalDays - stats.diet.noRecordDays} 天、服用记录 ${stats.totalDays - stats.medication.noRecordDays} 天、体重记录 ${stats.weight.recordedDays} 天。`,
-    });
-  }
-
-  // 本次补充作为独立区块（如果用户填了补充内容）
-  if (supplementTrim) {
-    const sensitive = hasSensitiveContent(supplementTrim);
-    sections.push({
-      id: "supplement",
-      title: "本次补充",
-      source: "supplement",
-      text: supplementTrim,
-      sensitive,
-    });
-  }
-
-  return { overview, cards: cards.slice(0, 5), sections };
 }
 
-/* —— 简单句数统计（用于补充内容条数描述）—— */
-function countSentences(text: string): number {
-  const parts = text
-    .split(/[。\n！？!?]/)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
-  return Math.max(1, parts.length);
+/** 完成会话：固化状态并生成历史条目 */
+export function completeSession(session: CommunicationSession): OrganizeHistoryEntry {
+  const topics = recomputeTopicPermissions(session.communicationTopics);
+  const topicCount = topics.filter((t) => t.allowedInMaterial).length;
+  const disclosureIncluded =
+    session.specialDisclosure.decision === "include" &&
+    session.specialDisclosure.confirmed;
+  const completed: CommunicationSession = {
+    ...session,
+    communicationTopics: topics,
+    specialDisclosure: {
+      ...session.specialDisclosure,
+      allowedInMaterial: disclosureIncluded,
+    },
+    status: "completed",
+  };
+  return {
+    id: completed.id,
+    targetType: completed.targetType,
+    targetLabel: completed.targetLabel,
+    startDate: completed.startDate,
+    endDate: completed.endDate,
+    totalDays: completed.totalDays,
+    recordedDays: completed.recordedDays,
+    topicCount,
+    disclosureIncluded,
+    session: completed,
+    createdAt: completed.createdAt,
+  };
 }
 
-/* —— 复制简版文字 ——
- * 一段克制、可粘贴的纯文本摘要。
- * 始终附上免责说明：仅来自用户已有记录和本次主动补充，不包含诊断或治疗建议。 */
-export function buildPlainText(params: {
-  range: OrganizeRange;
-  summary: GeneratedSummary;
-}): string {
-  const { range, summary } = params;
+/* =========================================================
+ * 完整材料构建（详情页 / 完整内容视图 / 导出共用）
+ * ======================================================= */
+
+export interface MaterialSection {
+  id: string;
+  title: string;
+  /** 段落文本（材料说明 / 免责声明） */
+  paragraph?: string;
+  /** 沟通重点列表（仅"本次希望讨论的问题"用） */
+  topics?: { title: string; content: string; sourceType: TopicSourceType }[];
+  /** 相关记录事实（按沟通重点关联） */
+  facts?: { topicTitle: string; evidence: string[] }[];
+  /** 经确认的特殊情况 */
+  disclosure?: { summary: string; detailRecords: string[] };
+  /** 其他记录概览 */
+  otherRecords?: { title: string; items: string[] }[];
+}
+
+/** 构建完整材料结构 */
+export function buildFullMaterial(session: CommunicationSession): MaterialSection[] {
+  const sections: MaterialSection[] = [];
+
+  // 1. 材料说明
+  sections.push({
+    id: "description",
+    title: "材料说明",
+    paragraph: MATERIAL_DESCRIPTION,
+  });
+
+  // 2. 本次希望讨论的问题
+  const materialTopics = getMaterialTopics(session);
+  if (materialTopics.length > 0) {
+    sections.push({
+      id: "topics",
+      title: "本次希望和医生讨论的问题",
+      topics: materialTopics.map((t) => ({
+        title: t.title,
+        content: t.content,
+        sourceType: t.sourceType,
+      })),
+    });
+  }
+
+  // 3. 与所选问题相关的记录事实
+  if (materialTopics.length > 0) {
+    sections.push({
+      id: "facts",
+      title: "与所选问题相关的记录事实",
+      facts: materialTopics.map((t) => ({
+        topicTitle: t.title,
+        evidence: t.evidenceSummary,
+      })),
+    });
+  }
+
+  // 4. 经用户确认纳入的特殊情况
+  if (session.specialDisclosure.allowedInMaterial) {
+    sections.push({
+      id: "disclosure",
+      title: "经用户确认纳入的特殊情况",
+      disclosure: {
+        summary: session.specialDisclosure.summary,
+        detailRecords: session.specialDisclosure.detailRecords,
+      },
+    });
+  }
+
+  // 5. 其他记录概览
+  sections.push({
+    id: "other-records",
+    title: "其他记录概览",
+    otherRecords: OTHER_RECORD_SECTIONS.map((s) => ({
+      title: s.title,
+      items: s.items,
+    })),
+  });
+
+  // 6. 免责声明
+  sections.push({
+    id: "disclaimer",
+    title: "免责声明",
+    paragraph: DISCLAIMER,
+  });
+
+  return sections;
+}
+
+/** 构建可分享/复制的纯文本 */
+export function buildShareText(session: CommunicationSession): string {
   const lines: string[] = [];
-  lines.push(`最近 ${range} 天整理：${summary.overview}`);
-  if (summary.cards.length > 0) {
-    for (const c of summary.cards) {
-      lines.push(c.text);
-    }
-  }
+  lines.push(`沟通材料（给${session.targetLabel}）`);
   lines.push(
-    "本整理仅来自用户已有记录和本次主动补充，不包含诊断或治疗建议。",
+    `时间范围：${formatDateRange(session.startDate, session.endDate)}（共 ${session.totalDays} 天，${session.recordedDays} 天有记录）`,
   );
+  lines.push("");
+
+  const materialTopics = getMaterialTopics(session);
+  if (materialTopics.length > 0) {
+    lines.push("本次希望讨论的问题：");
+    materialTopics.forEach((t, i) => {
+      lines.push(`${i + 1}. ${t.title}`);
+      lines.push(`   ${t.content}`);
+    });
+    lines.push("");
+  }
+
+  if (session.specialDisclosure.allowedInMaterial) {
+    lines.push("经确认纳入的特殊情况：");
+    lines.push(`包含 ${session.specialDisclosure.count} 条经本人确认的深夜记录`);
+    lines.push("");
+  }
+
+  lines.push(MATERIAL_DESCRIPTION);
+  lines.push("");
+  lines.push(DISCLAIMER);
   return lines.join("\n");
 }
 
-/* —— 整理单快照（App 内详情 + 导出报告共用同一份数据）——
- * 保存时生成，之后不再重新计算。
- * appViewSections: App 内详情页渲染用（与创建预览页结构一致）
- * exportConfig: 导出医生报告时的配置（可包含更完整信息） */
-export type SheetSnapshot = {
-  title: string;
-  audience: OrganizeAudience;
-  audienceLabel: string;
-  range: OrganizeRange;
-  generatedAt: number;
-  savedAt: number;
-  /** App 内详情页渲染用：与创建预览页结构一致 */
-  appViewSections: SectionDetail[];
-  /** 用户选择放入的模块 ID 列表 */
-  includedSectionIds: (OrganizeSectionId | "supplement")[];
-  /** 自由文本展示模式 */
-  textMode: FreeTextMode;
-  /** 关键指标（医生版使用） */
-  metrics: {
-    overview: string;
-    cards: GeneratedCard[];
-  };
-  /** 一句话总览 */
-  summary: string;
-  /** 导出配置：导出医生报告时使用 */
-  exportConfig: {
-    /** 导出时是否包含趋势图 */
-    includeTrends: boolean;
-    /** 导出时是否包含边界说明 */
-    includeBoundaryNote: boolean;
-  };
-  /** 补充文本（原始输入） */
-  supplementText: string;
-  /** 用户选择的区块（原始选择） */
-  selectedSections: OrganizeSectionId[];
-};
+/* =========================================================
+ * 日期格式化
+ * ======================================================= */
 
-/* —— 历史记录条目 —— */
-export type OrganizeHistoryEntry = {
-  id: string;
-  audience: OrganizeAudience;
-  audienceLabel: string;
-  range: OrganizeRange;
-  selectedSections: OrganizeSectionId[];
-  freeTextMode: FreeTextMode;
-  supplementText: string;
-  generatedSummary: GeneratedSummary;
-  createdAt: number;
-  /** 整理单快照：App 内详情 + 导出报告共用 */
-  sheetSnapshot?: SheetSnapshot;
-};
+/** YYYY-MM-DD → YYYY.MM.DD */
+export function formatDateDotted(dateStr: string): string {
+  return dateStr.replace(/-/g, ".");
+}
 
-/* —— 生成整理单快照 ——
- * 保存时调用，生成固定快照供 App 内详情和导出报告使用。 */
-export function buildSheetSnapshot(params: {
-  title: string;
-  audience: OrganizeAudience;
-  audienceLabel: string;
-  range: OrganizeRange;
-  selectedSections: OrganizeSectionId[];
-  supplementText: string;
-  freeTextMode: FreeTextMode;
-  generatedSummary: GeneratedSummary;
-  savedAt?: number;
-}): SheetSnapshot {
-  const {
-    title,
-    audience,
-    audienceLabel,
-    range,
-    selectedSections,
-    supplementText,
-    freeTextMode,
-    generatedSummary,
-    savedAt = Date.now(),
-  } = params;
+/** 时间段格式化：2026-06-15 ~ 2026-07-17 → 2026.06.15—2026.07.17 */
+export function formatDateRange(start: string, end: string): string {
+  return `${formatDateDotted(start)}—${formatDateDotted(end)}`;
+}
 
-  // 提取用户选择放入的模块 ID（排除 hidden 的）
-  const includedSectionIds = generatedSummary.sections
-    .map((s) => s.id)
-    .filter((id) => {
-      // freeText 根据 textMode 判断
-      if (id === "freeText" && freeTextMode === "hidden") return false;
-      return true;
-    });
+/** 时间戳 → 创建于 YYYY.MM.DD */
+export function formatCreatedAt(ts: number): string {
+  const d = new Date(ts);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
+}
 
-  return {
-    title,
-    audience,
-    audienceLabel,
-    range,
-    generatedAt: savedAt,
-    savedAt,
-    appViewSections: generatedSummary.sections,
-    includedSectionIds,
-    textMode: freeTextMode,
-    metrics: {
-      overview: generatedSummary.overview,
-      cards: generatedSummary.cards,
-    },
-    summary: generatedSummary.overview,
-    exportConfig: {
-      includeTrends: true,
-      includeBoundaryNote: true,
-    },
-    supplementText,
-    selectedSections,
-  };
+/* =========================================================
+ * localStorage 持久化
+ * ======================================================= */
+
+const SESSION_KEY = "zaiya_organize_session";
+const HISTORY_KEY = "zaiya_organize_history";
+
+/** 保存进行中的会话 */
+export function saveSession(session: CommunicationSession): void {
+  try {
+    window.localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  } catch {
+    // 忽略写入失败
+  }
+}
+
+/** 加载进行中的会话（刷新恢复） */
+export function loadSession(): CommunicationSession | null {
+  try {
+    const raw = window.localStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CommunicationSession;
+    if (parsed.status === "completed") return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+/** 清除进行中的会话 */
+export function clearSession(): void {
+  try {
+    window.localStorage.removeItem(SESSION_KEY);
+  } catch {
+    // 忽略
+  }
+}
+
+/** 加载历史（localStorage，跨刷新持久） */
+export function loadHistory(): OrganizeHistoryEntry[] {
+  try {
+    const raw = window.localStorage.getItem(HISTORY_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw) as OrganizeHistoryEntry[];
+  } catch {
+    return [];
+  }
+}
+
+/** 保存历史（全量写入） */
+export function saveHistory(history: OrganizeHistoryEntry[]): void {
+  try {
+    window.localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  } catch {
+    // 忽略
+  }
+}
+
+/** 追加一条历史 */
+export function appendHistory(
+  history: OrganizeHistoryEntry[],
+  entry: OrganizeHistoryEntry,
+): OrganizeHistoryEntry[] {
+  const next = [entry, ...history];
+  saveHistory(next);
+  return next;
+}
+
+/** 删除一条历史 */
+export function removeHistory(
+  history: OrganizeHistoryEntry[],
+  id: string,
+): OrganizeHistoryEntry[] {
+  const next = history.filter((e) => e.id !== id);
+  saveHistory(next);
+  return next;
 }
