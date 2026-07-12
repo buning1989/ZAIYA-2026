@@ -4,22 +4,24 @@ import { Check } from "lucide-react";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-/** 细进度条 + 步骤计数（1/5 — 5/5） */
+/** 与「记一下」一致的细进度条 + 右侧弱化步骤数字 */
 export function StepProgress({ current, total }: { current: number; total: number }) {
   const pct = Math.min(100, (current / total) * 100);
   return (
-    <div className="flex items-center gap-2 px-5 pb-2">
-      <div className="h-1 flex-1 overflow-hidden rounded-full bg-line-soft">
-        <motion.div
-          className="h-full rounded-full bg-accent"
-          initial={false}
-          animate={{ width: `${pct}%` }}
-          transition={{ duration: 0.3, ease }}
-        />
+    <div className="px-5 pt-3 pb-1">
+      <div className="flex items-center gap-2.5">
+        <div className="h-[2px] flex-1 overflow-hidden rounded-full bg-line-soft">
+          <motion.div
+            className="h-full rounded-full bg-[rgba(177,194,113,0.7)]"
+            initial={false}
+            animate={{ width: `${pct}%` }}
+            transition={{ duration: 0.3, ease }}
+          />
+        </div>
+        <span className="text-[11px] tabular-nums text-ink-faint">
+          {current}/{total}
+        </span>
       </div>
-      <span className="text-[11px] font-medium tabular-nums text-ink-faint">
-        {current}/{total}
-      </span>
     </div>
   );
 }
@@ -134,14 +136,14 @@ export function BottomSheet({
   );
 }
 
-/** 居中 toast 反馈 */
+/** 底部居中 toast 反馈 */
 export function Toast({ message }: { message: string }) {
   return (
     <motion.div
-      className="pointer-events-none absolute left-1/2 top-20 z-[70] -translate-x-1/2 rounded-full bg-ink/85 px-4 py-2 text-[12px] text-white"
-      initial={{ opacity: 0, y: -6 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -6 }}
+      className="pointer-events-none absolute bottom-20 left-1/2 z-[70] rounded-full bg-ink/85 px-4 py-2 text-[12px] text-white shadow-[0_4px_14px_rgba(0,0,0,0.18)]"
+      initial={{ opacity: 0, x: "-50%", y: 6 }}
+      animate={{ opacity: 1, x: "-50%", y: 0 }}
+      exit={{ opacity: 0, x: "-50%", y: 6 }}
       transition={{ duration: 0.2, ease }}
     >
       {message}

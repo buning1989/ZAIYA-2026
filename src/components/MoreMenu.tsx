@@ -12,6 +12,7 @@ import {
   ImagePlus,
   X,
   Plus,
+  Zap,
   type LucideProps,
 } from "lucide-react";
 import type { ForwardRefExoticComponent } from "react";
@@ -32,6 +33,7 @@ export type MoreItemId =
   | "review"
   | "organize"
   | "praise"
+  | "energy"
   | "privacy"
   | "help"
   | "settings";
@@ -46,6 +48,7 @@ export const moreMenuItems: {
   { id: "review", label: "回头看看", Icon: Clock },
   { id: "organize", label: "帮我整理", Icon: FolderOpen },
   { id: "praise", label: "夸夸自己", Icon: Sparkles },
+  { id: "energy", label: "我的能量", Icon: Zap },
   { id: "privacy", label: "我的隐私", Icon: Shield },
 ];
 
@@ -60,44 +63,61 @@ const bottomMenuItems: {
 ];
 
 /* —— 更多侧边栏内容 ——
- * 上半部分：功能区（记一下 / 回头看看 / 帮我整理 / 夸夸自己 / 我的隐私）
+ * 上半部分：功能区（记一下 / 回头看看 / 帮我整理 / 夸夸自己 / 我的能量 / 我的隐私）
  * 底部固定：应用级入口（帮助与反馈 / 设置），低权重色 */
 export function MoreContent({
   onSelect,
+  onUnavailable,
 }: {
   onSelect: (id: MoreItemId) => void;
   onClose: () => void;
+  /** 点击「暂未开放」入口时触发，由父级展示统一提示 */
+  onUnavailable?: (msg: string) => void;
 }) {
   return (
     <div className="relative flex h-full flex-col bg-white">
       {/* 上半部分：功能区 */}
       <nav className="flex-1 px-8 pt-16">
         <ul className="flex flex-col">
-          {moreMenuItems.map((item, i) => (
-            <motion.li
-              key={item.id}
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{
-                duration: 0.3,
-                ease: [...ease],
-                delay: 0.08 + i * 0.05,
-              }}
-            >
-              <button
-                onClick={() => onSelect(item.id)}
-                className="flex w-full items-center gap-4 py-4 text-left transition-colors hover:text-ink-faint"
+          {moreMenuItems.map((item, i) => {
+            const isUnavailable = item.id === "energy";
+            return (
+              <motion.li
+                key={item.id}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{
+                  duration: 0.3,
+                  ease: [...ease],
+                  delay: 0.08 + i * 0.05,
+                }}
               >
-                <item.Icon
-                  className="h-[21px] w-[21px] shrink-0 text-ink-soft"
-                  strokeWidth={1.6}
-                />
-                <span className="text-[17px] font-medium tracking-tight text-ink">
-                  {item.label}
-                </span>
-              </button>
-            </motion.li>
-          ))}
+                <button
+                  onClick={() => {
+                    if (isUnavailable) {
+                      onUnavailable?.("Demo 阶段暂未开放");
+                    } else {
+                      onSelect(item.id);
+                    }
+                  }}
+                  className="flex w-full items-center gap-4 py-4 text-left transition-colors hover:text-ink-faint"
+                >
+                  <item.Icon
+                    className="h-[21px] w-[21px] shrink-0 text-ink-soft"
+                    strokeWidth={1.6}
+                  />
+                  <span className="text-[17px] font-medium tracking-tight text-ink">
+                    {item.label}
+                  </span>
+                  {isUnavailable && (
+                    <span className="ml-auto rounded-full bg-line-soft px-2 py-0.5 text-[10px] text-ink-faint">
+                      暂未开放
+                    </span>
+                  )}
+                </button>
+              </motion.li>
+            );
+          })}
         </ul>
       </nav>
 
@@ -571,6 +591,7 @@ export function MoreDetailContent({
   onDismissShortcutHint,
   onRecordComplete,
   onSaveFirst,
+  onOpenZaiyaDialog,
   recordHistory,
   organizeHistory,
   onSaveOrganizeToHistory,
@@ -593,6 +614,8 @@ export function MoreDetailContent({
     typeId: RecordTypeId;
     answers: Answers;
   }) => void;
+  /** 安全承接页：退出记录流程并打开 ZAIYA 对话 */
+  onOpenZaiyaDialog?: (starterText: string) => void;
   recordHistory?: import("@/data/record").RecordEntry[];
   organizeHistory?: OrganizeHistoryEntry[];
   onSaveOrganizeToHistory?: (entry: OrganizeHistoryEntry) => void;
@@ -604,6 +627,7 @@ export function MoreDetailContent({
         onBack={onBack}
         onRecordComplete={onRecordComplete}
         onSaveFirst={onSaveFirst}
+        onOpenZaiyaDialog={onOpenZaiyaDialog}
         showShortcutHint={showShortcutHint}
         onAcceptShortcut={onAcceptShortcut}
         onDismissShortcutHint={onDismissShortcutHint}

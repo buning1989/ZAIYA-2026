@@ -15,16 +15,23 @@ import {
   MoreHorizontal,
   Pencil,
   Trash2,
-  Zap,
 } from "lucide-react";
 import ZaizaiVideo from "./ZaizaiVideo";
 import VoiceInputBar from "./VoiceInputBar";
-import MoodRecordWizard, {
-  type MoodRecordWizardHandle,
-} from "./MoodRecordWizard";
+import MoodRecordWizard from "./MoodRecordWizard";
+import MedicationRecordWizard from "./MedicationRecordWizard";
+import MealRecordWizard from "./MealRecordWizard";
+import SleepRecordWizard from "./SleepRecordWizard";
+import ActivityRecordWizard from "./ActivityRecordWizard";
+import WeightRecordWizard from "./WeightRecordWizard";
+import RecordEnergyToast, {
+  type RecordEnergyRewardEvent,
+} from "./RecordEnergyToast";
+import EnergyBadge from "./EnergyBadge";
+import { useEnergy } from "@/hooks/useEnergy";
 import { PhoneStatusBar } from "./AppMainSurface";
 import { MoonPhaseIcon, type MoonPhaseLevel } from "./MoonPhaseIcon";
-import { calculateBMI, getUserProfile, addEnergy, getEnergy, FULL_RECORD_ENERGY_REWARD } from "@/data/userProfile";
+import { calculateBMI, getUserProfile, addEnergy, FULL_RECORD_ENERGY_REWARD } from "@/data/userProfile";
 import {
   CUSTOM_INPUT_VALUE,
   getNextStep,
@@ -41,8 +48,13 @@ import {
   type Step,
   type StepOption,
 } from "@/data/record";
+import { SAFETY_DIALOG_STARTER } from "@/data/crisisResources";
 
 const ease = [0.22, 1, 0.36, 1] as const;
+
+type ActiveEnergyReward = RecordEnergyRewardEvent & {
+  toEnergy: number;
+};
 
 /* —— 月相图标（与 LookbackPage MoodBead 同步）—— */
 const intensityValueToLevel: Record<string, MoonPhaseLevel> = {
@@ -133,6 +145,8 @@ type Props = {
     typeId: RecordTypeId;
     answers: Answers;
   }) => void;
+  /** 安全承接页：点击「去跟 ZAIYA 聊一聊」时回调，退出记录流程并打开 ZAIYA 对话 */
+  onOpenZaiyaDialog?: (starterText: string) => void;
   /** 保留给 AppMainSurface 的快捷入口控制；当前记录完成后不再展示独立结果页 */
   showShortcutHint: boolean;
   onAcceptShortcut: () => void;
@@ -145,6 +159,7 @@ export default function RecordFlow({
   onBack,
   onRecordComplete,
   onSaveFirst,
+  onOpenZaiyaDialog,
   recordHistory = [],
 }: Props) {
   const [layer, setLayer] = useState<Layer>("home");
@@ -156,10 +171,14 @@ export default function RecordFlow({
 
   // 是否已完成保存（success 态），用于返回按钮跳过放弃确认
   const [isRecordSaved, setIsRecordSaved] = useState(false);
-  // 当前能量值（从 localStorage 读取，完成记录后累加刷新）
-  const [energyValue, setEnergyValue] = useState(() => getEnergy());
-  // 能量入口点击提示（wizard 层轻量 Toast，1.8s 自动淡出，不跳转空页面）
-  const [energyHint, setEnergyHint] = useState<string | null>(null);
+  // 当前能量值（useEnergy 订阅全局 pub/sub，跨模块同步；freeze/unfreeze 用于 toast 飞行期间冻结展示）
+  const { value: energyValue, freeze: freezeEnergy, unfreeze: unfreezeEnergy } = useEnergy();
+  const [activeEnergyReward, setActiveEnergyReward] =
+    useState<ActiveEnergyReward | null>(null);
+  const [energyPulse, setEnergyPulse] = useState(false);
+  const energyRewardIdRef = useRef(0);
+  const energyButtonRef = useRef<HTMLButtonElement | null>(null);
+  const energyPulseTimer = useRef<number | null>(null);
   // 上一次体重记录值（用于体重页默认填入 + 步进调节）
   // 从 recordHistory 中读取最近一条带 weight 值的体重记录；无历史时为 null（页面渲染手动输入框）
   const [lastWeight, setLastWeight] = useState<number | null>(
@@ -171,17 +190,23 @@ export default function RecordFlow({
   // isFullRecordReady：已进入「这条记录已经完整了」确认页
   const [hasCompletedFirstStep, setHasCompletedFirstStep] = useState(false);
   const [isFullRecordReady, setIsFullRecordReady] = useState(false);
-  // 情绪向导当前步骤（1-5），用于顶部「1/5」提示与返回拦截
-  const [moodInternalStep, setMoodInternalStep] = useState(1);
-  // 返回确认浮层模式：discard=二选一（继续填写/放弃并返回）；three=三选一（含先记到这儿）
-  const [dialogMode, setDialogMode] = useState<"discard" | "three" | null>(null);
-
-  // 情绪向导 ref：用于拦截顶部返回按钮，优先走内部「上一步」
-  const moodWizardRef = useRef<MoodRecordWizardHandle>(null);
+  // 安全承接页激活态：拦截普通返回逻辑，弹出安全引导确认
+  const [isSafetyPhase, setIsSafetyPhase] = useState(false);
+  // 返回确认浮层模式：moodExit=有未保存内容时的三选一（继续/保存当前内容/不保存退出）；safetyExit=安全承接页引导
+  const [dialogMode, setDialogMode] = useState<
+    "moodExit" | "safetyExit" | null
+  >(null);
 
   const type = typeId
     ? recordTypes.find((t) => t.id === typeId) ?? null
     : null;
+
+  const clearEnergyPulseTimer = useCallback(() => {
+    if (energyPulseTimer.current !== null) {
+      window.clearTimeout(energyPulseTimer.current);
+      energyPulseTimer.current = null;
+    }
+  }, []);
 
   const goWizard = (id: RecordTypeId) => {
     setTypeId(id);
@@ -190,7 +215,7 @@ export default function RecordFlow({
     setIsRecordSaved(false);
     setHasCompletedFirstStep(false);
     setIsFullRecordReady(false);
-    setMoodInternalStep(1);
+    setIsSafetyPhase(false);
     setDialogMode(null);
     setLayer("wizard");
   };
@@ -210,7 +235,7 @@ export default function RecordFlow({
     // 体重记录：保存本次体重值作为下一次默认值，并随回调持久化到历史
     let weightValue: number | undefined;
     if (typeId === "weight") {
-      const w = parseWeightKg(answers.weightValue?.value);
+      const w = parseWeightKg(answers.weightKg?.value);
       if (w !== null) {
         weightValue = w;
         setLastWeight(w);
@@ -228,7 +253,7 @@ export default function RecordFlow({
     // 体重记录：保存本次体重值作为下一次默认值，并随回调持久化到历史
     let weightValue: number | undefined;
     if (typeId === "weight") {
-      const w = parseWeightKg(answers.weightValue?.value);
+      const w = parseWeightKg(answers.weightKg?.value);
       if (w !== null) {
         weightValue = w;
         setLastWeight(w);
@@ -236,8 +261,14 @@ export default function RecordFlow({
     }
     if (typeId) onRecordComplete?.({ typeId, isComplete: complete, weightValue });
     if (complete) {
+      freezeEnergy();
       const newEnergy = addEnergy(FULL_RECORD_ENERGY_REWARD);
-      setEnergyValue(newEnergy);
+      energyRewardIdRef.current += 1;
+      setActiveEnergyReward({
+        id: energyRewardIdRef.current,
+        reward: FULL_RECORD_ENERGY_REWARD,
+        toEnergy: newEnergy,
+      });
     }
     setIsRecordSaved(true);
     // 不 setSavedMessage：完成反馈由 success 态承担，不再走 Toast
@@ -251,35 +282,27 @@ export default function RecordFlow({
     if (typeId) onSaveFirst?.({ typeId, answers: wizardAnswers });
   };
 
-  // 顶部返回按钮拦截：
+  // 顶部返回按钮拦截（统一走情绪模块的退出交互）：
   //   已保存 → 直接回首页
-  //   确认页（记录已完整未最终保存）→ 二选一（无「先记到这儿」）
-  //   已完成第一项但未到确认页 → 三选一（含「先记到这儿」）
-  //   有未保存输入但未形成有效记录 → 二选一（无「先记到这儿」）
+  //   安全承接页 → 不直接返回普通记录流程，弹出安全引导确认
+  //   有未保存内容 → moodExit 三选一（继续记录/保存当前内容/不保存退出）
   //   无任何填写 → 直接返回
   const handleBack = () => {
     if (layer === "home") {
       onBack();
       return;
     }
-    // 情绪向导：优先尝试内部返回（上一步 / 退出安全流程）
-    if (typeId === "mood" && moodWizardRef.current?.goBackInternal()) {
-      return;
-    }
     if (isRecordSaved) {
       backToRecordHome();
       return;
     }
-    if (isFullRecordReady) {
-      setDialogMode("discard");
-      return;
-    }
-    if (hasCompletedFirstStep) {
-      setDialogMode("three");
+    // 安全承接页：不直接返回普通记录流程，弹出安全引导确认
+    if (isSafetyPhase) {
+      setDialogMode("safetyExit");
       return;
     }
     if (hasAnyAnswer) {
-      setDialogMode("discard");
+      setDialogMode("moodExit");
       return;
     }
     backToRecordHome();
@@ -298,22 +321,20 @@ export default function RecordFlow({
     setIsRecordSaved(false);
     setHasCompletedFirstStep(false);
     setIsFullRecordReady(false);
-    setMoodInternalStep(1);
+    setIsSafetyPhase(false);
     setDialogMode(null);
   };
 
-  // 接收 RecordWizard 上报的进度（stepStack 长度 / 是否进入确认页）
+  // 接收 RecordWizard 上报的进度（stepStack 长度 / 是否进入确认页 / 是否在安全承接页）
   const handleProgressChange = useCallback(
     (progress: {
       hasCompletedFirstStep: boolean;
       isFullRecordReady: boolean;
-      moodInternalStep?: number;
+      isSafetyPhase: boolean;
     }) => {
       setHasCompletedFirstStep(progress.hasCompletedFirstStep);
       setIsFullRecordReady(progress.isFullRecordReady);
-      if (progress.moodInternalStep !== undefined) {
-        setMoodInternalStep(progress.moodInternalStep);
-      }
+      setIsSafetyPhase(progress.isSafetyPhase);
     },
     [],
   );
@@ -331,11 +352,27 @@ export default function RecordFlow({
     return () => window.clearTimeout(timer);
   }, [savedMessage]);
 
-  useEffect(() => {
-    if (!energyHint) return;
-    const timer = window.setTimeout(() => setEnergyHint(null), 1800);
-    return () => window.clearTimeout(timer);
-  }, [energyHint]);
+  useEffect(
+    () => () => {
+      clearEnergyPulseTimer();
+    },
+    [clearEnergyPulseTimer],
+  );
+
+  const handleEnergyRewardArrive = useCallback(() => {
+    if (!activeEnergyReward) return;
+    unfreezeEnergy();
+    setEnergyPulse(true);
+    clearEnergyPulseTimer();
+    energyPulseTimer.current = window.setTimeout(() => {
+      setEnergyPulse(false);
+      energyPulseTimer.current = null;
+    }, 420);
+  }, [activeEnergyReward, clearEnergyPulseTimer, unfreezeEnergy]);
+
+  const handleEnergyRewardDone = useCallback(() => {
+    setActiveEnergyReward(null);
+  }, []);
 
   return (
     <div className="relative flex h-full flex-col bg-white">
@@ -352,25 +389,16 @@ export default function RecordFlow({
         </button>
         <h2 className="flex-1 text-[17px] font-semibold tracking-tight text-ink">
           {title}
-          {layer === "wizard" &&
-            typeId === "mood" &&
-            !isFullRecordReady &&
-            !isRecordSaved && (
-              <span className="ml-2 text-[12px] font-normal text-ink-faint">
-                {moodInternalStep}/5
-              </span>
-            )}
         </h2>
-        {layer === "wizard" && (isFullRecordReady || isRecordSaved) ? (
-          /* 确认页 / 已保存：能量入口（仅展示，点击提示 Demo 暂未开放） */
-          <button
-            onClick={() => setEnergyHint("能量可以用来兑换在在的小装扮，Demo 暂未开放。")}
-            className="flex items-center gap-1 rounded-full bg-[rgba(177,194,113,0.15)] px-2.5 py-1 text-[12px] font-medium text-[#2C3B27] transition-colors hover:bg-[rgba(177,194,113,0.25)]"
-          >
-            <Zap className="h-3 w-3" />
-            <span>{energyValue}</span>
-          </button>
-        ) : layer === "wizard" && canSavePartial ? (
+        {layer === "wizard" && !isSafetyPhase && (isFullRecordReady || isRecordSaved) ? (
+          /* 确认页 / 已保存：能量入口（统一组件，点击提示 Demo 暂未开放） */
+          <EnergyBadge
+            value={energyValue}
+            pulse={energyPulse}
+            buttonRef={energyButtonRef}
+            position="inline"
+          />
+        ) : layer === "wizard" && !isSafetyPhase && canSavePartial ? (
           /* 第二项及以后、未到确认页：先记到这儿（部分保存） */
           <button
             onClick={handleSavePartial}
@@ -379,21 +407,6 @@ export default function RecordFlow({
             先记到这儿
           </button>
         ) : null}
-
-        {/* 能量入口点击提示：紧贴能量入口下方展开，1.8s 自动淡出；宽度受限可换行，不会被裁切 */}
-        <AnimatePresence>
-          {energyHint && (
-            <motion.div
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.2, ease }}
-              className="pointer-events-none absolute right-5 top-full z-20 mt-1 max-w-[220px] rounded-2xl bg-[rgba(177,194,113,0.9)] px-3.5 py-2 text-left text-[12px] font-medium leading-relaxed text-white shadow-[0_6px_16px_rgba(44,59,39,0.18)]"
-            >
-              {energyHint}
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
       {/* 层级内容 */}
@@ -416,7 +429,18 @@ export default function RecordFlow({
             )}
             {layer === "wizard" && type && typeId === "mood" && (
               <MoodRecordWizard
-                ref={moodWizardRef}
+                type={type}
+                answers={wizardAnswers}
+                setAnswers={setWizardAnswers}
+                onSave={handleSave}
+                onFinishRecord={handleCompleteRecord}
+                onAbort={backToRecordHome}
+                onProgressChange={handleProgressChange}
+                onOpenZaiyaDialog={onOpenZaiyaDialog}
+              />
+            )}
+            {layer === "wizard" && type && typeId === "medication" && (
+              <MedicationRecordWizard
                 type={type}
                 answers={wizardAnswers}
                 setAnswers={setWizardAnswers}
@@ -426,8 +450,41 @@ export default function RecordFlow({
                 onProgressChange={handleProgressChange}
               />
             )}
-            {layer === "wizard" && type && typeId !== "mood" && (
-              <RecordWizard
+            {layer === "wizard" && type && typeId === "food" && (
+              <MealRecordWizard
+                type={type}
+                answers={wizardAnswers}
+                setAnswers={setWizardAnswers}
+                onSave={handleSave}
+                onFinishRecord={handleCompleteRecord}
+                onAbort={backToRecordHome}
+                onProgressChange={handleProgressChange}
+              />
+            )}
+            {layer === "wizard" && type && typeId === "sleep" && (
+              <SleepRecordWizard
+                type={type}
+                answers={wizardAnswers}
+                setAnswers={setWizardAnswers}
+                onSave={handleSave}
+                onFinishRecord={handleCompleteRecord}
+                onAbort={backToRecordHome}
+                onProgressChange={handleProgressChange}
+              />
+            )}
+            {layer === "wizard" && type && typeId === "activity" && (
+              <ActivityRecordWizard
+                type={type}
+                answers={wizardAnswers}
+                setAnswers={setWizardAnswers}
+                onSave={handleSave}
+                onFinishRecord={handleCompleteRecord}
+                onAbort={backToRecordHome}
+                onProgressChange={handleProgressChange}
+              />
+            )}
+            {layer === "wizard" && type && typeId === "weight" && (
+              <WeightRecordWizard
                 type={type}
                 answers={wizardAnswers}
                 setAnswers={setWizardAnswers}
@@ -438,11 +495,37 @@ export default function RecordFlow({
                 onProgressChange={handleProgressChange}
               />
             )}
+            {layer === "wizard" &&
+              type &&
+              typeId !== "mood" &&
+              typeId !== "medication" &&
+              typeId !== "food" &&
+              typeId !== "sleep" &&
+              typeId !== "activity" &&
+              typeId !== "weight" && (
+                <RecordWizard
+                  type={type}
+                  answers={wizardAnswers}
+                  setAnswers={setWizardAnswers}
+                  onSave={handleSave}
+                  onFinishRecord={handleCompleteRecord}
+                  onAbort={backToRecordHome}
+                  lastWeight={lastWeight}
+                  onProgressChange={handleProgressChange}
+                />
+              )}
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* 返回确认浮层：discard=二选一（继续填写/放弃并返回）；three=三选一（含先记到这儿） */}
+      <RecordEnergyToast
+        event={activeEnergyReward}
+        targetRef={energyButtonRef}
+        onArrive={handleEnergyRewardArrive}
+        onDone={handleEnergyRewardDone}
+      />
+
+      {/* 返回确认浮层：moodExit=有未保存内容时的三选一；safetyExit=安全承接页引导 */}
       <AnimatePresence>
         {dialogMode && (
           <>
@@ -463,64 +546,74 @@ export default function RecordFlow({
               transition={{ duration: 0.25, ease: "easeOut" }}
               className="absolute inset-x-0 bottom-0 z-40 rounded-t-2xl bg-white px-5 pb-8 pt-5 shadow-[0_-8px_24px_rgba(39,51,31,0.08)]"
             >
-              {dialogMode === "three" ? (
-                <>
-                  <h3 className="text-center text-[16px] font-semibold tracking-tight text-ink">
-                    这条记录还没有完整保存
-                  </h3>
-                  <p className="mt-2 text-center text-[13px] leading-relaxed text-ink-faint">
-                    你可以继续填写，也可以先把已经记下的内容保存起来。
-                  </p>
-                  <div className="mt-5 flex flex-col gap-2.5">
-                    {/* 主按钮：继续填写 */}
-                    <button
-                      onClick={() => setDialogMode(null)}
-                      className="w-full rounded-xl bg-action-primary px-4 py-3 text-[14px] font-medium text-action-primary-text transition-opacity hover:opacity-90"
-                    >
-                      继续填写
-                    </button>
-                    {/* 次按钮：先记到这儿 */}
-                    <button
-                      onClick={handleSavePartial}
-                      className="w-full rounded-xl border border-line bg-white px-4 py-3 text-[14px] font-medium text-ink transition-colors hover:border-ink-faint"
-                    >
-                      先记到这儿
-                    </button>
-                    {/* 弱按钮：放弃并返回 */}
-                    <button
-                      onClick={handleDiscardAndGoHome}
-                      className="w-full rounded-xl px-4 py-3 text-[13px] text-ink-faint transition-colors hover:text-ink"
-                    >
-                      放弃并返回
-                    </button>
-                  </div>
-                </>
-              ) : (
+              {dialogMode === "moodExit" ? (
                 <>
                   <h3 className="text-center text-[16px] font-semibold tracking-tight text-ink">
                     这条记录还没有保存
                   </h3>
                   <p className="mt-2 text-center text-[13px] leading-relaxed text-ink-faint">
-                    现在返回的话，刚才填写的内容不会被保存。
+                    你可以继续记录，也可以先把已经记下的内容保存起来。
                   </p>
                   <div className="mt-5 flex flex-col gap-2.5">
-                    {/* 主按钮：继续填写 */}
+                    {/* 主按钮：继续记录 */}
                     <button
                       onClick={() => setDialogMode(null)}
                       className="w-full rounded-xl bg-action-primary px-4 py-3 text-[14px] font-medium text-action-primary-text transition-opacity hover:opacity-90"
                     >
-                      继续填写
+                      继续记录
                     </button>
-                    {/* 弱按钮：放弃并返回 */}
+                    {/* 次按钮：保存当前内容 */}
+                    <button
+                      onClick={handleSavePartial}
+                      className="w-full rounded-xl border border-line bg-white px-4 py-3 text-[14px] font-medium text-ink transition-colors hover:border-ink-faint"
+                    >
+                      保存当前内容
+                    </button>
+                    {/* 弱按钮：不保存退出 */}
                     <button
                       onClick={handleDiscardAndGoHome}
-                      className="w-full rounded-xl border border-line bg-white px-4 py-3 text-[13px] text-ink-faint transition-colors hover:text-ink"
+                      className="w-full rounded-xl px-4 py-3 text-[13px] text-ink-faint transition-colors hover:text-ink"
                     >
-                      放弃并返回
+                      不保存退出
                     </button>
                   </div>
                 </>
-              )}
+              ) : dialogMode === "safetyExit" ? (
+                <>
+                  <h3 className="text-center text-[16px] font-semibold tracking-tight text-ink">
+                    先找一个出口，好吗？
+                  </h3>
+                  <p className="mt-2 text-center text-[13px] leading-relaxed text-ink-faint">
+                    你可以先跟 ZAIYA 说一句，或者联系一个现在能接住你的人。
+                  </p>
+                  <div className="mt-5 flex flex-col gap-2.5">
+                    {/* 主按钮：去跟 ZAIYA 聊一聊 */}
+                    <button
+                      onClick={() => {
+                        setDialogMode(null);
+                        onOpenZaiyaDialog?.(SAFETY_DIALOG_STARTER);
+                      }}
+                      className="w-full rounded-xl bg-action-primary px-4 py-3 text-[14px] font-medium text-action-primary-text transition-opacity hover:opacity-90"
+                    >
+                      去跟 ZAIYA 聊一聊
+                    </button>
+                    {/* 次按钮：查看紧急联系人（关闭弹窗，留在安全承接页查看行动出口） */}
+                    <button
+                      onClick={() => setDialogMode(null)}
+                      className="w-full rounded-xl border border-line bg-white px-4 py-3 text-[14px] font-medium text-ink transition-colors hover:border-ink-faint"
+                    >
+                      查看紧急联系人
+                    </button>
+                    {/* 弱按钮：取消（留在安全承接页） */}
+                    <button
+                      onClick={() => setDialogMode(null)}
+                      className="w-full rounded-xl px-4 py-3 text-[13px] text-ink-faint transition-colors hover:text-ink"
+                    >
+                      取消
+                    </button>
+                  </div>
+                </>
+              ) : null}
             </motion.div>
           </>
         )}
@@ -657,32 +750,19 @@ function buildRecentBubbles(history: RecordEntry[]): string[] {
   // 按时间倒序取最近 3 条
   const recent = history.slice(-3).reverse();
 
+  // 中性保存反馈：不展示固定 mock 摘要，避免与实际保存内容不一致
+  const fallbackSummary: Record<RecordTypeId, string> = {
+    mood: "刚才这条情绪记录已保存",
+    medication: "刚才这条服用记录已保存",
+    food: "刚才这条饮食记录已保存",
+    sleep: "刚才这条睡眠记录已保存",
+    activity: "刚才这条活动记录已保存",
+    weight: "刚才这条体重记录已保存",
+  };
+
   return recent.map((entry) => {
-    const type = recordTypes.find((t) => t.id === entry.type);
-
-    // 根据 completedAt 计算相对时间
-    const now = Date.now();
-    const diff = now - entry.completedAt;
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(hours / 24);
-
-    let timePrefix: string;
-    if (days === 0) {
-      if (hours === 0) timePrefix = "刚才你留下过";
-      else if (hours === 1) timePrefix = "一小时前你留下过";
-      else timePrefix = "今天你留下过";
-    } else if (days === 1) {
-      timePrefix = "昨天你留下过";
-    } else if (days === 2) {
-      timePrefix = "前天你记到";
-    } else {
-      timePrefix = "前几天你记到";
-    }
-
-    // 摘要：使用 mockRecentSummary 的 text 字段（本地 mock 阶段）
-    const summary = type?.mockRecentSummary?.text ?? "一条记录";
-
-    return `${timePrefix}：${summary}`;
+    const summary = fallbackSummary[entry.type] ?? "刚才这条记录已保存";
+    return `刚刚：${summary}`;
   });
 }
 
@@ -730,6 +810,7 @@ function RecordWizard({
   onProgressChange?: (progress: {
     hasCompletedFirstStep: boolean;
     isFullRecordReady: boolean;
+    isSafetyPhase: boolean;
   }) => void;
 }) {
   const initialStep = type.steps[0];
@@ -971,6 +1052,7 @@ function RecordWizard({
     onProgressChange?.({
       hasCompletedFirstStep: stepStack.length > 1,
       isFullRecordReady: showConfirmPage,
+      isSafetyPhase: false,
     });
   }, [stepStack.length, showConfirmPage, onProgressChange]);
 
@@ -1683,8 +1765,7 @@ function RecordConfirmPage({
     onAbort();
   };
 
-  const now = new Date();
-  const timeStr = `今天 ${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+  const timeStr = "刚刚";
 
   // —— 完成反馈 Toast（inline 覆盖在确认页中央，不切换独立页面）——
   // toast：实色能量胶囊，居中弹出，1.3s 后原地淡出

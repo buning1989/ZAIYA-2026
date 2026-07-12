@@ -1,9 +1,8 @@
-import { useState, useRef, useEffect } from "react";
-import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
-  Menu,
+  ArrowUp,
   MessageCircle,
-  Pause,
   BookOpen,
   Users,
   Wind,
@@ -12,12 +11,14 @@ import {
   Waves,
   Hand,
   Leaf,
+  HandHeart,
   ChevronLeft,
 } from "lucide-react";
 import VoiceInputBar from "./VoiceInputBar";
 import {
-  PresenceSelectContent,
-  PresenceRoomContent,
+  SocialSceneSelectContent,
+  DazeFlow,
+  EatPlaceholderContent,
   type SceneId,
 } from "./PresenceRoom";
 import FeaturePageTransition, { CollapseButton } from "./FeaturePageTransition";
@@ -26,12 +27,25 @@ import {
   MoreDetailContent,
   type MoreItemId,
 } from "./MoreMenu";
-import ZaizaiVideo, { ZAIZAI_RELIEF_VIDEO_SRC } from "./ZaizaiVideo";
 import ZaiyaWakeAnimation from "./ZaiyaWakeAnimation";
+import HomeTimeAnchor from "./HomeTimeAnchor";
+import HomeBubbleCopy from "./HomeBubbleCopy";
+import ZaizaiHomeScene from "./ZaizaiHomeScene";
+import { getHomeTimePhase } from "@/lib/homeTimePhase";
+import BreathingFlow from "./BreathingFlow";
+import RecordEnergyToast, {
+  type RecordEnergyRewardEvent,
+} from "./RecordEnergyToast";
+import EnergyBadge from "./EnergyBadge";
+import { useEnergy } from "@/hooks/useEnergy";
 import type { Answers, RecordEntry, RecordTypeId } from "@/data/record";
 import type { OrganizeHistoryEntry } from "@/data/organize";
+import { addEnergy } from "@/data/userProfile";
 
 const ease = [0.22, 1, 0.36, 1] as const;
+
+/* —— 轻社交：一起发呆结束获得的能量值（Demo 固定，不按时长计算）—— */
+const SOCIAL_DAZE_ENERGY_REWARD = 3;
 
 /* —— 应用锁受保护入口 ——
  * 仅这 4 个入口被应用锁保护；首页 / 记一下的新建入口 / 帮助与反馈 /
@@ -43,18 +57,21 @@ const APP_LOCK_PROTECTED_ITEMS: MoreItemId[] = [
   "privacy",
 ];
 
-/* —— 首页内缓解模式：3 个核心方法，结构预留扩展到 6 个 ——
- * 仅样式与点击反馈，不含真实心理干预内容。 */
-type ReliefMethodId = "breathing" | "grounding" | "mindfulness";
+/* —— 首页内缓解模式：4 个能力项 ——
+ * 当前 demo 阶段仅开放「呼吸法」；其余卡片弱化并标识「暂未开放」标签，点击无反馈。
+ * 与轻社交模块未开放状态视觉规则一致。 */
+type ReliefMethodId = "breathing" | "grounding" | "mindfulness" | "butterfly";
 
 const reliefMethods: {
   id: ReliefMethodId;
   label: string;
   Icon: typeof Waves;
+  enabled: boolean;
 }[] = [
-  { id: "breathing", label: "呼吸法", Icon: Waves },
-  { id: "grounding", label: "五感接地", Icon: Hand },
-  { id: "mindfulness", label: "正念", Icon: Leaf },
+  { id: "breathing", label: "呼吸法", Icon: Waves, enabled: true },
+  { id: "grounding", label: "五感接地", Icon: Hand, enabled: false },
+  { id: "mindfulness", label: "正念", Icon: Leaf, enabled: false },
+  { id: "butterfly", label: "蝴蝶拍", Icon: HandHeart, enabled: false },
 ];
 
 function buildDemoReply(text: string) {
@@ -69,6 +86,184 @@ function buildDemoReply(text: string) {
   return "我先记下来了。今天不用一次解决全部问题，只选一个最小动作：喝一口水、坐起来两分钟，或告诉身边的人“我现在需要慢一点”。";
 }
 
+const WEEKDAY_CHARS = ["日", "一", "二", "三", "四", "五", "六"];
+
+function HomeBreathingMenuIcon({ className = "" }: { className?: string }) {
+  const reduceMotion = useReducedMotion();
+  const lines = [
+    { y: 6.8, x2: 18.2, grow: 0.7, delay: 0 },
+    { y: 12, x2: 15.2, grow: 0.45, delay: 0.45 },
+    { y: 17.2, x2: 19.2, grow: 0.55, delay: 0.9 },
+  ];
+
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {lines.map((line, index) => (
+        <motion.line
+          key={index}
+          x1={4.5}
+          x2={line.x2}
+          y1={line.y}
+          y2={line.y}
+          stroke="currentColor"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          vectorEffect="non-scaling-stroke"
+          style={{ transformOrigin: "12px 12px" }}
+          animate={
+            reduceMotion
+              ? undefined
+              : {
+                  x2: [line.x2, line.x2 + line.grow, line.x2],
+                  opacity: [0.82, 1, 0.86, 0.82],
+                }
+          }
+          transition={
+            reduceMotion
+              ? undefined
+              : {
+                  duration: 3.8 + index * 0.35,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: line.delay,
+                }
+          }
+        />
+      ))}
+    </svg>
+  );
+}
+
+function formatHHMM(date: Date): string {
+  const h = String(date.getHours()).padStart(2, "0");
+  const m = String(date.getMinutes()).padStart(2, "0");
+  return `${h}:${m}`;
+}
+
+function isSameCalendarDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+function isYesterday(date: Date, reference: Date): boolean {
+  const yesterday = new Date(reference);
+  yesterday.setDate(reference.getDate() - 1);
+  return isSameCalendarDay(date, yesterday);
+}
+
+function formatDialogTime(date: Date, reference = new Date()): string {
+  const hhmm = formatHHMM(date);
+
+  if (isSameCalendarDay(date, reference)) {
+    return `今天 ${hhmm}`;
+  }
+
+  if (isYesterday(date, reference)) {
+    return `昨天 ${hhmm}`;
+  }
+
+  return `周${WEEKDAY_CHARS[date.getDay()]} ${hhmm}`;
+}
+
+function dialogTimeItem(
+  id: string,
+  date: Date,
+  reference?: Date,
+): DialogTimeItem {
+  return {
+    kind: "time",
+    id,
+    label: formatDialogTime(date, reference),
+    createdAt: date.getTime(),
+  };
+}
+
+function dialogMessageItem(
+  id: string,
+  role: DialogMessageItem["role"],
+  text: string,
+  date: Date,
+): DialogMessageItem {
+  return {
+    kind: "message",
+    id,
+    role,
+    text,
+    createdAt: date.getTime(),
+  };
+}
+
+function createMockDialogItems(now: Date): DialogItem[] {
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  yesterday.setHours(21, 30, 0, 0);
+
+  const yesterdayUser = new Date(yesterday.getTime() + 60 * 1000);
+  const yesterdayReply = new Date(yesterday.getTime() + 2 * 60 * 1000);
+  const today = new Date(now.getTime() - 18 * 60 * 1000);
+  const todayReply = new Date(today.getTime() + 2 * 60 * 1000);
+
+  return [
+    dialogTimeItem("mock-time-yesterday", yesterday, now),
+    dialogMessageItem(
+      "mock-zaizai-yesterday-open",
+      "zaizai",
+      "嘿，我在。今晚怎么样？有什么想聊的，还是只是想先放松一下？",
+      yesterday,
+    ),
+    dialogMessageItem(
+      "mock-user-yesterday",
+      "user",
+      "有点累，脑子停不下来。",
+      yesterdayUser,
+    ),
+    dialogMessageItem(
+      "mock-zaizai-yesterday-reply",
+      "zaizai",
+      "那我们不急着解决。先把今天放小一点：喝口水，靠一下，等身体知道你已经停下来了。",
+      yesterdayReply,
+    ),
+    dialogTimeItem("mock-time-today", today, now),
+    dialogMessageItem(
+      "mock-user-today",
+      "user",
+      "刚刚又有点卡住。",
+      today,
+    ),
+    dialogMessageItem(
+      "mock-zaizai-today-reply",
+      "zaizai",
+      "我在。我们只看下一步，不看整座山。你可以先在这里说一句最小的话，哪怕只是“我有点乱”。",
+      todayReply,
+    ),
+  ];
+}
+
+function shouldInsertTimeMarker(items: DialogItem[], now: Date): boolean {
+  const lastTimeItem = [...items]
+    .reverse()
+    .find((item): item is DialogTimeItem => item.kind === "time");
+
+  if (!lastTimeItem) return true;
+
+  const lastTime = new Date(lastTimeItem.createdAt);
+
+  if (!isSameCalendarDay(lastTime, now)) return true;
+
+  const lastMinute = Math.floor(lastTimeItem.createdAt / 60000);
+  const currentMinute = Math.floor(now.getTime() / 60000);
+  return lastMinute !== currentMinute;
+}
+
 /* —— iOS 风格手机状态栏（抽象绘制，仅增强真实感，不承担功能） ——
  * 左：时间；右：信号 / Wi-Fi / 电池。颜色 text-ink，接近真实状态栏。
  * 可选关闭按钮（非首页用），位于状态栏右侧之外，不挤占信号区。
@@ -76,15 +271,30 @@ function buildDemoReply(text: string) {
 export function PhoneStatusBar({
   showClose = false,
   onClose,
+  now,
 }: {
   showClose?: boolean;
   onClose?: () => void;
+  now?: Date;
 }) {
+  const [fallbackNow, setFallbackNow] = useState<Date>(() => new Date());
+
+  useEffect(() => {
+    if (now) return;
+
+    const iv = window.setInterval(() => setFallbackNow(new Date()), 20000);
+    return () => window.clearInterval(iv);
+  }, [now]);
+
+  const displayNow = now ?? fallbackNow;
+
   return (
     <>
       <div className="absolute left-0 right-0 top-0 z-20 flex items-center justify-between px-6 pt-3.5 pb-1 text-ink">
         {/* 左：时间 */}
-        <span className="text-[12px] font-semibold tracking-wide">9:41</span>
+        <span className="text-[12px] font-semibold tracking-wide">
+          {formatHHMM(displayNow)}
+        </span>
         {/* 右：信号 / Wi-Fi / 电池 */}
         <div className="flex items-center gap-1.5">
           {/* 信号条：4 条递增 */}
@@ -120,22 +330,35 @@ export function PhoneStatusBar({
 /* —— 首页内模式：均在首页内部展开，非独立页面 / 不跳转路由 ——
  * home：默认首页结构（在在居中 + 四角图标）
  * dialog：在在上移到中上部并固定，下方展开对话内容区，底部出现输入区
- * reliefSelect：在在上移，首页 icon 弱化，下方出现 2×3 缓解方法选择区
- * reliefPractice：在在保留，中部出现节奏动画，底部仅一个暂停按钮；暂停态展开继续 / 回主页
- * presenceSelect：在在上移到中上部并保留气泡，下方出现 4 个场景卡片（共同在场）
- * presenceRoom：在在缩小保留在顶部，下方出现 6 个角色位 + 轻互动按钮 */
+ * reliefSelect：在在上移，首页 icon 弱化，下方出现 2×2 缓解能力项选择区
+ * breathing：呼吸法选择 / 练习 / 完成流程（独立全屏覆盖层，自管理在在形象）
+ * socialSelect：在在上移到中上部并保留气泡，下方出现 2×2 轻社交场景卡片
+ * socialFlow：选中场景后的流程页（一起发呆 / 一起吃饭），全屏覆盖，在在退出 */
 type SurfaceMode =
   | "home"
   | "dialog"
   | "reliefSelect"
-  | "reliefPractice"
-  | "presenceSelect"
-  | "presenceRoom"
+  | "breathing"
+  | "socialSelect"
+  | "socialFlow"
   | "more"
   | "moreDetail"
   | "verify";
 
-type DialogMessage = { id: number; role: "user" | "zaizai"; text: string };
+type DialogMessageItem = {
+  kind: "message";
+  id: string;
+  role: "user" | "zaizai";
+  text: string;
+  createdAt: number;
+};
+type DialogTimeItem = {
+  kind: "time";
+  id: string;
+  label: string;
+  createdAt: number;
+};
+type DialogItem = DialogMessageItem | DialogTimeItem;
 
 type Props = {
   /** 预览态：仅瞬时视觉反馈，不触发任何回调（首页 Hero 使用） */
@@ -180,25 +403,97 @@ export default function AppMainSurface({
 }: Props) {
   const [active, setActive] = useState<number | null>(null);
 
+  // —— 首页环境节律：当前时间（每 20s 刷新，保证分钟及时更新）+ 派生时间段 ——
+  // 仅用于 home 模式下的环境信息行 / 在在场景 / 状态文案；非 home 模式不消费。
+  const [now, setNow] = useState<Date>(() => new Date());
+  useEffect(() => {
+    const iv = window.setInterval(() => setNow(new Date()), 20000);
+    return () => window.clearInterval(iv);
+  }, []);
+  const homePhase = getHomeTimePhase(now);
+
   // —— 首页内模式状态（仅 interactive/immersive 下由对应 icon 触发）——
   const [mode, setMode] = useState<SurfaceMode>("home");
-  const [messages, setMessages] = useState<DialogMessage[]>([]);
+  const [messages, setMessages] = useState<DialogItem[]>(() =>
+    createMockDialogItems(now),
+  );
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // —— 缓解模式状态 ——
-  const [reliefMethod, setReliefMethod] = useState<ReliefMethodId | null>(null);
-  const [paused, setPaused] = useState(false);
-  const rhythmControls = useAnimationControls();
-  // —— 一次性下滑提示：首次进入练习态时短暂显示，淡出后不再强提示 ——
-  const [showSwipeHint, setShowSwipeHint] = useState(false);
+  // 未开放能力项已在卡片上标识「暂未开放」标签，不再使用 Toast 提醒。
 
-  // —— 共同在场状态 ——
-  const [presenceScene, setPresenceScene] = useState<SceneId | null>(null);
+  // —— 轻社交状态 ——
+  const [socialScene, setSocialScene] = useState<SceneId | null>(null);
+
+  // —— 轻社交能量（发呆结束获得 +3 能量，与记一下模块一致）——
+  // useEnergy 订阅全局 pub/sub，跨模块同步；freeze/unfreeze 用于 toast 飞行期间冻结展示
+  const { value: socialEnergy, freeze: freezeSocialEnergy, unfreeze: unfreezeSocialEnergy } = useEnergy();
+  const [socialEnergyReward, setSocialEnergyReward] =
+    useState<(RecordEnergyRewardEvent & { toEnergy: number }) | null>(null);
+  const [socialEnergyPulse, setSocialEnergyPulse] = useState(false);
+  const socialEnergyBtnRef = useRef<HTMLButtonElement | null>(null);
+  const socialEnergyPulseTimer = useRef<number | null>(null);
+  const socialEnergyRewardIdRef = useRef(0);
+
+  // 发呆结束 → 累加能量并触发 toast（与记一下模块完成记录后的反馈一致）
+  const handleDazeFinish = () => {
+    freezeSocialEnergy();
+    const newEnergy = addEnergy(SOCIAL_DAZE_ENERGY_REWARD);
+    socialEnergyRewardIdRef.current += 1;
+    setSocialEnergyReward({
+      id: socialEnergyRewardIdRef.current,
+      reward: SOCIAL_DAZE_ENERGY_REWARD,
+      toEnergy: newEnergy,
+    });
+    setMode("socialSelect");
+  };
+
+  // toast 粒子飞抵右上角：解冻展示值 + pulse
+  const handleSocialEnergyArrive = useCallback(() => {
+    if (!socialEnergyReward) return;
+    unfreezeSocialEnergy();
+    setSocialEnergyPulse(true);
+    if (socialEnergyPulseTimer.current)
+      window.clearTimeout(socialEnergyPulseTimer.current);
+    socialEnergyPulseTimer.current = window.setTimeout(() => {
+      setSocialEnergyPulse(false);
+      socialEnergyPulseTimer.current = null;
+    }, 420);
+  }, [socialEnergyReward, unfreezeSocialEnergy]);
+
+  // toast 整段动画结束：清空 event
+  const handleSocialEnergyDone = useCallback(() => {
+    setSocialEnergyReward(null);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (socialEnergyPulseTimer.current)
+        window.clearTimeout(socialEnergyPulseTimer.current);
+    };
+  }, []);
 
   // —— 更多状态 ——
   const [moreDetailId, setMoreDetailId] = useState<MoreItemId | null>(null);
+
+  // —— 侧边栏「暂未开放」统一提示（沿用全局未开放功能的统一提示方式）——
+  const [moreToastMsg, setMoreToastMsg] = useState<string | null>(null);
+  const moreToastTimer = useRef<number | null>(null);
+  const showMoreToast = useCallback((msg: string) => {
+    setMoreToastMsg(msg);
+    if (moreToastTimer.current) window.clearTimeout(moreToastTimer.current);
+    moreToastTimer.current = window.setTimeout(() => {
+      setMoreToastMsg(null);
+      moreToastTimer.current = null;
+    }, 1600);
+  }, []);
+  useEffect(() => {
+    return () => {
+      if (moreToastTimer.current) window.clearTimeout(moreToastTimer.current);
+    };
+  }, []);
 
   // —— 首页快捷入口开关 ——
   // 默认关闭：首页右上角保持空置；开启后显示「记一下」快捷入口。
@@ -345,6 +640,7 @@ export default function AppMainSurface({
 
   // 由 RecordFlow 在每次完成时回调
   // weightValue：体重记录专用，保存当前体重值（KG），用于下次进入体重页的默认值
+  // sleep：同一天只保留一条睡眠记录，保存新记录时覆盖当天已有睡眠记录
   const handleRecordComplete = (e: {
     typeId: RecordTypeId;
     isComplete: boolean;
@@ -362,7 +658,21 @@ export default function AppMainSurface({
         ? { weight: e.weightValue }
         : {}),
     };
-    const newHistory = [...recordHistory, entry];
+    // 睡眠：同自然日覆盖，而非追加多条
+    const newHistory =
+      e.typeId === "sleep"
+        ? ((): RecordEntry[] => {
+            const todayKey = new Date(entry.completedAt).toDateString();
+            const filtered = recordHistory.filter(
+              (r) =>
+                !(
+                  r.type === "sleep" &&
+                  new Date(r.completedAt).toDateString() === todayKey
+                ),
+            );
+            return [...filtered, entry];
+          })()
+        : [...recordHistory, entry];
     setRecordHistory(newHistory);
 
     // 基于新历史（含本次）判断是否在完成页展示提示
@@ -397,6 +707,14 @@ export default function AppMainSurface({
     showHomeFeedback("已经帮你保存了。");
   };
 
+  // 安全承接页：退出记录流程，打开 ZAIYA 对话并预填 starter 文案
+  // 不保存任何记录、不回首页、不展示轻反馈；直接进入对话模式
+  const handleOpenZaiyaDialog = (starterText: string) => {
+    setMoreDetailId(null);
+    setInput(starterText);
+    setMode("dialog");
+  };
+
   const acceptShortcut = () => {
     setHomeShortcut(true);
     setHintVisibleForResult(false);
@@ -426,6 +744,8 @@ export default function AppMainSurface({
       enterRecordFromMore();
       return;
     }
+    // 「我的能量」入口暂未开放，不执行路由跳转（正常由 MoreContent 拦截，此处兜底）
+    if (id === "energy") return;
     if (
       appLock &&
       !sessionVerified &&
@@ -453,60 +773,55 @@ export default function AppMainSurface({
     setMode("more");
   };
 
-  // 新消息进入时滚动到底部
+  // 进入对话或新消息到达时滚动到底部，确保 mock 历史打开后展示最新上下文。
   useEffect(() => {
+    if (mode !== "dialog") return;
     const el = scrollRef.current;
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-  }, [messages]);
+    if (!el) return;
 
-  // 进入练习态时启动节奏动画；离开时停止。不接真实算法，仅 CSS 节奏反馈。
-  useEffect(() => {
-    if (mode === "reliefPractice") {
-      setPaused(false);
-      rhythmControls.start({
-        scale: [0.9, 1.15, 0.9],
-        transition: { duration: 8, repeat: Infinity, ease: "easeInOut" },
-      });
-    }
-    return () => {
-      rhythmControls.stop();
-    };
-  }, [mode, rhythmControls]);
+    const timer = window.setTimeout(() => {
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    }, 0);
 
-  // 一次性下滑提示：仅首次进入练习态时显示 1.5s，localStorage 持久化「已展示」标记。
-  // 不每次强提示，避免成为页面噪音。
-  useEffect(() => {
-    if (mode !== "reliefPractice") return;
-    let shown = false;
-    try {
-      shown =
-        window.localStorage.getItem("zaiya_relief_swipe_hint_shown") === "true";
-    } catch {
-      // 忽略读取失败
-    }
-    if (shown) return;
-    setShowSwipeHint(true);
-    try {
-      window.localStorage.setItem("zaiya_relief_swipe_hint_shown", "true");
-    } catch {
-      // 忽略写入失败
-    }
-    const t = window.setTimeout(() => setShowSwipeHint(false), 1500);
-    return () => window.clearTimeout(t);
-  }, [mode]);
+    return () => window.clearTimeout(timer);
+  }, [messages, mode]);
 
   // 本地模拟发送：不接 LLM / API，仅样式与反馈
   const send = () => {
     const text = input.trim();
     if (!text || sending) return;
-    setMessages((m) => [...m, { id: Date.now(), role: "user", text }]);
+    const sentAt = new Date();
+    setMessages((items) => {
+      const nextItems = shouldInsertTimeMarker(items, sentAt)
+        ? [
+            ...items,
+            dialogTimeItem(`time-${sentAt.getTime()}`, sentAt),
+          ]
+        : [...items];
+
+      return [
+        ...nextItems,
+        dialogMessageItem(
+          `user-${sentAt.getTime()}`,
+          "user",
+          text,
+          sentAt,
+        ),
+      ];
+    });
     setInput("");
     setSending(true);
     const delay = 300 + Math.random() * 300; // 300–600ms
     setTimeout(() => {
+      const replyAt = new Date();
       setMessages((m) => [
         ...m,
-        { id: Date.now() + 1, role: "zaizai", text: buildDemoReply(text) },
+        dialogMessageItem(
+          `zaizai-${replyAt.getTime()}`,
+          "zaizai",
+          buildDemoReply(text),
+          replyAt,
+        ),
       ]);
       setSending(false);
     }, delay);
@@ -514,38 +829,13 @@ export default function AppMainSurface({
 
   const closeDialog = () => setMode("home");
 
-  const selectRelief = (id: ReliefMethodId) => {
-    setReliefMethod(id);
-    setMode("reliefPractice");
+  // 选择缓解能力项：仅「呼吸法」可进入；未开放卡片已标识「暂未开放」标签，点击无反馈。
+  const selectRelief = (m: { id: ReliefMethodId; enabled: boolean }) => {
+    if (!m.enabled) return;
+    if (m.id === "breathing") {
+      setMode("breathing");
+    }
   };
-
-  // 退出缓解（练习态 / 选择态均可调用），回到首页并复位
-  const exitRelief = () => {
-    setMode("home");
-    setReliefMethod(null);
-    setPaused(false);
-  };
-
-  // 进入暂停态：停止节奏动画，展示暂停态操作（继续练习 / 回到主页）。
-  // 不直接退出页面，也不在主练习页同时出现多个退出按钮。
-  const enterPause = () => {
-    setPaused(true);
-    rhythmControls.stop();
-  };
-
-  // 继续练习：关闭暂停态，恢复节奏动画。
-  const resumePractice = () => {
-    setPaused(false);
-    rhythmControls.start({
-      scale: [0.9, 1.15, 0.9],
-      transition: { duration: 8, repeat: Infinity, ease: "easeInOut" },
-    });
-  };
-
-  // 正念练习页主视觉在在尺寸（与隐私页装饰视频分离，独立管理）
-  // 容器 120px → ZaizaiVideo 内部 video h-[170%] ≈ 204px，配合 scale 1 显示约 200px
-  // 满足"容器宽度 190–210px"要求；不超过内容宽度 58%（390×0.58≈226px）
-  const mindfulnessZaizaiClassName = "h-[120px] w-[120px]";
 
   // 核心按钮：preview 仅瞬时反馈；interactive 触发回调
   // id 0 = AI对话 → 进入首页内对话模式（不跳转下一屏）
@@ -572,8 +862,8 @@ export default function AppMainSurface({
           return;
         }
         if (i === 2) {
-          // Users（陪做）：进入首页内共同在场选择态（不跳转下一屏）
-          setMode("presenceSelect");
+          // Users（陪做）：进入首页内轻社交场景选择态（不跳转下一屏）
+          setMode("socialSelect");
           return;
         }
         // 其他按钮：瞬时按压反馈，可选回调
@@ -589,12 +879,12 @@ export default function AppMainSurface({
     active === i ? "text-ink" : "text-ink/80";
 
   // 是否处于任一缓解模式（用于背景降噪与首页 icon 弱化）
-  const inRelief = mode === "reliefSelect" || mode === "reliefPractice";
+  const inRelief = mode === "reliefSelect" || mode === "breathing";
 
   return (
     <div className="relative h-full w-full bg-white">
       {/* iOS 风格状态栏 */}
-      <PhoneStatusBar />
+      <PhoneStatusBar now={now} />
 
       {/* 缓解模式背景降噪：浅柔灰覆盖，不使用强色。pointer-events-none 不阻断交互 */}
       <motion.div
@@ -604,24 +894,30 @@ export default function AppMainSurface({
         transition={{ duration: 0.4, ease }}
       />
 
-      {/* 在在 + 气泡：home 居中(top 38%)；非 home 上移到中上部(top 15%)并固定。
-          presenceRoom 下在在完全退出（不渲染），让共同场成为唯一视觉主体，
-          避免“AI 陪着看别人”的双中心感。inset-x-0 让容器撑满宽度
-          reliefPractice 模式：top 16% + scale 1，主视觉在在尺寸独立管理，
-          不与 reliefSelect 共用 scale 0.65，避免压缩练习圆形空间 */}
+      {/* 在在 + 气泡：home 居中(top 38%)；非 home 上移到中上部并固定。
+          dialog 模式按「动画主体」而非 GIF 画布外框定位：
+          GIF 画布 9:16，主体只占 y=27%~67%，上下大片透明留白，
+          若直接按画布外框上移，移动的是容器而非主体，主体视觉仍偏下。
+          dialog 使用 ZaiyaWakeAnimation 的专用主体 slot，压缩无效透明留白。
+          渐隐过渡层放在对话页面内部，以消息区上缘为定位基准，
+          不绑定 GIF wrapper 边界，避免覆盖主体。
+          其余非 home 模式(reliefSelect / socialSelect)保持 top 15%。
+          socialFlow / breathing 下在在完全退出（不渲染）。 */}
       <motion.div
-        className="absolute inset-x-0 z-10 flex flex-col items-center"
+        className={`absolute inset-x-0 z-10 flex flex-col items-center ${
+          mode === "dialog" ? "h-[220px]" : ""
+        }`}
         initial={false}
         animate={{
           top:
             mode === "home"
               ? variant === "immersive"
-                ? "38%"
+                ? "39%"
                 : "34%"
-              : mode === "reliefPractice"
-                ? "16%"
+              : mode === "dialog"
+                ? "4%"
                 : "15%",
-          scale: mode === "home" ? 1 : mode === "reliefPractice" ? 1 : 0.65,
+          scale: mode === "home" ? 1 : 0.65,
         }}
         transition={{
           type: "spring",
@@ -629,20 +925,30 @@ export default function AppMainSurface({
           damping: 30,
         }}
       >
-        {mode !== "presenceRoom" && (
+        {mode !== "socialFlow" && mode !== "breathing" && (
           <div className="relative">
-            {mode === "reliefPractice" ? (
-              <ZaizaiVideo
-                className={mindfulnessZaizaiClassName}
-                src={ZAIZAI_RELIEF_VIDEO_SRC}
-                shadow={false}
+            {mode === "home" && variant === "immersive" ? (
+              <ZaizaiHomeScene
+                phase={homePhase}
+                guide={<HomeBubbleCopy phase={homePhase} />}
               />
             ) : (
-              <ZaiyaWakeAnimation variant="phone-app" />
+              <ZaiyaWakeAnimation
+                variant={mode === "dialog" ? "dialog" : "phone-app"}
+              />
             )}
           </div>
         )}
       </motion.div>
+
+      {/* 首页时间锚点：时段+时间（主）/ 日期·周几（次），放在在在动画上方。
+          仅 immersive 首页；由 AnimatePresence 控制挂载/卸载——每次回到 home 重新交错入场，
+          进入底部三个功能模块时轻上移淡出。动效复用全局 softReveal 语言（与「更多」菜单一致）。 */}
+      <AnimatePresence>
+        {mode === "home" && variant === "immersive" && (
+          <HomeTimeAnchor key="home-time-anchor" now={now} />
+        )}
+      </AnimatePresence>
 
       {/* 首页轻反馈：先保存回首页后由在在展示，纯文字浮动（无气泡容器），几秒后自动消失。
           仅在 home 模式且 homeFeedback 有值时显示。 */}
@@ -664,7 +970,7 @@ export default function AppMainSurface({
         )}
       </AnimatePresence>
 
-      {/* home 模式：四角图标；非 home 模式（dialog / reliefSelect / reliefPractice）淡出并禁用点击 */}
+      {/* home 模式：四角图标；非 home 模式（dialog / reliefSelect / breathing）淡出并禁用点击 */}
       <div
         className={`absolute inset-0 bg-white transition-opacity duration-300 ${
           mode === "home" ? "opacity-100" : "pointer-events-none opacity-0"
@@ -694,7 +1000,7 @@ export default function AppMainSurface({
             active === 10 ? "text-ink" : "text-ink/80"
           }`}
         >
-          <Menu className="h-5 w-5" />
+          <HomeBreathingMenuIcon className="h-6 w-6" />
         </button>
 
         {/* 右上：默认空置；homeShortcut 开启后显示「记一下」快捷入口。
@@ -715,7 +1021,7 @@ export default function AppMainSurface({
           {...coreHandlers(2)}
           className={`absolute bottom-8 left-6 p-1 transition-colors ${iconColor(2)}`}
         >
-          <Users className="h-6 w-6" />
+          <Users className="h-6 w-6" strokeWidth={1.8} />
         </button>
 
         {/* 右下：两个高频即时入口横向排列 —— Wind（左）+ AI对话（右，最右下角，略大） */}
@@ -725,7 +1031,7 @@ export default function AppMainSurface({
             {...coreHandlers(1)}
             className={`p-1 transition-colors ${iconColor(1)}`}
           >
-            <Wind className="h-6 w-6" />
+            <Wind className="h-6 w-6" strokeWidth={1.8} />
           </button>
 
           <button
@@ -733,7 +1039,7 @@ export default function AppMainSurface({
             {...coreHandlers(0)}
             className={`p-1 transition-colors ${iconColor(0)}`}
           >
-            <MessageCircle className="h-7 w-7" />
+            <MessageCircle className="h-7 w-7" strokeWidth={1.8} />
           </button>
         </div>
       </div>
@@ -746,94 +1052,149 @@ export default function AppMainSurface({
             pageKey="dialog"
             onExit={closeDialog}
           >
-            {/* 对话内容区：位于在在下方、输入区上方，可滚动 */}
+            {/* 消息区顶部渐变蒙层：只覆盖消息列表顶端，让上滑内容自然淡出。 */}
+            <div
+              className="pointer-events-none absolute inset-x-0 z-[25] h-16 bg-gradient-to-b from-white/95 via-white/70 to-white/0"
+              style={{ top: "33%" }}
+            />
+
+            {/* 对话内容区：独立容器，位于在在动画下方、输入区上方，可滚动。
+                正常展示 mock 历史记录；messages 为空时保留轻量引导文案作为兜底。
+                top 33% 确保在在动画固定陪伴区（260px 高 + top 7%）下方，保留明确间距不重叠；
+                bottom 92px 让出底部输入区，最后一条气泡不被遮挡。 */}
             <motion.div
               ref={scrollRef}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 12 }}
               transition={{ duration: 0.35, ease, delay: 0.05 }}
-              className="no-scrollbar absolute inset-x-0 overflow-y-auto px-6"
-              style={{ top: "44%", bottom: "92px" }}
+              className="no-scrollbar absolute inset-x-0 z-20 overflow-y-auto px-6 pt-2"
+              style={{ top: "33%", bottom: "92px" }}
             >
               {messages.length === 0 ? (
                 <p className="text-[13px] leading-relaxed text-ink-faint">
                   在这里说一句话试试。
                 </p>
               ) : (
-                <div className="flex flex-col gap-3 pb-4">
-                  {messages.map((m) => (
-                    <motion.p
-                      key={m.id}
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.25, ease }}
-                      className={`max-w-[78%] text-[14px] leading-relaxed ${
-                        m.role === "user"
-                          ? "self-end text-ink"
-                          : "self-start text-ink-soft"
-                      }`}
-                    >
-                      {m.text}
-                    </motion.p>
-                  ))}
+                <div className="flex flex-col pb-6">
+                  {messages.map((m, i) => {
+                    if (m.kind === "time") {
+                      return (
+                        <motion.div
+                          key={m.id}
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.25, ease }}
+                          className={[
+                            "w-fit self-center rounded-full bg-ink/10 px-3 py-1 text-[11px] font-medium leading-[16px] text-ink/50 backdrop-blur-sm",
+                            i === 0 ? "" : "mt-4",
+                            i === messages.length - 1 ? "" : "mb-2",
+                          ].join(" ")}
+                        >
+                          {m.label}
+                        </motion.div>
+                      );
+                    }
+
+                    const isUser = m.role === "user";
+                    const prev = i > 0 ? messages[i - 1] : null;
+                    const sameAsPrev =
+                      prev?.kind === "message" && prev.role === m.role;
+                    return (
+                      <motion.div
+                        key={m.id}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.25, ease }}
+                        className={[
+                          "w-fit max-w-[78%] rounded-[18px] px-3.5 py-2.5 text-[14px] leading-relaxed",
+                          isUser
+                            ? "self-end bg-accent-soft text-ink"
+                            : "self-start bg-card-soft text-ink-soft",
+                          i === 0 ? "" : sameAsPrev ? "mt-1.5" : "mt-4",
+                        ].join(" ")}
+                      >
+                        {m.text}
+                      </motion.div>
+                    );
+                  })}
                   {sending && (
-                    <motion.p
+                    <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="self-start text-[13px] text-ink-faint"
+                      className="mt-4 w-fit max-w-[78%] self-start rounded-[18px] bg-card-soft px-3.5 py-2.5 text-[13px] text-ink-faint"
                     >
                       在在正在听…
-                    </motion.p>
+                    </motion.div>
                   )}
                 </div>
               )}
             </motion.div>
 
-            {/* 输入区：收起按钮 + 文字输入 / 语音 / 发送 */}
+            {/* 输入区：文字输入 + 语音 + 关闭/发送状态切换
+                - 未输入态（input.trim() 为空）：右侧显示关闭按钮（深色圆形 + 白×），点击退出对话
+                - 输入态（input.trim() 非空）：右侧显示发送按钮（accent 圆形 + 白↑），点击发送
+                - 两种状态互斥，不会同时出现；发送后清空输入自动回到关闭态 */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.35, ease }}
-              className="absolute inset-x-0 bottom-0 flex items-center gap-2.5 px-4 pb-6"
+              className="absolute inset-x-0 bottom-0 px-4 pb-6"
             >
-              {/* 左侧收起按钮：独立圆形，向下箭头 */}
-              <button
-                onClick={closeDialog}
-                aria-label="收起对话"
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-line bg-white text-ink-faint transition-colors hover:text-ink-soft active:bg-line-soft"
-              >
-                <svg
-                  width="16"
-                  height="10"
-                  viewBox="0 0 18 10"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M2 2l7 6 7-6" />
-                </svg>
-              </button>
-              <div className="flex-1">
-                <VoiceInputBar
+              <div className="flex items-center gap-2 rounded-xl border border-line bg-white p-2">
+                {/* 文本输入：始终可输入，min-w-0 防止被右侧按钮挤压溢出 */}
+                <textarea
                   value={input}
-                  onChange={setInput}
-                  onSend={send}
-                  canSend={input.trim().length > 0 && !sending}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      if (input.trim().length > 0 && !sending) send();
+                    }
+                  }}
                   placeholder="说点什么…"
-                  sendButtonClassName="bg-action-primary text-action-primary-text"
-                  className="rounded-xl border border-line bg-white p-2"
+                  rows={1}
+                  className="min-w-0 flex-1 resize-none bg-transparent p-0 text-[14px] leading-[20px] text-ink placeholder:text-ink-faint focus:outline-none"
                 />
+                {/* 语音入口：compact 轻量 mic 按钮，转录完成后填入输入框 */}
+                <div className="shrink-0">
+                  <VoiceInputBar
+                    value={input}
+                    onChange={setInput}
+                    onSend={send}
+                    canSend={input.trim().length > 0 && !sending}
+                    compact
+                    size="sm"
+                  />
+                </div>
+                {/* 右侧状态按钮：关闭 / 发送互斥，依据 input.trim() 切换，二者不会同时出现 */}
+                {input.trim().length > 0 ? (
+                  <button
+                    onClick={send}
+                    aria-label="发送"
+                    disabled={sending}
+                    className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-white transition-transform active:scale-95 disabled:opacity-50"
+                  >
+                    <ArrowUp className="h-4 w-4" strokeWidth={2.2} />
+                  </button>
+                ) : (
+                  <button
+                    onClick={closeDialog}
+                    aria-label="关闭对话"
+                    className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-action-deep text-white transition-transform active:scale-95"
+                  >
+                    <X className="h-4 w-4" strokeWidth={2.2} />
+                  </button>
+                )}
               </div>
             </motion.div>
           </FeaturePageTransition>
         )}
       </AnimatePresence>
 
-      {/* reliefSelect 模式：缓解方法选择区（首页内展开，非独立页面） */}
+      {/* reliefSelect 模式：缓解能力项选择区（首页内展开，非独立页面）
+          * 4 个能力项 2×2 网格；仅「呼吸法」可进入，其余标识「暂未开放」并弱化。 */}
       <AnimatePresence>
         {mode === "reliefSelect" && (
           <FeaturePageTransition
@@ -841,7 +1202,8 @@ export default function AppMainSurface({
             pageKey="reliefSelect"
             onExit={() => setMode("home")}
           >
-            {/* 选择区：2×3 网格，3 启用 + 3 占位（结构预留扩展到 6 个） */}
+            {/* 右上角能量入口：统一组件（floating），与记一下 / 轻社交同一位置规则 */}
+            <EnergyBadge value={socialEnergy} position="floating" />
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -854,11 +1216,31 @@ export default function AppMainSurface({
                 {reliefMethods.map((m) => (
                   <button
                     key={m.id}
-                    onClick={() => selectRelief(m.id)}
-                    className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-line bg-white py-5 transition-colors hover:border-ink-faint"
+                    onClick={() => selectRelief(m)}
+                    className={`relative flex flex-col items-center justify-center gap-2 rounded-2xl border py-5 transition-colors ${
+                      m.enabled
+                        ? "border-line bg-white hover:border-ink-faint"
+                        : "border-line/60 bg-line-soft/40 opacity-60"
+                    }`}
                   >
-                    <m.Icon className="h-7 w-7 text-ink-soft" strokeWidth={1.6} />
-                    <span className="text-[13px] text-ink">{m.label}</span>
+                    <m.Icon
+                      className={`h-7 w-7 ${
+                        m.enabled ? "text-ink-soft" : "text-ink-faint/50"
+                      }`}
+                      strokeWidth={1.6}
+                    />
+                    <span
+                      className={`text-[13px] ${
+                        m.enabled ? "text-ink" : "text-ink-faint/60"
+                      }`}
+                    >
+                      {m.label}
+                    </span>
+                    {!m.enabled && (
+                      <span className="absolute right-3 top-3 rounded-full bg-line-soft px-2 py-0.5 text-[10px] text-ink-faint">
+                        暂未开放
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
@@ -870,137 +1252,62 @@ export default function AppMainSurface({
         )}
       </AnimatePresence>
 
-      {/* reliefPractice 模式：练习节奏区 + 底部单一暂停控件（首页内展开，非独立页面）
-          * 信息层级精简：主练习页只保留一个暂停按钮；
-          * 退出/收起入口统一收进「暂停态」处理；下滑手势返回主页（语义为「收起练习」）。 */}
+      {/* breathing 模式：呼吸法选择 / 练习 / 完成全流程（独立全屏覆盖层） */}
       <AnimatePresence>
-        {mode === "reliefPractice" && (
-          <FeaturePageTransition
-            key="relief-practice"
-            pageKey="reliefPractice"
-            onExit={exitRelief}
-          >
-            {/* 中部练习节奏区域：在在下方，圆形轻微放大缩小（非真实呼吸算法）。
-                中心练习圆形保持视觉主体地位，标题 / 圆形 / 引导文案 / 暂停按钮之间留出呼吸感。
-                top 35%：在在底部（约 295px）与圆形顶部（约 309px）保持 ~14-22px 间距，
-                圆形中心（约 373px）接近页面视觉中心（390px）。 */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 16 }}
-              transition={{ duration: 0.35, ease, delay: 0.05 }}
-              className="absolute inset-x-0 flex flex-col items-center"
-              style={{ top: "35%" }}
-            >
-              {/* 标题：当前方法名（极简，仅标示所选方法） */}
-              {reliefMethod && (
-                <span className="mb-5 text-[13px] tracking-wide text-ink-soft">
-                  {reliefMethods.find((m) => m.id === reliefMethod)?.label}
-                </span>
-              )}
-              {/* 中心区域：正念练习视觉圆形 */}
-              <motion.div
-                animate={rhythmControls}
-                className="h-32 w-32 rounded-full border border-line bg-white/60"
-              />
-              {/* 引导文案：一句当前练习提示，圆形下方 32px 呼吸感 */}
-              <p className="mt-8 max-w-[220px] text-center text-[13px] leading-relaxed text-ink-soft">
-                跟着圆慢一点。能停下来，就已经够了。
-              </p>
-            </motion.div>
-
-            {/* 一次性轻提示：首次进入时显示「下滑可以回到主页」，1.5s 后自动淡出，不常驻。
-                字号小、颜色浅，不占据主要视觉层级。 */}
-            <AnimatePresence>
-              {showSwipeHint && (
-                <motion.div
-                  key="swipe-hint"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.4, ease }}
-                  className="pointer-events-none absolute inset-x-0 z-20 flex justify-center px-8"
-                  style={{ bottom: "120px" }}
-                >
-                  <p className="text-[12px] text-ink-faint">下滑可以回到主页</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* 底部控制区：练习中仅一个暂停按钮；暂停态展开「继续练习 / 回到主页」。
-                不在主练习页同时出现多个退出按钮。 */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              transition={{ duration: 0.35, ease }}
-              className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-8"
-            >
-              {!paused ? (
-                /* 练习中：唯一可见控件——暂停按钮（圆形，44px，不强主色）。
-                   点击后进入暂停态，不直接退出页面。 */
-                <button
-                  onClick={enterPause}
-                  aria-label="暂停"
-                  className="grid h-11 w-11 place-items-center rounded-full border border-line bg-white text-ink-soft transition-colors hover:border-ink-faint hover:text-ink"
-                >
-                  <Pause className="h-5 w-5" />
-                </button>
-              ) : (
-                /* 暂停态：底部轻量面板。
-                   「继续练习」为主操作，视觉权重最高；「回到主页」为次级操作，语义为收起练习页。
-                   不使用「关闭」「退出」这类偏工具化文案。 */
-                <motion.div
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25, ease }}
-                  className="flex flex-col items-center gap-3"
-                >
-                  <button
-                    onClick={resumePractice}
-                    className="h-11 w-40 rounded-full bg-ink text-canvas text-[14px] font-medium tracking-wide transition-opacity hover:opacity-90"
-                  >
-                    继续练习
-                  </button>
-                  <button
-                    onClick={exitRelief}
-                    className="text-[13px] text-ink-faint underline-offset-4 transition-colors hover:text-ink-soft hover:underline"
-                  >
-                    回到主页
-                  </button>
-                </motion.div>
-              )}
-            </motion.div>
-          </FeaturePageTransition>
-        )}
-      </AnimatePresence>
-
-      {/* presenceSelect 模式：场景选择（首页内展开，在在已上移并保留气泡） */}
-      <AnimatePresence>
-        {mode === "presenceSelect" && (
-          <PresenceSelectContent
-            onSelect={(s) => {
-              setPresenceScene(s);
-              setMode("presenceRoom");
-            }}
-            onClose={() => setMode("home")}
+        {mode === "breathing" && (
+          <BreathingFlow
+            onBackToRelief={() => setMode("reliefSelect")}
+            onGoHome={() => setMode("home")}
           />
         )}
       </AnimatePresence>
 
-      {/* presenceRoom 模式：6 个角色位 + 轻互动（首页内展开，在在缩小保留在顶部） */}
+      {/* socialSelect 模式：轻社交场景选择（首页内展开，在在已上移并保留气泡） */}
       <AnimatePresence>
-        {mode === "presenceRoom" && presenceScene && (
-          <FeaturePageTransition
-            key="presence-room"
-            pageKey="presenceRoom"
-            onExit={() => setMode("home")}
-          >
-            <PresenceRoomContent
-              scene={presenceScene}
+        {mode === "socialSelect" && (
+          <>
+            <SocialSceneSelectContent
+              onSelect={(s) => {
+                setSocialScene(s);
+                setMode("socialFlow");
+              }}
               onClose={() => setMode("home")}
             />
-          </FeaturePageTransition>
+            {/* 右上角能量入口：统一组件（floating），top-14 与记一下 pt-14 一致 */}
+            <EnergyBadge
+              value={socialEnergy}
+              pulse={socialEnergyPulse}
+              buttonRef={socialEnergyBtnRef}
+              position="floating"
+            />
+            {/* 能量获得 toast：复用记一下模块组件，飞向右上角能量入口 */}
+            <RecordEnergyToast
+              event={socialEnergyReward}
+              targetRef={socialEnergyBtnRef}
+              onArrive={handleSocialEnergyArrive}
+              onDone={handleSocialEnergyDone}
+              text={`获得 +${SOCIAL_DAZE_ENERGY_REWARD} 能量`}
+            />
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* socialFlow 模式：选中场景后的流程页（一起发呆 / 一起吃饭）。
+          全屏覆盖，在在退出；退出后回到轻社交场景选择页。
+          一起发呆：onExit=准备态返回（无能量），onFinish=长按结束（+3 能量并回主页） */}
+      <AnimatePresence>
+        {mode === "socialFlow" && socialScene && (
+          <>
+            {socialScene === "daze" && (
+              <DazeFlow
+                onExit={() => setMode("socialSelect")}
+                onFinish={handleDazeFinish}
+              />
+            )}
+            {socialScene === "eat" && (
+              <EatPlaceholderContent onExit={() => setMode("socialSelect")} />
+            )}
+          </>
         )}
       </AnimatePresence>
 
@@ -1030,8 +1337,25 @@ export default function AppMainSurface({
               <MoreContent
                 onSelect={handleMoreItemSelect}
                 onClose={() => setMode("home")}
+                onUnavailable={showMoreToast}
               />
             </motion.div>
+
+            {/* 「暂未开放」统一提示：居中于手机屏幕底部，与回头看看等模块一致 */}
+            <AnimatePresence>
+              {moreToastMsg && (
+                <motion.div
+                  key="more-toast"
+                  className="pointer-events-none absolute bottom-24 left-1/2 z-[60] -translate-x-1/2 max-w-[calc(100%-48px)] whitespace-nowrap rounded-full bg-ink/85 px-4 py-2 text-[12px] text-white shadow-[0_4px_14px_rgba(0,0,0,0.18)]"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 6 }}
+                  transition={{ duration: 0.2, ease }}
+                >
+                  {moreToastMsg}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </>
         )}
       </AnimatePresence>
@@ -1067,6 +1391,7 @@ export default function AppMainSurface({
               onDismissShortcutHint={dismissShortcutHint}
               onRecordComplete={handleRecordComplete}
               onSaveFirst={handleSaveFirst}
+              onOpenZaiyaDialog={handleOpenZaiyaDialog}
               recordHistory={recordHistory}
               organizeHistory={organizeHistory}
               onSaveOrganizeToHistory={(entry) =>

@@ -1,14 +1,12 @@
 /* —— 「帮我整理」模块编排器 ——
  *
- * 核心任务：澄清沟通重点并管理信息披露（非"生成报告"）
- * 流程：首页→选择沟通对象→选择整理时间段→确认沟通重点
- *       →确认特殊情况披露→确认沟通内容→完成页
+ * 流程：选择沟通对象 → 确认沟通重点 → 是否告诉对方特殊记录 → 完成
  *
  * 状态管理：统一 session state，localStorage 持久化
  * 返回上一步保留已选择内容
- * 完成后写入「以往整理」并清除进行中会话
+ * 完成后写入历史记录并清除进行中会话
  *
- * 通用 communicationTarget 结构，不写死医生
+ * 沟通对象为具体人物（王医生），不写死"医生"
  * 不做诊断、治疗建议、用药建议、因果解释或风险等级判断 */
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -20,35 +18,40 @@ import {
   saveSession,
   clearSession,
   loadHistory,
-  appendHistory,
-  getCoverage,
+  saveHistory,
   type CommunicationSession,
   type CommunicationTopic,
-  type SpecialDisclosure,
+  type CommunicationContact,
+  type DisclosureDecision,
   type RangeKey,
-  type CommunicationTargetType,
   type OrganizeHistoryEntry,
 } from "@/data/organize";
-import HomeStep from "./organize/HomeStep";
-import TargetStep from "./organize/TargetStep";
-import TimeRangeStep from "./organize/TimeRangeStep";
+import ContactStep from "./organize/ContactStep";
 import TopicsStep from "./organize/TopicsStep";
 import DisclosureStep from "./organize/DisclosureStep";
-import ConfirmContentStep from "./organize/ConfirmContentStep";
 import DoneStep from "./organize/DoneStep";
 import MaterialDetailView from "./organize/MaterialDetailView";
-import { BottomSheet } from "./organize/shared";
+import CommunicationHistoryPage from "./organize/CommunicationHistoryPage";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-type Step =
-  | "home"
-  | "target"
-  | "range"
-  | "topics"
-  | "disclosure"
-  | "confirm"
-  | "done";
+type Step = "contact" | "topics" | "disclosure" | "done";
+
+type AuxiliaryView = "history" | "historyDetail" | "materialDetail" | null;
+
+function canReuseSessionForContact(
+  session: CommunicationSession | null,
+  contact: CommunicationContact,
+): session is CommunicationSession {
+  return (
+    !!session &&
+    session.status === "in_progress" &&
+    session.contactId === contact.id &&
+    Array.isArray(session.communicationTopics) &&
+    session.communicationTopics.length > 0 &&
+    !!session.contactSnapshot
+  );
+}
 
 interface Props {
   onBack: () => void;
@@ -62,7 +65,8 @@ export default function OrganizePage({
   organizeHistory = [],
   onSaveToHistory,
 }: Props) {
-  const [step, setStep] = useState<Step>("home");
+  const [step, setStep] = useState<Step>("contact");
+  const [auxView, setAuxView] = useState<AuxiliaryView>(null);
   const [session, setSession] = useState<CommunicationSession | null>(null);
   const [history, setHistory] = useState<OrganizeHistoryEntry[]>(() => {
     const stored = loadHistory();
@@ -70,14 +74,11 @@ export default function OrganizePage({
   });
   const [viewingHistory, setViewingHistory] =
     useState<OrganizeHistoryEntry | null>(null);
-  const [viewingMaterialFromDone, setViewingMaterialFromDone] =
-    useState(false);
-  const [restartConfirm, setRestartConfirm] = useState(false);
 
   /* —— 挂载时恢复未完成会话 —— */
   useEffect(() => {
     const saved = loadSession();
-    if (saved && saved.status === "in_progress") {
+    if (saved) {
       setSession(saved);
     }
   }, []);
@@ -89,211 +90,171 @@ export default function OrganizePage({
     }
   }, [session]);
 
-  /* —— 历史操作 —— */
-  const handleSaveToHistory = (entry: OrganizeHistoryEntry) => {
-    const next = appendHistory(history, entry);
-    setHistory(next);
-    onSaveToHistory?.(entry);
-  };
-
-  /* —— 开始 / 重新开始 —— */
-  const handleStart = () => {
-    if (session && session.status === "in_progress") {
-      // 有进行中会话，弹出确认
-      setRestartConfirm(true);
-    } else {
-      // 无进行中会话，直接开始
-      const newSession = createInitialSession();
-      setSession(newSession);
-      setStep("target");
+  /* —— 选择沟通对象，创建会话 —— */
+  const handleSelectContact = (contact: CommunicationContact) => {
+    if (canReuseSessionForContact(session, contact)) {
+      setStep("topics");
+      return;
     }
-  };
-
-  const handleRestart = () => {
-    clearSession();
-    const newSession = createInitialSession();
+    const newSession = createInitialSession(contact);
     setSession(newSession);
-    setRestartConfirm(false);
-    setStep("target");
+    setStep("topics");
   };
 
-  const handleContinue = () => {
-    setRestartConfirm(false);
-    setStep("target");
-  };
-
-  /* —— 完成生成 —— */
-  const handleGenerate = () => {
+  const handleTopicsBack = (
+    topics: CommunicationTopic[],
+    rangeData: { rangeKey: RangeKey; startDate: string; endDate: string; totalDays: number; recordedDays: number },
+  ) => {
     if (!session) return;
-    const entry = completeSession(session);
-    handleSaveToHistory(entry);
+    setSession({
+      ...session,
+      communicationTopics: recomputeTopicPermissions(topics),
+      ...rangeData,
+    });
+    setStep("contact");
+  };
+
+  /* —— 确认沟通重点，进入特殊记录披露页 —— */
+  const handleTopicsNext = (
+    topics: CommunicationTopic[],
+    rangeData: { rangeKey: RangeKey; startDate: string; endDate: string; totalDays: number; recordedDays: number },
+  ) => {
+    if (!session) return;
+    setSession({
+      ...session,
+      communicationTopics: recomputeTopicPermissions(topics),
+      rangeKey: rangeData.rangeKey,
+      startDate: rangeData.startDate,
+      endDate: rangeData.endDate,
+      totalDays: rangeData.totalDays,
+      recordedDays: rangeData.recordedDays,
+    });
+    setStep("disclosure");
+  };
+
+  /* —— 完成特殊记录披露决策，进入完成页 —— */
+  const handleDisclosureComplete = (decision: DisclosureDecision) => {
+    if (!session) return;
+    const updatedSession: CommunicationSession = {
+      ...session,
+      specialDisclosure: {
+        ...session.specialDisclosure,
+        decision,
+        confirmed: true,
+        allowedInMaterial: decision === "include",
+      },
+    };
+    const entry = completeSession(updatedSession);
+    const existingIndex = history.findIndex((item) => item.id === entry.id);
+    const nextHistory =
+      existingIndex >= 0
+        ? history.map((item) => (item.id === entry.id ? entry : item))
+        : [entry, ...history];
+    saveHistory(nextHistory);
+    setHistory(nextHistory);
+    if (existingIndex < 0) {
+      onSaveToHistory?.(entry);
+    }
     setSession(entry.session);
+    clearSession();
     setStep("done");
   };
 
-  /* —— 返回首页 —— */
-  const handleBackHome = () => {
-    clearSession();
+  /* —— 从完成页返回整理主页（contact）—— */
+  const handleDoneHome = () => {
     setSession(null);
-    setStep("home");
+    setStep("contact");
   };
 
-  /* —— 历史详情视图 —— */
-  if (viewingHistory) {
+  /* —— 查看历史详情 —— */
+  const handleViewHistoryDetail = (entry: OrganizeHistoryEntry) => {
+    setViewingHistory(entry);
+    setAuxView("historyDetail");
+  };
+
+  /* —— 历史变更回调 —— */
+  const handleHistoryChange = (next: OrganizeHistoryEntry[]) => {
+    setHistory(next);
+  };
+
+  /* —— 渲染辅助视图 —— */
+  if (auxView === "history") {
+    return (
+      <CommunicationHistoryPage
+        history={history}
+        onBack={() => setAuxView(null)}
+        onViewDetail={handleViewHistoryDetail}
+        onHistoryChange={handleHistoryChange}
+      />
+    );
+  }
+
+  if (auxView === "historyDetail" && viewingHistory) {
     return (
       <MaterialDetailView
         session={viewingHistory.session}
         title="沟通材料详情"
-        onBack={() => setViewingHistory(null)}
+        onBack={() => {
+          setAuxView("history");
+          setViewingHistory(null);
+        }}
       />
     );
   }
 
-  /* —— 完成页查看完整内容 —— */
-  if (viewingMaterialFromDone && session) {
+  if (auxView === "materialDetail" && session) {
     return (
       <MaterialDetailView
         session={session}
         title="完整内容"
-        onBack={() => setViewingMaterialFromDone(false)}
+        onBack={() => setAuxView(null)}
       />
     );
   }
 
-  /* —— 步骤渲染 —— */
-  const stepTransition = {
-    initial: { opacity: 0, x: 12 },
-    animate: { opacity: 1, x: 0 },
-    exit: { opacity: 0, x: -12 },
-    transition: { duration: 0.25, ease },
-  };
-
+  /* —— 渲染主流程 —— */
   return (
-    <div className="relative h-full bg-white">
-      <AnimatePresence mode="wait">
-        {step === "home" && (
-          <motion.div key="home" className="h-full" {...stepTransition}>
-            <HomeStep
-              onBack={onBack}
-              history={history}
-              onStart={handleStart}
-              onViewHistory={(entry) => setViewingHistory(entry)}
-            />
-          </motion.div>
-        )}
-
-        {step === "target" && session && (
-          <motion.div key="target" className="h-full" {...stepTransition}>
-            <TargetStep
-              session={session}
-              onBack={() => setStep("home")}
-              onNext={(targetType: CommunicationTargetType, targetLabel: string) => {
-                setSession({ ...session, targetType, targetLabel });
-                setStep("range");
-              }}
-            />
-          </motion.div>
-        )}
-
-        {step === "range" && session && (
-          <motion.div key="range" className="h-full" {...stepTransition}>
-            <TimeRangeStep
-              session={session}
-              onBack={() => setStep("target")}
-              onNext={(rangeKey: RangeKey) => {
-                const cov = getCoverage(rangeKey);
-                setSession({
-                  ...session,
-                  rangeKey,
-                  startDate: cov.startDate,
-                  endDate: cov.endDate,
-                  totalDays: cov.totalDays,
-                  recordedDays: cov.recordedDays,
-                });
-                setStep("topics");
-              }}
-            />
-          </motion.div>
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={step}
+        initial={{ opacity: 0, x: 8 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -8 }}
+        transition={{ duration: 0.25, ease }}
+        className="h-full"
+      >
+        {step === "contact" && (
+          <ContactStep
+            onBack={onBack}
+            onSelectContact={handleSelectContact}
+          />
         )}
 
         {step === "topics" && session && (
-          <motion.div key="topics" className="h-full" {...stepTransition}>
-            <TopicsStep
-              session={session}
-              onBack={() => setStep("range")}
-              onNext={(topics: CommunicationTopic[]) => {
-                setSession({
-                  ...session,
-                  communicationTopics: recomputeTopicPermissions(topics),
-                });
-                setStep("disclosure");
-              }}
-            />
-          </motion.div>
+          <TopicsStep
+            session={session}
+            onBack={handleTopicsBack}
+            onNext={handleTopicsNext}
+          />
         )}
 
         {step === "disclosure" && session && (
-          <motion.div key="disclosure" className="h-full" {...stepTransition}>
-            <DisclosureStep
-              session={session}
-              onBack={() => setStep("topics")}
-              onNext={(disclosure: SpecialDisclosure) => {
-                setSession({ ...session, specialDisclosure: disclosure });
-                setStep("confirm");
-              }}
-            />
-          </motion.div>
-        )}
-
-        {step === "confirm" && session && (
-          <motion.div key="confirm" className="h-full" {...stepTransition}>
-            <ConfirmContentStep
-              session={session}
-              onBack={() => setStep("disclosure")}
-              onGenerate={handleGenerate}
-            />
-          </motion.div>
+          <DisclosureStep
+            session={session}
+            onBack={() => setStep("topics")}
+            onComplete={handleDisclosureComplete}
+          />
         )}
 
         {step === "done" && session && (
-          <motion.div key="done" className="h-full" {...stepTransition}>
-            <DoneStep
-              session={session}
-              onBack={() => setStep("confirm")}
-              onViewFull={() => setViewingMaterialFromDone(true)}
-              onBackHome={handleBackHome}
-            />
-          </motion.div>
+          <DoneStep
+            session={session}
+            onBack={() => setStep("disclosure")}
+            onHome={handleDoneHome}
+            onViewMaterial={() => setAuxView("materialDetail")}
+          />
         )}
-      </AnimatePresence>
-
-      {/* 重新开始确认 */}
-      <AnimatePresence>
-        {restartConfirm && (
-          <BottomSheet onClose={() => setRestartConfirm(false)}>
-            <div className="text-[16px] font-semibold text-ink">
-              重新开始整理？
-            </div>
-            <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">
-              之前的进度将被清除，无法恢复。
-            </p>
-            <div className="mt-5 flex gap-2.5">
-              <button
-                onClick={handleContinue}
-                className="flex-1 rounded-xl bg-action-primary py-3 text-[13px] font-medium text-action-primary-text"
-              >
-                继续整理
-              </button>
-              <button
-                onClick={handleRestart}
-                className="flex-1 rounded-xl border border-line bg-white py-3 text-[13px] font-medium text-ink"
-              >
-                重新开始
-              </button>
-            </div>
-          </BottomSheet>
-        )}
-      </AnimatePresence>
-    </div>
+      </motion.div>
+    </AnimatePresence>
   );
 }

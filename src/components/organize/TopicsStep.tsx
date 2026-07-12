@@ -1,28 +1,32 @@
-/* —— 步骤 3/5：确认沟通重点 ——
- * 5 条系统整理结果卡片：选择/编辑/查看依据/删除
- * 「补充一条」：用户新增沟通重点，标记「本人补充」
- * 至少选择 1 条才能继续 */
-import { useState } from "react";
-import { ChevronLeft, Pencil, Trash2, Plus, Check } from "lucide-react";
+/* —— 确认沟通重点 ——
+ * 时间范围并入本页顶部，通过底部面板修改
+ * 5 条 Mock 沟通重点默认全部选中
+ * 支持：选择/取消、修改、查看依据（不支持删除）
+ * 底部动态显示「确认这 N 条」 */
+import { forwardRef, useState } from "react";
+import { ChevronLeft, Pencil, Plus, Check } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   recomputeTopicPermissions,
+  getCoverage,
+  RANGE_OPTIONS,
   type CommunicationSession,
   type CommunicationTopic,
+  type RangeKey,
 } from "@/data/organize";
 import {
-  StepProgress,
   PrimaryButton,
   BottomSheet,
   SourceTag,
+  StepProgress,
 } from "./shared";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
 interface Props {
   session: CommunicationSession;
-  onBack: () => void;
-  onNext: (topics: CommunicationTopic[]) => void;
+  onBack: (topics: CommunicationTopic[], rangeData: { rangeKey: RangeKey; startDate: string; endDate: string; totalDays: number; recordedDays: number }) => void;
+  onNext: (topics: CommunicationTopic[], rangeData: { rangeKey: RangeKey; startDate: string; endDate: string; totalDays: number; recordedDays: number }) => void;
 }
 
 export default function TopicsStep({ session, onBack, onNext }: Props) {
@@ -36,11 +40,18 @@ export default function TopicsStep({ session, onBack, onNext }: Props) {
     null,
   );
   const [addingTopic, setAddingTopic] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState<CommunicationTopic | null>(
-    null,
-  );
+  const [showRangeSheet, setShowRangeSheet] = useState(false);
+  const [rangeKey, setRangeKey] = useState<RangeKey>(session.rangeKey);
+  const [rangeData, setRangeData] = useState({
+    rangeKey: session.rangeKey,
+    startDate: session.startDate,
+    endDate: session.endDate,
+    totalDays: session.totalDays,
+    recordedDays: session.recordedDays,
+  });
 
-  const visibleTopics = topics.filter((t) => !t.deleted);
+  const name = session.contactSnapshot.displayName;
+  const visibleTopics = topics;
   const selectedCount = visibleTopics.filter((t) => t.selected).length;
   const canProceed = selectedCount >= 1;
 
@@ -76,17 +87,6 @@ export default function TopicsStep({ session, onBack, onNext }: Props) {
     setEditingTopic(null);
   };
 
-  const handleDelete = (topic: CommunicationTopic) => {
-    setTopics((prev) =>
-      recomputeTopicPermissions(
-        prev.map((t) =>
-          t.id === topic.id ? { ...t, deleted: true, selected: false } : t,
-        ),
-      ),
-    );
-    setDeleteConfirm(null);
-  };
-
   const handleAddTopic = (title: string, content: string) => {
     const newTopic: CommunicationTopic = {
       id: `user-${Date.now()}`,
@@ -96,11 +96,23 @@ export default function TopicsStep({ session, onBack, onNext }: Props) {
       evidenceSummary: ["用户主动表达的问题"],
       selected: true,
       edited: false,
-      deleted: false,
       allowedInMaterial: true,
     };
     setTopics((prev) => [...prev, newTopic]);
     setAddingTopic(false);
+  };
+
+  const handleRangeSelect = (key: RangeKey) => {
+    const cov = getCoverage(key);
+    setRangeKey(key);
+    setRangeData({
+      rangeKey: key,
+      startDate: cov.startDate,
+      endDate: cov.endDate,
+      totalDays: cov.totalDays,
+      recordedDays: cov.recordedDays,
+    });
+    setShowRangeSheet(false);
   };
 
   return (
@@ -108,26 +120,46 @@ export default function TopicsStep({ session, onBack, onNext }: Props) {
       {/* 顶部导航 */}
       <div className="flex items-center gap-3 px-5 pt-14 pb-2">
         <button
-          onClick={onBack}
+          onClick={() => onBack(topics, rangeData)}
           aria-label="返回"
           className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
-        <h1 className="text-[17px] font-semibold tracking-tight text-ink">
-          本次希望和{session.targetLabel}讨论什么？
+        <h1 className="text-[18px] font-medium leading-relaxed tracking-tight text-ink">
+          和{name}的沟通
         </h1>
       </div>
-      <StepProgress current={3} total={5} />
+
+      <StepProgress current={1} total={2} />
 
       {/* 内容区 */}
       <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-6">
-        <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">
-          选择需要放入本次沟通材料的内容，也可以修改或补充。
-        </p>
+        {/* 任务标题 */}
+        <h2 className="mt-4 text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
+          这次想和{name}聊什么？
+        </h2>
+
+        {/* 时间范围信息 */}
+        <div className="mt-3 rounded-xl bg-card-soft/40 px-4 py-3">
+          <div className="text-[13px] font-medium text-ink">
+            {formatRangeChinese(rangeData.startDate)}—{formatRangeChinese(rangeData.endDate)}
+          </div>
+          <div className="mt-1 flex items-center justify-between">
+            <span className="text-[12px] text-ink-faint">
+              {rangeData.totalDays} 天中有 {rangeData.recordedDays} 天留下记录
+            </span>
+            <button
+              onClick={() => setShowRangeSheet(true)}
+              className="text-[12px] text-accent transition-opacity active:opacity-70"
+            >
+              修改范围
+            </button>
+          </div>
+        </div>
 
         {/* 沟通重点卡片 */}
-        <div className="mt-5 flex flex-col gap-3">
+        <div className="relative mt-3 flex flex-col gap-3">
           <AnimatePresence mode="popLayout">
             {visibleTopics.map((topic) => (
               <TopicCard
@@ -137,7 +169,6 @@ export default function TopicsStep({ session, onBack, onNext }: Props) {
                 onToggleSelect={() => toggleSelect(topic.id)}
                 onToggleEvidence={() => toggleEvidence(topic.id)}
                 onEdit={() => setEditingTopic(topic)}
-                onDelete={() => setDeleteConfirm(topic)}
               />
             ))}
           </AnimatePresence>
@@ -151,23 +182,54 @@ export default function TopicsStep({ session, onBack, onNext }: Props) {
           <Plus className="h-4 w-4" strokeWidth={2} />
           补充一条
         </button>
-
-        {selectedCount > 0 && (
-          <div className="mt-4 text-center text-[12px] text-ink-faint">
-            已选择 {selectedCount} 项
-          </div>
-        )}
       </div>
 
       {/* 底部按钮 */}
       <div className="shrink-0 px-5 pb-8 pt-3">
         <PrimaryButton
-          onClick={() => onNext(topics)}
+          onClick={() => onNext(topics, rangeData)}
           disabled={!canProceed}
         >
-          下一步
+          确认这 {selectedCount} 条
         </PrimaryButton>
       </div>
+
+      {/* 时间范围面板 */}
+      <AnimatePresence>
+        {showRangeSheet && (
+          <BottomSheet onClose={() => setShowRangeSheet(false)}>
+            <div className="text-[16px] font-semibold text-ink">修改时间范围</div>
+            <div className="mt-4 flex flex-col gap-2.5">
+              {RANGE_OPTIONS.map((opt) => {
+                const cov = getCoverage(opt.value);
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => handleRangeSelect(opt.value)}
+                    className={`flex items-center justify-between rounded-xl border px-4 py-3.5 text-left transition-colors ${
+                      rangeKey === opt.value
+                        ? "border-accent bg-accent-soft/50"
+                        : "border-line bg-white hover:bg-card-soft/30"
+                    }`}
+                  >
+                    <div>
+                      <div className="text-[14px] font-medium text-ink">
+                        {opt.label}
+                      </div>
+                      <div className="mt-0.5 text-[12px] text-ink-faint">
+                        {cov.startDate} — {cov.endDate}
+                      </div>
+                    </div>
+                    {rangeKey === opt.value && (
+                      <Check className="h-4 w-4 text-accent" strokeWidth={2.5} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </BottomSheet>
+        )}
+      </AnimatePresence>
 
       {/* 编辑面板 */}
       <AnimatePresence>
@@ -191,41 +253,37 @@ export default function TopicsStep({ session, onBack, onNext }: Props) {
           />
         )}
       </AnimatePresence>
-
-      {/* 删除确认 */}
-      <AnimatePresence>
-        {deleteConfirm && (
-          <DeleteConfirmSheet
-            topicTitle={deleteConfirm.title}
-            onConfirm={() => handleDelete(deleteConfirm)}
-            onClose={() => setDeleteConfirm(null)}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
+}
+
+/* —— 日期中文格式 —— */
+function formatRangeChinese(dateStr: string): string {
+  const parts = dateStr.split("-");
+  return `${Number(parts[1])} 月 ${Number(parts[2])} 日`;
 }
 
 /* =========================================================
  * 沟通重点卡片
  * ======================================================= */
-function TopicCard({
-  topic,
-  expanded,
-  onToggleSelect,
-  onToggleEvidence,
-  onEdit,
-  onDelete,
-}: {
+interface TopicCardProps {
   topic: CommunicationTopic;
   expanded: boolean;
   onToggleSelect: () => void;
   onToggleEvidence: () => void;
   onEdit: () => void;
-  onDelete: () => void;
-}) {
+}
+
+const TopicCard = forwardRef<HTMLDivElement, TopicCardProps>(function TopicCard({
+  topic,
+  expanded,
+  onToggleSelect,
+  onToggleEvidence,
+  onEdit,
+}, ref) {
   return (
     <motion.div
+      ref={ref}
       layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -242,7 +300,6 @@ function TopicCard({
         onClick={onToggleSelect}
         className="flex w-full items-start gap-3 px-4 pt-4 text-left"
       >
-        {/* 选中标记 */}
         <span
           className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-[5px] border transition-colors ${
             topic.selected
@@ -255,7 +312,6 @@ function TopicCard({
           )}
         </span>
 
-        {/* 标题 + 来源 */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span className="text-[14px] font-medium text-ink">
@@ -285,14 +341,7 @@ function TopicCard({
           className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12px] text-ink-faint transition-colors hover:bg-line-soft"
         >
           <Pencil className="h-3 w-3" strokeWidth={1.8} />
-          编辑
-        </button>
-        <button
-          onClick={onDelete}
-          className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12px] text-ink-faint transition-colors hover:bg-line-soft"
-        >
-          <Trash2 className="h-3 w-3" strokeWidth={1.8} />
-          删除
+          修改
         </button>
       </div>
 
@@ -327,10 +376,10 @@ function TopicCard({
       </AnimatePresence>
     </motion.div>
   );
-}
+});
 
 /* =========================================================
- * 编辑 / 补充 / 删除确认面板
+ * 编辑 / 补充面板
  * ======================================================= */
 function EditSheet({
   topic,
@@ -346,9 +395,9 @@ function EditSheet({
 
   return (
     <BottomSheet onClose={onClose}>
-      <div className="text-[16px] font-semibold text-ink">编辑沟通重点</div>
+      <div className="text-[16px] font-semibold text-ink">修改沟通重点</div>
       <div className="mt-4">
-        <label className="text-[12px] text-ink-faint">标题</label>
+        <label className="text-[12px] text-ink-faint">想说的事</label>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -357,7 +406,7 @@ function EditSheet({
         />
       </div>
       <div className="mt-3">
-        <label className="text-[12px] text-ink-faint">内容</label>
+        <label className="text-[12px] text-ink-faint">具体想说</label>
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
@@ -393,7 +442,6 @@ function AddSheet({
 }) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-
   const canSave = title.trim().length > 0 && content.trim().length > 0;
 
   return (
@@ -403,7 +451,7 @@ function AddSheet({
         填写系统未整理出的内容，将标记为「本人补充」。
       </p>
       <div className="mt-4">
-        <label className="text-[12px] text-ink-faint">标题</label>
+        <label className="text-[12px] text-ink-faint">想说的事</label>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -413,7 +461,7 @@ function AddSheet({
         />
       </div>
       <div className="mt-3">
-        <label className="text-[12px] text-ink-faint">内容</label>
+        <label className="text-[12px] text-ink-faint">具体想说</label>
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
@@ -430,49 +478,11 @@ function AddSheet({
           取消
         </button>
         <button
-          onClick={() =>
-            canSave && onSave(title.trim(), content.trim())
-          }
+          onClick={() => canSave && onSave(title.trim(), content.trim())}
           disabled={!canSave}
           className="flex-1 rounded-xl bg-action-primary py-3 text-[13px] font-medium text-action-primary-text disabled:opacity-30"
         >
           添加
-        </button>
-      </div>
-    </BottomSheet>
-  );
-}
-
-function DeleteConfirmSheet({
-  topicTitle,
-  onConfirm,
-  onClose,
-}: {
-  topicTitle: string;
-  onConfirm: () => void;
-  onClose: () => void;
-}) {
-  return (
-    <BottomSheet onClose={onClose}>
-      <div className="text-[16px] font-semibold text-ink">删除这条沟通重点？</div>
-      <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">
-        删除后不会出现在本次沟通材料中。此操作不可撤销。
-      </p>
-      <div className="mt-2 rounded-lg bg-card-soft/40 px-3 py-2 text-[12px] text-ink-faint">
-        {topicTitle}
-      </div>
-      <div className="mt-5 flex gap-2.5">
-        <button
-          onClick={onClose}
-          className="flex-1 rounded-xl border border-line bg-white py-3 text-[13px] font-medium text-ink"
-        >
-          取消
-        </button>
-        <button
-          onClick={onConfirm}
-          className="flex-1 rounded-xl bg-ink py-3 text-[13px] font-medium text-action-deep-text"
-        >
-          确认删除
         </button>
       </div>
     </BottomSheet>

@@ -5,6 +5,8 @@ import {
   ChevronRight,
   Plus,
   Trash2,
+  MoreHorizontal,
+  Pencil,
   Phone,
   Copy,
   Camera,
@@ -360,18 +362,17 @@ function HomeView({
         <h2 className="text-[17px] font-semibold tracking-tight text-ink">
           我的隐私
         </h2>
-        {/* 右上角装饰视频：标题区氛围装饰，非功能入口。
-            尺寸独立管理（w-12 h-12 = 48×48），与正念页主视觉在在分离。
-            top 88px：标题行内，状态栏下方；right 36px：内收到内容区内侧。
-            pointer-events-none + z-10：不拦截点击，不遮挡卡片（卡片 z-auto 在下层）。 */}
-        <div className="pointer-events-none absolute right-9 top-[88px] z-10">
+        {/* 右上角装饰视频：源文件为 9:16，按角色主体而非文件画布定位。
+            64×100 纵向视窗让头顶与标题顶部对齐，身体向下贴住首张卡片边框；
+            头部始终完整，仅允许腿脚从视窗底部自然裁切。 */}
+        <div className="pointer-events-none absolute right-5 top-14 z-20 h-[100px] w-16 overflow-hidden rounded-2xl">
           <video
             src="/assets/zaiya/privacy-peek-transparent.webm"
             autoPlay
             loop
             muted
             playsInline
-            className="h-12 w-12 object-contain"
+            className="h-full w-full object-cover object-[50%_18%]"
           />
         </div>
       </div>
@@ -899,8 +900,21 @@ function ContactList({
   onToggleEmergency: (id: string) => boolean;
 }) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [emergencyLimitHit, setEmergencyLimitHit] = useState(false);
+
+  useEffect(() => {
+    if (!openMenuId) return;
+
+    const closeMenu = (event: PointerEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target?.closest("[data-contact-menu]")) setOpenMenuId(null);
+    };
+
+    document.addEventListener("pointerdown", closeMenu);
+    return () => document.removeEventListener("pointerdown", closeMenu);
+  }, [openMenuId]);
 
   const title = type === "guardian" ? "家长" : "老师";
   const emptyText =
@@ -945,43 +959,84 @@ function ContactList({
                 key={c.id}
                 className="rounded-2xl border border-line bg-white px-5 py-4"
               >
-                {/* 顶部：信息 + 删除 */}
-                <button
-                  onClick={() => onEdit(c.id)}
-                  className="w-full text-left"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 pr-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[15px] font-medium text-ink">
-                          {c.name}
+                {/* 顶部：信息 + 更多操作 */}
+                <div className="relative flex items-start justify-between">
+                  <div className="min-w-0 flex-1 pr-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[15px] font-medium text-ink">
+                        {c.name}
+                      </span>
+                      {c.isEmergencyContact && (
+                        <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10.5px] font-medium text-risk-high">
+                          紧急联系人
                         </span>
-                        {c.isEmergencyContact && (
-                          <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10.5px] font-medium text-risk-high">
-                            紧急联系人
-                          </span>
-                        )}
-                      </div>
-                      <div className="mt-1 text-[12.5px] text-ink-faint">
-                        {type === "guardian"
-                          ? c.relationship
-                            ? `${c.relationship} · ${c.phone}`
-                            : c.phone
-                          : c.teacherRole
-                            ? `${TEACHER_ROLE_LABEL[c.teacherRole]} · ${c.phone}`
-                            : c.phone}
-                      </div>
+                      )}
                     </div>
-                    <Trash2
-                      className="h-4 w-4 shrink-0 text-ink-faint transition-colors hover:text-risk-medium"
-                      strokeWidth={1.6}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleteId(c.id);
-                      }}
-                    />
+                    <div className="mt-1 text-[12.5px] text-ink-faint">
+                      {type === "guardian"
+                        ? c.relationship
+                          ? `${c.relationship} · ${c.phone}`
+                          : c.phone
+                        : c.teacherRole
+                          ? `${TEACHER_ROLE_LABEL[c.teacherRole]} · ${c.phone}`
+                          : c.phone}
+                    </div>
                   </div>
-                </button>
+                  <div className="relative shrink-0" data-contact-menu>
+                    <button
+                      type="button"
+                      aria-label={`管理${c.name}`}
+                      aria-haspopup="menu"
+                      aria-expanded={openMenuId === c.id}
+                      onClick={() =>
+                        setOpenMenuId((current) =>
+                          current === c.id ? null : c.id,
+                        )
+                      }
+                      className="grid h-7 w-7 place-items-center rounded-full text-ink-faint transition-colors hover:bg-line-soft hover:text-ink"
+                    >
+                      <MoreHorizontal className="h-4 w-4" strokeWidth={1.8} />
+                    </button>
+
+                    <AnimatePresence>
+                      {openMenuId === c.id && (
+                        <motion.div
+                          role="menu"
+                          initial={{ opacity: 0, y: -4, scale: 0.96 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -4, scale: 0.96 }}
+                          transition={{ duration: 0.16, ease }}
+                          className="absolute right-0 top-8 z-20 w-28 overflow-hidden rounded-xl border border-line bg-white p-1 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.24)]"
+                        >
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => {
+                              setOpenMenuId(null);
+                              onEdit(c.id);
+                            }}
+                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-[13px] text-ink-soft transition-colors hover:bg-line-soft"
+                          >
+                            <Pencil className="h-3.5 w-3.5" strokeWidth={1.8} />
+                            修改
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => {
+                              setOpenMenuId(null);
+                              setDeleteId(c.id);
+                            }}
+                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-[13px] text-risk-medium transition-colors hover:bg-accent-soft"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" strokeWidth={1.8} />
+                            删除
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
 
                 {/* 操作行：紧急联系人 + 拨打 + 复制 */}
                 <div className="mt-3 flex gap-2 border-t border-line pt-3">

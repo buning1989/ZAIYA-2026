@@ -173,7 +173,7 @@ export function calculateBMI(weightKg: number, heightCm: number): number {
  *   < 18.5 → 偏瘦
  *   < 24   → 正常
  *   < 28   → 偏重
- *   ≥ 28   → 偏胖
+ *   ≥ 28   → 明显偏高
  *
  * 不使用「异常 / 达标 / 未达标 / 目标完成率」等强判断词，
  * 也不再返回「需结合年龄身高看」。BMI 仅作体重辅助说明，不配警示色。
@@ -182,7 +182,7 @@ export function getBMIRemark(bmi: number): string {
   if (bmi < 18.5) return "偏瘦";
   if (bmi < 24) return "正常";
   if (bmi < 28) return "偏重";
-  return "偏胖";
+  return "明显偏高";
 }
 
 /* —— 性别标签 —— */
@@ -205,10 +205,106 @@ export function getEnergy(): number {
   return loadProfile().energy ?? 0;
 }
 
-/** 累加能量并持久化，返回累加后的值 */
+/* —— 能量值订阅（跨模块同步）——
+ * Demo 无独立状态库，能量值持久化在 localStorage。
+ * 通过轻量发布订阅，让所有 useEnergy 实例在 addEnergy 后即时同步展示态。 */
+type EnergyListener = (value: number) => void;
+const energyListeners = new Set<EnergyListener>();
+
+/** 订阅能量值变化，返回取消订阅函数 */
+export function subscribeEnergy(listener: EnergyListener): () => void {
+  energyListeners.add(listener);
+  return () => {
+    energyListeners.delete(listener);
+  };
+}
+
+/** 累加能量并持久化，返回累加后的值；同时通知所有订阅者 */
 export function addEnergy(delta: number): number {
   const p = loadProfile();
   const next: UserProfile = { ...p, energy: (p.energy ?? 0) + delta };
   persistProfile(next);
-  return next.energy ?? 0;
+  const value = next.energy ?? 0;
+  energyListeners.forEach((l) => l(value));
+  return value;
+}
+
+/* =========================================================
+ * 能量奖励规则与幂等发放
+ * ======================================================= */
+
+/** 夸夸卡创建奖励的能量值 */
+export const PRAISE_CARD_ENERGY_REWARD = 3;
+
+/** 呼吸练习完成奖励的能量值 */
+export const BREATHING_EXERCISE_ENERGY_REWARD = 3;
+
+/** 能量奖励来源标识（用于幂等校验） */
+export type EnergySource =
+  | "praise_card_created"
+  | "breathing_exercise_completed";
+
+/** 读取指定来源的奖励能量值 */
+export function getEnergyReward(source: EnergySource): number {
+  switch (source) {
+    case "praise_card_created":
+      return PRAISE_CARD_ENERGY_REWARD;
+    case "breathing_exercise_completed":
+      return BREATHING_EXERCISE_ENERGY_REWARD;
+  }
+}
+
+/* —— 幂等发放记录（localStorage）——
+ * 记录已发放过的 `${source}:${sourceId}`，防止页面刷新、重复点击
+ * 或组件重新挂载导致同一记录 / 同一次练习多次发放能量。 */
+const ENERGY_GRANTS_KEY = "zaiya_energy_grants";
+
+function loadEnergyGrants(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(ENERGY_GRANTS_KEY);
+    return raw ? (JSON.parse(raw) as string[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveEnergyGrants(grants: string[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(ENERGY_GRANTS_KEY, JSON.stringify(grants));
+  } catch {
+    // 忽略写入失败（隐私模式 / 配额满）
+  }
+}
+
+export interface GrantEnergyResult {
+  /** 是否实际发放（true=本次发放，false=已发放过被幂等拦截） */
+  granted: boolean;
+  /** 该来源的奖励能量值 */
+  reward: number;
+  /** 发放后的能量总值（未发放时为当前值） */
+  newValue: number;
+}
+
+/** 幂等发放能量：同一 source + sourceId 只发放一次
+ *  - 首次：累加能量并记录，返回 { granted: true, ... }
+ *  - 重复：不累加，返回 { granted: false, ... } */
+export function grantEnergy({
+  source,
+  sourceId,
+}: {
+  source: EnergySource;
+  sourceId: string;
+}): GrantEnergyResult {
+  const key = `${source}:${sourceId}`;
+  const grants = loadEnergyGrants();
+  const reward = getEnergyReward(source);
+  if (grants.includes(key)) {
+    return { granted: false, reward, newValue: getEnergy() };
+  }
+  const newValue = addEnergy(reward);
+  grants.push(key);
+  saveEnergyGrants(grants);
+  return { granted: true, reward, newValue };
 }

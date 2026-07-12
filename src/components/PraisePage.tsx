@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, Plus, Trash2 } from "lucide-react";
 import {
@@ -7,11 +7,23 @@ import {
   createCard,
   getGradient,
   loadCards,
+  randomGradientId,
+  randomGuideText,
+  resolveGradientId,
   saveCards,
   type PraiseCard,
 } from "@/data/praise";
+import {
+  PRAISE_CARD_ENERGY_REWARD,
+  grantEnergy,
+} from "@/data/userProfile";
 import ZaizaiVideo from "./ZaizaiVideo";
 import VoiceInputBar from "./VoiceInputBar";
+import EnergyBadge from "./EnergyBadge";
+import RecordEnergyToast, {
+  type RecordEnergyRewardEvent,
+} from "./RecordEnergyToast";
+import { useEnergy } from "@/hooks/useEnergy";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -49,6 +61,16 @@ export default function PraisePage({ onBack }: Props) {
   // 详情页查看的卡片
   const [detailId, setDetailId] = useState<string | null>(null);
 
+  // —— 能量奖励：复用「一起发呆」完成后的反馈方式 ——
+  // useEnergy 订阅全局 pub/sub，跨模块同步；freeze/unfreeze 用于 toast 飞行期间冻结展示
+  const { value: praiseEnergy, freeze: freezePraiseEnergy, unfreeze: unfreezePraiseEnergy } = useEnergy();
+  const [praiseEnergyReward, setPraiseEnergyReward] =
+    useState<RecordEnergyRewardEvent | null>(null);
+  const [praiseEnergyPulse, setPraiseEnergyPulse] = useState(false);
+  const praiseBadgeRef = useRef<HTMLButtonElement | null>(null);
+  const praisePulseTimer = useRef<number | null>(null);
+  const praiseRewardIdRef = useRef(0);
+
   // 初始加载 localStorage
   useEffect(() => {
     setCards(loadCards());
@@ -62,12 +84,59 @@ export default function PraisePage({ onBack }: Props) {
 
   const goHome = () => setLayer("home");
 
-  // 保存新卡片：插入最上方 + 返回主页
-  const handleSave = (text: string) => {
-    const card = createCard(text);
+  // 保存新卡片：插入最上方 + 返回主页 + 触发能量奖励
+  // 仅在创建成功后发放；同一张卡片只奖励一次（grantEnergy 幂等校验）
+  const handleSave = (
+    text: string,
+    gradientId: string,
+    guideText: string,
+  ) => {
+    const card = createCard(text, gradientId, guideText);
     persist([card, ...cards]);
     setLayer("home");
+
+    // 触发能量奖励：以卡片唯一 ID 做幂等校验
+    freezePraiseEnergy();
+    const result = grantEnergy({
+      source: "praise_card_created",
+      sourceId: card.id,
+    });
+    if (result.granted) {
+      praiseRewardIdRef.current += 1;
+      setPraiseEnergyReward({
+        id: praiseRewardIdRef.current,
+        reward: result.reward,
+      });
+    } else {
+      // 已发放过（幂等拦截）：立即解冻，不展示反馈
+      unfreezePraiseEnergy();
+    }
   };
+
+  // toast 粒子飞抵右上角：解冻展示值 + pulse
+  const handlePraiseEnergyArrive = useCallback(() => {
+    if (!praiseEnergyReward) return;
+    unfreezePraiseEnergy();
+    setPraiseEnergyPulse(true);
+    if (praisePulseTimer.current)
+      window.clearTimeout(praisePulseTimer.current);
+    praisePulseTimer.current = window.setTimeout(() => {
+      setPraiseEnergyPulse(false);
+      praisePulseTimer.current = null;
+    }, 420);
+  }, [praiseEnergyReward, unfreezePraiseEnergy]);
+
+  // toast 整段动画结束：清空 event
+  const handlePraiseEnergyDone = useCallback(() => {
+    setPraiseEnergyReward(null);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (praisePulseTimer.current)
+        window.clearTimeout(praisePulseTimer.current);
+    };
+  }, []);
 
   // 进入详情页
   const openDetail = (id: string) => {
@@ -113,6 +182,24 @@ export default function PraisePage({ onBack }: Props) {
           )}
         </motion.div>
       </AnimatePresence>
+
+      {/* 右上角能量入口：仅模块主页展示；写入 / 详情态保持专注，不常驻入口。 */}
+      {layer === "home" && (
+        <EnergyBadge
+          value={praiseEnergy}
+          pulse={praiseEnergyPulse}
+          buttonRef={praiseBadgeRef}
+          position="floating"
+        />
+      )}
+      {/* 能量获得 toast：复用「一起发呆」组件，飞向右上角能量入口 */}
+      <RecordEnergyToast
+        event={praiseEnergyReward}
+        targetRef={praiseBadgeRef}
+        onArrive={handlePraiseEnergyArrive}
+        onDone={handlePraiseEnergyDone}
+        text={`获得 +${PRAISE_CARD_ENERGY_REWARD} 能量`}
+      />
     </div>
   );
 }
@@ -136,7 +223,7 @@ function HomeView({
 
   return (
     <div className="relative flex h-full flex-col bg-white">
-      {/* 顶部：返回 + 标题（不放副标题，避免和在在气泡重复） */}
+      {/* 顶部：返回 + 标题（右上角能量入口由 PraisePage 根级 floating EnergyBadge 承载） */}
       <header className="flex items-center gap-3 px-5 pt-14 pb-1">
         <button
           onClick={onBack}
@@ -145,16 +232,25 @@ function HomeView({
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
-        <h2 className="text-[17px] font-semibold tracking-tight text-ink">
+        <h2 className="flex-1 text-[17px] font-semibold tracking-tight text-ink">
           夸夸自己
         </h2>
       </header>
 
-      {/* 在在引导区：在在 + 气泡（左右结构，与「记一下」一致） */}
-      <section className="flex items-start justify-center gap-3 px-5 pb-3 pt-3">
-        <ZaizaiVideo className="h-20 w-20 shrink-0" />
-        <ZaizaiBubble items={ZAIZAI_BUBBLES} />
+      {/* 在在引导区：固定高度，避免气泡轮播时带动动画和 feed 漂移。 */}
+      <section className="relative z-20 h-[96px] shrink-0 overflow-visible px-5">
+        <div className="absolute left-1/2 top-4 flex h-[88px] w-[188px] -translate-x-1/2 items-start justify-between overflow-visible">
+          <div className="relative h-[88px] w-[72px] shrink-0 overflow-visible">
+            <div className="absolute left-[46%] top-1 h-[88px] w-[88px] -translate-x-1/2 scale-[1.08] overflow-visible">
+              <ZaizaiVideo className="h-full w-full" />
+            </div>
+          </div>
+          <ZaizaiBubble items={ZAIZAI_BUBBLES} />
+        </div>
       </section>
+
+      {/* Feed 顶部渐隐：参考对话页消息区，让卡片上滑时自然隐入引导区。 */}
+      <div className="pointer-events-none absolute inset-x-0 top-[170px] z-[15] h-24 bg-gradient-to-b from-white via-white/95 to-white/0" />
 
       {/* 卡片 Feed：双列瀑布流，与引导区保持 24px 间距 */}
       <section className="no-scrollbar flex-1 overflow-y-auto px-5 pb-24 pt-6">
@@ -203,7 +299,7 @@ function ZaizaiBubble({ items }: { items: string[] }) {
   }, [items.length]);
 
   return (
-    <div className="relative max-w-[200px] pt-2">
+    <div className="relative h-[52px] w-[120px] shrink-0 pt-2">
       <AnimatePresence mode="wait">
         <motion.div
           key={index}
@@ -211,9 +307,10 @@ function ZaizaiBubble({ items }: { items: string[] }) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -4 }}
           transition={{ duration: 0.3, ease }}
+          className="absolute inset-x-0 top-2"
         >
           {/* 气泡主体：偏方正、轻圆角 */}
-          <div className="relative rounded-lg bg-line-soft px-4 py-2.5">
+          <div className="relative min-h-[42px] rounded-lg bg-line-soft px-3 py-2">
             <p className="line-clamp-2 text-[12px] leading-relaxed text-ink-soft">
               {items[index]}
             </p>
@@ -248,7 +345,7 @@ function CardItem({
   index: number;
   onClick: () => void;
 }) {
-  const gradient = getGradient(card.gradientId);
+  const gradient = getGradient(resolveGradientId(card));
   const timeLabel = buildTimeLabel(new Date(card.createdAt));
 
   return (
@@ -279,24 +376,30 @@ function CardItem({
  * 整个内容区即一张渐变卡片；不滚动、无标题/说明/示例列表/底部大按钮。
  * 结构：左上返回 / 右上保存 / 中央 textarea / 右下 mic
  * 注：在在引导主体在首页，新建页不再放小在在，避免视觉竞争与小橙点问题。
+ *
+ * 随机色与引导词：进入新建页时各随机一次（useState 初始化器仅执行一次），
+ * 输入、重渲染、保存过程中保持不变，保存时写入卡片数据结构。
  * ======================================================= */
 function EditView({
   onBack,
   onSave,
 }: {
   onBack: () => void;
-  onSave: (text: string) => void;
+  onSave: (text: string, gradientId: string, guideText: string) => void;
 }) {
-  // 使用固定渐变 g1（暖粉）作为新建卡片背景
-  const gradient = getGradient("g1");
+  // 进入新建页时随机一次，后续 re-render 不再变化
+  const [gradientId] = useState(() => randomGradientId());
+  const [guideText] = useState(() => randomGuideText());
+  const gradient = getGradient(gradientId);
 
   const [value, setValue] = useState("");
   const trimmed = value.trim();
-  const canSave = trimmed.length > 0 && value.length <= PRAISE_MAX_LENGTH;
+  const hasContent = trimmed.length > 0;
+  const canSave = hasContent && value.length <= PRAISE_MAX_LENGTH;
 
   const submit = () => {
     if (!canSave) return;
-    onSave(trimmed);
+    onSave(trimmed, gradientId, guideText);
   };
 
   return (
@@ -324,19 +427,24 @@ function EditView({
         </button>
       </div>
 
-      {/* 中央可编辑文字区域：铺满，不滚动 */}
-      <div className="flex flex-1 items-center justify-center px-8">
+      {/* 中央可编辑文字区域：引导词与输入框共用同一布局容器，定位与排版参数完全一致，
+          保证引导词位置与输入文字起始位置对齐；输入后引导词立即隐藏，不产生位置跳动 */}
+      <div className="praise-card-editor relative flex-1">
+        {!hasContent && (
+          <div className="guide-text pointer-events-none absolute left-1/2 top-1/2 min-h-[120px] w-[72%] -translate-x-1/2 -translate-y-1/2 text-center text-[18px] leading-[1.6] tracking-normal text-ink/[0.18]">
+            {guideText}
+          </div>
+        )}
         <textarea
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && canSave) submit();
           }}
-          placeholder="写一句今天可以留下的话。"
           autoFocus
           rows={4}
           maxLength={PRAISE_MAX_LENGTH + 20}
-          className="w-full resize-none bg-transparent text-center text-[20px] leading-relaxed text-ink placeholder:text-ink/40 focus:outline-none"
+          className="praise-input absolute left-1/2 top-1/2 min-h-[120px] w-[72%] -translate-x-1/2 -translate-y-1/2 resize-none border-0 bg-transparent p-0 text-center text-[18px] leading-[1.6] tracking-normal text-ink focus:outline-none"
         />
       </div>
 
@@ -376,7 +484,7 @@ function DetailView({
     );
   }
 
-  const gradient = getGradient(card.gradientId);
+  const gradient = getGradient(resolveGradientId(card));
   const timeLabel = buildTimeLabel(new Date(card.createdAt));
 
   return (

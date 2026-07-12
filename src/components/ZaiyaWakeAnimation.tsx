@@ -3,6 +3,7 @@
  *   phone-app       首页主视觉
  *   desktop-widget  桌面小组件卡片
  *   watch           手表表盘
+ *   dialog          对话顶部陪伴区
  *
  * GIF 画布 640×1138（9:16 竖向），主体（窗帘+在在）只占画布中部一部分。
  * 透明帧 union bbox 约为 x=102..561, y=309..767，布局时按主体视觉中心校正，
@@ -12,9 +13,13 @@
  *   - mediaClass：内层 GIF 本体按 9:16 竖向展示，保证完整显示窗帘/在在主体
  *   - scale：微调可见主体大小
  *   - y：微调垂直位置
- * 外层 overflow-visible，不裁切竖向动画；三个 variant 独立调参互不影响。
+ * 外层 overflow-visible，不裁切竖向动画；各 variant 独立调参互不影响。
  */
-type ZaiyaWakeAnimationVariant = "phone-app" | "desktop-widget" | "watch";
+type ZaiyaWakeAnimationVariant =
+  | "phone-app"
+  | "desktop-widget"
+  | "watch"
+  | "dialog";
 
 const VARIANT_CONFIG: Record<
   ZaiyaWakeAnimationVariant,
@@ -32,6 +37,13 @@ const VARIANT_CONFIG: Record<
     mediaClass: "h-[338px] w-[190px]",
     scale: 1.12,
     y: 10,
+  },
+  dialog: {
+    // 对话页顶部：slot 收紧到可见主体附近，避免透明画布参与过渡定位
+    slotClass: "h-[174px] w-[190px]",
+    mediaClass: "h-[338px] w-[190px]",
+    scale: 1.18,
+    y: -16,
   },
   "desktop-widget": {
     // 小组件卡片内占位，留出一行互动文案

@@ -1,36 +1,96 @@
-/* —— 「帮我整理」沟通材料整理模块（本地 mock，不接后端 / LLM）——
+/* —— 「帮我整理」沟通准备模块（本地 mock，不接后端 / LLM）——
  *
- * 定位：把用户已有记录整理成需要向他人说明的重点信息，
- *   并由用户确认哪些内容可以被对方看见。沟通材料仅作为流程完成后的结果。
+ * 定位：用户在与现实中的某个具体人物进行重要沟通前，完成：
+ *   1. 选择这次要和谁沟通；
+ *   2. 确认这次想沟通什么；
+ *   3. 选择准备采用什么沟通方式；
+ *   4. 确认哪些信息可以让对方看到。
+ *
+ * 报告或沟通材料只是其中一种输出方式，不是模块的核心目标。
  *
  * 核心原则：
  *   - 不做诊断、治疗建议、用药建议、因果解释或风险等级判断
  *   - 所有进入最终材料的沟通重点和特殊情况都必须由用户确认
- *   - 未选择、已删除或未授权的信息不进入最终材料
- *   - 通用 communicationTarget 结构，不写死医生
+ *   - 未选择或未授权的信息不进入最终材料
+ *   - 沟通对象为具体人物（王医生），不写死"医生"
+ *   - 沟通对象与「我的隐私」可信联系人分开建模
  *
- * 数据源：本文件内统一 Mock（小晨数据），不分散硬编码。
- * 不再依赖 lookbackData，避免两套数据模型冲突。 */
+ * 数据源：本文件内统一 Mock（小晨数据），不分散硬编码。 */
 
 /* =========================================================
- * 数据模型
+ * 沟通对象与可信联系人
  * ======================================================= */
 
-/** 沟通对象类型（可扩展：医生、家长、学校、心理咨询师等） */
-export type CommunicationTargetType =
+/** 沟通对象角色分类（可扩展） */
+export type CommunicationRoleType =
   | "doctor"
   | "parent"
   | "school"
-  | "counselor";
+  | "counselor"
+  | "other";
 
-/** 沟通对象配置 */
-export interface CommunicationTargetConfig {
-  targetType: CommunicationTargetType;
-  targetLabel: string;
-  desc: string;
-  /** Demo 阶段是否可选 */
-  available: boolean;
+/** 沟通对象：具体的人，用于本次沟通准备 */
+export interface CommunicationContact {
+  id: string;
+  /** 用户看到的具体称呼 */
+  displayName: string;
+  /** 系统内部角色分类 */
+  roleType: CommunicationRoleType;
+  /** 用户可读的角色名称 */
+  roleLabel: string;
+  /** 来源 */
+  source: "trusted_contact" | "organize_added";
+  /** 来源于可信联系人时保存弱关联，不复制联系方式 */
+  trustedContactId?: string;
+  createdAt: number;
+  lastUsedAt?: number;
 }
+
+/** Demo Mock 沟通对象 */
+export const MOCK_COMMUNICATION_CONTACTS: CommunicationContact[] = [
+  {
+    id: "contact-wang-doctor",
+    displayName: "王医生",
+    roleType: "doctor",
+    roleLabel: "精神科医生",
+    source: "organize_added",
+    createdAt: Date.now(),
+    lastUsedAt: Date.now(),
+  },
+];
+
+/** Demo Mock 可信联系人候选（用于"从可信联系人添加"） */
+export const MOCK_TRUSTED_CONTACT_CANDIDATES: {
+  id: string;
+  displayName: string;
+  roleType: CommunicationRoleType;
+  roleLabel: string;
+}[] = [
+  {
+    id: "trusted-dad",
+    displayName: "我爸爸",
+    roleType: "parent",
+    roleLabel: "家长或支持者",
+  },
+];
+
+/** 角色选项（新增沟通对象时选择） */
+export const ROLE_OPTIONS: {
+  value: CommunicationRoleType;
+  label: string;
+  /** Demo 阶段该角色是否开放完整流程 */
+  available: boolean;
+}[] = [
+  { value: "doctor", label: "医生", available: true },
+  { value: "parent", label: "家长或支持者", available: false },
+  { value: "school", label: "学校或老师", available: false },
+  { value: "counselor", label: "心理咨询师", available: false },
+  { value: "other", label: "其他", available: false },
+];
+
+/* =========================================================
+ * 沟通重点 / 特殊情况 / 沟通方式
+ * ======================================================= */
 
 /** 沟通重点来源类型 */
 export type TopicSourceType = "system_summary" | "user_added";
@@ -45,103 +105,53 @@ export interface CommunicationTopic {
   evidenceSummary: string[];
   selected: boolean;
   edited: boolean;
-  deleted: boolean;
-  /** 是否允许进入最终材料（未选择 / 已删除 / 未授权 = false） */
+  /** 是否允许进入最终材料（未选择 = false） */
   allowedInMaterial: boolean;
 }
 
 /** 特殊情况披露决定 */
 export type DisclosureDecision = "pending" | "include" | "exclude";
 
+/** 敏感表达分类（仅内部用，UI 不直接展示） */
+export type SensitiveCategory =
+  | "self_harm_expression"
+  | "suicidal_ideation_expression"
+  | "severe_conflict"
+  | "loss_of_control"
+  | "other_sensitive";
+
+/** 特殊记录原文（展示用户当时填写的真实内容，不做系统摘要） */
+export interface SensitiveOriginalRecord {
+  id: string;
+  /** ISO 时间，用于展示「6 月 24 日 01:32」 */
+  recordedAt: string;
+  /** 记录类型，如「情绪记录」 */
+  recordType: string;
+  /** 用户当时填写的原文，不做改写、不做摘要、不做风险判断 */
+  originalText: string;
+  /** 为什么需要单独确认（UI 展示用，克制描述，不做诊断/风险判断） */
+  confirmReason: string;
+  /** 敏感表达分类（仅内部用，UI 不直接展示） */
+  sensitiveCategory: SensitiveCategory;
+}
+
 /** 特殊情况披露 */
 export interface SpecialDisclosure {
   exists: boolean;
   count: number;
-  /** 概要说明（只陈述事实） */
-  summary: string;
-  /** 详情条目（用户主动展开后显示） */
-  detailRecords: string[];
+  /** 真实原始记录（用户原文） */
+  originalRecords: SensitiveOriginalRecord[];
   decision: DisclosureDecision;
-  /** 是否经过二次确认 */
+  /** 是否经过确认（点击任一按钮即为确认） */
   confirmed: boolean;
   allowedInMaterial: boolean;
 }
 
-/** 沟通整理会话 */
-export interface CommunicationSession {
-  id: string;
-  targetType: CommunicationTargetType;
-  targetLabel: string;
-  /** 时间段选择 key */
-  rangeKey: RangeKey;
-  /** 自定义开始日期（YYYY-MM-DD） */
-  startDate: string;
-  endDate: string;
-  totalDays: number;
-  recordedDays: number;
-  /** 已覆盖的记录类型 */
-  recordCategories: string[];
-  communicationTopics: CommunicationTopic[];
-  specialDisclosure: SpecialDisclosure;
-  status: "in_progress" | "completed";
-  createdAt: number;
-}
+/* =========================================================
+ * 时间段
+ * ======================================================= */
 
-/** 时间段选项 key */
 export type RangeKey = "7" | "14" | "30" | "custom";
-
-/** 历史条目：完成的会话持久化形式 */
-export interface OrganizeHistoryEntry {
-  id: string;
-  targetType: CommunicationTargetType;
-  targetLabel: string;
-  startDate: string;
-  endDate: string;
-  totalDays: number;
-  recordedDays: number;
-  /** 已确认沟通重点数量 */
-  topicCount: number;
-  /** 特殊情况是否纳入 */
-  disclosureIncluded: boolean;
-  /** 完成的会话快照（用于详情页 / 完整材料渲染） */
-  session: CommunicationSession;
-  createdAt: number;
-}
-
-/* =========================================================
- * 沟通对象配置（Demo 仅开放医生）
- * ======================================================= */
-
-export const COMMUNICATION_TARGETS: CommunicationTargetConfig[] = [
-  {
-    targetType: "doctor",
-    targetLabel: "精神科医生",
-    desc: "用于就诊或复诊时说明近期情况",
-    available: true,
-  },
-  {
-    targetType: "parent",
-    targetLabel: "家长或支持者",
-    desc: "向家人或支持者说明近况",
-    available: false,
-  },
-  {
-    targetType: "school",
-    targetLabel: "学校或老师",
-    desc: "与学校或老师沟通时使用",
-    available: false,
-  },
-  {
-    targetType: "counselor",
-    targetLabel: "心理咨询师",
-    desc: "与心理咨询师沟通时使用",
-    available: false,
-  },
-];
-
-/* =========================================================
- * 时间段选项与覆盖信息
- * ======================================================= */
 
 export const RANGE_OPTIONS: {
   value: RangeKey;
@@ -209,9 +219,58 @@ export function getCoverage(rangeKey: RangeKey): {
 }
 
 /* =========================================================
- * 沟通重点 Mock 数据（5 条系统整理结果，来自小晨记录）
+ * 会话与历史
  * ======================================================= */
 
+/** 沟通对象快照（保存入会话/历史，不随后续修改而变化） */
+export interface ContactSnapshot {
+  displayName: string;
+  roleType: CommunicationRoleType;
+  roleLabel: string;
+}
+
+/** 沟通整理会话 */
+export interface CommunicationSession {
+  id: string;
+  /** 所选沟通对象 ID */
+  contactId: string;
+  /** 沟通对象快照（创建当时的信息） */
+  contactSnapshot: ContactSnapshot;
+  /** 时间段选择 key */
+  rangeKey: RangeKey;
+  startDate: string;
+  endDate: string;
+  totalDays: number;
+  recordedDays: number;
+  recordCategories: string[];
+  communicationTopics: CommunicationTopic[];
+  specialDisclosure: SpecialDisclosure;
+  status: "in_progress" | "completed";
+  createdAt: number;
+}
+
+/** 历史条目：完成的会话持久化形式 */
+export interface OrganizeHistoryEntry {
+  id: string;
+  contactId: string;
+  contactSnapshot: ContactSnapshot;
+  startDate: string;
+  endDate: string;
+  totalDays: number;
+  recordedDays: number;
+  topicCount: number;
+  /** 特殊情况是否纳入 */
+  disclosureIncluded: boolean;
+  /** 完成的会话快照 */
+  session: CommunicationSession;
+  createdAt: number;
+}
+
+/* =========================================================
+ * Mock 数据（小晨）
+ * ======================================================= */
+
+/** 创建 5 条 Mock 沟通重点（默认全部选中） */
 export function createMockTopics(): CommunicationTopic[] {
   return [
     {
@@ -225,10 +284,9 @@ export function createMockTopics(): CommunicationTopic[] {
         "当前记录用药为舍曲林 50mg，每日一次",
         "24 个记录日中漏服 4 次",
       ],
-      selected: false,
+      selected: true,
       edited: false,
-      deleted: false,
-      allowedInMaterial: false,
+      allowedInMaterial: true,
     },
     {
       id: "topic-2",
@@ -241,10 +299,9 @@ export function createMockTopics(): CommunicationTopic[] {
         "11 天存在深夜反复思考相关记录",
         "7 月 4 日完成一次呼吸/接地练习",
       ],
-      selected: false,
+      selected: true,
       edited: false,
-      deleted: false,
-      allowedInMaterial: false,
+      allowedInMaterial: true,
     },
     {
       id: "topic-3",
@@ -256,10 +313,9 @@ export function createMockTopics(): CommunicationTopic[] {
         "日期为 6 月 22 日、6 月 29 日、7 月 8 日、7 月 13 日",
         "4 个未到校日均有晨起困难相关记录",
       ],
-      selected: false,
+      selected: true,
       edited: false,
-      deleted: false,
-      allowedInMaterial: false,
+      allowedInMaterial: true,
     },
     {
       id: "topic-4",
@@ -271,41 +327,47 @@ export function createMockTopics(): CommunicationTopic[] {
         "内容主要与是否到校、是否在找借口有关",
         "多数发生在晚间",
       ],
-      selected: false,
+      selected: true,
       edited: false,
-      deleted: false,
-      allowedInMaterial: false,
+      allowedInMaterial: true,
     },
     {
       id: "topic-5",
-      title: "想问医生：我这样算是在变好吗？",
+      title: "想问王医生：我这样算是在变好吗？",
       content: "自己感觉不出来。有的地方好像松了一点，有的地方还是老样子。",
       sourceType: "system_summary",
       evidenceSummary: ["用户主动表达的问题"],
-      selected: false,
+      selected: true,
       edited: false,
-      deleted: false,
-      allowedInMaterial: false,
+      allowedInMaterial: true,
     },
   ];
 }
 
-/* =========================================================
- * 特殊情况披露 Mock 数据
- * ======================================================= */
-
+/** 创建 Mock 特殊情况披露（小晨 2 条深夜情绪记录原文） */
 export function createMockDisclosure(): SpecialDisclosure {
   return {
     exists: true,
     count: 2,
-    summary:
-      "所选时间段内有 2 条深夜记录包含消极念头表达。请确认是否将相关内容纳入本次沟通材料。",
-    detailRecords: [
-      "2026 年 6 月 24 日凌晨出现“撑不下去”类表达",
-      "2026 年 7 月 6 日凌晨出现“撑不下去”类表达",
-      "两次记录中均无自伤行为或计划",
-      "33 天内无自伤相关记录",
-      "2026 年 7 月 4 日凌晨主动完成一次呼吸/接地练习，记录为“还是睡不着，但好一点点”",
+    originalRecords: [
+      {
+        id: "sensitive-1",
+        recordedAt: "2026-06-24T01:32",
+        recordType: "情绪记录",
+        originalText:
+          "又到一点多了还是睡不着。脑子里全是明天的课，作业也没写完。躺着躺着突然觉得特别没意思，好像怎么都撑不下去，但又说不上来撑不下去是什么意思。就是很累。",
+        confirmReason: "涉及：撑不下去、无力感相关表达",
+        sensitiveCategory: "self_harm_expression",
+      },
+      {
+        id: "sensitive-2",
+        recordedAt: "2026-07-06T01:48",
+        recordType: "情绪记录",
+        originalText:
+          "睡不着。晚上又和妈妈因为上学的事吵了一架，她说我就是在找借口。我不想跟她吵，心里堵得慌。那种感觉又上来了，好像再怎么努力也没用。",
+        confirmReason: "涉及：强烈焦虑、冲突后失控感",
+        sensitiveCategory: "loss_of_control",
+      },
     ],
     decision: "pending",
     confirmed: false,
@@ -379,7 +441,7 @@ export const OTHER_RECORD_SECTIONS: OtherRecordSection[] = [
   },
 ];
 
-/** 完整材料中的相关记录范围（确认沟通内容页用） */
+/** 完整材料中的相关记录范围（确认页用） */
 export const RECORD_SCOPE_LABELS = [
   "用药与身体感受",
   "睡眠",
@@ -400,14 +462,18 @@ export const DISCLAIMER =
  * 会话与历史构建
  * ======================================================= */
 
-/** 创建初始会话（开始整理时调用） */
-export function createInitialSession(): CommunicationSession {
-  const cov = getCoverage("30");
+/** 创建初始会话（选定沟通对象后调用） */
+export function createInitialSession(contact: CommunicationContact): CommunicationSession {
+  const cov = getCoverage("custom");
   return {
     id: Math.random().toString(36).slice(2),
-    targetType: "doctor",
-    targetLabel: "",
-    rangeKey: "30",
+    contactId: contact.id,
+    contactSnapshot: {
+      displayName: contact.displayName,
+      roleType: contact.roleType,
+      roleLabel: contact.roleLabel,
+    },
+    rangeKey: "custom",
     startDate: cov.startDate,
     endDate: cov.endDate,
     totalDays: cov.totalDays,
@@ -420,19 +486,17 @@ export function createInitialSession(): CommunicationSession {
   };
 }
 
-/** 重新计算 allowedInMaterial：只有 selected 且未 deleted 的才允许进入材料 */
+/** 重新计算 allowedInMaterial：只有 selected 的才允许进入材料 */
 export function recomputeTopicPermissions(topics: CommunicationTopic[]): CommunicationTopic[] {
   return topics.map((t) => ({
     ...t,
-    allowedInMaterial: t.selected && !t.deleted,
+    allowedInMaterial: t.selected,
   }));
 }
 
 /** 获取进入最终材料的沟通重点 */
 export function getMaterialTopics(session: CommunicationSession): CommunicationTopic[] {
-  return session.communicationTopics.filter(
-    (t) => t.allowedInMaterial && !t.deleted,
-  );
+  return session.communicationTopics.filter((t) => t.allowedInMaterial && t.selected);
 }
 
 /** 完成会话：固化状态并生成历史条目 */
@@ -453,8 +517,8 @@ export function completeSession(session: CommunicationSession): OrganizeHistoryE
   };
   return {
     id: completed.id,
-    targetType: completed.targetType,
-    targetLabel: completed.targetLabel,
+    contactId: completed.contactId,
+    contactSnapshot: completed.contactSnapshot,
     startDate: completed.startDate,
     endDate: completed.endDate,
     totalDays: completed.totalDays,
@@ -467,27 +531,49 @@ export function completeSession(session: CommunicationSession): OrganizeHistoryE
 }
 
 /* =========================================================
- * 完整材料构建（详情页 / 完整内容视图 / 导出共用）
+ * 沟通清单 / 完整材料构建
  * ======================================================= */
+
+/** 沟通清单结构（简洁，用于现场查看） */
+export interface ChecklistData {
+  contactName: string;
+  dateRange: string;
+  topics: { title: string; content: string }[];
+  /** 单独确认的特殊记录（仅当用户选择告诉对方时存在） */
+  disclosure?: { records: SensitiveOriginalRecord[] };
+}
+
+/** 构建沟通清单 */
+export function buildChecklist(session: CommunicationSession): ChecklistData {
+  const topics = getMaterialTopics(session);
+  const data: ChecklistData = {
+    contactName: session.contactSnapshot.displayName,
+    dateRange: formatDateRange(session.startDate, session.endDate),
+    topics: topics.map((t) => ({ title: t.title, content: t.content })),
+  };
+  if (session.specialDisclosure.allowedInMaterial) {
+    data.disclosure = {
+      records: session.specialDisclosure.originalRecords,
+    };
+  }
+  return data;
+}
 
 export interface MaterialSection {
   id: string;
   title: string;
-  /** 段落文本（材料说明 / 免责声明） */
   paragraph?: string;
-  /** 沟通重点列表（仅"本次希望讨论的问题"用） */
   topics?: { title: string; content: string; sourceType: TopicSourceType }[];
-  /** 相关记录事实（按沟通重点关联） */
   facts?: { topicTitle: string; evidence: string[] }[];
-  /** 经确认的特殊情况 */
-  disclosure?: { summary: string; detailRecords: string[] };
-  /** 其他记录概览 */
+  /** 经用户确认纳入的特殊记录原文（仅当用户选择告诉对方时存在） */
+  disclosureRecords?: SensitiveOriginalRecord[];
   otherRecords?: { title: string; items: string[] }[];
 }
 
 /** 构建完整材料结构 */
 export function buildFullMaterial(session: CommunicationSession): MaterialSection[] {
   const sections: MaterialSection[] = [];
+  const name = session.contactSnapshot.displayName;
 
   // 1. 材料说明
   sections.push({
@@ -501,7 +587,7 @@ export function buildFullMaterial(session: CommunicationSession): MaterialSectio
   if (materialTopics.length > 0) {
     sections.push({
       id: "topics",
-      title: "本次希望和医生讨论的问题",
+      title: `本次希望和${name}讨论的问题`,
       topics: materialTopics.map((t) => ({
         title: t.title,
         content: t.content,
@@ -522,15 +608,13 @@ export function buildFullMaterial(session: CommunicationSession): MaterialSectio
     });
   }
 
-  // 4. 经用户确认纳入的特殊情况
+  // 4. 经用户确认纳入的特殊记录（仅当用户选择告诉对方时展示原文）
   if (session.specialDisclosure.allowedInMaterial) {
     sections.push({
       id: "disclosure",
-      title: "经用户确认纳入的特殊情况",
-      disclosure: {
-        summary: session.specialDisclosure.summary,
-        detailRecords: session.specialDisclosure.detailRecords,
-      },
+      title: "经用户确认纳入的特殊记录",
+      paragraph: "该记录经用户确认后纳入。",
+      disclosureRecords: session.specialDisclosure.originalRecords,
     });
   }
 
@@ -556,8 +640,9 @@ export function buildFullMaterial(session: CommunicationSession): MaterialSectio
 
 /** 构建可分享/复制的纯文本 */
 export function buildShareText(session: CommunicationSession): string {
+  const name = session.contactSnapshot.displayName;
   const lines: string[] = [];
-  lines.push(`沟通材料（给${session.targetLabel}）`);
+  lines.push(`给${name}的沟通材料`);
   lines.push(
     `时间范围：${formatDateRange(session.startDate, session.endDate)}（共 ${session.totalDays} 天，${session.recordedDays} 天有记录）`,
   );
@@ -565,7 +650,7 @@ export function buildShareText(session: CommunicationSession): string {
 
   const materialTopics = getMaterialTopics(session);
   if (materialTopics.length > 0) {
-    lines.push("本次希望讨论的问题：");
+    lines.push(`本次希望和${name}讨论的问题：`);
     materialTopics.forEach((t, i) => {
       lines.push(`${i + 1}. ${t.title}`);
       lines.push(`   ${t.content}`);
@@ -574,8 +659,11 @@ export function buildShareText(session: CommunicationSession): string {
   }
 
   if (session.specialDisclosure.allowedInMaterial) {
-    lines.push("经确认纳入的特殊情况：");
-    lines.push(`包含 ${session.specialDisclosure.count} 条经本人确认的深夜记录`);
+    lines.push("经确认纳入的特殊记录（该记录经用户确认后纳入）：");
+    session.specialDisclosure.originalRecords.forEach((r) => {
+      lines.push(`- ${formatSensitiveRecordTime(r.recordedAt)} ${r.recordType}`);
+      lines.push(`  ${r.originalText}`);
+    });
     lines.push("");
   }
 
@@ -599,11 +687,27 @@ export function formatDateRange(start: string, end: string): string {
   return `${formatDateDotted(start)}—${formatDateDotted(end)}`;
 }
 
+/** 时间段格式化为中文：2026-06-15 ~ 2026-07-17 → 6 月 15 日—7 月 17 日 */
+export function formatDateRangeChinese(start: string, end: string): string {
+  const fmt = (s: string) => {
+    const parts = s.split("-");
+    return `${Number(parts[1])} 月 ${Number(parts[2])} 日`;
+  };
+  return `${fmt(start)}—${fmt(end)}`;
+}
+
 /** 时间戳 → 创建于 YYYY.MM.DD */
 export function formatCreatedAt(ts: number): string {
   const d = new Date(ts);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
+}
+
+/** 特殊记录时间格式化：2026-06-24T01:32 → 6 月 24 日 01:32 */
+export function formatSensitiveRecordTime(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getMonth() + 1} 月 ${d.getDate()} 日 ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 /* =========================================================
@@ -612,6 +716,7 @@ export function formatCreatedAt(ts: number): string {
 
 const SESSION_KEY = "zaiya_organize_session";
 const HISTORY_KEY = "zaiya_organize_history";
+const CONTACTS_KEY = "zaiya_organize_contacts";
 
 /** 保存进行中的会话 */
 export function saveSession(session: CommunicationSession): void {
@@ -627,12 +732,41 @@ export function loadSession(): CommunicationSession | null {
   try {
     const raw = window.localStorage.getItem(SESSION_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as CommunicationSession;
-    if (parsed.status === "completed") return null;
+    const parsed = JSON.parse(raw);
+    if (!isRestorableSession(parsed)) return null;
     return parsed;
   } catch {
     return null;
   }
+}
+
+function isRestorableSession(value: unknown): value is CommunicationSession {
+  if (!value || typeof value !== "object") return false;
+  const session = value as Partial<CommunicationSession>;
+  return (
+    session.status === "in_progress" &&
+    typeof session.id === "string" &&
+    typeof session.contactId === "string" &&
+    !!session.contactSnapshot &&
+    typeof session.contactSnapshot.displayName === "string" &&
+    typeof session.startDate === "string" &&
+    typeof session.endDate === "string" &&
+    typeof session.totalDays === "number" &&
+    typeof session.recordedDays === "number" &&
+    Array.isArray(session.recordCategories) &&
+    Array.isArray(session.communicationTopics) &&
+    session.communicationTopics.length > 0 &&
+    session.communicationTopics.every(
+      (topic) =>
+        !!topic &&
+        typeof topic.id === "string" &&
+        typeof topic.title === "string" &&
+        typeof topic.content === "string" &&
+        typeof topic.selected === "boolean" &&
+        Array.isArray(topic.evidenceSummary),
+    ) &&
+    !!session.specialDisclosure
+  );
 }
 
 /** 清除进行中的会话 */
@@ -642,6 +776,33 @@ export function clearSession(): void {
   } catch {
     // 忽略
   }
+}
+
+/** 加载沟通对象列表（localStorage + Mock 默认） */
+export function loadContacts(): CommunicationContact[] {
+  try {
+    const raw = window.localStorage.getItem(CONTACTS_KEY);
+    if (!raw) return [...MOCK_COMMUNICATION_CONTACTS];
+    return JSON.parse(raw) as CommunicationContact[];
+  } catch {
+    return [...MOCK_COMMUNICATION_CONTACTS];
+  }
+}
+
+/** 保存沟通对象列表 */
+export function saveContacts(contacts: CommunicationContact[]): void {
+  try {
+    window.localStorage.setItem(CONTACTS_KEY, JSON.stringify(contacts));
+  } catch {
+    // 忽略
+  }
+}
+
+/** 新增沟通对象 */
+export function addContact(contact: CommunicationContact): CommunicationContact[] {
+  const next = [...loadContacts(), contact];
+  saveContacts(next);
+  return next;
 }
 
 /** 加载历史（localStorage，跨刷新持久） */

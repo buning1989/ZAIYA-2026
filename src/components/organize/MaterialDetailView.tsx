@@ -1,12 +1,12 @@
 /* —— 沟通材料详情 / 完整内容视图 ——
  * 用 buildFullMaterial() 渲染统一结构
- * 从历史进入时标题「沟通材料详情」
- * 从完成页「查看完整内容」进入时标题「完整内容」 */
+ * 标题使用 contactSnapshot.displayName */
 import { ChevronLeft } from "lucide-react";
 import {
   buildFullMaterial,
   formatDateRange,
   formatCreatedAt,
+  formatSensitiveRecordTime,
   getMaterialTopics,
   type CommunicationSession,
   type MaterialSection,
@@ -26,6 +26,7 @@ export default function MaterialDetailView({
 }: Props) {
   const sections = buildFullMaterial(session);
   const materialTopics = getMaterialTopics(session);
+  const name = session.contactSnapshot.displayName;
 
   return (
     <div className="relative flex h-full flex-col bg-white">
@@ -48,7 +49,7 @@ export default function MaterialDetailView({
         {/* 顶部信息 */}
         <div className="mt-2 rounded-2xl border border-line bg-card-soft/20 px-4 py-3.5">
           <div className="text-[14px] font-medium text-ink">
-            给{session.targetLabel}的沟通材料
+            给{name}的沟通材料
           </div>
           <div className="mt-1.5 flex flex-col gap-0.5 text-[12px] text-ink-faint">
             <div>
@@ -81,14 +82,12 @@ function MaterialSectionBlock({ section }: { section: MaterialSection }) {
         {section.title}
       </div>
 
-      {/* 段落文本 */}
       {section.paragraph && (
         <p className="mt-2.5 text-[13px] leading-relaxed text-ink-soft">
           {section.paragraph}
         </p>
       )}
 
-      {/* 沟通重点列表 */}
       {section.topics && section.topics.length > 0 && (
         <div className="mt-3 flex flex-col gap-3">
           {section.topics.map((topic, i) => (
@@ -107,7 +106,6 @@ function MaterialSectionBlock({ section }: { section: MaterialSection }) {
         </div>
       )}
 
-      {/* 相关记录事实 */}
       {section.facts && section.facts.length > 0 && (
         <div className="mt-3 flex flex-col gap-3">
           {section.facts.map((fact, i) => (
@@ -131,27 +129,22 @@ function MaterialSectionBlock({ section }: { section: MaterialSection }) {
         </div>
       )}
 
-      {/* 特殊情况 */}
-      {section.disclosure && (
-        <div className="mt-2.5">
-          <p className="text-[13px] leading-relaxed text-ink-soft">
-            {section.disclosure.summary}
-          </p>
-          <ul className="mt-2 flex flex-col gap-1">
-            {section.disclosure.detailRecords.map((r, i) => (
-              <li
-                key={i}
-                className="flex gap-2 text-[12px] leading-relaxed text-ink-soft"
-              >
-                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-ink-faint" />
-                {r}
-              </li>
-            ))}
-          </ul>
+      {section.disclosureRecords && section.disclosureRecords.length > 0 && (
+        <div className="mt-3 flex flex-col gap-3">
+          {section.disclosureRecords.map((r, i) => (
+            <div key={i} className="rounded-xl bg-card-soft/30 px-3.5 py-3">
+              <div className="flex items-center justify-between text-[11.5px] text-ink-faint">
+                <span>{formatSensitiveRecordTime(r.recordedAt)}</span>
+                <span>{r.recordType}</span>
+              </div>
+              <p className="mt-2 whitespace-pre-wrap text-[12.5px] leading-relaxed text-ink-soft">
+                {r.originalText}
+              </p>
+            </div>
+          ))}
         </div>
       )}
 
-      {/* 其他记录概览 */}
       {section.otherRecords && section.otherRecords.length > 0 && (
         <div className="mt-3 flex flex-col gap-3">
           {section.otherRecords.map((rec, i) => (

@@ -4,13 +4,12 @@ import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 import { MoonPhaseIcon } from "./MoonPhaseIcon";
 import VoiceInputBar from "./VoiceInputBar";
 import {
-  lookbackData,
-  moodLabel,
-  mealLabel,
-  medLabel,
+  buildMonthRange,
+  buildWeekRange,
+  getWeekStart,
   activityLabel,
+  sleepLevelLabel,
   type DailyLookbackData,
-  type LookbackRange,
   type Mood,
   type MoodEntry,
   type ActivityLevel,
@@ -23,6 +22,44 @@ const ease = [0.22, 1, 0.36, 1] as const;
 
 /* —— 页面背景：纯净白 —— */
 const PAGE_BG = "#FFFFFF";
+
+/* —— 字段对齐统一口径（与「记一下」保存态共用同一套字段 schema）——
+ * EMPTY：所有模块空值统一显示为「未记录」，不再出现「无」「—」「其余字段未记录」。
+ * moodWordLabel：情绪文字等级，与「记一下」primaryMoods 对齐（很糟/不太好/一般/还行/很好）。
+ * moodDisplay：情绪字段统一口径「一般（3/5）」，兼容趋势数字与语义。 */
+const EMPTY = "未记录";
+
+const moodWordLabel: Record<Mood, string> = {
+  1: "很糟",
+  2: "不太好",
+  3: "一般",
+  4: "还行",
+  5: "很好",
+};
+
+function moodDisplay(mood: Mood): string {
+  return `${moodWordLabel[mood]}（${mood}/5）`;
+}
+
+/* 时间字段统一口径：「M月D日 HH:MM」（如 7月10日 14:19），与「记一下」的「今天 HH:MM」
+ * 仅在日期前缀上按历史/今日语境区分，字段名「时间」保持一致。 */
+function formatRecordTime(displayDate: string, time: string | null): string {
+  return time ? `${displayDate} ${time}` : EMPTY;
+}
+
+/* HH:MM → 口语化时间段（如 23:10 → 晚上11点多），与「记一下」睡眠上床/入睡/起床 label 口径对齐。 */
+function toColloquialTime(hhmm: string | null): string {
+  if (!hhmm) return EMPTY;
+  const [h] = hhmm.split(":").map(Number);
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  let period: string;
+  if (h >= 5 && h < 12) period = "早上";
+  else if (h === 12) period = "中午";
+  else if (h >= 13 && h < 18) period = "下午";
+  else if (h >= 18) period = "晚上";
+  else period = "凌晨";
+  return `${period}${hour12}点多`;
+}
 
 /* —— 6 场景独立主题色（低饱和、生活记录感）——
  * 按 zaiya 五类颜色语义映射：status-mood / status-sleep / chart-line-3(饮食) /
@@ -91,14 +128,21 @@ const scenes: { key: SceneKey; label: string }[] = [
   { key: "weight", label: "体重" },
 ];
 
-/* —— 统一字号规则：各模块卡片和列表共用（避免各模块独立字号）—— */
+/* —— 统一字号规则：与「记一下」完成页对齐，正文不低于 14px ——
+ * cardTitle: 卡片标题/日期主信息 16px
+ * cardMeta: 极弱辅助（底部提示）12px
+ * chartAxisLabel: 图表坐标/单位 12px（不低于 11px）
+ * listDate: 列表日期 14px
+ * listWeekday: 星期等次级 12px
+ * listContent: 记录摘要主信息 14px
+ * listSecondary: BMI 解读/服药状态等次级 12px */
 const reviewTypography = {
-  cardTitle: 14,
-  cardMeta: 11,
-  chartAxisLabel: 10,
+  cardTitle: 16,
+  cardMeta: 12,
+  chartAxisLabel: 12,
   listDate: 14,
-  listWeekday: 10,
-  listContent: 13,
+  listWeekday: 12,
+  listContent: 14,
   listSecondary: 12,
 } as const;
 
@@ -114,31 +158,92 @@ const sceneVariants = {
   exit: (dir: number) => ({ x: dir > 0 ? "-100%" : "100%", opacity: 0.4 }),
 };
 
+/* —— 时间模式：按周查看 / 按月查看 —— */
+type TimeMode = "week" | "month";
+
+/* —— 月份 key：YYYY-MM（用于状态与比较）—— */
+function toMonthKey(year: number, month: number): string {
+  return `${year}-${month < 10 ? `0${month}` : `${month}`}`;
+}
+function parseMonthKey(key: string): { year: number; month: number } {
+  const [y, m] = key.split("-").map(Number);
+  return { year: y, month: m };
+}
+function monthLabelCN(key: string): string {
+  const { year, month } = parseMonthKey(key);
+  return `${year}年${month}月`;
+}
+
+/* —— 日期 key：YYYY-MM-DD（用于周状态）—— */
+function toDateKey(d: Date): string {
+  const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+function parseDateKey(key: string): Date {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+/* —— 周范围文案：7.6 - 7.12 —— */
+function weekRangeLabel(weekStartKey: string): string {
+  const start = parseDateKey(weekStartKey);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  return `${start.getMonth() + 1}.${start.getDate()} - ${end.getMonth() + 1}.${end.getDate()}`;
+}
+
 /* =========================================================
  * LookbackPage —— 单屏单场景 + 横滑切换
  * ======================================================= */
 export default function LookbackPage({ onBack }: { onBack: () => void }) {
-  const [range, setRange] = useState<LookbackRange>(14);
+  // 时间模式：默认「按周查看」
+  const [timeMode, setTimeMode] = useState<TimeMode>("week");
+  // 当前周起始（周一），默认本周
+  const [currentWeekStart, setCurrentWeekStart] = useState<string>(() => {
+    return toDateKey(getWeekStart(new Date()));
+  });
+  // 当前月份 key，默认本月
+  const [currentMonth, setCurrentMonth] = useState<string>(() => {
+    const now = new Date();
+    return toMonthKey(now.getFullYear(), now.getMonth() + 1);
+  });
+  const [timeDirection, setTimeDirection] = useState(0);
+
   const [sceneIdx, setSceneIdx] = useState(0);
-  const [direction, setDirection] = useState(0);
   // 详情抽屉：点某天打开；null = 关闭
   const [detailIdx, setDetailIdx] = useState<number | null>(null);
   // 编辑表单：null = 关闭
   const [editIdx, setEditIdx] = useState<number | null>(null);
+  // 全局 toast：挂载在手机内容区根节点，避免跟随 bottom sheet / 按钮局部布局漂移
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const toastTimer = useRef<number | null>(null);
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    if (toastTimer.current !== null) window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToastMsg(null), 1600);
+  };
+  useEffect(
+    () => () => {
+      if (toastTimer.current !== null) window.clearTimeout(toastTimer.current);
+    },
+    [],
+  );
 
   // 本地覆盖：按 date 维度记录被删除/被编辑后的数据
   // 删除：将该日期对应场景字段置空；编辑：覆盖该日期数据
   const [overrides, setOverrides] = useState<Record<string, Partial<DailyLookbackData>>>({});
 
-  const baseData = useMemo(() => lookbackData[range], [range]);
+  // 按时间模式派生数据：按周用 buildWeekRange；按月用 buildMonthRange
+  const baseData = useMemo(() => {
+    if (timeMode === "month") {
+      const { year, month } = parseMonthKey(currentMonth);
+      return buildMonthRange(year, month);
+    }
+    return buildWeekRange(parseDateKey(currentWeekStart));
+  }, [timeMode, currentWeekStart, currentMonth]);
   const data = useMemo(
     () => baseData.map((d) => (overrides[d.date] ? { ...d, ...overrides[d.date] } : d)),
     [baseData, overrides],
   );
-  const days = data.length;
-  const first = data[0];
-  const last = data[days - 1];
-  const rangeText = `${first.displayDate} - ${last.displayDate}`;
 
   const currentScene = scenes[sceneIdx];
   const detailDay = detailIdx !== null ? data[detailIdx] : null;
@@ -146,13 +251,38 @@ export default function LookbackPage({ onBack }: { onBack: () => void }) {
 
   const goScene = (idx: number) => {
     if (idx < 0 || idx >= scenes.length || idx === sceneIdx) return;
-    setDirection(idx > sceneIdx ? 1 : -1);
     setSceneIdx(idx);
     setDetailIdx(null);
   };
 
-  const changeRange = (r: LookbackRange) => {
-    setRange(r);
+  // 切换时间模式：保留当前分类，重置详情/编辑态
+  const changeTimeMode = (m: TimeMode) => {
+    if (m === timeMode) return;
+    setTimeMode(m);
+    setDetailIdx(null);
+    setEditIdx(null);
+  };
+
+  // 时间切换：按周左/右移 7 天；按月左/右移 1 月。不能超过当前时间。
+  const goTime = (delta: number) => {
+    setTimeDirection(delta);
+    if (timeMode === "week") {
+      const start = parseDateKey(currentWeekStart);
+      const newStart = new Date(start);
+      newStart.setDate(newStart.getDate() + delta * 7);
+      // 不能超过本周（未来周）
+      const thisWeekStart = getWeekStart(new Date());
+      if (newStart > thisWeekStart) return;
+      setCurrentWeekStart(toDateKey(newStart));
+    } else {
+      const { year, month } = parseMonthKey(currentMonth);
+      const d = new Date(year, month - 1 + delta, 1);
+      const now = new Date();
+      const nowKey = toMonthKey(now.getFullYear(), now.getMonth() + 1);
+      const newKey = toMonthKey(d.getFullYear(), d.getMonth() + 1);
+      if (newKey > nowKey) return; // 不能超过当前月
+      setCurrentMonth(newKey);
+    }
     setDetailIdx(null);
     setEditIdx(null);
   };
@@ -228,10 +358,20 @@ export default function LookbackPage({ onBack }: { onBack: () => void }) {
         </h2>
       </div>
 
-      {/* 时间范围切换 + 日期区间 */}
+      {/* 时间模式切换：按周查看 / 按月查看 */}
+      <div className="px-5 pb-2">
+        <TimeModeTabs value={timeMode} onChange={changeTimeMode} />
+      </div>
+
+      {/* 具体时间范围：按周显示 7.6 - 7.12；按月显示 2026年7月，左右箭头切换 */}
       <div className="px-5 pb-2.5">
-        <RangeTabs value={range} onChange={changeRange} />
-        <p className="mt-2 text-[12px] text-ink-faint">{rangeText}</p>
+        <TimeRangeSwitcher
+          timeMode={timeMode}
+          weekStartKey={currentWeekStart}
+          monthKey={currentMonth}
+          onPrev={() => goTime(-1)}
+          onNext={() => goTime(1)}
+        />
       </div>
 
       {/* 场景标签栏 */}
@@ -242,12 +382,12 @@ export default function LookbackPage({ onBack }: { onBack: () => void }) {
         theme={theme}
       />
 
-      {/* 主体：单场景横滑区 */}
+      {/* 主体：横滑切换时间（周/月）；分类通过上方标签栏切换 */}
       <div className="relative flex-1 overflow-hidden">
-        <AnimatePresence initial={false} custom={direction}>
+        <AnimatePresence initial={false} custom={timeDirection}>
           <motion.div
-            key={sceneIdx}
-            custom={direction}
+            key={`${sceneIdx}-${timeMode}-${currentWeekStart}-${currentMonth}`}
+            custom={timeDirection}
             variants={sceneVariants}
             initial="enter"
             animate="center"
@@ -259,10 +399,11 @@ export default function LookbackPage({ onBack }: { onBack: () => void }) {
             onDragEnd={(_, info) => {
               const offset = info.offset.x;
               const velocity = info.velocity.x;
+              // 左滑 → 下一周/月；右滑 → 上一周/月
               if (offset < -60 || velocity < -500) {
-                if (sceneIdx < scenes.length - 1) goScene(sceneIdx + 1);
+                goTime(1);
               } else if (offset > 60 || velocity > 500) {
-                if (sceneIdx > 0) goScene(sceneIdx - 1);
+                goTime(-1);
               }
             }}
             transition={{
@@ -274,6 +415,7 @@ export default function LookbackPage({ onBack }: { onBack: () => void }) {
             <ScenePanel
               sceneKey={currentScene.key}
               data={data}
+              timeMode={timeMode}
               onOpenDetail={setDetailIdx}
             />
           </motion.div>
@@ -290,7 +432,7 @@ export default function LookbackPage({ onBack }: { onBack: () => void }) {
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
-        <span className="text-[10px]">{currentScene.label}</span>
+        <span className="text-[12px]">{currentScene.label}</span>
         <button
           onClick={() => goScene(sceneIdx + 1)}
           disabled={sceneIdx === scenes.length - 1}
@@ -309,6 +451,7 @@ export default function LookbackPage({ onBack }: { onBack: () => void }) {
             sceneKey={currentScene.key}
             theme={theme}
             onClose={() => setDetailIdx(null)}
+            onToast={showToast}
             onEdit={() => {
               setEditIdx(detailIdx);
               setDetailIdx(null);
@@ -338,24 +481,40 @@ export default function LookbackPage({ onBack }: { onBack: () => void }) {
           />
         )}
       </AnimatePresence>
+
+      {/* 全局 toast layer：挂载在手机内容区根节点，水平居中基于整个手机内容区，
+       * 不跟随 bottom sheet / 按钮局部容器；bottom-sheet 场景下 bottom 留出圆角安全距离。 */}
+      <AnimatePresence>
+        {toastMsg && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.18, ease }}
+            className="pointer-events-none absolute bottom-24 left-1/2 z-[9999] -translate-x-1/2 max-w-[calc(100%-48px)] whitespace-nowrap rounded-full bg-ink/85 px-4 py-2 text-[12px] text-white shadow-[0_4px_14px_rgba(0,0,0,0.18)]"
+          >
+            {toastMsg}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
 /* =========================================================
- * RangeTabs —— 时间范围切换（中性灰白，不跟随场景主题色）
+ * TimeModeTabs —— 时间模式 segmented control（按周查看 / 按月查看）
+ * 轻量胶囊分段，不喧宾夺主
  * ======================================================= */
-function RangeTabs({
+function TimeModeTabs({
   value,
   onChange,
 }: {
-  value: LookbackRange;
-  onChange: (r: LookbackRange) => void;
+  value: TimeMode;
+  onChange: (m: TimeMode) => void;
 }) {
-  const tabs: { key: LookbackRange; label: string }[] = [
-    { key: 7, label: "近 7 天" },
-    { key: 14, label: "近 14 天" },
-    { key: 30, label: "近 30 天" },
+  const tabs: { key: TimeMode; label: string }[] = [
+    { key: "week", label: "按周查看" },
+    { key: "month", label: "按月查看" },
   ];
   return (
     <div
@@ -378,6 +537,55 @@ function RangeTabs({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+/* =========================================================
+ * TimeRangeSwitcher —— 时间范围切换器（‹ 7.6 - 7.12 › / ‹ 2026年7月 ›）
+ * 按周显示周范围，按月显示月份；左右箭头切换，不超过当前时间
+ * ======================================================= */
+function TimeRangeSwitcher({
+  timeMode,
+  weekStartKey,
+  monthKey,
+  onPrev,
+  onNext,
+}: {
+  timeMode: TimeMode;
+  weekStartKey: string;
+  monthKey: string;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  const now = new Date();
+  // 判断是否已到当前时间（右箭头禁用）
+  const isCurrent = timeMode === "week"
+    ? weekStartKey === toDateKey(getWeekStart(now))
+    : monthKey === toMonthKey(now.getFullYear(), now.getMonth() + 1);
+  const label = timeMode === "week"
+    ? weekRangeLabel(weekStartKey)
+    : monthLabelCN(monthKey);
+  return (
+    <div className="flex items-center justify-between py-0.5">
+      <button
+        onClick={onPrev}
+        aria-label={timeMode === "week" ? "上一周" : "上个月"}
+        className="grid h-9 w-9 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft active:scale-95"
+      >
+        <ChevronLeft className="h-5 w-5" />
+      </button>
+      <span className="flex-1 text-center text-[15px] font-medium text-ink">
+        {label}
+      </span>
+      <button
+        onClick={onNext}
+        disabled={isCurrent}
+        aria-label={timeMode === "week" ? "下一周" : "下个月"}
+        className="grid h-9 w-9 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft active:scale-95 disabled:opacity-25 disabled:hover:bg-transparent"
+      >
+        <ChevronRight className="h-5 w-5" />
+      </button>
     </div>
   );
 }
@@ -408,7 +616,7 @@ function SceneTabs({
             aria-label={s.label}
           >
             <span
-              className="text-[12px] font-medium transition-colors"
+              className="text-[13px] font-medium transition-colors"
               style={{
                 color: active ? theme.text : "#8B947D",
               }}
@@ -435,36 +643,75 @@ function SceneTabs({
 function ScenePanel({
   sceneKey,
   data,
+  timeMode,
   onOpenDetail,
 }: {
   sceneKey: SceneKey;
   data: DailyLookbackData[];
+  timeMode: TimeMode;
   onOpenDetail: (i: number) => void;
 }) {
   // 降序展示：最近一天在顶部
   const reversed = [...data].reverse();
-  // reversed[i] 对应原 data[days-1-i]
   const days = data.length;
+
+  // 空状态：按周/按月分别显示不同文案
+  if (days === 0) {
+    return (
+      <div className="no-scrollbar h-full overflow-y-auto px-4 pb-4 pt-1">
+        <div className="flex h-[60vh] flex-col items-center justify-center">
+          <p className="text-[14px] text-ink-faint">
+            {timeMode === "week" ? "这一周还没有记录" : "这个月还没有记录"}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // 按月份分组：reversed 已是降序，按 year-month 分组保持顺序
+  // 跨月时显示月份标题；同月不重复标题
+  const groups: { monthKey: string; label: string; items: { day: DailyLookbackData; originalIdx: number }[] }[] = [];
+  reversed.forEach((d) => {
+    const ri = reversed.indexOf(d);
+    const originalIdx = days - 1 - ri;
+    const [y, m] = d.date.split("-").map(Number);
+    const mk = toMonthKey(y, m);
+    const label = `${y}年${m}月`;
+    let g = groups.find((gg) => gg.monthKey === mk);
+    if (!g) {
+      g = { monthKey: mk, label, items: [] };
+      groups.push(g);
+    }
+    g.items.push({ day: d, originalIdx });
+  });
 
   return (
     <div className="no-scrollbar h-full overflow-y-auto px-4 pb-4 pt-1">
       {/* 趋势区：非卡片，轻量信息区块（浅背景区分，不再套卡） */}
       <TrendArea sceneKey={sceneKey} data={data} />
 
-      {/* 详情列表主卡：白底，分隔线区分行 */}
-      <div className="mt-4 overflow-hidden rounded-[20px] border border-line-soft bg-white shadow-[0_1px_3px_-1px_rgba(0,0,0,0.04)]">
-        {reversed.map((d, ri) => {
-          const originalIdx = days - 1 - ri;
-          return (
-            <DayRow
-              key={d.date}
-              sceneKey={sceneKey}
-              day={d}
-              onClick={() => onOpenDetail(originalIdx)}
-              isLast={ri === reversed.length - 1}
-            />
-          );
-        })}
+      {/* 详情列表：按月份分组，每组一个白底卡 */}
+      <div className="mt-4 flex flex-col gap-3">
+        {groups.map((g) => (
+          <div key={g.monthKey}>
+            {/* 月份分组标题 */}
+            <div className="mb-1.5 px-1 text-[12px] font-medium text-ink-faint">
+              {g.label}
+            </div>
+            {/* 当月详情卡 */}
+            <div className="overflow-hidden rounded-[20px] border border-line-soft bg-white shadow-[0_1px_3px_-1px_rgba(0,0,0,0.04)]">
+              {g.items.map((it, ii) => (
+                <DayRow
+                  key={it.day.date}
+                  sceneKey={sceneKey}
+                  day={it.day}
+                  onClick={() => onOpenDetail(it.originalIdx)}
+                  isLast={ii === g.items.length - 1}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -982,7 +1229,7 @@ function MoodBeadRail({
             <MoodBead mood={e.mood} theme={theme} size={size} />
           </span>
           {showTime && (
-            <span className="text-[10px]" style={{ color: theme.text, opacity: 0.45 }}>
+            <span className="text-[12px]" style={{ color: theme.text, opacity: 0.45 }}>
               {e.time}
             </span>
           )}
@@ -1168,7 +1415,7 @@ function MoodDetailContent({
 
   if (!entries || entries.length === 0) {
     return (
-      <div className="py-8 text-center text-[13px]" style={{ color: theme.text, opacity: 0.4 }}>
+      <div className="py-8 text-center text-[14px]" style={{ color: theme.text, opacity: 0.4 }}>
         未记录
       </div>
     );
@@ -1193,6 +1440,7 @@ function MoodDetailContent({
             key={idx}
             entry={entry}
             theme={theme}
+            displayDate={day.displayDate}
             isExpanded={expandedIdx === idx}
             onToggle={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
             isLast={idx === entries.length - 1}
@@ -1203,42 +1451,34 @@ function MoodDetailContent({
   );
 }
 
-/* —— 情绪记录折叠项 —— */
+/* —— 情绪记录折叠项 ——
+ * 字段与「记一下」情绪保存态完全一致：情绪 / 感受 / 原因 / 特殊情况 / 时间 / 补充说明。
+ * 不再出现「情绪词 / 触发事件 / 身体感受」旧名，也不再出现「其余字段未记录」伪字段。
+ * 情绪口径统一为「一般（3/5）」，空值统一为「未记录」。 */
 function MoodRecordAccordion({
   entry,
   theme,
+  displayDate,
   isExpanded,
   onToggle,
   isLast,
 }: {
   entry: MoodEntry;
   theme: Theme;
+  displayDate: string;
   isExpanded: boolean;
   onToggle: () => void;
   isLast: boolean;
 }) {
-  // 收集有内容的字段
-  const fields: { label: string; value: string }[] = [];
-  if (entry.moodWords && entry.moodWords.length > 0) {
-    fields.push({ label: "情绪词", value: entry.moodWords.join("、") });
-  }
-  if (entry.moodTrigger) {
-    fields.push({ label: "触发事件", value: entry.moodTrigger });
-  }
-  if (entry.moodBody) {
-    fields.push({ label: "身体感受", value: entry.moodBody });
-  }
-  if (entry.moodNote) {
-    fields.push({ label: "补充说明", value: entry.moodNote });
-  }
-
-  // 统计空字段数
-  const allFields = ["moodWords", "moodTrigger", "moodBody", "moodNote"];
-  const emptyCount = allFields.filter((f) => {
-    const v = entry[f as keyof MoodEntry];
-    return !v || (Array.isArray(v) && v.length === 0);
-  }).length;
-  const hasEmptyFields = emptyCount > 0;
+  // 固定字段顺序，与「记一下」情绪保存态一致
+  const fields: { label: string; value: string }[] = [
+    { label: "情绪", value: moodDisplay(entry.mood) },
+    { label: "感受", value: entry.moodWords?.join("、") ?? EMPTY },
+    { label: "原因", value: entry.moodTrigger ?? EMPTY },
+    { label: "特殊情况", value: entry.moodSpecial ?? EMPTY },
+    { label: "时间", value: formatRecordTime(displayDate, entry.time) },
+    { label: "补充说明", value: entry.moodNote ?? EMPTY },
+  ];
 
   return (
     <div
@@ -1252,16 +1492,16 @@ function MoodRecordAccordion({
         className="flex w-full items-center gap-3 py-3 text-left transition-colors hover:bg-line-soft/40"
       >
         {/* 时间 */}
-        <span className="w-12 shrink-0 text-[13px] font-medium" style={{ color: theme.text, opacity: 0.7 }}>
+        <span className="w-12 shrink-0 text-[14px] font-medium" style={{ color: theme.text, opacity: 0.7 }}>
           {entry.time}
         </span>
         {/* 情绪值 */}
-        <span className="shrink-0 text-[13px] font-medium" style={{ color: theme.text }}>
-          {moodLabel[entry.mood as Mood]}
+        <span className="shrink-0 text-[14px] font-medium" style={{ color: theme.text }}>
+          {moodDisplay(entry.mood)}
         </span>
         {/* 情绪词（收起态显示，展开态隐藏） */}
         {!isExpanded && entry.moodWords && entry.moodWords.length > 0 && (
-          <span className="flex-1 truncate text-[12px]" style={{ color: theme.text, opacity: 0.5 }}>
+          <span className="flex-1 truncate text-[13px]" style={{ color: theme.text, opacity: 0.5 }}>
             {entry.moodWords.join("、")}
           </span>
         )}
@@ -1287,42 +1527,78 @@ function MoodRecordAccordion({
             className="overflow-hidden"
           >
             <div className="pb-3 pl-[60px]">
-              {/* 情绪值（详情中也展示） */}
-              <div className="mb-2 flex items-baseline gap-2">
-                <span className="text-[12px]" style={{ color: theme.text, opacity: 0.5 }}>情绪</span>
-                <span className="text-[13px] font-medium" style={{ color: theme.text }}>
-                  {moodLabel[entry.mood as Mood]}
-                </span>
+              <div className="flex flex-col gap-2">
+                {fields.map((f, i) => (
+                  <div key={i} className="flex flex-col gap-0.5">
+                    <span className="text-[13px]" style={{ color: theme.text, opacity: 0.5 }}>
+                      {f.label}
+                    </span>
+                    <span className="text-[14px]" style={{ color: theme.text }}>
+                      {f.value}
+                    </span>
+                  </div>
+                ))}
               </div>
-              {/* 有内容的字段 */}
-              {fields.length > 0 ? (
-                <div className="flex flex-col gap-2">
-                  {fields.map((f, i) => (
-                    <div key={i} className="flex flex-col gap-0.5">
-                      <span className="text-[12px]" style={{ color: theme.text, opacity: 0.5 }}>
-                        {f.label}
-                      </span>
-                      <span className="text-[13px]" style={{ color: theme.text }}>
-                        {f.value}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-[12px]" style={{ color: theme.text, opacity: 0.4 }}>
-                  仅记录了情绪值
-                </div>
-              )}
-              {/* 空字段统一提示 */}
-              {hasEmptyFields && fields.length > 0 && (
-                <div className="mt-2 text-[11px]" style={{ color: theme.text, opacity: 0.35 }}>
-                  其余字段未记录
-                </div>
-              )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+/* —— 饮食详情：按餐次分组展示 ——
+ * 三餐完整时按餐次独立小分组，组间 16px 间距；每组内字段 row 样式统一，
+ * 字段值允许换行不撑破弹层。字段与「记一下」饮食保存态一致：
+ * 吃了什么 / 吃完感受 / 时间 / 补充说明。 */
+function MealDetailGroups({
+  day,
+  theme,
+}: {
+  day: DailyLookbackData;
+  theme: Theme;
+}) {
+  const entries = day.mealEntries;
+  if (!entries || entries.length === 0) {
+    return (
+      <div className="py-8 text-center text-[14px]" style={{ color: theme.text, opacity: 0.4 }}>
+        未记录
+      </div>
+    );
+  }
+  const rowCls = "flex items-start justify-between gap-3 py-2";
+  const labelCls = "w-[72px] shrink-0 text-[14px]";
+  const labelStyle = { color: theme.text, opacity: 0.6 } as const;
+  const valueCls = "min-w-0 flex-1 text-right text-[14px] break-words [overflow-wrap:anywhere]";
+  const valueStyle = { color: theme.text } as const;
+  return (
+    <div className="flex flex-col" style={{ gap: "16px" }}>
+      {entries.map((entry, idx) => (
+        <div key={idx} className="flex flex-col">
+          <div
+            className="pb-1 text-[14px] font-medium"
+            style={{ color: theme.text, opacity: 0.85 }}
+          >
+            {entry.mealType}
+          </div>
+          <div className={rowCls}>
+            <span className={labelCls} style={labelStyle}>吃了什么</span>
+            <span className={valueCls} style={valueStyle}>{entry.food ?? EMPTY}</span>
+          </div>
+          <div className={rowCls}>
+            <span className={labelCls} style={labelStyle}>吃完感受</span>
+            <span className={valueCls} style={valueStyle}>{entry.feeling ?? EMPTY}</span>
+          </div>
+          <div className={rowCls}>
+            <span className={labelCls} style={labelStyle}>时间</span>
+            <span className={valueCls} style={valueStyle}>{formatRecordTime(day.displayDate, entry.time)}</span>
+          </div>
+          <div className={rowCls}>
+            <span className={labelCls} style={labelStyle}>补充说明</span>
+            <span className={valueCls} style={valueStyle}>{entry.note ?? EMPTY}</span>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -1336,18 +1612,21 @@ function DetailSheet({
   sceneKey,
   theme,
   onClose,
-  onEdit,
-  onDelete,
+  onToast,
 }: {
   day: DailyLookbackData;
   sceneKey: SceneKey;
   theme: Theme;
   onClose: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
+  /* onToast：轻量提示回调，由 LookbackPage 根节点统一挂载到手机内容区全局 toast layer，
+   * 避免在 bottom sheet / 按钮局部容器内渲染导致水平居中漂移。 */
+  onToast: (msg: string) => void;
+  /* onEdit / onDelete：Demo 阶段暂未开放真实修改 / 删除。
+   * 保留菜单入口仅为表明详情卡未来支持管理操作；点击仅给轻量提示，不触发任何流程。 */
+  onEdit?: () => void;
+  onDelete?: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const rows = buildDetailRows(sceneKey, day);
@@ -1366,12 +1645,12 @@ function DetailSheet({
 
   const handleEdit = () => {
     setMenuOpen(false);
-    onEdit();
+    onToast("Demo 阶段暂未开放");
   };
 
   const handleDeleteClick = () => {
     setMenuOpen(false);
-    setConfirmOpen(true);
+    onToast("Demo 阶段暂未开放");
   };
 
   return (
@@ -1385,9 +1664,9 @@ function DetailSheet({
         transition={{ duration: 0.25, ease }}
         onClick={onClose}
       />
-      {/* 抽屉：固定高度 + 内部滚动 + 下拉关闭 */}
+      {/* 抽屉：高度受控 + 内部滚动 + 下拉关闭；max-h 控制在手机内容区 76%，避免被内容撑满 */}
       <motion.div
-        className="absolute inset-x-0 bottom-0 z-50 flex max-h-[82vh] flex-col rounded-t-[24px] bg-white shadow-[0_-8px_30px_-12px_rgba(0,0,0,0.15)]"
+        className="absolute inset-x-0 bottom-0 z-50 flex max-h-[76%] flex-col rounded-t-[24px] bg-white shadow-[0_-8px_30px_-12px_rgba(0,0,0,0.15)]"
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
@@ -1410,16 +1689,16 @@ function DetailSheet({
         <div className="mb-3 flex shrink-0 items-start justify-between px-6">
           <div>
             <div className="flex items-baseline gap-2">
-              <span className="text-[15px] font-semibold" style={{ color: theme.text }}>
+              <span className="text-[16px] font-semibold" style={{ color: theme.text }}>
                 {day.displayDate}
               </span>
-              <span className="text-[11px]" style={{ color: theme.text, opacity: 0.5 }}>
+              <span className="text-[12px]" style={{ color: theme.text, opacity: 0.5 }}>
                 {weekday(day.date)}
               </span>
             </div>
             {/* 情绪场景：当天记录次数摘要 */}
             {sceneKey === "mood" && (
-              <div className="mt-1 text-[11px]" style={{ color: theme.text, opacity: 0.45 }}>
+              <div className="mt-1 text-[12px]" style={{ color: theme.text, opacity: 0.45 }}>
                 {day.moodEntries && day.moodEntries.length > 0
                   ? `当天共 ${day.moodEntries.length} 次记录`
                   : "未记录"}
@@ -1451,13 +1730,13 @@ function DetailSheet({
                 >
                   <button
                     onClick={handleEdit}
-                    className="flex w-full items-center px-3 py-2 text-left text-[13px] text-ink transition-colors hover:bg-line-soft"
+                    className="flex w-full items-center px-3 py-2 text-left text-[14px] text-ink transition-colors hover:bg-line-soft"
                   >
                     修改记录
                   </button>
                   <button
                     onClick={handleDeleteClick}
-                    className="flex w-full items-center px-3 py-2 text-left text-[13px] text-ink transition-colors hover:bg-line-soft"
+                    className="flex w-full items-center px-3 py-2 text-left text-[14px] text-ink transition-colors hover:bg-line-soft"
                   >
                     删除记录
                   </button>
@@ -1467,90 +1746,43 @@ function DetailSheet({
           </div>
         </div>
 
-        {/* 内容区：可滚动 */}
-        <div className="no-scrollbar flex-1 overflow-y-auto px-6 pb-8">
+        {/* 内容区：可滚动；min-h-0 保证 flex 子项内部 overflow 生效，不被内容撑满 */}
+        <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-6 pb-8">
           {sceneKey === "mood" ? (
             <MoodDetailContent day={day} theme={theme} />
+          ) : sceneKey === "meals" ? (
+            /* 饮食详情：按餐次分组展示，每餐独立小分组，组间留白 */
+            <MealDetailGroups day={day} theme={theme} />
           ) : (
-            /* 字段列表（非情绪场景） */
+            /* 字段列表（非情绪 / 非饮食场景） */
             <div className="flex flex-col divide-y" style={{ borderColor: theme.softer }}>
-              {rows.map((r, i) => (
-                <div
-                  key={i}
-                  className="flex items-baseline justify-between gap-4 py-3"
-                  style={{ borderTop: i === 0 ? "none" : `1px solid ${theme.softer}` }}
-                >
-                  <span className="text-[13px]" style={{ color: theme.text, opacity: 0.6 }}>
-                    {r.k}
-                  </span>
-                  <span className="text-right text-[14px]" style={{ color: theme.text }}>
-                    {r.v}
-                  </span>
-                </div>
-              ))}
+              {rows.map((r, i) =>
+                r.spacer ? (
+                  /* 多条记录之间的间隔（不渲染字段，仅留白） */
+                  <div key={i} className="h-3" />
+                ) : (
+                  <div
+                    key={i}
+                    className="flex items-start justify-between gap-3 py-3"
+                    style={{ borderTop: i === 0 ? "none" : `1px solid ${theme.softer}` }}
+                  >
+                    <span
+                      className="w-[72px] shrink-0 text-[14px]"
+                      style={{ color: theme.text, opacity: 0.6 }}
+                    >
+                      {r.k}
+                    </span>
+                    <span
+                      className="min-w-0 flex-1 text-right text-[14px] break-words [overflow-wrap:anywhere]"
+                      style={{ color: theme.text }}
+                    >
+                      {r.v}
+                    </span>
+                  </div>
+                ),
+              )}
             </div>
           )}
-        </div>
-      </motion.div>
-
-      {/* 删除二次确认：底部确认层 */}
-      <AnimatePresence>
-        {confirmOpen && (
-          <DeleteConfirm
-            onCancel={() => setConfirmOpen(false)}
-            onConfirm={() => {
-              setConfirmOpen(false);
-              onDelete();
-            }}
-          />
-        )}
-      </AnimatePresence>
-    </>
-  );
-}
-
-/* —— 删除二次确认：底部确认层 —— */
-function DeleteConfirm({
-  onCancel,
-  onConfirm,
-}: {
-  onCancel: () => void;
-  onConfirm: () => void;
-}) {
-  return (
-    <>
-      <motion.div
-        className="absolute inset-0 z-[60] bg-black/40"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2, ease }}
-        onClick={onCancel}
-      />
-      <motion.div
-        className="absolute inset-x-0 bottom-0 z-[61] rounded-t-[20px] bg-white px-6 pb-8 pt-5"
-        initial={{ y: "100%" }}
-        animate={{ y: 0 }}
-        exit={{ y: "100%" }}
-        transition={{ type: "spring", stiffness: 320, damping: 32 }}
-      >
-        <div className="mb-5">
-          <div className="text-[16px] font-semibold text-ink">删除这条记录？</div>
-        </div>
-        <div className="flex flex-col gap-2.5">
-          <button
-            onClick={onConfirm}
-            className="w-full rounded-xl py-3 text-[15px] font-medium text-white transition-transform active:scale-[0.98]"
-            style={{ backgroundColor: "var(--z-risk-medium)" }}
-          >
-            删除
-          </button>
-          <button
-            onClick={onCancel}
-            className="w-full rounded-xl bg-line-soft py-3 text-[15px] text-ink-soft transition-colors hover:bg-line"
-          >
-            取消
-          </button>
         </div>
       </motion.div>
     </>
@@ -1734,6 +1966,7 @@ function buildPatch(
           moodTrigger: form.moodTrigger || null,
           moodBody: form.moodBody || null,
           moodNote: form.moodNote || null,
+          moodSpecial: null,
         }];
       } else {
         moodPatch.moodEntries = null;
@@ -1803,7 +2036,7 @@ function FormField({
 }) {
   return (
     <div className="mb-5">
-      <div className="mb-2 text-[13px] font-medium text-ink">{label}</div>
+      <div className="mb-2 text-[14px] font-medium text-ink">{label}</div>
       {children}
     </div>
   );
@@ -2233,69 +2466,103 @@ function WeightEditForm({
   );
 }
 
-/* —— 详情抽屉字段：按场景构建 —— */
+/* —— 详情抽屉字段：按场景构建（与「记一下」保存态共用同一套字段 schema）
+ * 字段名称 / 字段顺序 / 空值口径均以「记一下」保存态为基准：
+ *   - 空值统一显示「未记录」（EMPTY）
+ *   - 多条记录之间用 spacer 行留白，不再用空字符串占位
+ *   - 数字 + 文案字段统一口径：情绪「一般（3/5）」、BMI「21.3（正常）」、体重「52.4 kg」
+ * 列表层（日汇总）由 ScenePanel 负责，本函数只产出单条记录详情字段。 —— */
 function buildDetailRows(
   sceneKey: SceneKey,
   day: DailyLookbackData,
-): { k: string; v: string }[] {
+): { k: string; v: string; spacer?: boolean }[] {
   switch (sceneKey) {
     case "mood": {
-      // 日内多条情绪记录：每条记录展开为一组字段
+      // 情绪详情实际由 MoodDetailContent 渲染（折叠列表），此分支保留与
+      // 「记一下」保存态一致的字段配置，供统一口径校验。
+      // 基准：情绪 / 感受 / 原因 / 特殊情况 / 时间 / 补充说明
       const entries = day.moodEntries;
       if (!entries || entries.length === 0) {
-        return [{ k: "情绪", v: "未记录" }];
+        return [{ k: "情绪", v: EMPTY }];
       }
-      // 多条记录时，每条记录独立展示
-      const rows: { k: string; v: string }[] = [];
+      const rows: { k: string; v: string; spacer?: boolean }[] = [];
       entries.forEach((entry, idx) => {
-        const prefix = entries.length > 1 ? `${entry.time} ` : "";
-        rows.push({ k: `${prefix}情绪`, v: moodLabel[entry.mood as Mood] });
-        rows.push({ k: `${prefix}情绪词`, v: entry.moodWords?.join("、") ?? "未记录" });
-        rows.push({ k: `${prefix}触发事件`, v: entry.moodTrigger ?? "未记录" });
-        rows.push({ k: `${prefix}身体感受`, v: entry.moodBody ?? "未记录" });
-        rows.push({ k: `${prefix}补充说明`, v: entry.moodNote ?? "—" });
-        // 多条记录之间加分行（空行）
-        if (idx < entries.length - 1) {
-          rows.push({ k: "", v: "" });
-        }
+        rows.push({ k: "情绪", v: moodDisplay(entry.mood) });
+        rows.push({ k: "感受", v: entry.moodWords?.join("、") ?? EMPTY });
+        rows.push({ k: "原因", v: entry.moodTrigger ?? EMPTY });
+        rows.push({ k: "特殊情况", v: entry.moodSpecial ?? EMPTY });
+        rows.push({ k: "时间", v: formatRecordTime(day.displayDate, entry.time) });
+        rows.push({ k: "补充说明", v: entry.moodNote ?? EMPTY });
+        if (idx < entries.length - 1) rows.push({ k: "", v: "", spacer: true });
       });
       return rows;
     }
     case "sleep": {
-      const duration =
-        day.sleepDurationMin !== null
-          ? `${Math.floor(day.sleepDurationMin / 60)}小时${day.sleepDurationMin % 60}分钟`
-          : "未记录";
+      // 基准：睡眠 / 感受 / 上床 / 入睡 / 起床 / 夜醒 / 时间 / 补充说明
+      const level = day.sleepLevel;
       return [
-        { k: "入睡", v: day.sleepTime ?? "未记录" },
-        { k: "醒来", v: day.wakeTime ?? "未记录" },
-        { k: "睡眠时长", v: duration },
-        { k: "夜醒", v: day.nightWake ?? "未记录" },
-        { k: "醒后感受", v: day.wakeFeeling ?? "未记录" },
+        { k: "睡眠", v: level !== null ? (sleepLevelLabel[level] ?? EMPTY) : EMPTY },
+        { k: "感受", v: day.wakeFeeling ?? EMPTY },
+        { k: "上床", v: day.sleepBedTime ?? EMPTY },
+        { k: "入睡", v: toColloquialTime(day.sleepTime) },
+        { k: "起床", v: toColloquialTime(day.wakeTime) },
+        { k: "夜醒", v: day.nightWake ?? EMPTY },
+        { k: "时间", v: formatRecordTime(day.displayDate, day.sleepRecordTime) },
+        { k: "补充说明", v: day.sleepNote ?? EMPTY },
       ];
     }
-    case "meals":
+    case "meals": {
+      // 单条饮食记录：餐次 / 吃了什么 / 吃完感受 / 时间 / 补充说明
+      const entries = day.mealEntries;
+      if (!entries || entries.length === 0) {
+        return [{ k: "餐次", v: EMPTY }];
+      }
+      const rows: { k: string; v: string; spacer?: boolean }[] = [];
+      entries.forEach((entry, idx) => {
+        rows.push({ k: "餐次", v: entry.mealType });
+        rows.push({ k: "吃了什么", v: entry.food ?? EMPTY });
+        rows.push({ k: "吃完感受", v: entry.feeling ?? EMPTY });
+        rows.push({ k: "时间", v: formatRecordTime(day.displayDate, entry.time) });
+        rows.push({ k: "补充说明", v: entry.note ?? EMPTY });
+        if (idx < entries.length - 1) rows.push({ k: "", v: "", spacer: true });
+      });
+      return rows;
+    }
+    case "med": {
+      // 单条服用记录：时段 / 起效 / 感受 / 时间 / 补充说明
+      const entries = day.medEntries;
+      if (!entries || entries.length === 0) {
+        return [{ k: "时段", v: EMPTY }];
+      }
+      const rows: { k: string; v: string; spacer?: boolean }[] = [];
+      entries.forEach((entry, idx) => {
+        rows.push({
+          k: "时段",
+          v: `${entry.slot}${entry.slotTime ? ` ${entry.slotTime}` : ""}`,
+        });
+        rows.push({ k: "起效", v: entry.effectTime ?? EMPTY });
+        rows.push({ k: "感受", v: entry.feeling ?? EMPTY });
+        rows.push({ k: "时间", v: formatRecordTime(day.displayDate, entry.time) });
+        rows.push({ k: "补充说明", v: entry.note ?? EMPTY });
+        if (idx < entries.length - 1) rows.push({ k: "", v: "", spacer: true });
+      });
+      return rows;
+    }
+    case "activity": {
+      // 基准：活动 / 具体活动 / 时长 / 感受 / 时间 / 补充说明
       return [
-        { k: "早餐", v: mealLabel[day.meals.breakfast] },
-        { k: "午餐", v: mealLabel[day.meals.lunch] },
-        { k: "晚餐", v: mealLabel[day.meals.dinner] },
-        { k: "饭后感受", v: day.mealFeeling ?? "未记录" },
+        { k: "活动", v: day.activityLevel !== null ? activityLabel[day.activityLevel] : EMPTY },
+        { k: "具体活动", v: day.activityContent ?? EMPTY },
+        { k: "时长", v: day.activityDuration ?? EMPTY },
+        { k: "感受", v: day.activityFeeling ?? EMPTY },
+        { k: "时间", v: formatRecordTime(day.displayDate, day.activityRecordTime) },
+        { k: "补充说明", v: day.activityNote ?? EMPTY },
       ];
-    case "med":
-      return [
-        { k: "早", v: medLabel[day.medication.morning] },
-        { k: "晚", v: medLabel[day.medication.evening] },
-        { k: "改动说明", v: day.medChangeNote ?? "无" },
-      ];
-    case "activity":
-      return [
-        { k: "活动等级", v: day.activityLevel !== null ? activityLabel[day.activityLevel] : "未记录" },
-        { k: "活动内容", v: day.activityContent ?? "—" },
-        { k: "补充说明", v: day.activityNote ?? "—" },
-      ];
+    }
     case "weight": {
+      // 基准：体重 / BMI / 场景 / 时间 / 补充说明
       if (day.weight === null) {
-        return [{ k: "体重", v: "未记录" }];
+        return [{ k: "体重", v: EMPTY }];
       }
       const profile = getUserProfile();
       const bmi = calculateBMI(day.weight, profile.heightCm);
@@ -2303,6 +2570,9 @@ function buildDetailRows(
       return [
         { k: "体重", v: `${day.weight} kg` },
         { k: "BMI", v: `${bmi}（${annotation}）` },
+        { k: "场景", v: day.weightMeasureContext ?? EMPTY },
+        { k: "时间", v: formatRecordTime(day.displayDate, day.weightRecordTime) },
+        { k: "补充说明", v: day.weightNote ?? EMPTY },
       ];
     }
   }

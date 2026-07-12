@@ -77,15 +77,6 @@ export type RecordType = {
   mockRecentSummary: { date: string; text: string };
 };
 
-/* —— 通用身体感受选项（复用） —— */
-const bodyFeelingOptions: StepOption[] = [
-  { label: "胃堵", value: "stomach" },
-  { label: "恶心", value: "nausea" },
-  { label: "肚子疼", value: "belly" },
-  { label: "心慌", value: "heart" },
-  { label: "没力气", value: "tired" },
-];
-
 export const recordTypes: RecordType[] = [
   {
     id: "mood",
@@ -109,92 +100,12 @@ export const recordTypes: RecordType[] = [
     hasCompletenessExtras: true,
     mockRecentSummary: {
       date: "7月4日",
-      text: "早 8:00 服药，无不适。",
+      text: "早上那顿药已记，半小时后有轻微嗜睡。",
     },
-    steps: [
-      {
-        id: "status",
-        question: "今天药吃了吗？",
-        field: "status",
-        inputType: "segmented",
-        // 服药状态需结构化，不允许自由输入；后续感觉/补充页可保留
-        allowCustom: false,
-        options: [
-          { label: "已服", value: "taken" },
-          { label: "未服", value: "not_taken" },
-          { label: "漏服", value: "missed", abnormal: true },
-          { label: "改动", value: "changed", abnormal: true },
-        ],
-        branches: {
-          taken: "timing",
-          missed: "missedReason",
-          changed: "changedReason",
-          not_taken: "note",
-        },
-      },
-      {
-        id: "timing",
-        question: "服用时间正常吗？",
-        field: "timing",
-        inputType: "segmented",
-        options: [
-          { label: "正常", value: "normal" },
-          { label: "延迟", value: "late" },
-          { label: "提前", value: "early" },
-        ],
-        nextStepId: "feeling",
-        extra: true,
-      },
-      {
-        id: "missedReason",
-        question: "更像是哪种情况？",
-        field: "missedReason",
-        inputType: "segmented",
-        options: [
-          { label: "忘了", value: "forgot" },
-          { label: "出门没带", value: "no_med" },
-          { label: "不舒服没吃", value: "unwell" },
-          { label: "时间冲突", value: "conflict" },
-        ],
-        nextStepId: "note",
-        extra: true,
-      },
-      {
-        id: "changedReason",
-        question: "改动原因？",
-        field: "changedReason",
-        inputType: "segmented",
-        options: [
-          { label: "方案调整", value: "adjust" },
-          { label: "时间冲突", value: "conflict" },
-          { label: "副作用", value: "side_effect" },
-        ],
-        nextStepId: "note",
-        extra: true,
-      },
-      {
-        id: "feeling",
-        question: "服用后感受？",
-        field: "feeling",
-        inputType: "segmented",
-        options: [
-          { label: "无不适", value: "ok" },
-          { label: "胃不适", value: "stomach" },
-          { label: "犯困", value: "drowsy" },
-          { label: "心慌", value: "heart" },
-        ],
-        nextStepId: "note",
-        extra: true,
-      },
-      {
-        id: "note",
-        question: "还想补一句的话，可以写在这里。",
-        field: "note",
-        inputType: "text",
-        isLast: true,
-        extra: true,
-      },
-    ],
+    // 服用类型使用独立的 MedicationRecordWizard 组件渲染（3 步分页：
+    // 1 服药时段 / 2 起效时间 / 3 身体感受），不走通用 wizard step 系统，
+    // steps 留空。
+    steps: [],
   },
   {
     id: "food",
@@ -206,88 +117,10 @@ export const recordTypes: RecordType[] = [
       date: "7月5日",
       text: "午饭吃了一点，饭后胃堵。",
     },
-    steps: [
-      {
-        id: "meal",
-        question: "记的是哪一餐？",
-        field: "meal",
-        inputType: "segmented",
-        options: [
-          { label: "早饭", value: "breakfast" },
-          { label: "午饭", value: "lunch" },
-          { label: "晚饭", value: "dinner" },
-          { label: "加餐", value: "snack" },
-        ],
-        nextStepId: "amount",
-      },
-      {
-        id: "amount",
-        question: "吃了多少？",
-        field: "amount",
-        inputType: "segmented",
-        // 食量需结构化（没吃/吃了一点/正常/不舒服），不允许自由输入
-        allowCustom: false,
-        options: [
-          { label: "正常", value: "normal" },
-          { label: "吃了一点", value: "little", abnormal: true },
-          { label: "没吃", value: "none", abnormal: true },
-          { label: "不舒服", value: "unwell", abnormal: true },
-        ],
-        branches: {
-          little: "reason",
-          none: "reason",
-          unwell: "bodyFeeling",
-          normal: "afterFeeling",
-        },
-      },
-      {
-        id: "reason",
-        question: "更像是哪种情况？",
-        field: "reason",
-        inputType: "segmented",
-        options: [
-          { label: "没胃口", value: "no_appetite" },
-          { label: "忘了", value: "forgot" },
-          { label: "吃不下", value: "cant_eat" },
-          { label: "身体不舒服", value: "unwell", abnormal: true },
-        ],
-        branches: { unwell: "bodyFeeling" },
-        // 非 unwell → afterFeeling
-        nextStepId: "afterFeeling",
-        extra: true,
-      },
-      {
-        id: "bodyFeeling",
-        question: "哪里最明显？",
-        field: "bodyFeeling",
-        inputType: "segmented",
-        options: bodyFeelingOptions,
-        nextStepId: "afterFeeling",
-        extra: true,
-      },
-      {
-        id: "afterFeeling",
-        question: "饭后身体感受？",
-        field: "afterFeeling",
-        inputType: "segmented",
-        photoAllowed: true,
-        options: [
-          ...bodyFeelingOptions,
-          { label: "还好", value: "ok" },
-        ],
-        nextStepId: "note",
-        extra: true,
-      },
-      {
-        id: "note",
-        question: "还想补一句的话，可以写在这里。",
-        field: "note",
-        inputType: "text",
-        isLast: true,
-        photoAllowed: true,
-        extra: true,
-      },
-    ],
+    // 饮食类型使用独立的 MealRecordWizard 组件渲染（4 步分页流程，
+    // 与情绪模块一致：一页只做一个判断，不使用折叠/多餐位展开式表单），
+    // 不走通用 wizard step 系统，steps 留空。
+    steps: [],
   },
   {
     id: "sleep",
@@ -299,94 +132,15 @@ export const recordTypes: RecordType[] = [
       date: "7月5日",
       text: "入睡较晚，夜里醒过一次。",
     },
-    steps: [
-      {
-        id: "quality",
-        question: "睡眠怎么样？",
-        field: "quality",
-        inputType: "segmented",
-        // 睡眠质量需结构化，不允许自由输入
-        allowCustom: false,
-        options: [
-          { label: "不好", value: "bad", abnormal: true },
-          { label: "一般", value: "ok" },
-          { label: "还行", value: "fine" },
-          { label: "很好", value: "good" },
-        ],
-        branches: { bad: "issues" },
-        nextStepId: "sleepTime",
-      },
-      {
-        id: "issues",
-        question: "更像是哪种情况？",
-        field: "issues",
-        inputType: "segmented",
-        options: [
-          { label: "夜醒", value: "wake" },
-          { label: "难入睡", value: "hard_sleep" },
-          { label: "早醒", value: "early_wake" },
-          { label: "多梦", value: "dream" },
-          { label: "噩梦", value: "nightmare" },
-          { label: "睡不沉", value: "light" },
-        ],
-        nextStepId: "sleepTime",
-        extra: true,
-      },
-      {
-        id: "sleepTime",
-        question: "大概几点睡着的？",
-        field: "sleepTime",
-        inputType: "segmented",
-        // 入睡时间需结构化，不允许自由输入
-        allowCustom: false,
-        options: [
-          { label: "23 点前", value: "before_23" },
-          { label: "23–24 点", value: "23_24" },
-          { label: "0–1 点", value: "0_1" },
-          { label: "1 点后", value: "after_1", abnormal: true },
-        ],
-        nextStepId: "wakeTime",
-      },
-      {
-        id: "wakeTime",
-        question: "早上几点醒的？",
-        field: "wakeTime",
-        inputType: "segmented",
-        // 起床时间需结构化，不允许自由输入
-        allowCustom: false,
-        options: [
-          { label: "6 点前", value: "before_6" },
-          { label: "6–7 点", value: "6_7" },
-          { label: "7–8 点", value: "7_8" },
-          { label: "8 点后", value: "after_8" },
-        ],
-        nextStepId: "wakeState",
-      },
-      {
-        id: "wakeState",
-        question: "醒后状态？",
-        field: "wakeState",
-        inputType: "segmented",
-        // 醒后状态需结构化，不允许自由输入
-        allowCustom: false,
-        options: [
-          { label: "累", value: "tired" },
-          { label: "昏沉", value: "groggy" },
-          { label: "还好", value: "ok" },
-          { label: "清醒", value: "fresh" },
-        ],
-        nextStepId: "note",
-        extra: true,
-      },
-      {
-        id: "note",
-        question: "还想补一句的话，可以写在这里。",
-        field: "note",
-        inputType: "text",
-        isLast: true,
-        extra: true,
-      },
-    ],
+    // 睡眠类型使用独立的 SleepRecordWizard 组件渲染（7 步分页流程，
+    // 与情绪 / 饮食 / 服用模块一致：一页只做一个判断，所有时间均使用范围选项，
+    // 不使用滚轮 / 分钟输入，时间步骤允许跳过）：
+    //   1 整体睡眠感受（单选自动进入） / 2 具体睡眠感受（按 level 动态多选） /
+    //   3 大概上床时间 / 4 大概入睡时间 / 5 大概醒来或起床时间 /
+    //   6 夜里醒着大概多久（3-6 均为范围单选，含「记不清」选项） /
+    //   7 完整信息确认页
+    // 不走通用 wizard step 系统，steps 留空。
+    steps: [],
   },
   {
     id: "activity",
@@ -398,78 +152,12 @@ export const recordTypes: RecordType[] = [
       date: "7月4日",
       text: "下午出门散步 20 分钟，身体轻松。",
     },
-    steps: [
-      {
-        id: "type",
-        question: "是什么活动？",
-        field: "type",
-        inputType: "segmented",
-        options: [
-          { label: "出门", value: "out" },
-          { label: "运动", value: "exercise" },
-          { label: "上学/学习", value: "study" },
-          { label: "家务", value: "housework" },
-          { label: "其他", value: "other" },
-        ],
-        nextStepId: "completion",
-      },
-      {
-        id: "completion",
-        question: "完成程度？",
-        field: "completion",
-        inputType: "segmented",
-        // 完成程度需结构化，不允许自由输入（自由输入仅用于活动内容 type）
-        allowCustom: false,
-        options: [
-          { label: "没开始", value: "none", abnormal: true },
-          { label: "做了一点", value: "some" },
-          { label: "基本完成", value: "mostly" },
-          { label: "完成", value: "done" },
-        ],
-        nextStepId: "bodyChange",
-      },
-      {
-        id: "bodyChange",
-        question: "身体变化？",
-        field: "bodyChange",
-        inputType: "segmented",
-        // 身体变化需结构化，不允许自由输入
-        allowCustom: false,
-        options: [
-          { label: "累", value: "tired" },
-          { label: "轻松", value: "light" },
-          { label: "疼", value: "pain" },
-          { label: "出汗", value: "sweat" },
-          { label: "无变化", value: "none" },
-        ],
-        nextStepId: "moodChange",
-        extra: true,
-      },
-      {
-        id: "moodChange",
-        question: "情绪变化？",
-        field: "moodChange",
-        inputType: "segmented",
-        // 情绪变化需结构化，不允许自由输入
-        allowCustom: false,
-        options: [
-          { label: "更稳", value: "steady" },
-          { label: "更闷", value: "stuffy" },
-          { label: "更轻", value: "light" },
-          { label: "无变化", value: "none" },
-        ],
-        nextStepId: "note",
-        extra: true,
-      },
-      {
-        id: "note",
-        question: "还想补一句的话，可以写在这里。",
-        field: "note",
-        inputType: "text",
-        isLast: true,
-        extra: true,
-      },
-    ],
+    // 活动类型使用独立的 ActivityRecordWizard 组件渲染（5 步分页流程，
+    // 与情绪 / 饮食模块一致：一页只做一个判断，不使用完整表单）：
+    //   1 活动大类（卡片单选） / 2 具体活动（胶囊多选 + 自由输入） /
+    //   3 持续时间（胶囊单选） / 4 做完后感受（胶囊多选） / 5 完整信息确认页
+    // 不走通用 wizard step 系统，steps 留空。
+    steps: [],
   },
   {
     id: "weight",
@@ -481,23 +169,12 @@ export const recordTypes: RecordType[] = [
       date: "7月5日",
       text: "今天体重 51.5 kg。",
     },
-    steps: [
-      {
-        id: "weightValue",
-        question: "今天的体重大约是多少？",
-        field: "weightValue",
-        inputType: "number",
-        nextStepId: "note",
-      },
-      {
-        id: "note",
-        question: "还想补一句的话，可以写在这里。",
-        field: "note",
-        inputType: "text",
-        isLast: true,
-        extra: true,
-      },
-    ],
+    // 体重类型使用独立的 WeightRecordWizard 组件渲染（4 步分页流程，
+    // 与情绪 / 饮食模块一致：一页只做一个判断，不做即时胖瘦评价）：
+    //   1 体重数值（数字键盘 + 步进微调） / 2 测量场景（胶囊单选） /
+    //   3 补充说明（没有补充 / 写一点）/ 4 完整信息确认页
+    // 不走通用 wizard step 系统，steps 留空。
+    steps: [],
   },
 ];
 
@@ -541,9 +218,10 @@ export type Answers = Record<string, AnswerEntry | undefined>;
  *
  * 情绪：情绪强度 + 具体情绪词 + (触发原因 或 身体反应)
  * 饮食：餐次 + 吃了多少 + 饭后身体感受 + (异常时原因必填)
- * 睡眠：睡眠质量 + 入睡/醒来时间 + (quality=不好 时 issues 必填)
- * 服用：已服→时间+感受；漏服→原因；改动→原因；未服→不算完整
- * 活动：活动类型 + 完成程度 + (身体 或 情绪感受) */
+ * 睡眠：整体睡眠感受（sleepLevel），时间步骤允许跳过，不影响完整记录判断
+ * 服用：服药时段 + 起效时间 + (身体感受 或 自定义感受)
+ * 活动：活动大类 + (具体活动 或 自定义活动文字) + 持续时间
+ * 体重：体重数值 + 测量场景 */
 export function isCompleteCoreRecord(
   typeId: RecordTypeId,
   answers: Answers,
@@ -553,47 +231,46 @@ export function isCompleteCoreRecord(
     if (!a) return false;
     return !!a.label?.trim() || !!a.value.trim();
   };
-  const labelOf = (field: string): string | undefined => answers[field]?.label;
 
   switch (typeId) {
     case "mood":
       // 情绪类型使用独立 MoodRecordWizard，完整记录 = 已选一级情绪
       return filled("primaryMood");
     case "food": {
-      const abnormalAmount = ["吃了一点", "没吃", "不舒服"].includes(
-        labelOf("amount") ?? "",
-      );
+      // 饮食类型使用独立 MealRecordWizard（4 步分页：餐次 / 吃了什么 / 吃完感受 / 确认）
+      // 完整记录 = 餐次 + (食物标签 或 食物文字)
+      // 感受为可选（提供「先不记感受」入口），不计入完整记录判断
       return (
-        filled("meal") &&
-        filled("amount") &&
-        filled("afterFeeling") &&
-        (!abnormalAmount || filled("reason") || filled("bodyFeeling"))
+        filled("mealType") && (filled("foodTags") || filled("foodText"))
       );
     }
     case "sleep": {
-      const badQuality = labelOf("quality") === "不好";
+      // 睡眠类型使用独立 SleepRecordWizard（7 步分页），
+      // 完整记录 = 已选整体睡眠感受（sleepLevel）；
+      // 时间步骤（bedTime / fallAsleepTime / wakeTime / awakeDuration）允许跳过，
+      // 跳过或选「记不清」不影响完整记录判断。
+      return filled("sleepLevel");
+    }
+    case "medication":
+      // 完整记录 = 服药时段 + 起效时间 + (身体感受 或 自定义感受)
+      // 部分保存（仅选了时段）不算完整，不发能量
       return (
-        filled("quality") &&
-        filled("sleepTime") &&
-        filled("wakeTime") &&
-        (!badQuality || filled("issues"))
+        filled("doseSlot") &&
+        filled("effectTime") &&
+        (filled("discomfortTags") || filled("customDiscomfortText"))
       );
-    }
-    case "medication": {
-      const status = labelOf("status");
-      if (status === "已服") return filled("timing") && filled("feeling");
-      if (status === "漏服") return filled("missedReason");
-      if (status === "改动") return filled("changedReason");
-      return false; // 未服 不算完整
-    }
     case "activity":
+      // 活动类型使用独立 ActivityRecordWizard（5 步分页：大类 / 具体活动 / 时长 / 感受 / 确认）
+      // 完整记录 = 活动大类 + (具体活动标签 或 自定义活动文字) + 持续时间
       return (
-        filled("type") &&
-        filled("completion") &&
-        (filled("bodyChange") || filled("moodChange"))
+        filled("activityCategory") &&
+        (filled("activityItems") || filled("customActivityText")) &&
+        filled("duration")
       );
     case "weight":
-      return filled("weightValue");
+      // 体重类型使用独立 WeightRecordWizard（4 步分页：数值 / 场景 / 感受 / 确认）
+      // 完整记录 = 体重数值 + 测量场景（感受为可选，不计入完整记录判断）
+      return filled("weightKg") && filled("measureContext");
     default:
       return false;
   }
@@ -610,34 +287,42 @@ export const summaryLabels: Record<RecordTypeId, Record<string, string>> = {
     specialDetails: "具体表现",
   },
   medication: {
-    status: "服药",
-    timing: "时间",
-    missedReason: "原因",
-    changedReason: "原因",
-    feeling: "感受",
+    doseSlot: "时段",
+    effectTime: "起效",
+    discomfortTags: "感受",
+    customDiscomfortText: "感受",
+    note: "补充",
   },
   food: {
-    meal: "餐次",
-    amount: "食量",
-    reason: "原因",
-    bodyFeeling: "身体感受",
-    afterFeeling: "饭后感受",
+    mealType: "餐次",
+    snackTimeLabel: "加餐时间",
+    foodTags: "吃了什么",
+    customFoodText: "吃了什么",
+    bodyTags: "吃完感受",
+    customBodyFeelingText: "吃完感受",
+    note: "补充",
   },
   sleep: {
-    quality: "睡眠",
-    issues: "情况",
-    sleepTime: "入睡",
-    wakeTime: "醒来",
-    wakeState: "醒后",
+    sleepLevel: "睡眠",
+    sleepSubwords: "感受",
+    customFeelingText: "感受",
+    bedTimeLabel: "上床",
+    fallAsleepTimeLabel: "入睡",
+    wakeTimeLabel: "起床",
+    awakeDurationLabel: "夜醒",
+    note: "补充",
   },
   activity: {
-    type: "活动",
-    completion: "完成度",
-    bodyChange: "身体",
-    moodChange: "情绪",
+    activityCategory: "活动",
+    activityItems: "具体活动",
+    customActivityText: "具体活动",
+    duration: "时长",
+    afterFeeling: "感受",
   },
   weight: {
-    weightValue: "体重",
+    weightKg: "体重",
+    measureContext: "场景",
+    note: "补充",
   },
 };
 

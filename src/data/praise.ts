@@ -11,7 +11,8 @@
 
 /* —— 单张夸夸卡片 ——
  * isPrivate 固定为 true：当前版本不开发家长端查看 / 公开分享 / 社区展示。
- * gradientId：卡片使用的渐变 ID，创建时分配，刷新后保持不变。 */
+ * gradientId：卡片使用的渐变 ID，创建时分配，刷新后保持不变。
+ * guideText：新建时随机分配的底纹引导词，持久化后不再变化。 */
 export type PraiseCard = {
   id: string;
   text: string;
@@ -19,6 +20,7 @@ export type PraiseCard = {
   updatedAt?: string;
   isPrivate: true;
   gradientId: string;
+  guideText?: string;
 };
 
 /* —— 新建卡片页的轻量示例句（不做分类，仅作启动参考）—— */
@@ -30,6 +32,12 @@ export const PRAISE_EXAMPLES: string[] = [
   "邻居对我笑了一下",
   "今天撑到了现在",
 ];
+
+/* —— 新建卡片页底纹引导词：创建时随机二选一，持久化到卡片 —— */
+export const PRAISE_GUIDE_TEXTS = [
+  "收集每一缕微光，终将照亮前路",
+  "珍视每一次小胜，积攒面对未来的勇气",
+] as const;
 
 /* —— 输入规则 —— */
 export const PRAISE_MAX_LENGTH = 60;
@@ -63,6 +71,26 @@ export function randomGradientId(): string {
 /* —— 根据 id 获取渐变定义 —— */
 export function getGradient(id: string): CardGradient {
   return CARD_GRADIENTS.find((g) => g.id === id) ?? CARD_GRADIENTS[0];
+}
+
+/* —— 随机分配一句底纹引导词 —— */
+export function randomGuideText(): string {
+  const idx = Math.floor(Math.random() * PRAISE_GUIDE_TEXTS.length);
+  return PRAISE_GUIDE_TEXTS[idx];
+}
+
+/* —— 解析卡片渐变 ID（兼容历史数据）——
+ * 已有 gradientId 直接返回；缺失时按 id/createdAt 做 hash 取固定颜色，
+ * 避免每次刷新变化，也不再把 g1（偏绿）作为唯一默认。 */
+export function resolveGradientId(card: PraiseCard): string {
+  if (card.gradientId) return card.gradientId;
+  const seed = card.id || card.createdAt || "";
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash * 31 + seed.charCodeAt(i)) | 0;
+  }
+  const idx = Math.abs(hash) % CARD_GRADIENTS.length;
+  return CARD_GRADIENTS[idx].id;
 }
 
 /* —— 日期 / 时间标签 ——
@@ -107,14 +135,21 @@ export function saveCards(cards: PraiseCard[]): void {
   }
 }
 
-/* —— 创建一张夸夸卡片 —— */
-export function createCard(text: string): PraiseCard {
+/* —— 创建一张夸夸卡片 ——
+ * gradientId / guideText 由新建页在进入时随机生成并传入，
+ * 确保编辑页预览的颜色和引导词与保存后完全一致。 */
+export function createCard(
+  text: string,
+  gradientId: string,
+  guideText: string,
+): PraiseCard {
   const now = new Date();
   return {
     id: `${now.getTime()}-${Math.random().toString(36).slice(2, 8)}`,
     text: text.trim(),
     createdAt: now.toISOString(),
     isPrivate: true,
-    gradientId: randomGradientId(),
+    gradientId,
+    guideText,
   };
 }

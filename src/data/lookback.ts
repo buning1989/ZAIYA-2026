@@ -23,6 +23,27 @@ export type MoodEntry = {
   moodTrigger: string | null;
   moodBody: string | null;
   moodNote: string | null;
+  // 特殊情况（与「记一下」情绪保存态字段对齐）：如「吃东西/体重这件事最近有变化：吃不下」
+  moodSpecial: string | null;
+};
+
+/* —— 单条饮食记录（日内可有多条，与「记一下」饮食保存态字段对齐）—— */
+export type MealEntry = {
+  mealType: string; // 早餐 / 午餐 / 晚餐 / 加餐
+  food: string | null; // 吃了什么
+  feeling: string | null; // 吃完后的感受
+  time: string; // "HH:MM" 记录时间
+  note: string | null; // 补充说明
+};
+
+/* —— 单条服用记录（日内可有多条，与「记一下」服用保存态字段对齐）—— */
+export type MedEntry = {
+  slot: string; // 早上的药 / 晚上的药（时段）
+  slotTime: string; // "HH:MM" 服药时间
+  effectTime: string | null; // 起效
+  feeling: string | null; // 感受
+  time: string; // "HH:MM" 记录时间
+  note: string | null; // 补充说明
 };
 
 export type DailyLookbackData = {
@@ -31,29 +52,41 @@ export type DailyLookbackData = {
   mood: Mood | null;
   moodWords: string[] | null; // 情绪词：烦躁、疲惫 …（仅当 mood 非 null 时可能有）
   moodTrigger: string | null; // 触发事件
-  moodBody: string | null; // 身体感受
+  moodBody: string | null; // 身体感受（详情态不再展示，保留用于汇总聚合）
   moodNote: string | null; // 补充说明
   moodEntries: MoodEntry[] | null; // 日内多条情绪记录；null = 当天无记录
-  sleepTime: string | null; // "23:10" / "00:40" / "01:30"
-  wakeTime: string | null; // "08:10"
+  sleepTime: string | null; // "23:10" / "00:40" / "01:30"（入睡，HH:MM）
+  wakeTime: string | null; // "08:10"（醒来/起床，HH:MM）
   sleepDurationMin: number | null; // 睡眠时长（分钟）
   nightWake: string | null; // 夜醒
   wakeFeeling: string | null; // 醒后感受
+  sleepLevel: 1 | 2 | 3 | null; // 睡眠情况：3 好 / 2 一般 / 1 不好
+  sleepBedTime: string | null; // 上床（口语化 label，与「记一下」对齐）
+  sleepNote: string | null; // 补充说明
+  sleepRecordTime: string | null; // "HH:MM" 记录时间
   meals: {
     breakfast: MealState;
     lunch: MealState;
     dinner: MealState;
   };
   mealFeeling: string | null; // 饭后感受
+  mealEntries: MealEntry[] | null; // 日内多条饮食记录；null = 当天无记录
   medication: {
     morning: MedState;
     evening: MedState;
   };
   medChangeNote: string | null; // 改动说明
+  medEntries: MedEntry[] | null; // 日内多条服用记录；null = 当天无记录
   activityLevel: ActivityLevel | null;
   activityContent: string | null; // 活动内容
   activityNote: string | null; // 补充说明
+  activityDuration: string | null; // 活动时长 / 强度
+  activityFeeling: string | null; // 活动后的感受
+  activityRecordTime: string | null; // "HH:MM" 记录时间
   weight: number | null; // kg
+  weightMeasureContext: string | null; // 场景
+  weightNote: string | null; // 补充说明
+  weightRecordTime: string | null; // "HH:MM" 记录时间
 };
 
 export type LookbackRange = 7 | 14 | 30;
@@ -87,11 +120,15 @@ function toDisplayDate(d: Date): string {
   return `${d.getMonth() + 1}月${d.getDate()}日`;
 }
 
-function buildDay(offset: number): DailyLookbackData {
-  // 以「今天」为 offset=0，往回取 offset 天
-  const base = new Date();
+/* —— 由 hash 派生一个稳定的 "HH:MM" 时间字符串（分钟区间内）—— */
+function genTimeStr(hash: number, salt: number, minMin: number, maxMin: number): string {
+  const t = minMin + Math.floor(derive(hash, salt) * (maxMin - minMin));
+  return `${pad(Math.floor(t / 60) % 24)}:${pad(t % 60)}`;
+}
+
+function buildDayByDate(base: Date): DailyLookbackData {
+  base = new Date(base);
   base.setHours(0, 0, 0, 0);
-  base.setDate(base.getDate() - offset);
   const h = dayHash(base);
 
   // 情绪：约 12% 概率未记录，否则 1-5，多数集中在 2-4
@@ -162,8 +199,11 @@ function buildDay(offset: number): DailyLookbackData {
   if (weightRoll < 0.2) {
     weight = null;
   } else {
-    // 用 offset 做一个缓慢的周期波动，再加微小噪声
-    const wave = Math.sin(offset / 6) * 0.6;
+    // 用距今天数做一个缓慢的周期波动，再加微小噪声
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dayOffset = Math.round((today.getTime() - base.getTime()) / 86400000);
+    const wave = Math.sin(dayOffset / 6) * 0.6;
     const noise = (derive(h, 9) - 0.5) * 0.4;
     weight = Math.round((51.5 + wave + noise) * 10) / 10;
   }
@@ -173,6 +213,14 @@ function buildDay(offset: number): DailyLookbackData {
   const moodTriggerPool = ["和家人争吵", "工作压力大", "睡眠不好", "无特别原因", "和朋友聊天", "天气阴沉", "完成任务后", "身体不适"];
   const moodBodyPool = ["胸闷", "头胀", "肩膀紧", "无特别感受", "乏力", "心悸", "放松"];
   const moodNotePool = ["下午稍微好转", "整天都比较闷", "晚上散步后好一些", "记录时已平静", ""];
+  // 特殊情况（与「记一下」specialSituationCategories 对齐，组合成「大类：细项」）
+  const moodSpecialPool = [
+    "吃东西/体重这件事最近有变化：吃不下",
+    "吃东西/体重这件事最近有变化：很怕变胖",
+    "最近状态和平时很不一样：睡很少也不困",
+    "最近状态和平时很不一样：特别容易发火",
+    "反复冒出来的想法/忍不住要做的事：脑子反复冒出不想要的想法",
+  ];
 
   // 情绪详情：仅当 mood 非 null 时填充，部分字段可空
   let moodWords: string[] | null = null;
@@ -226,6 +274,8 @@ function buildDay(offset: number): DailyLookbackData {
       const eTrigger = derive(h, 100 + ei) < 0.5 ? moodTriggerPool[ew1 % moodTriggerPool.length] : null;
       const eBody = derive(h, 110 + ei) < 0.4 ? moodBodyPool[ew2 % moodBodyPool.length] : null;
       const eNote = derive(h, 120 + ei) < 0.3 ? moodNotePool[ew1 % moodNotePool.length] : null;
+      // 特殊情况：约 25% 概率有（与「记一下」字段对齐）
+      const eSpecial = derive(h, 130 + ei) < 0.25 ? moodSpecialPool[ew1 % moodSpecialPool.length] : null;
       entries.push({
         time,
         mood: eMood,
@@ -233,6 +283,7 @@ function buildDay(offset: number): DailyLookbackData {
         moodTrigger: eTrigger,
         moodBody: eBody,
         moodNote: eNote || null,
+        moodSpecial: eSpecial,
       });
     }
     // 按时间升序
@@ -293,6 +344,108 @@ function buildDay(offset: number): DailyLookbackData {
     activityNote = an || null;
   }
 
+  /* —— 睡眠单条记录字段（与「记一下」睡眠保存态对齐）—— */
+  let sleepLevel: 1 | 2 | 3 | null = null;
+  let sleepBedTime: string | null = null;
+  let sleepNote: string | null = null;
+  let sleepRecordTime: string | null = null;
+  if (sleepTime !== null) {
+    // 睡眠情况：3 好 / 2 一般 / 1 不好，与时长轻度相关
+    const durRoll = derive(h, 33);
+    if (sleepDurationMin !== null && sleepDurationMin >= 7 * 60) sleepLevel = durRoll < 0.3 ? 2 : 3;
+    else if (sleepDurationMin !== null && sleepDurationMin < 5 * 60) sleepLevel = durRoll < 0.3 ? 2 : 1;
+    else sleepLevel = durRoll < 0.45 ? 3 : durRoll < 0.85 ? 2 : 1;
+    // 上床时间（口语化 label，略早于入睡）
+    const bedPool = ["晚上9点多", "晚上10点多", "晚上11点多", "凌晨0点多"];
+    sleepBedTime = bedPool[Math.floor(derive(h, 34) * bedPool.length)];
+    // 补充说明：约 25% 概率有
+    const sleepNotePool = ["做了个梦", "中途醒过一次", "睡前看了很久手机", ""];
+    sleepNote = derive(h, 35) < 0.25 ? sleepNotePool[Math.floor(derive(h, 36) * sleepNotePool.length)] || null : null;
+    // 记录时间：醒来后不久
+    sleepRecordTime = genTimeStr(h, 37, 390, 480);
+  }
+
+  /* —— 饮食单条记录（日内多条，与「记一下」饮食保存态对齐）—— */
+  const mealFoodPool: Record<"breakfast" | "lunch" | "dinner", string[]> = {
+    breakfast: ["粥、鸡蛋", "面包、牛奶", "包子、豆浆", "面条"],
+    lunch: ["米饭配菜", "面食", "食堂套餐", "轻食"],
+    dinner: ["家常菜", "清淡少油", "粥", "吃得很少"],
+  };
+  const mealFeelPool2 = ["舒服", "满足", "吃撑了", "胃胀", "没什么感觉"];
+  const mealTypeLabels: Record<"breakfast" | "lunch" | "dinner", string> = {
+    breakfast: "早餐", lunch: "午餐", dinner: "晚餐",
+  };
+  const mealTimeRange: Record<"breakfast" | "lunch" | "dinner", [number, number]> = {
+    breakfast: [450, 510], lunch: [720, 780], dinner: [1080, 1140],
+  };
+  const mealEntries: MealEntry[] = [];
+  (["breakfast", "lunch", "dinner"] as const).forEach((mt, mi) => {
+    const state = mt === "breakfast" ? breakfast : mt === "lunch" ? lunch : dinner;
+    if (state !== "yes") return;
+    const food = mealFoodPool[mt][Math.floor(derive(h, 200 + mi) * mealFoodPool[mt].length)];
+    const hasFeeling = derive(h, 210 + mi) < 0.5;
+    const feeling = hasFeeling ? mealFeelPool2[Math.floor(derive(h, 220 + mi) * mealFeelPool2.length)] : null;
+    const [tMin, tMax] = mealTimeRange[mt];
+    const time = genTimeStr(h, 230 + mi, tMin, tMax);
+    const hasNote = derive(h, 240 + mi) < 0.2;
+    const note = hasNote ? "吃得有点急" : null;
+    mealEntries.push({ mealType: mealTypeLabels[mt], food, feeling, time, note });
+  });
+  const mealEntriesFinal: MealEntry[] | null = mealEntries.length > 0 ? mealEntries : null;
+
+  /* —— 服用单条记录（日内多条，与「记一下」服用保存态对齐）—— */
+  const effectTimePool = ["半小时", "1 小时", "1.5 小时", "2 小时", "没感觉"];
+  const medFeelPool = ["嗜睡", "口干", "头晕", "恶心", "没有感受"];
+  const medSlotLabels: Record<"morning" | "evening", { label: string; time: string }> = {
+    morning: { label: "早上的药", time: "08:00" },
+    evening: { label: "晚上的药", time: "20:00" },
+  };
+  const medEntries: MedEntry[] = [];
+  (["morning", "evening"] as const).forEach((sl, si) => {
+    const st = sl === "morning" ? medMorning : medEvening;
+    if (st === "unknown") return;
+    const cfg = medSlotLabels[sl];
+    let effectTime: string | null = null;
+    let feeling: string | null = null;
+    let note: string | null = null;
+    if (st === "taken" || st === "changed") {
+      effectTime = derive(h, 300 + si) < 0.7 ? effectTimePool[Math.floor(derive(h, 310 + si) * effectTimePool.length)] : null;
+      feeling = derive(h, 320 + si) < 0.6 ? medFeelPool[Math.floor(derive(h, 330 + si) * medFeelPool.length)] : null;
+      note = derive(h, 340 + si) < 0.25 ? "吃完稍微有点困" : null;
+    } else {
+      // 漏服：无起效 / 感受
+      note = derive(h, 340 + si) < 0.5 ? "漏服了" : null;
+    }
+    // 记录时间：服药后不久
+    const baseMin = sl === "morning" ? 480 : 1200;
+    const time = genTimeStr(h, 350 + si, baseMin, baseMin + 60);
+    medEntries.push({ slot: cfg.label, slotTime: cfg.time, effectTime, feeling, time, note });
+  });
+  const medEntriesFinal: MedEntry[] | null = medEntries.length > 0 ? medEntries : null;
+
+  /* —— 活动单条记录补充字段（与「记一下」活动保存态对齐）—— */
+  let activityDuration: string | null = null;
+  let activityFeeling: string | null = null;
+  let activityRecordTime: string | null = null;
+  if (activityLevel !== null && activityLevel > 0) {
+    const durationPool = ["不到 10 分钟", "10–30 分钟", "30–60 分钟", "1 小时以上"];
+    activityDuration = durationPool[Math.floor(derive(h, 62) * durationPool.length)];
+    const actFeelPool = ["轻松了一点", "还可以", "有点累", "没什么感觉"];
+    activityFeeling = derive(h, 63) < 0.7 ? actFeelPool[Math.floor(derive(h, 64) * actFeelPool.length)] : null;
+    activityRecordTime = genTimeStr(h, 65, 840, 1080); // 下午 14:00-18:00
+  }
+
+  /* —— 体重单条记录补充字段（与「记一下」体重保存态对齐）—— */
+  let weightMeasureContext: string | null = null;
+  let weightNote: string | null = null;
+  let weightRecordTime: string | null = null;
+  if (weight !== null) {
+    const ctxPool = ["起床后", "饭前", "饭后", "晚上", "随手称的"];
+    weightMeasureContext = ctxPool[Math.floor(derive(h, 90) * ctxPool.length)];
+    weightNote = derive(h, 91) < 0.2 ? "穿着外套称的" : null;
+    weightRecordTime = genTimeStr(h, 92, 450, 540); // 早上 07:30-09:00
+  }
+
   return {
     date: toDate(base),
     displayDate: toDisplayDate(base),
@@ -307,24 +460,92 @@ function buildDay(offset: number): DailyLookbackData {
     sleepDurationMin,
     nightWake,
     wakeFeeling,
+    sleepLevel,
+    sleepBedTime,
+    sleepNote,
+    sleepRecordTime,
     meals: { breakfast, lunch, dinner },
     mealFeeling,
+    mealEntries: mealEntriesFinal,
     medication: { morning: medMorning, evening: medEvening },
     medChangeNote,
+    medEntries: medEntriesFinal,
     activityLevel,
     activityContent,
     activityNote,
+    activityDuration,
+    activityFeeling,
+    activityRecordTime,
     weight,
+    weightMeasureContext,
+    weightNote,
+    weightRecordTime,
   };
 }
 
 function buildRange(days: number): DailyLookbackData[] {
   // 按日期升序排列：最早 → 最近（左 → 右）
   const out: DailyLookbackData[] = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
   for (let i = days - 1; i >= 0; i--) {
-    out.push(buildDay(i));
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    out.push(buildDayByDate(d));
   }
   return out;
+}
+
+/* —— 按月生成数据：生成指定 year/month 的所有日期（升序）——
+ * 未来日期（晚于今天）不生成，避免出现「未来记录」。
+ * 当月只生成到今天；历史月份生成整月。 */
+export function buildMonthRange(year: number, month: number): DailyLookbackData[] {
+  // month: 1-12
+  const out: DailyLookbackData[] = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const daysInMonth = new Date(year, month, 0).getDate(); // month 是 1-based，day=0 取上月末
+  for (let day = 1; day <= daysInMonth; day++) {
+    const d = new Date(year, month - 1, day);
+    if (d > today) break; // 未来日期不生成
+    out.push(buildDayByDate(d));
+  }
+  return out;
+}
+
+/* —— 判断某月是否有记录（至少一条 DailyLookbackData 有任意记录字段）——
+ * 用于「按月回看」空状态判断。Demo 阶段只要该月有生成日期即视为有记录，
+ * 因为 buildDayByDate 会按概率产生未记录项，但仍属于「有记录的日期」。 */
+export function monthHasRecords(year: number, month: number): boolean {
+  const data = buildMonthRange(year, month);
+  return data.length > 0;
+}
+
+/* —— 按周生成数据：从 weekStart（周一）开始生成 7 天（升序）——
+ * 未来日期（晚于今天）不生成。当前周只生成到今天。 */
+export function buildWeekRange(weekStart: Date): DailyLookbackData[] {
+  const out: DailyLookbackData[] = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const start = new Date(weekStart);
+  start.setHours(0, 0, 0, 0);
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start);
+    d.setDate(d.getDate() + i);
+    if (d > today) break; // 未来日期不生成
+    out.push(buildDayByDate(d));
+  }
+  return out;
+}
+
+/* —— 计算某日期所在周的周一（中国习惯：周一开始）—— */
+export function getWeekStart(date: Date): Date {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  const day = d.getDay(); // 0=周日, 1=周一 ... 6=周六
+  const diff = day === 0 ? -6 : 1 - day; // 周日回到上个周一
+  d.setDate(d.getDate() + diff);
+  return d;
 }
 
 export const lookbackData: Record<LookbackRange, DailyLookbackData[]> = {
@@ -360,4 +581,11 @@ export const activityLabel: Record<ActivityLevel, string> = {
   1: "轻微活动",
   2: "完成一件事",
   3: "参与较多",
+};
+
+/* —— 睡眠情况 label：3 好 / 2 一般 / 1 不好（与「记一下」sleepLevelLabel 对齐）—— */
+export const sleepLevelLabel: Record<1 | 2 | 3, string> = {
+  3: "好",
+  2: "一般",
+  1: "不好",
 };
