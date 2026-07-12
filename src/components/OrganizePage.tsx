@@ -1,6 +1,6 @@
 /* —— 「帮我整理」模块编排器 ——
  *
- * 流程：选择沟通对象 → 确认沟通重点 → 是否告诉对方特殊记录 → 完成
+ * 流程：选择沟通对象 → 确认沟通重点 → 高风险记录是否放入材料 → 完成
  *
  * 状态管理：统一 session state，localStorage 持久化
  * 返回上一步保留已选择内容
@@ -22,7 +22,6 @@ import {
   type CommunicationSession,
   type CommunicationTopic,
   type CommunicationContact,
-  type DisclosureDecision,
   type RangeKey,
   type OrganizeHistoryEntry,
 } from "@/data/organize";
@@ -114,7 +113,7 @@ export default function OrganizePage({
     setStep("contact");
   };
 
-  /* —— 确认沟通重点，进入特殊记录披露页 —— */
+  /* —— 确认沟通重点，进入高风险记录确认页 —— */
   const handleTopicsNext = (
     topics: CommunicationTopic[],
     rangeData: { rangeKey: RangeKey; startDate: string; endDate: string; totalDays: number; recordedDays: number },
@@ -132,16 +131,21 @@ export default function OrganizePage({
     setStep("disclosure");
   };
 
-  /* —— 完成特殊记录披露决策，进入完成页 —— */
-  const handleDisclosureComplete = (decision: DisclosureDecision) => {
+  /* —— 完成高风险记录披露决策，进入完成页 —— */
+  const handleDisclosureComplete = (selectedIds: string[]) => {
     if (!session) return;
+    const updatedRecords = session.specialDisclosure.originalRecords.map(
+      (r) => ({ ...r, selected: selectedIds.includes(r.id) }),
+    );
+    const allowedInMaterial = selectedIds.length > 0;
     const updatedSession: CommunicationSession = {
       ...session,
       specialDisclosure: {
         ...session.specialDisclosure,
-        decision,
+        originalRecords: updatedRecords,
+        decision: allowedInMaterial ? "include" : "exclude",
         confirmed: true,
-        allowedInMaterial: decision === "include",
+        allowedInMaterial,
       },
     };
     const entry = completeSession(updatedSession);

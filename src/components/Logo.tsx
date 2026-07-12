@@ -33,7 +33,7 @@ export default function Logo({
       </span>
       {showWordmark && (
         <span
-          className={`font-display font-semibold leading-none tracking-normal text-ink ${
+          className={`font-brand font-semibold leading-none tracking-normal text-ink ${
             isNav ? "text-[28px]" : "text-2xl"
           }`}
         >

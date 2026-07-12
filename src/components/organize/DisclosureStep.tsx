@@ -1,25 +1,40 @@
-/* —— 需要单独确认的记录 ——
- * 第二页定位：敏感/特殊内容的披露决策
- * 与第一页普通沟通重点在信息结构、文案、视觉层级上明显区分
- * 直接展示用户原文，不折叠、不摘要、不做风险判断
- * 底部两按钮，点击任一直接进入完成页 */
-import { ChevronLeft } from "lucide-react";
+/* —— 高风险记录确认 ——
+ * 第二页定位：高风险原话的逐条披露决策
+ * 默认全部不选；用户主动勾选后该条才进入材料。
+ * 卡片只展示：来源场景 + 时间 + 用户原话。
+ * 不做行为概括、不贴标签、不展示内部分类、不做风险等级判断。
+ * 底部两按钮：「都不放入」/「放入 X 条」，X 为已勾选数量，为 0 时右侧置灰。 */
+import { useState } from "react";
+import { ChevronLeft, Check } from "lucide-react";
 import {
-  formatSensitiveRecordTime,
+  formatHighRiskRecordTime,
   type CommunicationSession,
-  type DisclosureDecision,
 } from "@/data/organize";
 import { StepProgress } from "./shared";
 
 interface Props {
   session: CommunicationSession;
   onBack: () => void;
-  onComplete: (decision: DisclosureDecision) => void;
+  onComplete: (selectedIds: string[]) => void;
 }
 
 export default function DisclosureStep({ session, onBack, onComplete }: Props) {
   const name = session.contactSnapshot.displayName;
   const records = session.specialDisclosure.originalRecords;
+
+  // 默认全部不选
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectedCount = selectedIds.size;
 
   return (
     <div className="relative flex h-full flex-col bg-white">
@@ -44,44 +59,50 @@ export default function DisclosureStep({ session, onBack, onComplete }: Props) {
         {/* 页面标题 */}
         <div className="mt-5">
           <h2 className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
-            需要单独确认的记录
+            高风险记录确认
           </h2>
         </div>
 
-        {/* 特殊记录卡片列表 */}
+        {/* 高风险记录卡片列表 */}
         <div className="mt-5 flex flex-col gap-3">
-          {records.map((record) => (
-            <div
-              key={record.id}
-              className="rounded-2xl border border-line bg-ink/[0.02] px-4 py-4"
-            >
-              {/* 顶部标签：需要单独确认 */}
-              <div className="flex items-center gap-2">
-                <span className="text-[13px] leading-relaxed text-ink-soft">
-                  需要单独确认
-                </span>
-              </div>
+          {records.map((record) => {
+            const checked = selectedIds.has(record.id);
+            return (
+              <button
+                key={record.id}
+                onClick={() => toggleSelect(record.id)}
+                className="rounded-2xl border border-line bg-white px-4 py-4 text-left"
+              >
+                {/* 来源 + 勾选框 */}
+                <div className="flex items-center justify-between">
+                  <div className="text-[16px] font-medium leading-relaxed text-ink">
+                    来源：{record.sourceLabel}
+                  </div>
+                  <span
+                    className={`grid h-5 w-5 shrink-0 place-items-center rounded-[5px] border transition-colors ${
+                      checked
+                        ? "border-accent bg-accent"
+                        : "border-line bg-white"
+                    }`}
+                  >
+                    {checked && (
+                      <Check className="h-3 w-3 text-white" strokeWidth={3} />
+                    )}
+                  </span>
+                </div>
 
-              {/* 涉及内容（辅助说明） */}
-              <div className="mt-2.5 text-[12px] leading-relaxed text-ink-faint">
-                {record.confirmReason}
-              </div>
+                {/* 时间 */}
+                <div className="mt-1 text-[12px] leading-relaxed text-ink-faint">
+                  {formatHighRiskRecordTime(record.recordedAt)}
+                </div>
 
-              {/* 分隔线 */}
-              <div className="my-3 h-px bg-line/60" />
-
-              {/* 日期 + 记录类型 */}
-              <div className="flex items-center justify-between text-[12px] text-ink-faint">
-                <span>{formatSensitiveRecordTime(record.recordedAt)}</span>
-                <span>{record.recordType}</span>
-              </div>
-
-              {/* 用户原文（视觉权重更高） */}
-              <p className="mt-2.5 whitespace-pre-wrap text-[14px] leading-relaxed text-ink">
-                {record.originalText}
-              </p>
-            </div>
-          ))}
+                {/* 用户原话（完整展示，不改写不摘要） */}
+                <p className="mt-2.5 whitespace-pre-wrap text-[14px] leading-relaxed text-ink">
+                  {record.originalText}
+                </p>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -89,16 +110,17 @@ export default function DisclosureStep({ session, onBack, onComplete }: Props) {
       <div className="shrink-0 px-5 pb-8 pt-3">
         <div className="flex gap-2.5">
           <button
-            onClick={() => onComplete("exclude")}
+            onClick={() => onComplete([])}
             className="flex-1 rounded-xl border border-line bg-white px-4 py-3.5 text-[14px] font-medium text-ink transition-colors hover:bg-card-soft/30"
           >
-            不放入
+            都不放入
           </button>
           <button
-            onClick={() => onComplete("include")}
-            className="flex-1 rounded-xl bg-action-primary px-4 py-3.5 text-[14px] font-medium text-action-primary-text transition-opacity active:opacity-80"
+            onClick={() => onComplete([...selectedIds])}
+            disabled={selectedCount === 0}
+            className="flex-1 rounded-xl bg-action-primary px-4 py-3.5 text-[14px] font-medium text-action-primary-text transition-opacity active:opacity-80 disabled:opacity-30"
           >
-            放入材料
+            放入 {selectedCount} 条
           </button>
         </div>
       </div>

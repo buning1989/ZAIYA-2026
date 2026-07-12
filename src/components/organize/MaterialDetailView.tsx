@@ -6,7 +6,7 @@ import {
   buildFullMaterial,
   formatDateRange,
   formatCreatedAt,
-  formatSensitiveRecordTime,
+  formatHighRiskRecordTime,
   getMaterialTopics,
   type CommunicationSession,
   type MaterialSection,
@@ -134,8 +134,8 @@ function MaterialSectionBlock({ section }: { section: MaterialSection }) {
           {section.disclosureRecords.map((r, i) => (
             <div key={i} className="rounded-xl bg-card-soft/30 px-3.5 py-3">
               <div className="flex items-center justify-between text-[11.5px] text-ink-faint">
-                <span>{formatSensitiveRecordTime(r.recordedAt)}</span>
-                <span>{r.recordType}</span>
+                <span>来源：{r.sourceLabel}</span>
+                <span>{formatHighRiskRecordTime(r.recordedAt)}</span>
               </div>
               <p className="mt-2 whitespace-pre-wrap text-[12.5px] leading-relaxed text-ink-soft">
                 {r.originalText}

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { ArrowRight } from "lucide-react";
 
 type Props = {
@@ -8,31 +9,29 @@ type Props = {
 
 /**
  * 模式选择页：进入 Demo 根路径时首先展示。
- *
- * 两个卡片权重接近，「跟着一个案例看」通过主色按钮与「推荐」标签略微突出，
- * 作为默认推荐入口。整体保持安静、克制、留白充足，不做营销落地页式堆叠。
+ * ESC 键关闭返回落地页。
  */
 export default function DemoModeSelector({
   onEnterGuided,
   onEnterFree,
   onClose,
 }: Props) {
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [onClose]);
+
   return (
     <div className="relative flex min-h-full flex-col items-center justify-center px-6 py-16">
-      {/* 关闭：返回落地页 */}
-      <button
-        onClick={onClose}
-        className="absolute right-5 top-5 text-[13px] text-ink-faint transition-colors hover:text-ink-soft focus:outline-none focus-visible:text-ink"
-      >
-        关闭
-      </button>
-
       <header className="mb-10 text-center">
         <p className="text-[11px] uppercase tracking-[0.18em] text-ink-faint">
           在呀 · Demo
         </p>
         <h1 className="mt-3 font-brand text-[28px] leading-tight text-ink">
-          你想怎么体验在呀？
+          你想怎么体验「在呀 ZÀIYA」？
         </h1>
       </header>
 
@@ -42,9 +41,6 @@ export default function DemoModeSelector({
           onClick={onEnterGuided}
           className="group flex flex-col rounded-2xl border border-ink/30 bg-white p-7 text-left transition-colors hover:border-ink/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/25"
         >
-          <span className="self-start rounded-full bg-canvas-soft px-2 py-0.5 text-[11px] text-ink-soft">
-            推荐
-          </span>
           <h2 className="mt-3 text-[18px] font-semibold tracking-tight text-ink">
             跟着一个案例看
           </h2>
@@ -62,9 +58,6 @@ export default function DemoModeSelector({
           onClick={onEnterFree}
           className="group flex flex-col rounded-2xl border border-line bg-white p-7 text-left transition-colors hover:border-ink-faint focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/25"
         >
-          <span className="self-start rounded-full bg-line-soft px-2 py-0.5 text-[11px] text-ink-faint">
-            自由
-          </span>
           <h2 className="mt-3 text-[18px] font-semibold tracking-tight text-ink">
             自由体验产品
           </h2>
@@ -77,18 +70,6 @@ export default function DemoModeSelector({
           </span>
         </button>
       </div>
-
-      <p className="mt-8 text-center text-[12px] text-ink-faint">
-        也可以直接分享带{" "}
-        <code className="rounded bg-line-soft px-1.5 py-0.5 text-[11px] text-ink-soft">
-          ?mode=guided
-        </code>{" "}
-        或{" "}
-        <code className="rounded bg-line-soft px-1.5 py-0.5 text-[11px] text-ink-soft">
-          ?mode=free
-        </code>{" "}
-        的链接进入对应模式。
-      </p>
     </div>
   );
 }

@@ -1,8 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useDemoMode, readModeFromUrl } from "./useDemoMode";
 import DemoModeSelector from "./DemoModeSelector";
-import GuidedDemoShell from "./GuidedDemoShell";
-import FreeExperienceMode from "./FreeExperienceMode";
+import UnifiedDemoStage from "./UnifiedDemoStage";
 
 type Props = { onClose: () => void };
 
@@ -99,13 +98,14 @@ export default function DemoExperience({ onClose }: Props) {
           onClose={onClose}
         />
       )}
-      {mode === "guided" && (
-        <GuidedDemoShell
-          onEnterFree={enterFreeMode}
-          onExitToSelect={exitToModeSelect}
+      {(mode === "guided" || mode === "free") && (
+        <UnifiedDemoStage
+          mode={mode}
+          onReturnHome={onClose}
+          onSwitchToGuided={enterGuidedMode}
+          onSwitchToFree={enterFreeMode}
         />
       )}
-      {mode === "free" && <FreeExperienceMode onExitToSelect={exitToModeSelect} />}
     </div>
   );
 }

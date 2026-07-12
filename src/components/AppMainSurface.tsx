@@ -27,7 +27,6 @@ import {
   MoreDetailContent,
   type MoreItemId,
 } from "./MoreMenu";
-import ZaiyaWakeAnimation from "./ZaiyaWakeAnimation";
 import HomeTimeAnchor from "./HomeTimeAnchor";
 import HomeBubbleCopy from "./HomeBubbleCopy";
 import ZaizaiHomeScene from "./ZaizaiHomeScene";
@@ -41,6 +40,12 @@ import { useEnergy } from "@/hooks/useEnergy";
 import type { Answers, RecordEntry, RecordTypeId } from "@/data/record";
 import type { OrganizeHistoryEntry } from "@/data/organize";
 import { addEnergy } from "@/data/userProfile";
+import type {
+  AppMainSurfaceDemoState,
+  DialogItem,
+  DialogMessageItem,
+  DialogTimeItem,
+} from "./demo/types";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -334,6 +339,8 @@ export function PhoneStatusBar({
  * breathing：呼吸法选择 / 练习 / 完成流程（独立全屏覆盖层，自管理在在形象）
  * socialSelect：在在上移到中上部并保留气泡，下方出现 2×2 轻社交场景卡片
  * socialFlow：选中场景后的流程页（一起发呆 / 一起吃饭），全屏覆盖，在在退出 */
+/* AppMainSurface 内部模式：与 demo/types.ts 的 DemoSurfaceMode 一致，
+ * 但扩展了 more / moreDetail / verify 三个仅自由体验使用的内部模式。 */
 type SurfaceMode =
   | "home"
   | "dialog"
@@ -344,21 +351,6 @@ type SurfaceMode =
   | "more"
   | "moreDetail"
   | "verify";
-
-type DialogMessageItem = {
-  kind: "message";
-  id: string;
-  role: "user" | "zaizai";
-  text: string;
-  createdAt: number;
-};
-type DialogTimeItem = {
-  kind: "time";
-  id: string;
-  label: string;
-  createdAt: number;
-};
-type DialogItem = DialogMessageItem | DialogTimeItem;
 
 type Props = {
   /** 预览态：仅瞬时视觉反馈，不触发任何回调（首页 Hero 使用） */
@@ -373,6 +365,9 @@ type Props = {
   onButtonClick?: (id: number) => void;
   /** 在在动画尺寸类名。不传时按 variant 取默认值 */
   zaizaiClassName?: string;
+  /** 案例演示状态注入。enabled !== true 时组件完全保持自由体验逻辑；
+   *  enabled === true 时允许外部覆盖内部模式 / 时间 / 气泡 / 对话 / 轻社交场景。 */
+  demoState?: AppMainSurfaceDemoState;
 };
 
 /**
@@ -400,17 +395,24 @@ export default function AppMainSurface({
   interactive = false,
   variant = "hero",
   onButtonClick,
+  demoState,
 }: Props) {
   const [active, setActive] = useState<number | null>(null);
+
+  // —— 演示状态：enabled !== true 时所有派生值回落到内部状态 ——
+  const demoEnabled = demoState?.enabled === true;
 
   // —— 首页环境节律：当前时间（每 20s 刷新，保证分钟及时更新）+ 派生时间段 ——
   // 仅用于 home 模式下的环境信息行 / 在在场景 / 状态文案；非 home 模式不消费。
   const [now, setNow] = useState<Date>(() => new Date());
   useEffect(() => {
+    if (demoEnabled) return; // 演示模式使用固定时间，不刷新
     const iv = window.setInterval(() => setNow(new Date()), 20000);
     return () => window.clearInterval(iv);
-  }, []);
-  const homePhase = getHomeTimePhase(now);
+  }, [demoEnabled]);
+  // 演示模式下使用 demoState.now；否则使用系统时间
+  const effectiveNow = demoEnabled && demoState?.now ? demoState.now : now;
+  const homePhase = getHomeTimePhase(effectiveNow);
 
   // —— 首页内模式状态（仅 interactive/immersive 下由对应 icon 触发）——
   const [mode, setMode] = useState<SurfaceMode>("home");
@@ -427,6 +429,22 @@ export default function AppMainSurface({
   // —— 轻社交状态 ——
   const [socialScene, setSocialScene] = useState<SceneId | null>(null);
 
+  // —— 演示状态派生值：覆盖内部 mode / socialScene / messages ——
+  // demoEnabled 时外部 demoState 优先；否则回落到内部状态。
+  // 内部状态仍可被用户交互修改，但在演示模式下不会影响渲染结果。
+  const effectiveMode: SurfaceMode =
+    demoEnabled && demoState?.surfaceMode ? demoState.surfaceMode : mode;
+  const effectiveSocialScene: SceneId | null =
+    demoEnabled && demoState?.socialScene != null
+      ? (demoState.socialScene as SceneId)
+      : socialScene;
+  // 演示模式下注入固定对话脚本；否则使用本地 mock 消息
+  const dialogMessages: DialogItem[] =
+    demoEnabled && demoState?.dialogItems ? demoState.dialogItems : messages;
+  // 演示模式且注入了对话脚本时，隐藏底部输入区
+  const hideInputDialog =
+    demoEnabled && !!(demoState?.dialogItems && demoState.dialogItems.length > 0);
+
   // —— 轻社交能量（发呆结束获得 +3 能量，与记一下模块一致）——
   // useEnergy 订阅全局 pub/sub，跨模块同步；freeze/unfreeze 用于 toast 飞行期间冻结展示
   const { value: socialEnergy, freeze: freezeSocialEnergy, unfreeze: unfreezeSocialEnergy } = useEnergy();
@@ -438,7 +456,9 @@ export default function AppMainSurface({
   const socialEnergyRewardIdRef = useRef(0);
 
   // 发呆结束 → 累加能量并触发 toast（与记一下模块完成记录后的反馈一致）
+  // 演示模式下不触发能量奖励与状态变更，避免评委误触长按结束导致脚本偏移
   const handleDazeFinish = () => {
+    if (demoEnabled) return;
     freezeSocialEnergy();
     const newEnergy = addEnergy(SOCIAL_DAZE_ENERGY_REWARD);
     socialEnergyRewardIdRef.current += 1;
@@ -774,8 +794,9 @@ export default function AppMainSurface({
   };
 
   // 进入对话或新消息到达时滚动到底部，确保 mock 历史打开后展示最新上下文。
+  // 演示模式下 dialogMessages 由 demoState 注入，步骤切换时同样滚到底部。
   useEffect(() => {
-    if (mode !== "dialog") return;
+    if (effectiveMode !== "dialog") return;
     const el = scrollRef.current;
     if (!el) return;
 
@@ -784,10 +805,12 @@ export default function AppMainSurface({
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [messages, mode]);
+  }, [dialogMessages, effectiveMode]);
 
   // 本地模拟发送：不接 LLM / API，仅样式与反馈
+  // 演示模式下禁用（输入区已隐藏），保险起见早退
   const send = () => {
+    if (demoEnabled) return;
     const text = input.trim();
     if (!text || sending) return;
     const sentAt = new Date();
@@ -879,12 +902,12 @@ export default function AppMainSurface({
     active === i ? "text-ink" : "text-ink/80";
 
   // 是否处于任一缓解模式（用于背景降噪与首页 icon 弱化）
-  const inRelief = mode === "reliefSelect" || mode === "breathing";
+  const inRelief = effectiveMode === "reliefSelect" || effectiveMode === "breathing";
 
   return (
     <div className="relative h-full w-full bg-white">
       {/* iOS 风格状态栏 */}
-      <PhoneStatusBar now={now} />
+      <PhoneStatusBar now={effectiveNow} />
 
       {/* 缓解模式背景降噪：浅柔灰覆盖，不使用强色。pointer-events-none 不阻断交互 */}
       <motion.div
@@ -905,19 +928,19 @@ export default function AppMainSurface({
           socialFlow / breathing 下在在完全退出（不渲染）。 */}
       <motion.div
         className={`absolute inset-x-0 z-10 flex flex-col items-center ${
-          mode === "dialog" ? "h-[220px]" : ""
+          effectiveMode === "dialog" ? "h-[220px]" : ""
         }`}
         initial={false}
         animate={{
           top:
-            mode === "home"
+            effectiveMode === "home"
               ? variant === "immersive"
                 ? "39%"
                 : "34%"
-              : mode === "dialog"
+              : effectiveMode === "dialog"
                 ? "4%"
                 : "15%",
-          scale: mode === "home" ? 1 : 0.65,
+          scale: effectiveMode === "home" ? 1 : 0.65,
         }}
         transition={{
           type: "spring",
@@ -925,16 +948,32 @@ export default function AppMainSurface({
           damping: 30,
         }}
       >
-        {mode !== "socialFlow" && mode !== "breathing" && (
+        {effectiveMode !== "socialFlow" && effectiveMode !== "breathing" && (
           <div className="relative">
-            {mode === "home" && variant === "immersive" ? (
+            {effectiveMode === "home" && variant === "immersive" ? (
               <ZaizaiHomeScene
                 phase={homePhase}
-                guide={<HomeBubbleCopy phase={homePhase} />}
+                guide={
+                  <HomeBubbleCopy
+                    phase={homePhase}
+                    overrideCopy={
+                      demoEnabled ? demoState?.bubbleCopy : undefined
+                    }
+                  />
+                }
               />
             ) : (
-              <ZaiyaWakeAnimation
-                variant={mode === "dialog" ? "dialog" : "phone-app"}
+              <video
+                src="/assets/zaiya/zaizai-eating.webm"
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="block h-[338px] w-[190px] max-w-none select-none object-contain"
+                style={{
+                  transform: "translateY(10px) scale(1.12)",
+                  transformOrigin: "center center",
+                }}
               />
             )}
           </div>
@@ -945,15 +984,15 @@ export default function AppMainSurface({
           仅 immersive 首页；由 AnimatePresence 控制挂载/卸载——每次回到 home 重新交错入场，
           进入底部三个功能模块时轻上移淡出。动效复用全局 softReveal 语言（与「更多」菜单一致）。 */}
       <AnimatePresence>
-        {mode === "home" && variant === "immersive" && (
-          <HomeTimeAnchor key="home-time-anchor" now={now} />
+        {effectiveMode === "home" && variant === "immersive" && (
+          <HomeTimeAnchor key="home-time-anchor" now={effectiveNow} />
         )}
       </AnimatePresence>
 
       {/* 首页轻反馈：先保存回首页后由在在展示，纯文字浮动（无气泡容器），几秒后自动消失。
           仅在 home 模式且 homeFeedback 有值时显示。 */}
       <AnimatePresence>
-        {mode === "home" && homeFeedback && (
+        {effectiveMode === "home" && homeFeedback && (
           <motion.div
             key="home-feedback"
             initial={{ opacity: 0, y: 6 }}
@@ -973,7 +1012,7 @@ export default function AppMainSurface({
       {/* home 模式：四角图标；非 home 模式（dialog / reliefSelect / breathing）淡出并禁用点击 */}
       <div
         className={`absolute inset-0 bg-white transition-opacity duration-300 ${
-          mode === "home" ? "opacity-100" : "pointer-events-none opacity-0"
+          effectiveMode === "home" ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
       >
         {/* 左上：菜单入口（汉堡菜单）—— 位于状态栏下方，低频收纳。interactive 下点击进入更多 */}
@@ -1046,11 +1085,12 @@ export default function AppMainSurface({
 
       {/* dialog 模式：对话内容区 + 输入区（首页内展开，非独立页面） */}
       <AnimatePresence>
-        {mode === "dialog" && (
+        {effectiveMode === "dialog" && (
           <FeaturePageTransition
             key="dialog-layer"
             pageKey="dialog"
             onExit={closeDialog}
+            enableDragExit={!demoEnabled}
           >
             {/* 消息区顶部渐变蒙层：只覆盖消息列表顶端，让上滑内容自然淡出。 */}
             <div
@@ -1059,9 +1099,10 @@ export default function AppMainSurface({
             />
 
             {/* 对话内容区：独立容器，位于在在动画下方、输入区上方，可滚动。
-                正常展示 mock 历史记录；messages 为空时保留轻量引导文案作为兜底。
+                正常展示 mock 历史记录；dialogMessages 为空时保留轻量引导文案作为兜底。
                 top 33% 确保在在动画固定陪伴区（260px 高 + top 7%）下方，保留明确间距不重叠；
-                bottom 92px 让出底部输入区，最后一条气泡不被遮挡。 */}
+                bottom 92px 让出底部输入区，最后一条气泡不被遮挡。
+                演示模式注入对话脚本时（hideInputDialog）输入区隐藏，bottom 收到 24px 让消息区下扩。 */}
             <motion.div
               ref={scrollRef}
               initial={{ opacity: 0, y: 12 }}
@@ -1069,15 +1110,15 @@ export default function AppMainSurface({
               exit={{ opacity: 0, y: 12 }}
               transition={{ duration: 0.35, ease, delay: 0.05 }}
               className="no-scrollbar absolute inset-x-0 z-20 overflow-y-auto px-6 pt-2"
-              style={{ top: "33%", bottom: "92px" }}
+              style={{ top: "33%", bottom: hideInputDialog ? "24px" : "92px" }}
             >
-              {messages.length === 0 ? (
+              {dialogMessages.length === 0 ? (
                 <p className="text-[13px] leading-relaxed text-ink-faint">
                   在这里说一句话试试。
                 </p>
               ) : (
                 <div className="flex flex-col pb-6">
-                  {messages.map((m, i) => {
+                  {dialogMessages.map((m, i) => {
                     if (m.kind === "time") {
                       return (
                         <motion.div
@@ -1088,7 +1129,7 @@ export default function AppMainSurface({
                           className={[
                             "w-fit self-center rounded-full bg-ink/10 px-3 py-1 text-[11px] font-medium leading-[16px] text-ink/50 backdrop-blur-sm",
                             i === 0 ? "" : "mt-4",
-                            i === messages.length - 1 ? "" : "mb-2",
+                            i === dialogMessages.length - 1 ? "" : "mb-2",
                           ].join(" ")}
                         >
                           {m.label}
@@ -1097,7 +1138,7 @@ export default function AppMainSurface({
                     }
 
                     const isUser = m.role === "user";
-                    const prev = i > 0 ? messages[i - 1] : null;
+                    const prev = i > 0 ? dialogMessages[i - 1] : null;
                     const sameAsPrev =
                       prev?.kind === "message" && prev.role === m.role;
                     return (
@@ -1134,61 +1175,64 @@ export default function AppMainSurface({
             {/* 输入区：文字输入 + 语音 + 关闭/发送状态切换
                 - 未输入态（input.trim() 为空）：右侧显示关闭按钮（深色圆形 + 白×），点击退出对话
                 - 输入态（input.trim() 非空）：右侧显示发送按钮（accent 圆形 + 白↑），点击发送
-                - 两种状态互斥，不会同时出现；发送后清空输入自动回到关闭态 */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              transition={{ duration: 0.35, ease }}
-              className="absolute inset-x-0 bottom-0 px-4 pb-6"
-            >
-              <div className="flex items-center gap-2 rounded-xl border border-line bg-white p-2">
-                {/* 文本输入：始终可输入，min-w-0 防止被右侧按钮挤压溢出 */}
-                <textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      if (input.trim().length > 0 && !sending) send();
-                    }
-                  }}
-                  placeholder="说点什么…"
-                  rows={1}
-                  className="min-w-0 flex-1 resize-none bg-transparent p-0 text-[14px] leading-[20px] text-ink placeholder:text-ink-faint focus:outline-none"
-                />
-                {/* 语音入口：compact 轻量 mic 按钮，转录完成后填入输入框 */}
-                <div className="shrink-0">
-                  <VoiceInputBar
+                - 两种状态互斥，不会同时出现；发送后清空输入自动回到关闭态
+                - 演示模式注入对话脚本时整个输入区隐藏，避免评委误触发送导致脚本偏移 */}
+            {!hideInputDialog && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.35, ease }}
+                className="absolute inset-x-0 bottom-0 px-4 pb-6"
+              >
+                <div className="flex items-center gap-2 rounded-xl border border-line bg-white p-2">
+                  {/* 文本输入：始终可输入，min-w-0 防止被右侧按钮挤压溢出 */}
+                  <textarea
                     value={input}
-                    onChange={setInput}
-                    onSend={send}
-                    canSend={input.trim().length > 0 && !sending}
-                    compact
-                    size="sm"
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        if (input.trim().length > 0 && !sending) send();
+                      }
+                    }}
+                    placeholder="说点什么…"
+                    rows={1}
+                    className="min-w-0 flex-1 resize-none bg-transparent p-0 text-[14px] leading-[20px] text-ink placeholder:text-ink-faint focus:outline-none"
                   />
+                  {/* 语音入口：compact 轻量 mic 按钮，转录完成后填入输入框 */}
+                  <div className="shrink-0">
+                    <VoiceInputBar
+                      value={input}
+                      onChange={setInput}
+                      onSend={send}
+                      canSend={input.trim().length > 0 && !sending}
+                      compact
+                      size="sm"
+                    />
+                  </div>
+                  {/* 右侧状态按钮：关闭 / 发送互斥，依据 input.trim() 切换，二者不会同时出现 */}
+                  {input.trim().length > 0 ? (
+                    <button
+                      onClick={send}
+                      aria-label="发送"
+                      disabled={sending}
+                      className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-white transition-transform active:scale-95 disabled:opacity-50"
+                    >
+                      <ArrowUp className="h-4 w-4" strokeWidth={2.2} />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={closeDialog}
+                      aria-label="关闭对话"
+                      className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-action-deep text-white transition-transform active:scale-95"
+                    >
+                      <X className="h-4 w-4" strokeWidth={2.2} />
+                    </button>
+                  )}
                 </div>
-                {/* 右侧状态按钮：关闭 / 发送互斥，依据 input.trim() 切换，二者不会同时出现 */}
-                {input.trim().length > 0 ? (
-                  <button
-                    onClick={send}
-                    aria-label="发送"
-                    disabled={sending}
-                    className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-white transition-transform active:scale-95 disabled:opacity-50"
-                  >
-                    <ArrowUp className="h-4 w-4" strokeWidth={2.2} />
-                  </button>
-                ) : (
-                  <button
-                    onClick={closeDialog}
-                    aria-label="关闭对话"
-                    className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-action-deep text-white transition-transform active:scale-95"
-                  >
-                    <X className="h-4 w-4" strokeWidth={2.2} />
-                  </button>
-                )}
-              </div>
-            </motion.div>
+              </motion.div>
+            )}
           </FeaturePageTransition>
         )}
       </AnimatePresence>
@@ -1196,11 +1240,12 @@ export default function AppMainSurface({
       {/* reliefSelect 模式：缓解能力项选择区（首页内展开，非独立页面）
           * 4 个能力项 2×2 网格；仅「呼吸法」可进入，其余标识「暂未开放」并弱化。 */}
       <AnimatePresence>
-        {mode === "reliefSelect" && (
+        {effectiveMode === "reliefSelect" && (
           <FeaturePageTransition
             key="relief-select"
             pageKey="reliefSelect"
             onExit={() => setMode("home")}
+            enableDragExit={!demoEnabled}
           >
             {/* 右上角能量入口：统一组件（floating），与记一下 / 轻社交同一位置规则 */}
             <EnergyBadge value={socialEnergy} position="floating" />
@@ -1254,7 +1299,7 @@ export default function AppMainSurface({
 
       {/* breathing 模式：呼吸法选择 / 练习 / 完成全流程（独立全屏覆盖层） */}
       <AnimatePresence>
-        {mode === "breathing" && (
+        {effectiveMode === "breathing" && (
           <BreathingFlow
             onBackToRelief={() => setMode("reliefSelect")}
             onGoHome={() => setMode("home")}
@@ -1264,7 +1309,7 @@ export default function AppMainSurface({
 
       {/* socialSelect 模式：轻社交场景选择（首页内展开，在在已上移并保留气泡） */}
       <AnimatePresence>
-        {mode === "socialSelect" && (
+        {effectiveMode === "socialSelect" && (
           <>
             <SocialSceneSelectContent
               onSelect={(s) => {
@@ -1294,26 +1339,28 @@ export default function AppMainSurface({
 
       {/* socialFlow 模式：选中场景后的流程页（一起发呆 / 一起吃饭）。
           全屏覆盖，在在退出；退出后回到轻社交场景选择页。
-          一起发呆：onExit=准备态返回（无能量），onFinish=长按结束（+3 能量并回主页） */}
+          一起发呆：onExit=准备态返回（无能量），onFinish=长按结束（+3 能量并回主页）
+          演示模式下 socialScene 由 demoState 注入；onExit/onFinish 在演示模式下不会触发状态变更。 */}
       <AnimatePresence>
-        {mode === "socialFlow" && socialScene && (
+        {effectiveMode === "socialFlow" && effectiveSocialScene && (
           <>
-            {socialScene === "daze" && (
+            {effectiveSocialScene === "daze" && (
               <DazeFlow
                 onExit={() => setMode("socialSelect")}
                 onFinish={handleDazeFinish}
               />
             )}
-            {socialScene === "eat" && (
+            {effectiveSocialScene === "eat" && (
               <EatPlaceholderContent onExit={() => setMode("socialSelect")} />
             )}
           </>
         )}
       </AnimatePresence>
 
-      {/* more 模式：侧边栏从左侧滑入，右侧遮罩弱化主页，点击遮罩关闭 */}
+      {/* more 模式：侧边栏从左侧滑入，右侧遮罩弱化主页，点击遮罩关闭。
+          演示模式下 effectiveMode 由 demoState 控制，不会进入 more。 */}
       <AnimatePresence>
-        {mode === "more" && (
+        {effectiveMode === "more" && (
           <>
             {/* 右侧遮罩：压暗主页背景，点击关闭 */}
             <motion.div
@@ -1362,7 +1409,7 @@ export default function AppMainSurface({
 
       {/* moreDetail 模式：完整二级页面，从右侧滑入，完全铺满手机屏幕 */}
       <AnimatePresence>
-        {mode === "moreDetail" && moreDetailId && (
+        {effectiveMode === "moreDetail" && moreDetailId && (
           <motion.div
             key="more-detail-layer"
             className="absolute inset-0 z-[60] bg-white"
@@ -1412,7 +1459,7 @@ export default function AppMainSurface({
           * 标题「验证后查看」+ 说明「此内容受应用锁保护。」+ 按钮「验证并进入」
           * 点击验证 → 本会话标记已验证 → 进入目标受保护页；返回 → 回到更多侧边栏 */}
       <AnimatePresence>
-        {mode === "verify" && pendingProtectedItem && (
+        {effectiveMode === "verify" && pendingProtectedItem && (
           <motion.div
             key="verify-layer"
             className="absolute inset-0 z-[70] bg-white"

@@ -31,15 +31,9 @@ function AppSurface() {
   );
 }
 
-function DesktopIcon({ index }: { index: number }) {
+function DesktopIcon() {
   return (
-    <div className="grid h-full w-full place-items-center rounded-[14px] bg-line-soft shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
-      <div
-        className={`rounded-full bg-line ${
-          index % 3 === 0 ? "h-5 w-5" : index % 3 === 1 ? "h-4 w-7" : "h-6 w-6"
-        }`}
-      />
-    </div>
+    <div className="rounded-[14px] bg-line-soft shadow-[0_1px_2px_rgba(0,0,0,0.03)]" />
   );
 }
 
@@ -47,7 +41,7 @@ function PlaceholderIcons({ count, offset = 0 }: { count: number; offset?: numbe
   return (
     <>
       {Array.from({ length: count }, (_, i) => (
-        <DesktopIcon key={i + offset} index={i + offset} />
+        <DesktopIcon key={i + offset} />
       ))}
     </>
   );
@@ -57,9 +51,6 @@ function WidgetCard() {
   return (
     <div className="col-start-3 row-start-1 col-span-2 row-span-2 flex flex-col items-center justify-center gap-1.5 overflow-hidden rounded-[24px] border border-white/80 bg-white/90 px-3 shadow-[0_10px_28px_-18px_rgba(0,0,0,0.24)] backdrop-blur-md">
       <ZaiyaWakeAnimation variant="desktop-widget" />
-      <p className="whitespace-nowrap text-[11px] font-medium leading-none tracking-normal text-ink-soft">
-        在在轻轻叫你
-      </p>
     </div>
   );
 }

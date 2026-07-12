@@ -39,6 +39,9 @@ export default function DoneStep({
   const disclosure = session.specialDisclosure;
   const disclosureIncluded =
     disclosure.decision === "include" && disclosure.confirmed;
+  const selectedRecordCount = disclosure.originalRecords.filter(
+    (r) => r.selected,
+  ).length;
 
   const handleShare = async () => {
     const text = buildShareText(session);
@@ -132,14 +135,12 @@ export default function DoneStep({
                 ))}
               </div>
             </div>
-            <div className="flex">
-              <span className="w-20 shrink-0 text-ink-faint">特殊记录</span>
-              <span>
-                {disclosureIncluded
-                  ? `已加入 ${disclosure.originalRecords.length} 条`
-                  : "未加入"}
-              </span>
-            </div>
+            {disclosureIncluded && selectedRecordCount > 0 && (
+              <div className="flex">
+                <span className="w-20 shrink-0 text-ink-faint">高风险记录</span>
+                <span>已加入 {selectedRecordCount} 条</span>
+              </div>
+            )}
             <div className="flex">
               <span className="w-20 shrink-0 text-ink-faint">创建日期</span>
               <span>{formatCreatedAt(session.createdAt)}</span>

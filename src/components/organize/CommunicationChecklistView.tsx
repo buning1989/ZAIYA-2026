@@ -8,7 +8,7 @@ import {
   buildChecklist,
   buildShareText,
   formatDateRange,
-  formatSensitiveRecordTime,
+  formatHighRiskRecordTime,
   type CommunicationSession,
 } from "@/data/organize";
 import { Toast } from "./shared";
@@ -116,11 +116,11 @@ export default function CommunicationChecklistView({ session, onBack }: Props) {
           </div>
         </div>
 
-        {/* 单独确认的内容 */}
+        {/* 高风险记录 */}
         {checklist.disclosure && (
           <div className="mt-6">
             <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-ink-faint">
-              单独确认的内容
+              高风险记录
             </div>
             <div className="mt-3 flex flex-col gap-3">
               {checklist.disclosure.records.map((record) => (
@@ -129,8 +129,8 @@ export default function CommunicationChecklistView({ session, onBack }: Props) {
                   className="rounded-xl border border-line bg-card-soft/30 px-4 py-3"
                 >
                   <div className="flex items-center justify-between text-[11.5px] text-ink-faint">
-                    <span>{formatSensitiveRecordTime(record.recordedAt)}</span>
-                    <span>{record.recordType}</span>
+                    <span>来源：{record.sourceLabel}</span>
+                    <span>{formatHighRiskRecordTime(record.recordedAt)}</span>
                   </div>
                   <p className="mt-2 whitespace-pre-wrap text-[12.5px] leading-relaxed text-ink-soft">
                     {record.originalText}

@@ -109,38 +109,48 @@ export interface CommunicationTopic {
   allowedInMaterial: boolean;
 }
 
-/** 特殊情况披露决定 */
+/** 高风险记录披露决定 */
 export type DisclosureDecision = "pending" | "include" | "exclude";
 
-/** 敏感表达分类（仅内部用，UI 不直接展示） */
-export type SensitiveCategory =
-  | "self_harm_expression"
-  | "suicidal_ideation_expression"
-  | "severe_conflict"
-  | "loss_of_control"
-  | "other_sensitive";
+/**
+ * 高风险内部识别分类（仅用于内部筛选，不在 UI 展示）。
+ * 产品不在此处评定用户具体属于哪类行为，只做「高风险原话是否披露」的确认。
+ */
+export type RiskCategory =
+  | "self_harm"
+  | "od_or_medication_abuse"
+  | "suicidal_ideation_or_behavior"
+  | "harmed_by_others";
 
-/** 特殊记录原文（展示用户当时填写的真实内容，不做系统摘要） */
-export interface SensitiveOriginalRecord {
+/** 高风险记录来源场景（仅这两种，UI 展示为「情绪记录」/「对话模式」） */
+export type HighRiskSourceType = "emotion_record" | "conversation";
+
+/**
+ * 高风险原话记录：完整展示用户原话，不改写、不摘要、不提取关键词、
+ * 不合并、不展示 AI 解释或总结。对话来源只展示用户自己的原话。
+ * 默认不选；用户主动勾选后该条才进入材料。
+ */
+export interface HighRiskOriginalRecord {
   id: string;
+  sourceType: HighRiskSourceType;
+  /** 来源场景可读标签（UI 唯一展示的来源信息） */
+  sourceLabel: "情绪记录" | "对话模式";
   /** ISO 时间，用于展示「6 月 24 日 01:32」 */
   recordedAt: string;
-  /** 记录类型，如「情绪记录」 */
-  recordType: string;
-  /** 用户当时填写的原文，不做改写、不做摘要、不做风险判断 */
+  /** 用户原话，完整展示 */
   originalText: string;
-  /** 为什么需要单独确认（UI 展示用，克制描述，不做诊断/风险判断） */
-  confirmReason: string;
-  /** 敏感表达分类（仅内部用，UI 不直接展示） */
-  sensitiveCategory: SensitiveCategory;
+  /** 是否被用户勾选放入材料（默认 false） */
+  selected: boolean;
+  /** 内部高风险分类，不在 UI 展示 */
+  riskCategory: RiskCategory;
 }
 
-/** 特殊情况披露 */
+/** 高风险记录披露决策容器 */
 export interface SpecialDisclosure {
   exists: boolean;
   count: number;
-  /** 真实原始记录（用户原文） */
-  originalRecords: SensitiveOriginalRecord[];
+  /** 高风险原话记录（完整展示用户原文） */
+  originalRecords: HighRiskOriginalRecord[];
   decision: DisclosureDecision;
   /** 是否经过确认（点击任一按钮即为确认） */
   confirmed: boolean;
@@ -344,29 +354,59 @@ export function createMockTopics(): CommunicationTopic[] {
   ];
 }
 
-/** 创建 Mock 特殊情况披露（小晨 2 条深夜情绪记录原文） */
+/** 创建 Mock 高风险记录披露
+ * 4 条高风险原话，覆盖情绪记录 / 对话模式两种来源，
+ * 内部 riskCategory 覆盖自我伤害、OD/药物滥用、自杀倾向、被他人伤害四类（仅内部，不在 UI 展示）。
+ * 全部默认 selected: false，用户需逐条勾选才放入材料。
+ * originalText 均使用小晨 Demo 中已有的真实记录或对话原文，不改写、不摘要。 */
 export function createMockDisclosure(): SpecialDisclosure {
   return {
     exists: true,
-    count: 2,
+    count: 4,
     originalRecords: [
       {
-        id: "sensitive-1",
+        id: "highrisk-1",
+        sourceType: "emotion_record",
+        sourceLabel: "情绪记录",
         recordedAt: "2026-06-24T01:32",
-        recordType: "情绪记录",
         originalText:
           "又到一点多了还是睡不着。脑子里全是明天的课，作业也没写完。躺着躺着突然觉得特别没意思，好像怎么都撑不下去，但又说不上来撑不下去是什么意思。就是很累。",
-        confirmReason: "涉及：撑不下去、无力感相关表达",
-        sensitiveCategory: "self_harm_expression",
+        selected: false,
+        // 内部分类，不在 UI 展示
+        riskCategory: "suicidal_ideation_or_behavior",
       },
       {
-        id: "sensitive-2",
+        id: "highrisk-2",
+        sourceType: "emotion_record",
+        sourceLabel: "情绪记录",
         recordedAt: "2026-07-06T01:48",
-        recordType: "情绪记录",
         originalText:
           "睡不着。晚上又和妈妈因为上学的事吵了一架，她说我就是在找借口。我不想跟她吵，心里堵得慌。那种感觉又上来了，好像再怎么努力也没用。",
-        confirmReason: "涉及：强烈焦虑、冲突后失控感",
-        sensitiveCategory: "loss_of_control",
+        selected: false,
+        // 内部分类，不在 UI 展示
+        riskCategory: "self_harm",
+      },
+      {
+        id: "highrisk-3",
+        sourceType: "conversation",
+        sourceLabel: "对话模式",
+        recordedAt: "2026-07-12T07:35",
+        originalText:
+          "我又没去学校。我妈一直问我怎么办，我不知道，我真的不知道。",
+        selected: false,
+        // 内部分类，不在 UI 展示
+        riskCategory: "harmed_by_others",
+      },
+      {
+        id: "highrisk-4",
+        sourceType: "conversation",
+        sourceLabel: "对话模式",
+        recordedAt: "2026-07-12T14:20",
+        originalText:
+          "落了三张数学卷子，刚才想补，打开三分钟就受不了了。我知道我该学，但我真的动不了。",
+        selected: false,
+        // 内部分类，不在 UI 展示
+        riskCategory: "od_or_medication_abuse",
       },
     ],
     decision: "pending",
@@ -539,8 +579,8 @@ export interface ChecklistData {
   contactName: string;
   dateRange: string;
   topics: { title: string; content: string }[];
-  /** 单独确认的特殊记录（仅当用户选择告诉对方时存在） */
-  disclosure?: { records: SensitiveOriginalRecord[] };
+  /** 用户确认放入材料的高风险记录（仅当用户选择告诉对方时存在） */
+  disclosure?: { records: HighRiskOriginalRecord[] };
 }
 
 /** 构建沟通清单 */
@@ -552,9 +592,12 @@ export function buildChecklist(session: CommunicationSession): ChecklistData {
     topics: topics.map((t) => ({ title: t.title, content: t.content })),
   };
   if (session.specialDisclosure.allowedInMaterial) {
-    data.disclosure = {
-      records: session.specialDisclosure.originalRecords,
-    };
+    const selectedRecords = session.specialDisclosure.originalRecords.filter(
+      (r) => r.selected,
+    );
+    if (selectedRecords.length > 0) {
+      data.disclosure = { records: selectedRecords };
+    }
   }
   return data;
 }
@@ -565,8 +608,8 @@ export interface MaterialSection {
   paragraph?: string;
   topics?: { title: string; content: string; sourceType: TopicSourceType }[];
   facts?: { topicTitle: string; evidence: string[] }[];
-  /** 经用户确认纳入的特殊记录原文（仅当用户选择告诉对方时存在） */
-  disclosureRecords?: SensitiveOriginalRecord[];
+  /** 用户确认放入材料的高风险记录原文（仅当用户选择告诉对方时存在） */
+  disclosureRecords?: HighRiskOriginalRecord[];
   otherRecords?: { title: string; items: string[] }[];
 }
 
@@ -608,14 +651,19 @@ export function buildFullMaterial(session: CommunicationSession): MaterialSectio
     });
   }
 
-  // 4. 经用户确认纳入的特殊记录（仅当用户选择告诉对方时展示原文）
+  // 4. 经用户确认纳入的高风险记录（仅展示用户勾选的原话）
   if (session.specialDisclosure.allowedInMaterial) {
-    sections.push({
-      id: "disclosure",
-      title: "经用户确认纳入的特殊记录",
-      paragraph: "该记录经用户确认后纳入。",
-      disclosureRecords: session.specialDisclosure.originalRecords,
-    });
+    const selectedRecords = session.specialDisclosure.originalRecords.filter(
+      (r) => r.selected,
+    );
+    if (selectedRecords.length > 0) {
+      sections.push({
+        id: "disclosure",
+        title: "经用户确认纳入的高风险记录",
+        paragraph: "以下记录经用户确认后纳入材料。",
+        disclosureRecords: selectedRecords,
+      });
+    }
   }
 
   // 5. 其他记录概览
@@ -659,12 +707,17 @@ export function buildShareText(session: CommunicationSession): string {
   }
 
   if (session.specialDisclosure.allowedInMaterial) {
-    lines.push("经确认纳入的特殊记录（该记录经用户确认后纳入）：");
-    session.specialDisclosure.originalRecords.forEach((r) => {
-      lines.push(`- ${formatSensitiveRecordTime(r.recordedAt)} ${r.recordType}`);
-      lines.push(`  ${r.originalText}`);
-    });
-    lines.push("");
+    const selectedRecords = session.specialDisclosure.originalRecords.filter(
+      (r) => r.selected,
+    );
+    if (selectedRecords.length > 0) {
+      lines.push("经确认纳入的高风险记录：");
+      selectedRecords.forEach((r) => {
+        lines.push(`- 来源：${r.sourceLabel} · ${formatHighRiskRecordTime(r.recordedAt)}`);
+        lines.push(`  ${r.originalText}`);
+      });
+      lines.push("");
+    }
   }
 
   lines.push(MATERIAL_DESCRIPTION);
@@ -703,8 +756,8 @@ export function formatCreatedAt(ts: number): string {
   return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
 }
 
-/** 特殊记录时间格式化：2026-06-24T01:32 → 6 月 24 日 01:32 */
-export function formatSensitiveRecordTime(iso: string): string {
+/** 高风险记录时间格式化：2026-06-24T01:32 → 6 月 24 日 01:32 */
+export function formatHighRiskRecordTime(iso: string): string {
   const d = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getMonth() + 1} 月 ${d.getDate()} 日 ${pad(d.getHours())}:${pad(d.getMinutes())}`;

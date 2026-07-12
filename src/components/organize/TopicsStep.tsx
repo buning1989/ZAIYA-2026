@@ -295,10 +295,6 @@ const TopicCard = forwardRef<HTMLDivElement, TopicCardProps>(function TopicCard(
           : "border-line"
       }`}
     >
-      {/* 选中态左侧强调线 */}
-      {topic.selected && (
-        <span className="absolute inset-y-0 left-0 w-[3px] bg-accent" />
-      )}
       {/* 卡片主体（点击切换选择） */}
       <button
         onClick={onToggleSelect}

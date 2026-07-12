@@ -36,7 +36,7 @@ export default function Hero({ onOpenDemo }: Props) {
               className="inline-flex items-center gap-2 rounded-full border border-line bg-white px-3 py-1 text-[12px] text-ink-soft"
             >
               <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-              面向社会功能受损青少年的 AI 健康生活管理助手
+              面向精神心理困扰人群的 AI 健康生活伙伴
             </motion.span>
 
             <motion.h1
@@ -53,11 +53,11 @@ export default function Hero({ onOpenDemo }: Props) {
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.14, ease }}
-            className="mt-8 max-w-xl font-display text-[34px] font-semibold leading-[1.05] tracking-normal text-ink sm:text-[42px] md:text-[52px]"
+            className="mt-8 max-w-xl font-display text-[26px] font-medium leading-[1.2] tracking-normal text-ink sm:text-[30px] md:text-[34px]"
           >
-            不靠意志力启动，
+            帮助社会功能受损的精神心理困扰人群，
             <br />
-            从一个生活节点开始。
+            重建健康生活模式。
           </motion.h2>
 
           <motion.div

@@ -9,6 +9,9 @@ import type { HomeTimePhase } from "@/lib/homeTimePhase";
  *
  * 视觉：普通居中文案，无卡片背景；增加对比度和行高，避免弱到不像引导语。
  * 动效：跟随动画模块的 soft reveal。
+ *
+ * 演示模式：传入 overrideCopy 时只展示该文案，不循环、不打字机，
+ * 随首页挂载柔和出现。自由体验模式不受影响。
  */
 
 const HOME_BUBBLE_COPY = [
@@ -24,25 +27,42 @@ function nextCopyIndex(idx: number): number {
   return (idx + 1) % HOME_BUBBLE_COPY.length;
 }
 
-export default function HomeBubbleCopy({ phase }: { phase: HomeTimePhase }) {
+export default function HomeBubbleCopy({
+  phase,
+  overrideCopy,
+}: {
+  phase: HomeTimePhase;
+  /** 演示模式注入的固定文案。提供时只展示该文案，不循环、不打字机。 */
+  overrideCopy?: string;
+}) {
   const [idx, setIdx] = useState(0);
   const [visibleCount, setVisibleCount] = useState(0);
   const prefersReducedMotion = useReducedMotion();
 
   // 场景切换时从第一句重新开始，避免不同时段回到首页时卡在半句。
+  // 演示模式下 overrideCopy 不受 phase 重置影响（直接展示完整文案）。
   useEffect(() => {
+    if (overrideCopy) return;
     setIdx(0);
     setVisibleCount(0);
-  }, [phase]);
+  }, [phase, overrideCopy]);
 
-  const text = HOME_BUBBLE_COPY[idx] ?? HOME_BUBBLE_COPY[0];
+  const text = overrideCopy ?? HOME_BUBBLE_COPY[idx] ?? HOME_BUBBLE_COPY[0];
   const textChars = Array.from(text);
   const visibleText = prefersReducedMotion
     ? text
     : textChars.slice(0, visibleCount).join("");
-  const isTyping = !prefersReducedMotion && visibleCount < textChars.length;
+  // 演示模式（overrideCopy 存在）直接展示完整文案，不显示打字光标
+  const isTyping =
+    !overrideCopy && !prefersReducedMotion && visibleCount < textChars.length;
 
   useEffect(() => {
+    // 演示模式：直接展示完整文案，不启动打字机定时器
+    if (overrideCopy) {
+      setVisibleCount(textChars.length);
+      return;
+    }
+
     const chars = Array.from(text);
 
     if (prefersReducedMotion) {
@@ -84,7 +104,8 @@ export default function HomeBubbleCopy({ phase }: { phase: HomeTimePhase }) {
         window.clearTimeout(holdTimer);
       }
     };
-  }, [phase, prefersReducedMotion, text]);
+    // overrideCopy 变化时重新初始化展示
+  }, [phase, prefersReducedMotion, text, overrideCopy, textChars.length]);
 
   return (
     <motion.div
