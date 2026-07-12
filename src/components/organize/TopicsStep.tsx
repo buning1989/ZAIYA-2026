@@ -289,12 +289,16 @@ const TopicCard = forwardRef<HTMLDivElement, TopicCardProps>(function TopicCard(
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.97 }}
       transition={{ duration: 0.25, ease }}
-      className={`rounded-2xl border transition-colors ${
+      className={`relative overflow-hidden rounded-2xl border bg-white transition-colors ${
         topic.selected
-          ? "border-accent bg-accent-soft/40"
-          : "border-line bg-white"
+          ? "border-accent"
+          : "border-line"
       }`}
     >
+      {/* 选中态左侧强调线 */}
+      {topic.selected && (
+        <span className="absolute inset-y-0 left-0 w-[3px] bg-accent" />
+      )}
       {/* 卡片主体（点击切换选择） */}
       <button
         onClick={onToggleSelect}
