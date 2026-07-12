@@ -30,6 +30,9 @@ import {
 import HomeTimeAnchor from "./HomeTimeAnchor";
 import HomeBubbleCopy from "./HomeBubbleCopy";
 import ZaizaiHomeScene from "./ZaizaiHomeScene";
+import DialogueZaiyaAnimation, {
+  type DialogueAnimState,
+} from "./DialogueZaiyaAnimation";
 import { getHomeTimePhase } from "@/lib/homeTimePhase";
 import BreathingFlow from "./BreathingFlow";
 import RecordEnergyToast, {
@@ -421,6 +424,10 @@ export default function AppMainSurface({
   );
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
+  // 回复刚出现：sending 由 true→false 时置 true，短窗口后自动清除
+  const [replyJustAppeared, setReplyJustAppeared] = useState(false);
+  const prevSendingRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // —— 缓解模式状态 ——
@@ -852,6 +859,27 @@ export default function AppMainSurface({
 
   const closeDialog = () => setMode("home");
 
+  // —— 对话顶部在在动画状态机 ——
+  // 检测 sending 由 true→false（回复到达），触发 responding 短窗口
+  useEffect(() => {
+    const wasSending = prevSendingRef.current;
+    prevSendingRef.current = sending;
+    if (wasSending && !sending) {
+      setReplyJustAppeared(true);
+      const t = window.setTimeout(() => setReplyJustAppeared(false), 1200);
+      return () => window.clearTimeout(t);
+    }
+  }, [sending]);
+
+  // 状态优先级：thinking(等待回复) > responding(回复刚出现且未在输入) > listening(聚焦/输入) > idle
+  const dialogueAnimState: DialogueAnimState = sending
+    ? "thinking"
+    : replyJustAppeared && input.trim().length === 0
+      ? "responding"
+      : inputFocused || input.trim().length > 0
+        ? "listening"
+        : "idle";
+
   // 选择缓解能力项：仅「呼吸法」可进入；未开放卡片已标识「暂未开放」标签，点击无反馈。
   const selectRelief = (m: { id: ReliefMethodId; enabled: boolean }) => {
     if (!m.enabled) return;
@@ -961,6 +989,11 @@ export default function AppMainSurface({
                     }
                   />
                 }
+              />
+            ) : effectiveMode === "dialog" ? (
+              <DialogueZaiyaAnimation
+                state={dialogueAnimState}
+                onRespondingEnd={() => setReplyJustAppeared(false)}
               />
             ) : (
               <video
@@ -1190,6 +1223,8 @@ export default function AppMainSurface({
                   <textarea
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
+                    onFocus={() => setInputFocused(true)}
+                    onBlur={() => setInputFocused(false)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
