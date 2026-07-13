@@ -112,14 +112,14 @@ export const xiaochenDay1Scenario: GuidedScenario = {
       time: "06:40",
       title: "起床失败",
       narrative: [
-        "妈妈叫起床，小晨翻身埋回枕头，没有碰手机。",
-        "小晨打开在呀 ZÀIYA，看到在在拉开了窗帘，象征新一天的开始。",
+        "妈妈叫起床，小晨翻身埋回枕头，没有回应。",
+        "过了一会儿，她点亮手机，看到桌面小组件里的在在拉开了窗帘，象征新一天的开始。",
         "它没有弹窗、没有响铃、没有催小晨起床。",
         "稳定出现的晨起画面，成为不施压的生活节律参照。",
       ],
       principles: "替代性示范 × 最小行为启动 × 非对峙原则 × 昼夜节律锚定",
       explanation: "降低启动压力，也保留下一次行动的可能。",
-      moduleTags: ["home"],
+      moduleTags: ["widget"],
       demoState: {
         enabled: true,
         now: makeDate("06:40"),

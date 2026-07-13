@@ -1,68 +1,26 @@
-import { ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type Props = {
-  atStart: boolean;
-  atEnd: boolean;
   total: number;
   stepIndex: number;
-  onPrev: () => void;
-  onNext: () => void;
   onGoTo: (index: number) => void;
-  onEnterFree: () => void;
 };
 
 /* —— 案例演示控制层（简化版）——
  * 职责：
- *   - 移动端 Prev/Next 按钮（桌面端左右大按钮由 UnifiedDemoStage 直接渲染）
  *   - 底部进度点（可点击跳转）
+ *   - 轻量提示语
  *
- * 键盘 ←/→ 切换由 UnifiedDemoStage 统一处理，覆盖所有阶段（含阶段页）。
- * 桌面端左右大按钮不在本组件内，因为它们需要紧贴手机左右两侧
- * 作为舞台 flex 的子项，由 UnifiedDemoStage 在 flex 行中直接渲染。
+ * 导航（左右箭头、键盘、滑动）由 UnifiedDemoStage 统一处理。
+ * 不再包含移动端 Prev/Next 按钮，统一使用滑动切换。
  */
 export default function GuidedDemoControls({
-  atStart,
-  atEnd,
   total,
   stepIndex,
-  onPrev,
-  onNext,
   onGoTo,
-  onEnterFree,
 }: Props) {
-  const handleNext = atEnd ? onEnterFree : onNext;
-
   return (
     <>
-      {/* 移动端：内联 Prev/Next 按钮（故事面板下方） */}
-      <div className="mt-8 flex items-center justify-center gap-3 lg:hidden">
-        <button
-          onClick={onPrev}
-          disabled={atStart}
-          aria-label="上一节点"
-          className="grid h-11 w-11 place-items-center rounded-full border border-line text-ink-soft transition-colors hover:border-ink-faint hover:text-ink disabled:cursor-not-allowed disabled:opacity-30 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/25"
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </button>
-        <button
-          onClick={handleNext}
-          aria-label={atEnd ? "完成并进入自由体验" : "下一节点"}
-          className="inline-flex h-11 items-center gap-1.5 rounded-full bg-ink px-6 text-[13px] font-medium text-white transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/25"
-        >
-          {atEnd ? (
-            <>
-              <Check className="h-4 w-4" />
-              完成
-            </>
-          ) : (
-            <>
-              下一步
-              <ChevronRight className="h-4 w-4" />
-            </>
-          )}
-        </button>
-      </div>
-
       {/* 底部进度点：可点击跳转 */}
       <div className="mt-6 flex items-center justify-center gap-2">
         {Array.from({ length: total }, (_, i) => {
@@ -83,9 +41,9 @@ export default function GuidedDemoControls({
         })}
       </div>
 
-      {/* 键盘引导语 */}
+      {/* 提示语 */}
       <p className="mt-3 text-center text-[12px] text-ink-faint">
-        键盘 ← / → 切换
+        键盘 ← / → 或左右滑动切换
       </p>
     </>
   );
@@ -97,12 +55,10 @@ export default function GuidedDemoControls({
 export function NavArrow({
   direction,
   disabled,
-  isEnd,
   onClick,
 }: {
   direction: "left" | "right";
   disabled: boolean;
-  isEnd: boolean;
   onClick: () => void;
 }) {
   const isLeft = direction === "left";
@@ -110,22 +66,15 @@ export function NavArrow({
     <button
       onClick={onClick}
       disabled={disabled}
-      aria-label={
-        isLeft
-          ? "上一节点"
-          : isEnd
-            ? "完成并进入自由体验"
-            : "下一节点"
-      }
+      aria-label={isLeft ? "上一页" : "下一页"}
       className="hidden h-12 w-12 shrink-0 place-items-center rounded-full border border-line bg-white text-ink-soft shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] transition-colors hover:border-ink-faint hover:text-ink disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-line disabled:hover:text-ink-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/25 lg:grid"
     >
       {isLeft ? (
         <ChevronLeft className="h-6 w-6" />
-      ) : isEnd ? (
-        <Check className="h-6 w-6" />
       ) : (
         <ChevronRight className="h-6 w-6" />
       )}
     </button>
   );
 }
+

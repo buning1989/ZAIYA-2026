@@ -5,14 +5,9 @@ import {
   consultationPageContent,
 } from "./scenarios/consultationPrep";
 
-type Props = {
-  onNext: () => void;
-  onBack: () => void;
-};
-
 /* —— 复诊整理页面 ——
- * 在两周后故事结束后，新增独立展示区块。
- * 展示日常碎片如何整理成专业人士可理解的信息。
+ * 独立阶段页，不再包含导航按钮。
+ * 评委通过左右箭头或键盘 → 切换页面。
  *
  * 结构：
  *   A. 标题区：小标签 + 主标题 + 副标题
@@ -22,7 +17,7 @@ type Props = {
  *   E. 三方价值：对小晨/对家长/对医生
  *   F. 页面收束
  */
-export default function ConsultationPrepPage({ onNext, onBack }: Props) {
+export default function ConsultationPrepPage() {
   return (
     <div className="mx-auto w-full max-w-[680px]">
       {/* —— A. 标题区 —— */}
@@ -122,23 +117,6 @@ export default function ConsultationPrepPage({ onNext, onBack }: Props) {
         <p className="text-center text-[16px] leading-[1.7] text-ink">
           {consultationPageContent.closing}
         </p>
-
-        {/* 主按钮 */}
-        <div className="mt-8 flex flex-col items-center gap-3">
-          <button
-            onClick={onNext}
-            className="inline-flex h-12 w-full max-w-[280px] items-center justify-center rounded-full bg-action-primary px-6 text-[15px] font-medium text-action-primary-text transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/25"
-          >
-            看完整案例总结
-          </button>
-
-          <button
-            onClick={onBack}
-            className="inline-flex h-9 items-center rounded-full px-4 text-[13px] text-ink-faint transition-colors hover:text-ink-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/25"
-          >
-            ← 回到两周后
-          </button>
-        </div>
       </section>
     </div>
   );

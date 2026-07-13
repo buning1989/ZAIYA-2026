@@ -141,6 +141,7 @@ export type ScenarioId = "day1" | "day2";
 
 /** 产品模块标签：用于在故事面板中标识当前步骤涉及的硬功能 */
 export type ProductModuleTag =
+  | "widget"
   | "home"
   | "dialog"
   | "relief"
@@ -154,6 +155,7 @@ export type ProductModuleTag =
 
 /** 模块标签 → 产品内真实名称映射 */
 export const moduleLabelMap: Record<ProductModuleTag, string> = {
+  widget: "桌面小组件",
   home: "首页",
   dialog: "对话",
   relief: "缓解",

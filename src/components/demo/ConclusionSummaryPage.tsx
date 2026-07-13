@@ -1,12 +1,8 @@
 import { conclusionContent } from "./scenarios/conclusionSummary";
 
-type Props = {
-  onBack: () => void;
-};
-
 /* —— 两天整体大总结页 ——
- * 完整替换原压缩改写版。
- * 突出四方价值、GPM 核心和"桥"的定位。
+ * 演示序列最后一页。不再包含返回按钮。
+ * 评委通过左箭头或键盘 ← 返回复诊整理页。
  *
  * 结构：
  *   A. 第一部分：痛苦中的人最怕的
@@ -16,11 +12,10 @@ type Props = {
  *   E. GPM 说明
  *   F. 最终收束
  *   G. 终句
- *   H. 返回按钮
  *
  * 所有可见文字保持 Word 文档原文。
  */
-export default function ConclusionSummaryPage({ onBack }: Props) {
+export default function ConclusionSummaryPage() {
   return (
     <div className="mx-auto w-full max-w-[680px]">
       {/* —— A. 第一部分 —— */}
@@ -145,19 +140,6 @@ export default function ConclusionSummaryPage({ onBack }: Props) {
         <p className="text-center text-[26px] font-semibold leading-[1.4] text-ink">
           {conclusionContent.finalLine}
         </p>
-      </section>
-
-      {/* —— H. 返回按钮 —— */}
-      <section
-        aria-label="返回按钮"
-        className="mt-12 flex flex-col items-center gap-3"
-      >
-        <button
-          onClick={onBack}
-          className="inline-flex h-9 items-center rounded-full px-4 text-[13px] text-ink-faint transition-colors hover:text-ink-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/25"
-        >
-          ← 回到复诊整理
-        </button>
       </section>
     </div>
   );
