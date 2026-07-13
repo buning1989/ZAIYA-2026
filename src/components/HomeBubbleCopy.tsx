@@ -123,7 +123,7 @@ export default function HomeBubbleCopy({
   return (
     <motion.div
       variants={softRevealItemVariants}
-      className="min-h-[40px] max-w-[226px] text-left text-[14px] font-normal leading-[20px]"
+      className="min-h-[40px] max-w-[226px] text-center text-[14px] font-normal leading-[20px]"
       style={{ color: "rgba(0, 0, 0, 0.68)" }}
     >
       {hasEmphasis ? (

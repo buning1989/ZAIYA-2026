@@ -72,7 +72,7 @@ function WidgetSurface() {
     <div className="mx-auto w-full max-w-[420px]">
       <div className="relative h-[440px] overflow-hidden rounded-t-[42px] bg-ink p-[7px] pb-0 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.14)]">
         <div className="relative h-full overflow-hidden rounded-t-[33px] bg-white">
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(251,252,245,0.9),rgba(255,255,255,1))]" />
+          <div className="absolute inset-0 bg-white" />
 
           <div className="relative z-20 flex items-center justify-between px-6 pt-3 pb-1 text-[11px] font-semibold text-ink-faint">
             <span>9:41</span>

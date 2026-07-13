@@ -37,34 +37,36 @@ export default function ZaizaiHomeScene({
   const render = SCENE_RENDER[phase];
 
   return (
-    <div className="pointer-events-none relative grid h-[190px] w-[220px] place-items-center overflow-visible">
+    <div className="pointer-events-none relative h-[280px] w-[220px] overflow-visible">
       {guide && (
-        <div className="absolute left-1/2 top-[4px] z-10 w-[226px] -translate-x-1/2">
+        <div className="absolute left-1/2 top-0 z-10 w-[226px] -translate-x-1/2 text-center">
           {guide}
         </div>
       )}
-      <AnimatePresence mode="sync">
-        <motion.video
-          key={src}
-          src={src}
-          draggable={false}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.4, ease }}
-          className={`block max-w-none select-none object-contain ${render.mediaClass}`}
-          style={{
-            transform: `translate(${render.x}px, ${render.y}px) scale(${render.scale})`,
-            transformOrigin: "center center",
-          }}
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="none"
-          controls={false}
-        />
-      </AnimatePresence>
+      <div className="absolute inset-x-0 bottom-0 flex justify-center">
+        <AnimatePresence mode="sync">
+          <motion.video
+            key={src}
+            src={src}
+            draggable={false}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4, ease }}
+            className={`block max-w-none select-none object-contain ${render.mediaClass}`}
+            style={{
+              transform: `translate(${render.x}px, ${render.y}px) scale(${render.scale})`,
+              transformOrigin: "center center",
+            }}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="none"
+            controls={false}
+          />
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
