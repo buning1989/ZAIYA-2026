@@ -128,6 +128,23 @@ export function getHomeTimeLabel(date: Date): string {
   return "夜深了";
 }
 
+/* —— 7 个时间段按一天时间顺序排列，用于自由体验模式首页轮播 —— */
+export const HOME_PHASE_ORDER: HomeTimePhase[] = [
+  "morning",
+  "forenoon",
+  "noon",
+  "afternoon",
+  "dusk",
+  "evening",
+  "night",
+];
+
+/** 返回下一个时间段（到 night 后回到 morning，循环） */
+export function getNextHomePhase(phase: HomeTimePhase): HomeTimePhase {
+  const idx = HOME_PHASE_ORDER.indexOf(phase);
+  return HOME_PHASE_ORDER[(idx + 1) % HOME_PHASE_ORDER.length];
+}
+
 /* —— 各时间段对应的在在首页动画素材（向后兼容） —— */
 export const HOME_PHASE_SCENE: Record<HomeTimePhase, string> = {
   morning: "/assets/homepage-animations/打开窗帘，阳光自己就挤进来了.webm",

@@ -28,7 +28,12 @@ import ZaizaiHomeScene from "./ZaizaiHomeScene";
 import DialogueZaiyaAnimation, {
   type DialogueAnimState,
 } from "./DialogueZaiyaAnimation";
-import { getHomeTimePhase } from "@/lib/homeTimePhase";
+import {
+  getHomeTimePhase,
+  getNextHomePhase,
+  HOME_PHASE_BUBBLE_TEXT,
+  type HomeTimePhase,
+} from "@/lib/homeTimePhase";
 import EnergyRewardFeedback, {
   type EnergyRewardEvent,
 } from "./EnergyRewardFeedback";
@@ -461,6 +466,27 @@ export default function AppMainSurface({
   // 演示模式下使用 demoState.now；否则使用系统时间
   const effectiveNow = demoEnabled && demoState?.now ? demoState.now : now;
   const homePhase = getHomeTimePhase(effectiveNow);
+
+  // —— 自由体验模式首页轮播：从真实时间对应的 phase 起步，自动循环播放 7 个时间段 ——
+  // 仅在 immersive + 非 demo 模式下启用，让体验者在短时间内能感知到全部 7 段动画+文案。
+  // 案例演示模式（demoEnabled）使用 demoState.now 注入的固定 phase，不受轮播影响。
+  // 落地页 Hero 固定 morning，也不受影响。
+  const isFreeImmersive = variant === "immersive" && !demoEnabled;
+  const [carouselPhase, setCarouselPhase] =
+    useState<HomeTimePhase>(homePhase);
+  useEffect(() => {
+    if (!isFreeImmersive) return;
+    // 单段时长 = 当前文案打字机时长 + 停留时间
+    // 打字机每字 80ms（与 HomeBubbleCopy 一致），最少 1s；停留 7s 让动画与文案被充分感知。
+    const text = HOME_PHASE_BUBBLE_TEXT[carouselPhase];
+    const typingMs = Math.max(Array.from(text).length * 80, 1000);
+    const holdMs = 7000;
+    const timer = window.setTimeout(() => {
+      setCarouselPhase((prev) => getNextHomePhase(prev));
+    }, typingMs + holdMs);
+    return () => window.clearTimeout(timer);
+  }, [isFreeImmersive, carouselPhase]);
+  const effectiveHomePhase = isFreeImmersive ? carouselPhase : homePhase;
 
   // —— 首页内模式状态（仅 interactive/immersive 下由对应 icon 触发）——
   const [mode, setMode] = useState<SurfaceMode>("home");
@@ -1069,7 +1095,7 @@ export default function AppMainSurface({
           <div className="relative">
             {effectiveMode === "home" && variant === "immersive" ? (
               <ZaizaiHomeScene
-                phase={homePhase}
+                phase={effectiveHomePhase}
                 guide={
                   onDemoBubbleClick && demoEnabled ? (
                     <motion.button
@@ -1081,7 +1107,7 @@ export default function AppMainSurface({
                       className="pointer-events-auto block cursor-pointer rounded-lg text-center"
                     >
                       <HomeBubbleCopy
-                        phase={homePhase}
+                        phase={effectiveHomePhase}
                         overrideCopy={
                           demoEnabled ? demoState?.bubbleCopy : undefined
                         }
@@ -1092,7 +1118,7 @@ export default function AppMainSurface({
                     </motion.button>
                   ) : (
                     <HomeBubbleCopy
-                      phase={homePhase}
+                      phase={effectiveHomePhase}
                       overrideCopy={
                         demoEnabled ? demoState?.bubbleCopy : undefined
                       }
