@@ -1,9 +1,11 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import GuidedModeSwitch from "./GuidedModeSwitch";
 import GuidedStoryPanel from "./GuidedStoryPanel";
 import GuidedDemoControls, { NavArrow } from "./GuidedDemoControls";
 import XiaochenCaseIntro from "./XiaochenCaseIntro";
+import DayOneSummaryPage from "./DayOneSummaryPage";
 import TwoWeekTransition from "./TwoWeekTransition";
 import ConsultationPrepPage from "./ConsultationPrepPage";
 import ConclusionSummaryPage from "./ConclusionSummaryPage";
@@ -23,15 +25,35 @@ type Props = {
 /* —— 线性叙事相位 ——
  * intro         → 案例介绍
  * day1          → 第一天 1/7 … 7/7
- * transition    → 两周后过渡页
+ * day1-summary  → 第一天结束总结页
+ * week2-intro   → 两周后开场页
  * day2          → 小晨两周后 1/9 … 9/9
  * consultation  → 复诊整理页
  * conclusion    → 结尾总结页
  *
- * 评委不再通过 Tab 切换第一天/第二天，而是通过「下一步」线性推进。
- * 第一天末步 → transition → 第二天第 1 步 → … → 第二天末步 → consultation → conclusion
+ * 评委不再通过 Tab 切换第一天/第二天，而是通过左右箭头/键盘线性推进。
+ * day1-summary 和 week2-intro 是独立阶段页，使用统一左右切换，无按钮。
  */
-type GuidedPhase = "intro" | "day1" | "transition" | "day2" | "consultation" | "conclusion";
+type GuidedPhase =
+  | "intro"
+  | "day1"
+  | "day1-summary"
+  | "week2-intro"
+  | "day2"
+  | "consultation"
+  | "conclusion";
+
+/* 阶段页（无手机 Demo、无分页圆点，但有左右箭头） */
+const PHASE_PAGES: GuidedPhase[] = [
+  "day1-summary",
+  "week2-intro",
+  "consultation",
+  "conclusion",
+];
+
+function isPhasePage(phase: GuidedPhase): boolean {
+  return PHASE_PAGES.includes(phase);
+}
 
 /* —— 统一演示舞台 ——
  * 案例演示（guided）和自由体验（free）共用同一个舞台容器。
@@ -39,13 +61,11 @@ type GuidedPhase = "intro" | "day1" | "transition" | "day2" | "consultation" | "
  * 核心设计：
  * 1. 外层页面、背景、舞台容器不变 —— 由 DemoExperience 提供
  * 2. 弱提示返回入口与模式切换控件常驻顶部，位置不变
- * 3. 手机 Demo（DemoPhoneFrame + AppMainSurface）在 scenario ↔ free 之间不卸载，
- *    只通过 demoState prop 的有无切换内部状态
- * 4. 线性叙事：intro → day1 → transition → day2，不再有「第一天｜第二天」Tab
- * 5. transition 不显示手机 Demo，独立居中卡片
+ * 3. 手机 Demo（DemoPhoneFrame + AppMainSurface）在 scenario ↔ free 之间不卸载
+ * 4. 线性叙事：intro → day1 → day1-summary → week2-intro → day2 → consultation → conclusion
+ * 5. 阶段页（day1-summary / week2-intro）不显示手机 Demo 和分页圆点，但保留左右箭头
  *
- * guidedPhase 状态在 guided/free 切换时保留：
- * - scenario → free → guided：回到之前的 phase / step
+ * guidedPhase 状态在 guided/free 切换时保留。
  */
 export default function UnifiedDemoStage({
   mode,
@@ -54,25 +74,16 @@ export default function UnifiedDemoStage({
   onSwitchToFree,
 }: Props) {
   const [phase, setPhase] = useState<GuidedPhase>("intro");
-  // 分别记住第一天 / 第二天的步骤索引，便于 transition 双向返回时恢复
   const [day1Index, setDay1Index] = useState(0);
   const [day2Index, setDay2Index] = useState(0);
 
   const enterDay1 = useCallback(() => setPhase("day1"), []);
-  const enterDay2 = useCallback(() => {
-    setDay2Index(0);
-    setPhase("day2");
-  }, []);
-  const enterConsultation = useCallback(() => setPhase("consultation"), []);
   const enterConclusion = useCallback(() => setPhase("conclusion"), []);
-  const backToDay1 = useCallback(() => {
-    setDay1Index(xiaochenDay1Scenario.steps.length - 1);
-    setPhase("day1");
-  }, []);
   const backToDay2 = useCallback(() => {
     setDay2Index(xiaochenDay2Scenario.steps.length - 1);
     setPhase("day2");
   }, []);
+  const backToConsultation = useCallback(() => setPhase("consultation"), []);
 
   const isDay2 = phase === "day2";
   const scenario = isDay2 ? xiaochenDay2Scenario : xiaochenDay1Scenario;
@@ -82,25 +93,42 @@ export default function UnifiedDemoStage({
 
   const atStart = stepIndex <= 0;
   const atEnd = stepIndex >= total - 1;
-  // 仅第二天末步才真正"完成 → 进入复诊整理页"；第一天末步下一步是 transition
+  // 仅第二天末步才真正"完成 → 进入自由体验"
   const isFinalEnd = isDay2 && atEnd;
 
   const next = useCallback(() => {
     if (phase === "day1") {
-      if (atEnd) setPhase("transition");
+      if (atEnd) setPhase("day1-summary");
       else setDay1Index((i) => Math.min(i + 1, xiaochenDay1Scenario.steps.length - 1));
+    } else if (phase === "day1-summary") {
+      setPhase("week2-intro");
+    } else if (phase === "week2-intro") {
+      setDay2Index(0);
+      setPhase("day2");
     } else if (phase === "day2") {
       if (atEnd) setPhase("consultation");
       else setDay2Index((i) => Math.min(i + 1, xiaochenDay2Scenario.steps.length - 1));
+    } else if (phase === "consultation") {
+      setPhase("conclusion");
     }
   }, [phase, atEnd]);
 
   const prev = useCallback(() => {
     if (phase === "day1") {
       if (!atStart) setDay1Index((i) => Math.max(i - 1, 0));
+    } else if (phase === "day1-summary") {
+      setDay1Index(xiaochenDay1Scenario.steps.length - 1);
+      setPhase("day1");
+    } else if (phase === "week2-intro") {
+      setPhase("day1-summary");
     } else if (phase === "day2") {
-      if (atStart) setPhase("transition");
+      if (atStart) setPhase("week2-intro");
       else setDay2Index((i) => Math.max(i - 1, 0));
+    } else if (phase === "consultation") {
+      setDay2Index(xiaochenDay2Scenario.steps.length - 1);
+      setPhase("day2");
+    } else if (phase === "conclusion") {
+      setPhase("consultation");
     }
   }, [phase, atStart]);
 
@@ -116,14 +144,49 @@ export default function UnifiedDemoStage({
   );
 
   const showIntro = mode === "guided" && phase === "intro";
-  const showTransition = mode === "guided" && phase === "transition";
+  const showDay1Summary = mode === "guided" && phase === "day1-summary";
+  const showWeek2Intro = mode === "guided" && phase === "week2-intro";
   const showConsultation = mode === "guided" && phase === "consultation";
   const showConclusion = mode === "guided" && phase === "conclusion";
   const showStage = mode === "guided" && (phase === "day1" || phase === "day2");
 
+  // 阶段页（day1-summary / week2-intro）需要左右箭头，但不显示手机和圆点
+  const showPhasePage = mode === "guided" && isPhasePage(phase);
+
+  // 统一键盘事件：覆盖所有 guided 阶段（intro 除外）
+  // intro 由 XiaochenCaseIntro 的按钮进入，不响应键盘左右
+  useEffect(() => {
+    if (mode !== "guided" || phase === "intro") return;
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        prev();
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        if (isFinalEnd) onSwitchToFree();
+        else next();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mode, phase, prev, next, isFinalEnd, onSwitchToFree]);
+
   const stageKey = useMemo(
-    () => (showIntro ? "intro" : showTransition ? "transition" : showConsultation ? "consultation" : showConclusion ? "conclusion" : "stage"),
-    [showIntro, showTransition, showConsultation, showConclusion],
+    () =>
+      showIntro
+        ? "intro"
+        : showDay1Summary
+          ? "day1-summary"
+          : showWeek2Intro
+            ? "week2-intro"
+            : showConsultation
+              ? "consultation"
+              : showConclusion
+                ? "conclusion"
+                : "stage",
+    [showIntro, showDay1Summary, showWeek2Intro, showConsultation, showConclusion],
   );
 
   return (
@@ -166,15 +229,25 @@ export default function UnifiedDemoStage({
             >
               <XiaochenCaseIntro onStart={enterDay1} />
             </motion.div>
-          ) : showTransition ? (
+          ) : showDay1Summary ? (
             <motion.div
-              key="transition"
+              key="day1-summary"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.28, ease: SOFT_EASE }}
             >
-              <TwoWeekTransition onEnter={enterDay2} onBack={backToDay1} />
+              <DayOneSummaryPage />
+            </motion.div>
+          ) : showWeek2Intro ? (
+            <motion.div
+              key="week2-intro"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.28, ease: SOFT_EASE }}
+            >
+              <TwoWeekTransition />
             </motion.div>
           ) : showConsultation ? (
             <motion.div
@@ -194,7 +267,7 @@ export default function UnifiedDemoStage({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.28, ease: SOFT_EASE }}
             >
-              <ConclusionSummaryPage onBack={enterConsultation} />
+              <ConclusionSummaryPage onBack={backToConsultation} />
             </motion.div>
           ) : (
             <motion.div
@@ -287,6 +360,26 @@ export default function UnifiedDemoStage({
         </AnimatePresence>
       </div>
 
+      {/* 阶段页（day1-summary / week2-intro）的左右箭头 */}
+      {showPhasePage && !showConsultation && !showConclusion && (
+        <div className="mt-8 flex items-center justify-between">
+          <button
+            onClick={prev}
+            aria-label="上一页"
+            className="grid h-11 w-11 place-items-center rounded-full border border-line text-ink-soft transition-colors hover:border-ink-faint hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/25"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button
+            onClick={next}
+            aria-label="下一页"
+            className="grid h-11 w-11 place-items-center rounded-full border border-line text-ink-soft transition-colors hover:border-ink-faint hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/25"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </div>
+      )}
+
       {/* 固定高度控制槽：内容仅在 guided stage 显示，避免切换时上下漂移 */}
       {showStage && (
         <div className="min-h-[138px] lg:min-h-[61px]">
@@ -303,6 +396,13 @@ export default function UnifiedDemoStage({
             />
           )}
         </div>
+      )}
+
+      {/* 阶段页键盘提示 */}
+      {showPhasePage && (
+        <p className="mt-4 text-center text-[12px] text-ink-faint">
+          键盘 ← / → 切换
+        </p>
       )}
     </div>
   );

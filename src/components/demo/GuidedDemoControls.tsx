@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 
 type Props = {
@@ -14,10 +13,10 @@ type Props = {
 
 /* —— 案例演示控制层（简化版）——
  * 职责：
- *   - 键盘 ←/→ 切换步骤（末步 → 进入自由体验）
  *   - 移动端 Prev/Next 按钮（桌面端左右大按钮由 UnifiedDemoStage 直接渲染）
  *   - 底部进度点（可点击跳转）
  *
+ * 键盘 ←/→ 切换由 UnifiedDemoStage 统一处理，覆盖所有阶段（含阶段页）。
  * 桌面端左右大按钮不在本组件内，因为它们需要紧贴手机左右两侧
  * 作为舞台 flex 的子项，由 UnifiedDemoStage 在 flex 行中直接渲染。
  */
@@ -31,24 +30,6 @@ export default function GuidedDemoControls({
   onGoTo,
   onEnterFree,
 }: Props) {
-  // 键盘左右方向键
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement | null)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA") return;
-      if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        if (!atStart) onPrev();
-      } else if (e.key === "ArrowRight") {
-        e.preventDefault();
-        if (atEnd) onEnterFree();
-        else onNext();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [atStart, atEnd, onPrev, onNext, onEnterFree]);
-
   const handleNext = atEnd ? onEnterFree : onNext;
 
   return (
