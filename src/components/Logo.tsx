@@ -1,9 +1,11 @@
 import { lazy, Suspense } from "react";
+import { rivePlayerLoader } from "@/lib/moduleLoaders";
 
 /* 性能优化（2026-07-13）：@rive-app/react-canvas 库较大（~250KB gzip），
  * 通过 React.lazy 将 RivePlayer 拆为独立 chunk，Logo 文字部分立即可见，
- * Rive 动画在主 bundle 解析完成后异步加载，避免阻塞首屏文字渲染。 */
-const RivePlayer = lazy(() => import("./RivePlayer"));
+ * Rive 动画在主 bundle 解析完成后异步加载，避免阻塞首屏文字渲染。
+ * 预加载优化：使用集中式 loader，确保预加载与真实渲染复用同一份 Promise。 */
+const RivePlayer = lazy(rivePlayerLoader);
 
 type Props = {
   className?: string;

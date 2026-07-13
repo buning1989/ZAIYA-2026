@@ -22,12 +22,40 @@ import type { OrganizeHistoryEntry } from "@/data/organize";
 
 /* 性能优化（2026-07-13）：MoreMenu 中各功能页按需懒加载，
  * 首屏 / 主菜单态不加载 RecordFlow / LookbackPage / OrganizePage / PraisePage / PrivacyPage 代码。
- * 各页仅在选择对应 itemId 后才加载对应 chunk。 */
-const RecordFlow = lazy(() => import("./RecordFlow"));
-const LookbackPage = lazy(() => import("./LookbackPage"));
-const OrganizePage = lazy(() => import("./OrganizePage"));
-const PraisePage = lazy(() => import("./PraisePage"));
-const PrivacyPage = lazy(() => import("./PrivacyPage"));
+ * 预加载优化（2026-07-13）：所有 loader 复用集中式 moduleLoaders，
+ * 确保 React.lazy 和预加载（preloadModule）使用同一个 Promise。 */
+import {
+  recordFlowLoader,
+  lookbackPageLoader,
+  organizePageLoader,
+  praisePageLoader,
+  privacyPageLoader,
+  loadRecordFlow,
+  loadLookbackPage,
+  loadOrganizePage,
+  loadPraisePage,
+  loadPrivacyPage,
+} from "@/lib/moduleLoaders";
+import { usePrefetchMap } from "@/lib/usePrefetch";
+
+const RecordFlow = lazy(recordFlowLoader);
+const LookbackPage = lazy(lookbackPageLoader);
+const OrganizePage = lazy(organizePageLoader);
+const PraisePage = lazy(praisePageLoader);
+const PrivacyPage = lazy(privacyPageLoader);
+
+/* —— Intent Prefetch 映射：MoreItemId → 预加载函数 ——
+ * 在用户 hover/focus/touch 功能入口时预加载对应模块 chunk。 */
+const PREFETCH_MAP: Record<MoreItemId, () => void> = {
+  note: loadRecordFlow,
+  review: loadLookbackPage,
+  organize: loadOrganizePage,
+  praise: loadPraisePage,
+  privacy: loadPrivacyPage,
+  energy: () => {},
+  help: () => {},
+  settings: () => {},
+};
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -78,6 +106,7 @@ export function MoreContent({
   /** 点击「暂未开放」入口时触发，由父级展示统一提示 */
   onUnavailable?: (msg: string) => void;
 }) {
+  const prefetchMap = usePrefetchMap(PREFETCH_MAP);
   return (
     <div className="relative flex h-full flex-col bg-white">
       {/* 上半部分：功能区 */}
@@ -85,6 +114,7 @@ export function MoreContent({
         <ul className="flex flex-col">
           {moreMenuItems.map((item, i) => {
             const isUnavailable = item.id === "energy";
+            const prefetch = prefetchMap[item.id];
             return (
               <motion.li
                 key={item.id}
@@ -104,6 +134,10 @@ export function MoreContent({
                       onSelect(item.id);
                     }
                   }}
+                  onPointerEnter={prefetch}
+                  onFocus={prefetch}
+                  onTouchStart={prefetch}
+                  onPointerDown={prefetch}
                   className="flex w-full items-center gap-4 py-4 text-left transition-colors hover:text-ink-faint"
                 >
                   <item.Icon

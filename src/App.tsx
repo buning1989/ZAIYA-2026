@@ -8,10 +8,12 @@ import CharacterDesign from "@/components/CharacterDesign";
 import Team from "@/components/Team";
 import Vision from "@/components/Vision";
 import Footer from "@/components/Footer";
+import { demoExperienceLoader } from "@/lib/moduleLoaders";
 
 /* 性能优化（2026-07-13）：DemoExperience 及其全部子组件（UnifiedDemoStage、
- * 10+ Demo 流程、场景数据等）拆分为独立 chunk，落地页首屏不加载 Demo 代码。 */
-const DemoExperience = lazy(() => import("@/components/demo/DemoExperience"));
+ * 10+ Demo 流程、场景数据等）拆分为独立 chunk，落地页首屏不加载 Demo 代码。
+ * 预加载优化：使用集中式 loader，确保预加载与真实渲染复用同一份 Promise。 */
+const DemoExperience = lazy(demoExperienceLoader);
 
 /** 初始 URL 是否带 ?mode=guided / ?mode=free（用于直接访问对应模式）。 */
 function urlHasDemoMode(): boolean {

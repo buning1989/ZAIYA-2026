@@ -45,27 +45,37 @@ import type {
 } from "./demo/types";
 
 /* 性能优化（2026-07-13）：按功能模块拆包，落地页 / 首页首屏不加载以下重型模块。
- * - PresenceRoom（一起发呆 / 一起吃饭 / 轻社交场景选择）
- * - BreathingFlow（呼吸法全流程）
- * - DemoRecordPreview / DemoPraisePreview（演示态记录 / 夸夸预览）
- * - LookbackPage（回头看看，含大量数据结构与表格组件）
- * - MaterialDetailView / DoneStep（帮我整理：材料详情 / 完成页）
- * 全部通过 React.lazy 拆为独立 chunk，仅 mode 切换到对应态时才加载。 */
+ * 预加载优化（2026-07-13）：所有 loader 复用集中式 moduleLoaders，
+ * 确保 React.lazy 和预加载（preloadModule）使用同一个 Promise。 */
+import {
+  presenceRoomLoader,
+  breathingFlowLoader,
+  demoRecordPreviewLoader,
+  demoPraisePreviewLoader,
+  lookbackPageLoader,
+  materialDetailViewLoader,
+  doneStepLoader,
+  loadBreathingFlow,
+  loadPresenceRoom,
+} from "@/lib/moduleLoaders";
+import { preloadVideo, preloadImage } from "@/lib/mediaPreloader";
+import { usePrefetch } from "@/lib/usePrefetch";
+
 const SocialSceneSelectContent = lazy(() =>
-  import("./PresenceRoom").then((m) => ({ default: m.SocialSceneSelectContent })),
+  presenceRoomLoader().then((m) => ({ default: m.SocialSceneSelectContent })),
 );
 const DazeFlow = lazy(() =>
-  import("./PresenceRoom").then((m) => ({ default: m.DazeFlow })),
+  presenceRoomLoader().then((m) => ({ default: m.DazeFlow })),
 );
 const EatFlow = lazy(() =>
-  import("./PresenceRoom").then((m) => ({ default: m.EatFlow })),
+  presenceRoomLoader().then((m) => ({ default: m.EatFlow })),
 );
-const BreathingFlow = lazy(() => import("./BreathingFlow"));
-const DemoRecordPreview = lazy(() => import("./demo/DemoRecordPreview"));
-const DemoPraisePreview = lazy(() => import("./demo/DemoPraisePreview"));
-const LookbackPage = lazy(() => import("./LookbackPage"));
-const MaterialDetailView = lazy(() => import("./organize/MaterialDetailView"));
-const DoneStep = lazy(() => import("./organize/DoneStep"));
+const BreathingFlow = lazy(breathingFlowLoader);
+const DemoRecordPreview = lazy(demoRecordPreviewLoader);
+const DemoPraisePreview = lazy(demoPraisePreviewLoader);
+const LookbackPage = lazy(lookbackPageLoader);
+const MaterialDetailView = lazy(materialDetailViewLoader);
+const DoneStep = lazy(doneStepLoader);
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -938,6 +948,14 @@ export default function AppMainSurface({
     }
   };
 
+  // —— Intent Prefetch：首页核心 icon hover/focus 时预加载对应模块 ——
+  const prefetchBreathing = usePrefetch(() => {
+    loadBreathingFlow();
+  });
+  const prefetchPresenceRoom = usePrefetch(() => {
+    loadPresenceRoom();
+  });
+
   // 核心按钮：preview 仅瞬时反馈；interactive 触发回调
   // id 0 = AI对话 → 进入首页内对话模式（不跳转下一屏）
   // id 1 = Wind → 进入首页内缓解选择态（不触发 onNext / 不向上回调）
@@ -950,6 +968,9 @@ export default function AppMainSurface({
         onPointerLeave: () => setActive(null),
       };
     }
+    // 预加载映射：i=1 → BreathingFlow，i=2 → PresenceRoom
+    const prefetch =
+      i === 1 ? prefetchBreathing : i === 2 ? prefetchPresenceRoom : undefined;
     return {
       onClick: () => {
         if (i === 0) {
@@ -972,6 +993,14 @@ export default function AppMainSurface({
         setTimeout(() => setActive(null), 300);
         onButtonClick?.(i);
       },
+      ...(prefetch
+        ? {
+            onPointerEnter: prefetch,
+            onFocus: prefetch,
+            onTouchStart: prefetch,
+            onPointerDown: prefetch,
+          }
+        : {}),
     };
   };
 
@@ -1047,7 +1076,7 @@ export default function AppMainSurface({
                       whileTap={{ scale: 1.02 }}
                       whileHover={{ scale: 1.01 }}
                       transition={{ duration: 0.2, ease }}
-                      className="pointer-events-auto block cursor-pointer rounded-lg text-left"
+                      className="pointer-events-auto block cursor-pointer rounded-lg text-center"
                     >
                       <HomeBubbleCopy
                         phase={homePhase}
@@ -1408,6 +1437,10 @@ export default function AppMainSurface({
                   <button
                     key={m.id}
                     onClick={() => selectRelief(m)}
+                    onPointerEnter={prefetchBreathing}
+                    onFocus={prefetchBreathing}
+                    onTouchStart={prefetchBreathing}
+                    onPointerDown={prefetchBreathing}
                     className={`relative flex flex-col items-center justify-center gap-2 rounded-2xl border py-5 transition-colors ${
                       m.enabled
                         ? "border-line bg-white hover:border-ink-faint"

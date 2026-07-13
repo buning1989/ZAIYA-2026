@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { preloadVideo } from "@/lib/mediaPreloader";
 
 /* —— 对话模式顶部在在动画：基于对话状态切换 WebM ——
  * 四种状态：idle / listening / thinking / responding
@@ -7,6 +8,11 @@ import { cn } from "@/lib/utils";
  * - responding：播放一次短动作后回到 idle（由父级 onRespondingEnd 触发）
  * - 四个 video 常驻叠层，preload="none"：仅 active 状态由 play() 触发加载
  *   性能优化（2026-07-13）：从 preload="auto" 改为 "none"，避免一次性加载 4 个视频
+ * - 预加载优化（2026-07-13）：状态预加载链
+ *   idle 显示时预加载 listening；
+ *   用户开始输入时预加载 thinking；
+ *   thinking 显示时预加载 responding；
+ *   不一次加载四个状态。
  * - 切换加 200ms 淡入淡出，容器尺寸不变，不抖动
  * - 任一视频加载失败：回退到 idle，控制台 warning，不阻断使用
  * - video 容器背景透明，承接 WebM 透明底素材
@@ -64,6 +70,7 @@ export default function DialogueZaiyaAnimation({
   const effectiveState: DialogueAnimState = failed.has(state) ? "idle" : state;
 
   // 状态切换时：激活对应 video（从头播放），其余暂停
+  // 同时预加载下一个状态的视频（预加载链）
   useEffect(() => {
     const active = effectiveState;
     (Object.keys(videoRefs.current) as DialogueAnimState[]).forEach((s) => {
@@ -86,6 +93,18 @@ export default function DialogueZaiyaAnimation({
         el.pause();
       }
     });
+
+    // 预加载链：当前状态显示时，提前预加载下一个可能的状态
+    const NEXT_STATE: Record<DialogueAnimState, DialogueAnimState> = {
+      idle: "listening",
+      listening: "thinking",
+      thinking: "responding",
+      responding: "idle",
+    };
+    const nextState = NEXT_STATE[active];
+    if (nextState && nextState !== active) {
+      preloadVideo(VIDEO_SOURCES[nextState]);
+    }
   }, [effectiveState]);
 
   return (

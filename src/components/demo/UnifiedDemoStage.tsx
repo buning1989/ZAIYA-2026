@@ -13,13 +13,18 @@ import DemoPhoneFrame from "./DemoPhoneFrame";
 import DemoWatchFrame from "./DemoWatchFrame";
 import DemoSleepRecordFlow from "./DemoSleepRecordFlow";
 import DemoOrganizeFlow from "./DemoOrganizeFlow";
-import DemoPraiseFlow from "./DemoPraiseFlow";
+import DemoPraisePreview from "./DemoPraisePreview";
 import DemoLookbackFlow from "./DemoLookbackFlow";
 import FreeExperiencePanel from "./FreeExperiencePanel";
 import { xiaochenDay1Scenario } from "./scenarios/xiaochenDay1";
 import { xiaochenDay2Scenario } from "./scenarios/xiaochenDay2";
+import { day2PraiseDemo } from "./scenarios/xiaochenTwoWeekSummary";
 import type { DialogItem } from "./types";
 import { SOFT_EASE } from "@/lib/motionVariants";
+import {
+  getNextNodeKey,
+  preloadNodeResources,
+} from "./demoPreloadMap";
 
 type Props = {
   mode: "guided" | "free";
@@ -41,7 +46,7 @@ type Props = {
  * 所有阶段统一使用左右箭头 / 键盘 ← → / 移动端左右滑动切换。
  * 不再设置任何用于推进流程的 CTA 按钮。
  */
-type GuidedPhase =
+export type GuidedPhase =
   | "intro"
   | "day1"
   | "day1-summary"
@@ -226,6 +231,26 @@ export default function UnifiedDemoStage({
     },
     [phase, goTo],
   );
+
+  /* —— 预加载下一节点资源 ——
+   * 当前节点稳定显示后（延迟 600ms，避免与当前节点渲染争抢带宽），
+   * 后台只预加载下一个节点的：动态 JS chunk + 首个 WebM + poster + 音频。
+   * 不预加载下下个节点。已加载缓存保留，返回不重复下载。 */
+  useEffect(() => {
+    if (mode !== "guided") return;
+    const nextKey = getNextNodeKey(
+      phase,
+      day1Index,
+      day2Index,
+      xiaochenDay1Scenario.steps.length,
+      xiaochenDay2Scenario.steps.length,
+    );
+    if (!nextKey) return;
+    const timer = window.setTimeout(() => {
+      preloadNodeResources(nextKey);
+    }, 600);
+    return () => window.clearTimeout(timer);
+  }, [phase, day1Index, day2Index, mode]);
 
   /* —— 对话自动逐条出现 ——
    * 07:35（day1[1]）：短消息 400ms，长消息 750ms，对话全部出现后停留
@@ -555,10 +580,10 @@ export default function UnifiedDemoStage({
                       overlay={<DemoOrganizeFlow />}
                     />
                   ) : isDay2PraiseNode && mode === "guided" ? (
-                    /* 第二周 16:30：夸夸卡创建 → 保存（内部两状态流程） */
+                    /* 第二周 16:30：夸夸自己首页 feed（对齐体验模式） */
                     <DemoPhoneFrame
                       demoState={step.demoState}
-                      overlay={<DemoPraiseFlow />}
+                      overlay={<DemoPraisePreview preset={day2PraiseDemo} />}
                     />
                   ) : isDay2LookbackNode && mode === "guided" ? (
                     /* 第二周 21:00：回头看看 近两周睡眠趋势 + 饮食摘要 */
