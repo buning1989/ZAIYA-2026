@@ -46,9 +46,8 @@ export default function GuidedCaseResultPage() {
       </h1>
 
       {/* —— B. 副标题 —— */}
-      <p className="mt-6 max-w-[640px] text-[17px] leading-[1.8] text-ink">
-        两周里，她从被动获得支持，慢慢开始记录、整理、回看，
-        也开始参与自己的恢复过程。
+      <p className="mt-6 text-[26px] font-semibold leading-[1.5] text-ink">
+        两周里，她从被动获得支持，慢慢开始记录、整理、回看，也开始参与自己的恢复过程。
       </p>
 
       {/* —— C. 三张变化卡片 —— */}
