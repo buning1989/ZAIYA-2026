@@ -1,15 +1,20 @@
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { ChevronLeft } from "lucide-react";
 import RecordSummaryCard, {
   type SummaryRow,
 } from "@/components/RecordSummaryCard";
+import RecordNoteSection from "@/components/RecordNoteSection";
+import { PhoneStatusBar } from "@/components/AppMainSurface";
+import EnergyBadge from "@/components/EnergyBadge";
 
 /* —— 第二周 10:00 节点：睡眠记录确认 → 结果态演示流程 ——
  *
  * 状态 A（confirm）：直接展示已填写到最终确认步骤的睡眠记录单。
  *   - 复用 RecordSummaryCard 展示字段（与真实「记一下」确认页一致）
- *   - 记录单下方低干扰陪伴文案
- *   - 评委点击「完成记录」→ 切换到状态 B
+ *   - 复用 RecordNoteSection 展示补充说明区域（视觉与真实产品一致）
+ *   - 复用 PhoneStatusBar + 导航栏（与真实产品一致）
+ *   - 评委点击「保存记录」→ 切换到状态 B
  *
  * 状态 B（result）：今天的记录结果页。
  *   - 轻量反馈「已经轻轻留下来了」
@@ -39,9 +44,6 @@ const SLEEP_ROWS: SummaryRow[] = [
   { label: "时间", value: "刚刚" },
 ];
 
-/* 记录单下方低干扰陪伴文案 */
-const COMPANION_TEXT = "我喜欢把小事记下来，\n不然它们会像风一样跑掉。";
-
 export default function DemoSleepRecordFlow() {
   const [state, setState] = useState<FlowState>("confirm");
   const prefersReducedMotion = useReducedMotion();
@@ -57,21 +59,39 @@ export default function DemoSleepRecordFlow() {
           exit={{ opacity: 0 }}
           transition={{ duration: prefersReducedMotion ? 0 : 0.28, ease }}
         >
-          {/* 状态栏占位 */}
-          <div className="h-11 shrink-0" />
+          {/* iOS 风格状态栏 */}
+          <PhoneStatusBar />
+
+          {/* 页面导航栏：返回箭头 + 标题 + 能量入口 */}
+          <div className="relative flex items-center gap-3 bg-white px-5 pt-14 pb-2">
+            <button
+              aria-label="返回"
+              className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+            <h2 className="flex-1 text-[17px] font-semibold tracking-tight text-ink">
+              睡眠
+            </h2>
+            <EnergyBadge value={0} position="inline" />
+          </div>
+
+          {/* 记录确认页主体 */}
           <div className="flex-1">
             <RecordSummaryCard
               rows={SLEEP_ROWS}
               saved={false}
-              primaryButtonText="完成记录"
+              primaryButtonText="保存记录"
               onPrimaryClick={() => setState("result")}
             >
-              {/* 记录单下方、按钮上方：低干扰陪伴文案 */}
-              <div className="mt-5">
-                <p className="whitespace-pre-line text-center text-[13px] leading-relaxed text-ink-faint">
-                  {COMPANION_TEXT}
-                </p>
-              </div>
+              {/* 补充说明区域：复用真实产品组件，视觉与体验模块一致 */}
+              <RecordNoteSection
+                value=""
+                onChange={() => {}}
+                saved={false}
+                placeholder="比如做了梦、半夜醒了几次、醒来后的感觉"
+                hint="比如做了梦、半夜醒了几次、醒来后的感觉"
+              />
             </RecordSummaryCard>
           </div>
         </motion.div>
