@@ -1,21 +1,21 @@
-/* —— 产品价值总结页｜在呀还做了什么 ——
- * Guided Demo 第二张总结页。独立阶段页，解释产品机制与价值。
+/* —— 关系总结页｜小晨与身边的人 ——
+ * Guided Demo 第二张总结页。独立阶段页，第三方视角描述小晨与家长、老师、医生之间
+ * 支持关系的重新建立。
  *
  * 结构：
- *   A. 主标题（两行）
- *   B. 副标题（问题背景 + 转折句）
- *   C. 三张产品价值卡片（桌面端横向排列）
- *   D. 用户授权说明条
- *   E. 产品定位横向总结卡
- *   F. 专业依据弱化说明
- *   G. 最终收束（主文案 + 辅助文案）
- *   H. 底部操作（重新观看案例 / 进入自由体验）
+ *   A. 主标题
+ *   B. 副标题
+ *   C. 中心人物 + 三方连接（家长 / 老师 / 医生 围绕 小晨）
+ *   D. 用户主导说明条（弱化）
+ *   E. 页面收束
+ *   F. 行动引导文案 + 操作按钮（重新观看案例 / 进入自由体验）
  *
- * 视觉与第一张总结页保持一组：相同宽度、圆角、边框、正文深绿色、浅色背景。
- * 表达重点不同：第一页偏人物变化，第二页偏产品价值。
+ * 不包含：数据图表、产品机制、GPM/BPS 理论、第一页中的记录 / 整理 / 回看内容。
+ * 视觉与第一张总结页保持一组：相同宽度、标题字号、卡片圆角、边框和背景。
+ * 关系展示采用中心结构，不与第一页的三张横向卡片重复。
  *
- * 作为 Guided Demo 最后一页，左箭头由 UnifiedDemoStage 统一承载，返回案例结果页；
- * 右箭头由 UnifiedDemoStage 统一禁用并隐藏。
+ * 作为 Guided Demo 最后一页，左箭头由 UnifiedDemoStage 统一承载返回第一页；
+ * 右箭头由 UnifiedDemoStage 统一隐藏，不允许继续循环到案例开头。
  */
 
 type Props = {
@@ -25,29 +25,23 @@ type Props = {
   onEnterFreeExperience: () => void;
 };
 
-type ValueCard = {
-  tag: string;
-  title: string;
+type RoleCard = {
+  role: string;
   body: string;
-  extra?: string;
 };
 
-const valueCards: ValueCard[] = [
+const roleCards: RoleCard[] = [
   {
-    tag: "低压力陪伴",
-    title: "陪在真实生活发生的地方",
-    body: "在起床、吃饭、情绪失控和深夜难熬的时候，用低压力的方式接住用户，而不是再增加一项任务。",
+    role: "家长",
+    body: "从只看到结果，到逐渐理解过程，减少误解和冲突。",
   },
   {
-    tag: "连续记录",
-    title: "让零散状态逐渐形成趋势",
-    body: "睡眠、饮食、情绪、用药和现实活动，不再只散落在记忆和对话里。",
-    extra: "用户可以先从外面看见自己的生活。",
+    role: "医生",
+    body: "不只依赖一次门诊，也能了解更连续的生活状态。",
   },
   {
-    tag: "支持协同",
-    title: "让支持建立在同一段生活之上",
-    body: "医生获得更连续的信息，家长从结果看见过程，学校和其他支持者也能获得更清晰的支持依据。",
+    role: "老师",
+    body: "更早看见她的困难，也更容易提供合适的节奏和支持。",
   },
 ];
 
@@ -55,95 +49,102 @@ export default function GuidedProductValuePage({
   onRestart,
   onEnterFreeExperience,
 }: Props) {
+  const [parent, doctor, teacher] = roleCards;
+
   return (
     <div className="mx-auto w-full max-w-[920px]">
       {/* —— A. 主标题 —— */}
       <h1 className="text-[26px] font-semibold leading-[1.5] text-ink">
-        每个人都在帮，
-        <br />
-        但他们看到的，往往只是生活的一小部分。
+        小晨和身边的人，开始重新建立连接。
       </h1>
 
       {/* —— B. 副标题 —— */}
       <p className="mt-6 text-[17px] leading-[1.8] text-ink-soft">
-        医生看到门诊时的状态，咨询师听到一次会谈里的表达，
+        当真实的日常被看见，家长、老师和医生不再各自判断，
         <br />
-        学校看到缺勤，家长看到争吵。
-      </p>
-      <p className="mt-2 text-[17px] leading-[1.8] text-ink">
-        在呀做的，是把这些时刻之间的生活连接起来。
+        而是围绕同一段生活提供支持。
       </p>
 
-      {/* —— C. 三张产品价值卡片 —— */}
-      <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5">
-        {valueCards.map((card) => (
-          <div
-            key={card.title}
-            className="rounded-2xl border border-line-soft bg-card-soft/60 px-5 py-5"
-          >
-            <span className="inline-block rounded-full border border-line bg-white/60 px-2 py-0.5 text-[11px] tracking-[0.04em] text-ink-soft">
-              {card.tag}
-            </span>
-            <p className="mt-3 text-[16px] font-semibold leading-[1.4] text-ink">
-              {card.title}
-            </p>
-            <p className="mt-2 text-[14px] leading-[1.7] text-ink-soft">
-              {card.body}
-            </p>
-            {card.extra ? (
-              <p className="mt-2 text-[14px] leading-[1.7] text-ink">
-                {card.extra}
-              </p>
-            ) : null}
-          </div>
-        ))}
+      {/* —— C. 中心人物 + 三方连接 —— */}
+      <div className="relative mx-auto mt-10 w-full max-w-[680px]">
+        {/* 连接线（在卡片下层，仅卡片间隙处可见，淡色虚线表达关系重新建立） */}
+        <svg
+          className="pointer-events-none absolute inset-0 h-full w-full"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          {/* 医生（顶部） → 小晨（中心）：纵线穿过行间隙 */}
+          <line
+            x1="50"
+            y1="20"
+            x2="50"
+            y2="78"
+            stroke="currentColor"
+            strokeWidth="1"
+            strokeDasharray="3 4"
+            vectorEffect="non-scaling-stroke"
+            className="text-line-soft"
+          />
+          {/* 家长（左） → 小晨：横线穿过列间隙 */}
+          <line
+            x1="15"
+            y1="78"
+            x2="50"
+            y2="78"
+            stroke="currentColor"
+            strokeWidth="1"
+            strokeDasharray="3 4"
+            vectorEffect="non-scaling-stroke"
+            className="text-line-soft"
+          />
+          {/* 小晨 → 老师（右）：横线穿过列间隙 */}
+          <line
+            x1="50"
+            y1="78"
+            x2="85"
+            y2="78"
+            stroke="currentColor"
+            strokeWidth="1"
+            strokeDasharray="3 4"
+            vectorEffect="non-scaling-stroke"
+            className="text-line-soft"
+          />
+        </svg>
+
+        {/* 卡片网格：第一行只显示医生（居中）；第二行家长 / 小晨 / 老师 */}
+        <div className="relative grid grid-cols-3 items-center gap-x-6 gap-y-10 sm:gap-x-10">
+          <div />
+          <RoleCardItem role={doctor.role} body={doctor.body} />
+          <div />
+
+          <RoleCardItem role={parent.role} body={parent.body} />
+          <CenterCard name="小晨" />
+          <RoleCardItem role={teacher.role} body={teacher.body} />
+        </div>
       </div>
 
-      {/* —— D. 用户授权说明条 —— */}
-      <div className="mt-6 rounded-xl border border-line-soft bg-card-soft/40 px-5 py-4">
+      {/* —— D. 用户主导说明条（弱化） —— */}
+      <div className="mt-8 rounded-xl border border-line-soft bg-card-soft/40 px-5 py-4">
         <p className="text-[13px] leading-[1.7] text-ink-soft">
-          信息由小晨先查看、确认，再决定是否分享。
-          不是绕过她进行监控，也不是把她的生活变成一份黑盒报告。
+          信息先由小晨查看和确认，再决定是否分享。
         </p>
       </div>
 
-      {/* —— E. 产品定位横向总结卡 —— */}
-      <div className="mt-8 rounded-2xl border border-line-soft bg-card-soft/60 px-6 py-6">
-        <p className="text-[18px] font-semibold leading-[1.6] text-ink">
-          在呀不是再增加一个“专家”
-        </p>
-        <p className="mt-3 text-[15px] leading-[1.8] text-ink-soft">
-          它陪在日常里，让真实生活被持续记录、被用户本人理解，
-          再被需要的人看见。
-        </p>
-        <p className="mt-2 text-[15px] leading-[1.8] text-ink-soft">
-          它不替代医生、咨询师、学校或家长，
-          而是让这些支持建立在更完整的信息基础之上。
-        </p>
-      </div>
-
-      {/* —— F. 专业依据 —— */}
-      <p className="mt-5 text-[12px] leading-[1.7] text-ink-faint">
-        产品设计参考 GPM 与生物—心理—社会框架，
-        目标指向生活功能和支持系统的长期改善。
-      </p>
-
-      {/* —— G. 最终收束 —— */}
+      {/* —— E. 页面收束 —— */}
       <div className="mt-8 border-t border-line-soft pt-8">
-        <p className="text-[18px] leading-[1.7] text-ink-soft">
-          不是只陪你熬过难受的一刻。
-        </p>
-        <p className="mt-1 text-[20px] font-semibold leading-[1.6] text-ink">
-          而是陪生活，逐渐走向健康。
-        </p>
-        <p className="mt-3 text-[13px] leading-[1.7] text-ink-faint">
-          这里的健康，不只是情绪变好，
-          也是作息、自我管理、治疗配合和现实生活逐渐恢复稳定。
+        <p className="text-[17px] leading-[1.8] text-ink-soft">
+          在呀连接的，不只是信息，
+          <br />
+          也是小晨重新回到家庭、学校和现实生活中的桥梁。
         </p>
       </div>
 
-      {/* —— H. 底部操作 —— */}
-      <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+      {/* —— F. 行动引导 + 操作按钮 —— */}
+      <p className="mt-8 text-center text-[15px] font-medium text-ink">
+        接下来，亲自体验在呀。
+      </p>
+      <div className="mt-4 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
         <button
           type="button"
           onClick={onRestart}
@@ -159,6 +160,31 @@ export default function GuidedProductValuePage({
           进入自由体验
         </button>
       </div>
+    </div>
+  );
+}
+
+/* —— 角色卡片：家长 / 老师 / 医生 使用统一样式 —— */
+function RoleCardItem({ role, body }: { role: string; body: string }) {
+  return (
+    <div className="rounded-2xl border border-line-soft bg-card-soft/60 px-4 py-4 sm:px-5 sm:py-5">
+      <p className="text-[15px] font-semibold leading-[1.4] text-ink sm:text-[16px]">
+        {role}
+      </p>
+      <p className="mt-2 text-[13px] leading-[1.7] text-ink-soft sm:text-[14px]">
+        {body}
+      </p>
+    </div>
+  );
+}
+
+/* —— 中心人物卡片：小晨 —— */
+function CenterCard({ name }: { name: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-ink/15 bg-white px-5 py-6 text-center">
+      <p className="text-[16px] font-semibold leading-[1.4] text-ink sm:text-[17px]">
+        {name}
+      </p>
     </div>
   );
 }

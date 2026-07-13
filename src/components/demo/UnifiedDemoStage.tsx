@@ -498,7 +498,7 @@ export default function UnifiedDemoStage({
               transition={{ duration: 0.28, ease: SOFT_EASE }}
             >
               <div className="lg:px-20">
-                <GuidedCaseResultPage />
+                <GuidedCaseResultPage onNext={next} />
               </div>
             </motion.div>
           ) : showGuidedProductValue ? (
