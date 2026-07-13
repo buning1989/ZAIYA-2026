@@ -180,23 +180,27 @@ type DazePosture = {
   id: string;
   label: string;
   src: string;
+  poster?: string;
 };
 
 const dazePostures: DazePosture[] = [
   {
     id: "shake-head",
     label: "轻轻摇头",
-    src: "./assets/social/daze/action-shake-head.gif",
+    src: "./assets/social/daze/action-shake-head.webm",
+    poster: "./assets/social/daze/action-shake-head-poster.png",
   },
   {
     id: "quick-idle",
     label: "安静坐着",
-    src: "./assets/social/daze/action-quick-idle.gif",
+    src: "./assets/social/daze/action-quick-idle.webm",
+    poster: "./assets/social/daze/action-quick-idle-poster.png",
   },
   {
     id: "lean-back",
     label: "往后靠着",
-    src: "./assets/social/daze/action-lean-back.gif",
+    src: "./assets/social/daze/action-lean-back.webm",
+    poster: "./assets/social/daze/action-lean-back-poster.png",
   },
 ];
 
@@ -475,6 +479,7 @@ type CarouselItem = {
   id: string;
   label: string;
   src: string;
+  poster?: string;
 };
 
 /* —— carousel 单卡：透明度/缩放/描边均由 x 派生，拖拽过程中无重渲染 ——

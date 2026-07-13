@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { ChevronLeft } from "lucide-react";
 import RecordSummaryCard, {
   type SummaryRow,
@@ -10,26 +10,24 @@ import EnergyBadge from "@/components/EnergyBadge";
 
 /* —— 第二周 10:00 节点：睡眠记录确认 → 结果态演示流程 ——
  *
- * 状态 A（confirm）：直接展示已填写到最终确认步骤的睡眠记录单。
+ * 未保存态：直接展示已填写到最终确认步骤的睡眠记录单。
  *   - 复用 RecordSummaryCard 展示字段（与真实「记一下」确认页一致）
  *   - 复用 RecordNoteSection 展示补充说明区域（视觉与真实产品一致）
  *   - 复用 PhoneStatusBar + 导航栏（与真实产品一致）
- *   - 评委点击「保存记录」→ 切换到状态 B
+ *   - 评委点击「保存记录」→ 切换为真实完成态样式
  *
- * 状态 B（result）：今天的记录结果页。
- *   - 轻量反馈「已经轻轻留下来了」
- *   - 「今天已经留下 2 条记录」
- *   - 两张轻量记录卡：睡眠（本节点刚完成）+ 情绪（今天此前已留下）
+ * 已保存态：与体验模式记录完成态一致。
+ *   - 复用 RecordSummaryCard 的 saved 盖章
+ *   - 底部按钮文案切为「回到记一下」
+ *   - 补充说明进入已保存样式
  *
  * 数据隔离：所有数据均为组件内部固定 Demo 数据，不写入 localStorage、
  * 不触发能量奖励、不影响自由体验模式。
  *
- * 状态重置：组件卸载（离开节点）后重新挂载时，自动恢复到状态 A。
+ * 状态重置：组件卸载（离开节点）后重新挂载时，自动恢复到未保存态。
  */
 
 const ease = [0.22, 1, 0.36, 1] as const;
-
-type FlowState = "confirm" | "result";
 
 /* 固定 Demo 睡眠数据：对齐真实 schema 字段
  * - 入睡：凌晨0点多（对应 00:00–01:00 范围，narrative 中为 00:20）
@@ -45,105 +43,52 @@ const SLEEP_ROWS: SummaryRow[] = [
 ];
 
 export default function DemoSleepRecordFlow() {
-  const [state, setState] = useState<FlowState>("confirm");
+  const [saved, setSaved] = useState(false);
   const prefersReducedMotion = useReducedMotion();
 
   return (
-    <AnimatePresence mode="wait">
-      {state === "confirm" ? (
-        <motion.div
-          key="confirm"
-          className="absolute inset-0 z-30 flex flex-col bg-white"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: prefersReducedMotion ? 0 : 0.28, ease }}
+    <motion.div
+      key="demo-sleep-record"
+      className="absolute inset-0 z-30 flex flex-col bg-white"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: prefersReducedMotion ? 0 : 0.28, ease }}
+    >
+      {/* iOS 风格状态栏 */}
+      <PhoneStatusBar />
+
+      {/* 页面导航栏：返回箭头 + 标题 + 能量入口 */}
+      <div className="relative flex items-center gap-3 bg-white px-5 pt-14 pb-2">
+        <button
+          aria-label="返回"
+          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
         >
-          {/* iOS 风格状态栏 */}
-          <PhoneStatusBar />
+          <ChevronLeft className="h-6 w-6" />
+        </button>
+        <h2 className="flex-1 text-[17px] font-semibold tracking-tight text-ink">
+          睡眠
+        </h2>
+        <EnergyBadge value={0} position="inline" />
+      </div>
 
-          {/* 页面导航栏：返回箭头 + 标题 + 能量入口 */}
-          <div className="relative flex items-center gap-3 bg-white px-5 pt-14 pb-2">
-            <button
-              aria-label="返回"
-              className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
-            >
-              <ChevronLeft className="h-6 w-6" />
-            </button>
-            <h2 className="flex-1 text-[17px] font-semibold tracking-tight text-ink">
-              睡眠
-            </h2>
-            <EnergyBadge value={0} position="inline" />
-          </div>
-
-          {/* 记录确认页主体 */}
-          <div className="flex-1">
-            <RecordSummaryCard
-              rows={SLEEP_ROWS}
-              saved={false}
-              primaryButtonText="保存记录"
-              onPrimaryClick={() => setState("result")}
-            >
-              {/* 补充说明区域：复用真实产品组件，视觉与体验模块一致 */}
-              <RecordNoteSection
-                value=""
-                onChange={() => {}}
-                saved={false}
-                placeholder="比如做了梦、半夜醒了几次、醒来后的感觉"
-                hint="比如做了梦、半夜醒了几次、醒来后的感觉"
-              />
-            </RecordSummaryCard>
-          </div>
-        </motion.div>
-      ) : (
-        <motion.div
-          key="result"
-          className="absolute inset-0 z-30 flex flex-col bg-white px-5"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: prefersReducedMotion ? 0 : 0.28, ease }}
+      {/* 记录确认 / 已保存主体：与体验模式 SleepRecordWizard 完成态同构 */}
+      <div className="min-h-0 flex-1">
+        <RecordSummaryCard
+          rows={SLEEP_ROWS}
+          saved={saved}
+          primaryButtonText={saved ? "回到记一下" : "保存记录"}
+          onPrimaryClick={() => setSaved(true)}
         >
-          {/* 状态栏占位 */}
-          <div className="h-11 shrink-0" />
-
-          {/* 轻量反馈 */}
-          <div className="pt-8">
-            <p className="text-center text-[13px] text-ink-faint">
-              已经轻轻留下来了
-            </p>
-          </div>
-
-          {/* 今日记录总数 */}
-          <div className="pt-6">
-            <h3 className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
-              今天已经留下 2 条记录
-            </h3>
-          </div>
-
-          {/* 记录卡片区 */}
-          <div className="mt-6 flex flex-col gap-3">
-            {/* 睡眠：本节点刚完成的记录 */}
-            <div className="rounded-2xl border border-line bg-white px-5 py-4">
-              <div className="text-[11px] tracking-[0.16em] text-ink-faint">
-                睡眠
-              </div>
-              <div className="mt-1.5 text-[14px] font-medium leading-relaxed text-ink">
-                00:20 入睡
-              </div>
-            </div>
-            {/* 情绪：今天此前已留下的记录 */}
-            <div className="rounded-2xl border border-line bg-white px-5 py-4">
-              <div className="text-[11px] tracking-[0.16em] text-ink-faint">
-                情绪
-              </div>
-              <div className="mt-1.5 text-[14px] font-medium leading-relaxed text-ink">
-                已记录
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          <RecordNoteSection
+            value=""
+            onChange={() => {}}
+            saved={saved}
+            placeholder="比如做了梦、半夜醒了几次、醒来后的感觉"
+            hint="比如做了梦、半夜醒了几次、醒来后的感觉"
+          />
+        </RecordSummaryCard>
+      </div>
+    </motion.div>
   );
 }

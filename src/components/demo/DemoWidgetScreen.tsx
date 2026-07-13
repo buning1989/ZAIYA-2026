@@ -12,6 +12,8 @@
  * - 无点击提示、无箭头、无手指素材
  */
 
+import LazyVideo from "@/components/LazyVideo";
+
 type Props = {
   /** 系统时间显示 */
   time?: string;
@@ -96,21 +98,23 @@ export default function DemoWidgetScreen({ time = "06:40" }: Props) {
  *   窗帘拉开了一点，
  *   光会自己进来
  *
- * 素材为 9:16 透明背景 GIF，按"组件专用裁切参数"放大定位，
- * 让窗帘和在在主体铺满组件有效区域，裁掉透明留白。
+ * 素材为 9:16 透明背景 WebM（由原 GIF 转换，VP9 + yuva420p），
+ * 按"组件专用裁切参数"放大定位，让窗帘和在在主体铺满组件有效区域，裁掉透明留白。
+ * 性能优化（2026-07-13）：GIF → 透明 WebM，poster 静态首帧先于视频淡入。
  */
 function WidgetCard() {
   return (
     <div className="relative h-full w-full overflow-hidden rounded-[24px] border border-white/60 bg-[#FBFCF5] shadow-[0_8px_24px_-12px_rgba(39,51,31,0.18)]">
       {/* 在在拉开窗帘的场景图（按主体 bbox 校准，裁掉透明留白） */}
-      <img
-        src="./assets/zaiya/wake-up.gif"
+      <LazyVideo
+        src="./assets/zaiya/wake-up.webm"
+        poster="./assets/zaiya/wake-up-poster.png"
+        eager
+        layout="natural"
+        mediaClassName="absolute left-[48%] top-[53%] h-[250%] w-auto max-w-none -translate-x-1/2 -translate-y-1/2 object-contain"
+        mediaStyle={{ transformOrigin: "center center" }}
         alt="在在拉开窗帘"
-        className="absolute left-[48%] top-[53%] h-[250%] w-auto max-w-none -translate-x-1/2 -translate-y-1/2 object-contain"
-        style={{
-          transformOrigin: "center center",
-        }}
-        draggable={false}
+        fadeDuration={300}
       />
 
       {/* 顶部渐变遮罩：保证文案可读性 */}
