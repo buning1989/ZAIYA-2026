@@ -7,7 +7,6 @@ import GuidedDemoControls, { NavArrow } from "./GuidedDemoControls";
 import XiaochenCaseIntro from "./XiaochenCaseIntro";
 import DayOneSummaryPage from "./DayOneSummaryPage";
 import TwoWeekTransition from "./TwoWeekTransition";
-import ConsultationPrepPage from "./ConsultationPrepPage";
 import ConclusionSummaryPage from "./ConclusionSummaryPage";
 import DemoPhoneFrame from "./DemoPhoneFrame";
 import DemoWatchFrame from "./DemoWatchFrame";
@@ -29,9 +28,10 @@ type Props = {
  * day1          → 第一天 1/5 … 5/5
  * day1-summary  → 第一天结束总结页
  * week2-intro   → 两周后开场页
- * day2          → 小晨两周后 1/9 … 9/9
- * consultation  → 复诊整理页
+ * day2          → 小晨两周后 1/5 … 5/5
  * conclusion    → 结尾总结页（最后一页，只显示左箭头）
+ *
+ * 注：独立复诊整理页已移除，第二周第 5 节点直接进入最终总结。
  *
  * 所有阶段统一使用左右箭头 / 键盘 ← → / 移动端左右滑动切换。
  * 不再设置任何用于推进流程的 CTA 按钮。
@@ -42,7 +42,6 @@ type GuidedPhase =
   | "day1-summary"
   | "week2-intro"
   | "day2"
-  | "consultation"
   | "conclusion";
 
 /* 阶段页：无手机 Demo、无分页圆点，但保留左右箭头 */
@@ -50,7 +49,6 @@ const PHASE_PAGES: GuidedPhase[] = [
   "intro",
   "day1-summary",
   "week2-intro",
-  "consultation",
   "conclusion",
 ];
 
@@ -132,10 +130,8 @@ export default function UnifiedDemoStage({
       setDay2Index(0);
       setPhase("day2");
     } else if (phase === "day2") {
-      if (atEnd) setPhase("consultation");
+      if (atEnd) setPhase("conclusion");
       else setDay2Index((i) => Math.min(i + 1, xiaochenDay2Scenario.steps.length - 1));
-    } else if (phase === "consultation") {
-      setPhase("conclusion");
     }
     // conclusion：无下一页
   }, [phase, atEnd]);
@@ -152,11 +148,9 @@ export default function UnifiedDemoStage({
     } else if (phase === "day2") {
       if (atStart) setPhase("week2-intro");
       else setDay2Index((i) => Math.max(i - 1, 0));
-    } else if (phase === "consultation") {
+    } else if (phase === "conclusion") {
       setDay2Index(xiaochenDay2Scenario.steps.length - 1);
       setPhase("day2");
-    } else if (phase === "conclusion") {
-      setPhase("consultation");
     }
     // intro：无上一页
   }, [phase, atStart]);
@@ -175,7 +169,6 @@ export default function UnifiedDemoStage({
   const showIntro = mode === "guided" && phase === "intro";
   const showDay1Summary = mode === "guided" && phase === "day1-summary";
   const showWeek2Intro = mode === "guided" && phase === "week2-intro";
-  const showConsultation = mode === "guided" && phase === "consultation";
   const showConclusion = mode === "guided" && phase === "conclusion";
   const showStage = mode === "guided" && (phase === "day1" || phase === "day2");
 
@@ -304,12 +297,10 @@ export default function UnifiedDemoStage({
           ? "day1-summary"
           : showWeek2Intro
             ? "week2-intro"
-            : showConsultation
-              ? "consultation"
-              : showConclusion
-                ? "conclusion"
-                : "stage",
-    [showIntro, showDay1Summary, showWeek2Intro, showConsultation, showConclusion],
+            : showConclusion
+              ? "conclusion"
+              : "stage",
+    [showIntro, showDay1Summary, showWeek2Intro, showConclusion],
   );
 
   return (
@@ -400,26 +391,6 @@ export default function UnifiedDemoStage({
                 </div>
                 <div className="flex-1">
                   <TwoWeekTransition />
-                </div>
-                <div className="hidden h-12 w-12 shrink-0 lg:block">
-                  <NavArrow direction="right" disabled={false} onClick={next} />
-                </div>
-              </div>
-            </motion.div>
-          ) : showConsultation ? (
-            <motion.div
-              key="consultation"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.28, ease: SOFT_EASE }}
-            >
-              <div className="flex items-center gap-4 lg:gap-8">
-                <div className="hidden h-12 w-12 shrink-0 lg:block">
-                  <NavArrow direction="left" disabled={false} onClick={prev} />
-                </div>
-                <div className="flex-1">
-                  <ConsultationPrepPage />
                 </div>
                 <div className="hidden h-12 w-12 shrink-0 lg:block">
                   <NavArrow direction="right" disabled={false} onClick={next} />
