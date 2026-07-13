@@ -108,7 +108,7 @@ export function SocialSceneSelectContent({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease, delay: 0.05 }}
         className="flex flex-row items-center justify-center gap-3 px-[18px] max-[360px]:gap-[9px] max-[360px]:px-[12px]"
-        style={{ marginTop: 80, marginBottom: 34 }}
+        style={{ marginTop: 100, marginBottom: 34 }}
       >
         <div className="flex h-[104px] w-[100px] flex-shrink-0 items-center justify-center overflow-visible max-[360px]:h-[94px] max-[360px]:w-[90px]">
           <img
