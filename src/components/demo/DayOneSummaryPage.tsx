@@ -21,7 +21,9 @@ export default function DayOneSummaryPage() {
 
       {/* 核心总结 */}
       <p className="mt-8 text-[20px] leading-[1.8] text-ink">
-        在呀 ZÀIYA 持续识别用户卡住的具体环节，并调用对应的心理学方法，让情绪调节、饮食、学习和睡眠中的下一步重新发生。
+        在呀 ZÀIYA 持续识别小晨卡住的具体环节，并调用对应的心理学方法
+        <br />
+        让情绪调节、饮食、学习和睡眠中的下一步重新发生。
       </p>
     </div>
   );
