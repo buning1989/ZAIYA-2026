@@ -57,7 +57,7 @@ export default function Hero({ onOpenDemo }: Props) {
           >
             帮助社会功能受损的精神心理困扰人群，
             <br />
-            重建健康生活模式。
+            重构健康生活模式。
           </motion.h2>
 
           <motion.div

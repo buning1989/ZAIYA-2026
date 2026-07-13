@@ -86,7 +86,7 @@ export default function DisclosureStep({ session, onBack, onComplete }: Props) {
                     }`}
                   >
                     {checked && (
-                      <Check className="h-3 w-3 text-white" strokeWidth={3} />
+                      <Check className="h-3 w-3 text-white" strokeWidth={2.4} />
                     )}
                   </span>
                 </div>

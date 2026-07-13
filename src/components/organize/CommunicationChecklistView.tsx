@@ -12,6 +12,9 @@ import {
   type CommunicationSession,
 } from "@/data/organize";
 import { Toast } from "./shared";
+import MaterialExportConfirmDialog, {
+  type MaterialExportAction,
+} from "./MaterialExportConfirmDialog";
 
 interface Props {
   session: CommunicationSession;
@@ -20,14 +23,24 @@ interface Props {
 
 export default function CommunicationChecklistView({ session, onBack }: Props) {
   const [toast, setToast] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] =
+    useState<MaterialExportAction | null>(null);
   const checklist = buildChecklist(session);
+  // 进入材料的高风险记录数量（buildChecklist 已只保留用户勾选且纳入的记录）
+  const highRiskCount = checklist.disclosure?.records.length ?? 0;
 
   const showToast = (msg: string) => {
     setToast(msg);
     window.setTimeout(() => setToast(null), 2500);
   };
 
-  const handleShare = async () => {
+  // 点击「分享 / 保存」只打开确认弹层，不直接执行导出
+  const handleShare = () => setPendingAction("share");
+  const handleSave = () => setPendingAction("save");
+
+  // 用户在确认弹层中点击「继续分享」后才执行真实分享
+  const executeShare = async () => {
+    setPendingAction(null);
     const text = buildShareText(session);
     if (navigator.share) {
       try {
@@ -45,7 +58,9 @@ export default function CommunicationChecklistView({ session, onBack }: Props) {
     }
   };
 
-  const handleSave = () => {
+  // 用户在确认弹层中点击「继续保存」后才执行真实下载
+  const executeSave = () => {
+    setPendingAction(null);
     const text = buildShareText(session);
     const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -159,6 +174,22 @@ export default function CommunicationChecklistView({ session, onBack }: Props) {
           分享
         </button>
       </div>
+
+      <AnimatePresence>
+        {pendingAction && (
+          <MaterialExportConfirmDialog
+            action={pendingAction}
+            recipientLabel={
+              pendingAction === "share" ? checklist.contactName : undefined
+            }
+            highRiskCount={highRiskCount}
+            onConfirm={
+              pendingAction === "share" ? executeShare : executeSave
+            }
+            onClose={() => setPendingAction(null)}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {toast && <Toast message={toast} />}

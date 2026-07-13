@@ -208,13 +208,13 @@ export default function WeightRecordWizard({
   const chipClass = (selected: boolean) =>
     `inline-flex items-center justify-center rounded-full border px-4 py-2 text-[14px] font-medium whitespace-nowrap transition-all active:scale-[0.97] ${
       selected
-        ? "border-[rgba(177,194,113,0.9)] bg-[rgba(177,194,113,0.22)] text-[#2C3B27]"
-        : "border-[rgba(177,194,113,0.45)] bg-white text-[#2C3B27] hover:border-[rgba(177,194,113,0.7)]"
+        ? "border-status-mood/90 bg-status-mood/[0.22] text-ink"
+        : "border-status-mood/45 bg-white text-ink hover:border-status-mood/70"
     }`;
 
   // 步进胶囊（−0.1 / +0.1）
   const stepperClass =
-    "inline-flex items-center justify-center rounded-full border border-[rgba(177,194,113,0.45)] bg-white px-4 py-2 text-[14px] font-medium text-[#2C3B27] transition-all active:scale-[0.97] hover:border-[rgba(177,194,113,0.7)]";
+    "inline-flex items-center justify-center rounded-full border border-status-mood/45 bg-white px-4 py-2 text-[14px] font-medium text-ink transition-all active:scale-[0.97] hover:border-status-mood/70";
 
   const summaryRows: SummaryRow[] = [
     {
@@ -276,7 +276,7 @@ export default function WeightRecordWizard({
                 <div className="flex items-center gap-2.5">
                   <div className="h-[2px] flex-1 rounded-full bg-line-soft">
                     <div
-                      className="h-full rounded-full bg-[rgba(177,194,113,0.7)] transition-all duration-300"
+                      className="h-full rounded-full bg-status-mood/70 transition-all duration-300"
                       style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
                     />
                   </div>
@@ -316,7 +316,7 @@ export default function WeightRecordWizard({
                           value={weightInput}
                           onChange={(e) => handleWeightChange(e.target.value)}
                           placeholder="0.0"
-                          className="w-[150px] border-b-2 border-[rgba(177,194,113,0.5)] bg-transparent text-center text-[40px] font-[650] leading-tight tracking-tight text-ink outline-none placeholder:text-ink-faint/40 focus:border-[rgba(177,194,113,0.9)]"
+                          className="w-[150px] border-b-2 border-status-mood/50 bg-transparent text-center text-[40px] font-[650] leading-tight tracking-tight text-ink outline-none placeholder:text-ink-faint/40 focus:border-status-mood/90"
                         />
                         <span className="pb-1.5 text-[16px] font-medium text-ink-faint">
                           kg

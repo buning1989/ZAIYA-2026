@@ -99,8 +99,8 @@ function CarouselDots({
             key={index}
             className={`rounded-full transition-all duration-200 ${
               active
-                ? "h-1.5 w-5 bg-[#2C3B27]"
-                : "h-1.5 w-1.5 bg-[rgba(44,59,39,0.28)]"
+                ? "h-1.5 w-5 bg-ink"
+                : "h-1.5 w-1.5 bg-ink/[0.28]"
             }`}
           />
         );
@@ -172,14 +172,14 @@ function ChoiceCarousel({
                 data-carousel-card
                 data-carousel-index={index}
                 onClick={() => onCardClick(index)}
-                className={`absolute left-1/2 top-1/2 flex min-h-[118px] w-[72%] items-center justify-center rounded-2xl border px-5 py-6 text-center shadow-sm outline-none transition-[border-color,background-color,box-shadow] duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(177,194,113,0.5)] focus-visible:ring-offset-0 active:scale-[0.97] ${
+                className={`absolute left-1/2 top-1/2 flex min-h-[118px] w-[72%] items-center justify-center rounded-2xl border px-5 py-6 text-center shadow-sm outline-none transition-[border-color,background-color,box-shadow] duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-status-mood/50 focus-visible:ring-offset-0 active:scale-[0.97] ${
                   selectedFeedback && active
-                    ? "border-[rgba(177,194,113,0.95)] bg-[#EFF3E5] shadow-[0_12px_26px_rgba(44,59,39,0.12)]"
+                    ? "border-status-mood/95 bg-canvas-soft shadow-[0_12px_26px_rgba(44,59,39,0.12)]"
                     : selected
-                      ? "border-[rgba(177,194,113,0.75)] bg-[#F4F6EE] shadow-[0_10px_22px_rgba(44,59,39,0.08)]"
+                      ? "border-status-mood/75 bg-card-soft shadow-[0_10px_22px_rgba(44,59,39,0.08)]"
                       : active
-                        ? "border-[rgba(177,194,113,0.42)] bg-[#FDFDFB] shadow-[0_10px_22px_rgba(44,59,39,0.07)]"
-                        : "border-line bg-[#FDFDFB]"
+                        ? "border-status-mood/[0.42] bg-card shadow-[0_10px_22px_rgba(44,59,39,0.07)]"
+                        : "border-line bg-card"
                 }`}
                 initial={{
                   opacity: 0,
@@ -221,7 +221,7 @@ function ChoiceCarousel({
                     }
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.22, ease }}
-                    className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-[rgba(177,194,113,0.2)] text-[#2C3B27]"
+                    className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-status-mood/20 text-ink"
                   >
                     <Check className="h-3.5 w-3.5" strokeWidth={2.4} />
                   </motion.span>
@@ -594,8 +594,8 @@ export default function MoodRecordWizard({
   const chipClass = (selected: boolean) =>
     `inline-flex items-center justify-center rounded-full border px-4 py-2 text-[14px] font-medium whitespace-nowrap transition-all active:scale-[0.97] ${
       selected
-        ? "border-[rgba(177,194,113,0.9)] bg-[rgba(177,194,113,0.22)] text-[#2C3B27]"
-        : "border-[rgba(177,194,113,0.45)] bg-white text-[#2C3B27] hover:border-[rgba(177,194,113,0.7)]"
+        ? "border-status-mood/90 bg-status-mood/[0.22] text-ink"
+        : "border-status-mood/45 bg-white text-ink hover:border-status-mood/70"
     }`;
 
   // ===================== 渲染：确认页（只读展示，不提供修改/删除入口） =====================
@@ -815,7 +815,7 @@ export default function MoodRecordWizard({
           <div className="flex items-center gap-2.5">
             <div className="h-[2px] flex-1 rounded-full bg-line-soft">
               <div
-                className="h-full rounded-full bg-[rgba(177,194,113,0.7)] transition-all duration-300"
+                className="h-full rounded-full bg-status-mood/70 transition-all duration-300"
                 style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
               />
             </div>
@@ -857,7 +857,7 @@ export default function MoodRecordWizard({
                         onClick={() => handleSelectPrimary(mood)}
                         className={`flex h-14 items-center gap-3 rounded-2xl border px-5 text-left transition-all active:scale-[0.99] ${
                           selected
-                            ? "border-[rgba(177,194,113,0.5)] bg-[rgba(177,194,113,0.08)] text-[#2C3B27]"
+                            ? "border-status-mood/50 bg-status-mood/[0.08] text-ink"
                             : "border-line bg-white text-ink hover:border-ink-faint"
                         }`}
                       >
@@ -870,7 +870,7 @@ export default function MoodRecordWizard({
                         </span>
                         {selected && (
                           <Check
-                            className="h-4 w-4 text-[#2C3B27]"
+                            className="h-4 w-4 text-ink"
                             strokeWidth={2.4}
                           />
                         )}
@@ -1046,7 +1046,7 @@ export default function MoodRecordWizard({
                       {specialDetails.map((detail) => (
                         <div
                           key={detail}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(177,194,113,0.5)] bg-[rgba(177,194,113,0.08)] px-3 py-1.5 text-[13px] text-[#2C3B27]"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-status-mood/50 bg-status-mood/[0.08] px-3 py-1.5 text-[13px] text-ink"
                         >
                           <span>{detail}</span>
                           <button
@@ -1055,7 +1055,7 @@ export default function MoodRecordWizard({
                               setSelectedFeedbackId(null);
                               handleToggleSpecialDetail(detail);
                             }}
-                            className="ml-0.5 text-[#2C3B27] opacity-60 transition-opacity hover:opacity-100"
+                            className="ml-0.5 text-ink opacity-60 transition-opacity hover:opacity-100"
                           >
                             ×
                           </button>

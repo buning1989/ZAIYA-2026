@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { AnimatePresence, motion, type PanInfo } from "framer-motion";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Volume2, VolumeX } from "lucide-react";
 import { BREATHING_EXERCISE_ENERGY_REWARD, grantEnergy } from "@/data/userProfile";
 import ZaizaiVideo, { ZAIZAI_RELIEF_VIDEO_SRC } from "./ZaizaiVideo";
 import EnergyBadge from "./EnergyBadge";
@@ -96,6 +96,7 @@ const TICK_MS = 50;
 const LONG_PRESS_MS = 700;
 const LONG_PRESS_TICK_MS = 30;
 const SELECT_GUIDE_INTERVAL_MS = 3200;
+const BREATHING_BGM = "/assets/zaiya/breathing-bgm.mp3";
 
 const easeInOut = (t: number) =>
   t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
@@ -115,6 +116,10 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
   const [methodIndex, setMethodIndex] = useState(0);
   const [activeCard, setActiveCard] = useState(0);
   const [guideIndex, setGuideIndex] = useState(0);
+  const [prepCountdown, setPrepCountdown] = useState<number | null>(null);
+  const [isMuted, setIsMuted] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const prepTimerRef = useRef<number | null>(null);
 
   // 练习态
   const [status, setStatus] = useState<PlayStatus>("playing");
@@ -144,6 +149,43 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
   const energyGrantedRef = useRef(false);
 
   const method = BREATHING_METHODS[methodIndex];
+
+  useEffect(() => {
+    if (subView !== "practice" || status !== "playing" || stopSheet) {
+      audioRef.current?.pause();
+      return;
+    }
+
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    audio.volume = 0.34;
+    audio.muted = isMuted;
+
+    if (!isMuted) {
+      void audio.play().catch(() => {
+        audio.muted = true;
+        setIsMuted(true);
+      });
+    }
+  }, [isMuted, status, stopSheet, subView]);
+
+  const toggleAudio = () => {
+    if (subView !== "practice") return;
+
+    const nextMuted = !isMuted;
+    const audio = audioRef.current;
+    setIsMuted(nextMuted);
+
+    if (!audio) return;
+    audio.muted = nextMuted;
+    if (!nextMuted) {
+      void audio.play().catch(() => {
+        audio.muted = true;
+        setIsMuted(true);
+      });
+    }
+  };
 
   useEffect(() => {
     if (subView !== "select") return;
@@ -195,6 +237,7 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
     return () => {
       if (timerRef.current) window.clearInterval(timerRef.current);
       if (progressTimer.current) window.clearInterval(progressTimer.current);
+      if (prepTimerRef.current) window.clearInterval(prepTimerRef.current);
     };
   }, []);
 
@@ -254,6 +297,7 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
   }, []);
 
   const startPractice = (idx: number) => {
+    setPrepCountdown(null);
     const m = BREATHING_METHODS[idx];
     setMethodIndex(idx);
     setPhaseIndex(0);
@@ -267,6 +311,25 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
     energyGrantedRef.current = false;
     setBreathEnergyReward(null);
     setSubView("practice");
+  };
+
+  const startPracticeAfterCountdown = (idx: number) => {
+    if (prepTimerRef.current) window.clearInterval(prepTimerRef.current);
+
+    let next = 3;
+    setPrepCountdown(next);
+    prepTimerRef.current = window.setInterval(() => {
+      next -= 1;
+      if (next <= 0) {
+        if (prepTimerRef.current) {
+          window.clearInterval(prepTimerRef.current);
+          prepTimerRef.current = null;
+        }
+        startPractice(idx);
+        return;
+      }
+      setPrepCountdown(next);
+    }, 1000);
   };
 
   const restartPractice = () => {
@@ -294,6 +357,7 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
   const progressTimer = useRef<number | null>(null);
   const [longPressProgress, setLongPressProgress] = useState(0);
   const longFired = useRef(false);
+  const suppressNextClick = useRef(false);
 
   const clearProgressTimer = () => {
     if (progressTimer.current !== null) {
@@ -313,6 +377,7 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
         clearProgressTimer();
         progressTimer.current = null;
         longFired.current = true;
+        suppressNextClick.current = true;
         statusBeforeStop.current = status;
         setStatus("paused");
         setStopSheet(true);
@@ -329,6 +394,12 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
   };
   const handlePointerUp = () => {
     cancelPress();
+  };
+  const handleControlClick = () => {
+    if (suppressNextClick.current) {
+      suppressNextClick.current = false;
+      return;
+    }
     if (!longFired.current) {
       togglePlay();
     }
@@ -422,10 +493,11 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
             {/* 底部开始按钮：全局统一主行动色，水平居中 */}
             <div className="flex justify-center pb-8 pt-3">
               <button
-                onClick={() => startPractice(activeCard)}
-                className="rounded-full bg-action-primary px-12 py-3 text-[15px] font-medium tracking-wide text-action-primary-text transition-opacity hover:opacity-90"
+                onClick={() => startPracticeAfterCountdown(activeCard)}
+                disabled={prepCountdown !== null}
+                className="min-w-[104px] rounded-full bg-action-primary px-12 py-3 text-[15px] font-medium tracking-wide text-action-primary-text transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-80"
               >
-                开始
+                {prepCountdown === null ? "开始" : `${prepCountdown}`}
               </button>
             </div>
           </motion.div>
@@ -441,6 +513,21 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
             transition={{ duration: 0.3, ease }}
             className="absolute inset-0 flex flex-col items-center px-6 pb-10"
           >
+            <audio ref={audioRef} src={BREATHING_BGM} autoPlay loop preload="auto" />
+
+            <button
+              type="button"
+              onClick={toggleAudio}
+              aria-label={isMuted ? "打开背景音乐" : "静音背景音乐"}
+              className="absolute right-5 top-12 z-30 grid h-9 w-9 place-items-center rounded-full border border-line bg-white/82 text-ink-soft shadow-[0_12px_30px_-22px_rgba(39,51,31,0.55)] backdrop-blur-md transition-colors hover:border-ink-faint hover:bg-white hover:text-ink"
+            >
+              {isMuted ? (
+                <VolumeX className="h-[18px] w-[18px]" strokeWidth={1.8} />
+              ) : (
+                <Volume2 className="h-[18px] w-[18px]" strokeWidth={1.8} />
+              )}
+            </button>
+
             {/* 顶部：仅极简返回入口，播放态不保留呼吸法名称标题 */}
             <button
               onClick={() => {
@@ -531,6 +618,7 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
                   onPointerUp={handlePointerUp}
                   onPointerLeave={cancelPress}
                   onPointerCancel={cancelPress}
+                  onClick={handleControlClick}
                   aria-label={status === "playing" ? "暂停" : "继续"}
                   className="grid h-14 w-14 place-items-center rounded-full border border-line bg-white text-ink-soft transition-colors hover:border-ink-faint hover:text-ink"
                 >

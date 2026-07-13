@@ -483,10 +483,10 @@ function buildDayByDate(base: Date): DailyLookbackData {
   };
 }
 
-function buildRange(days: number): DailyLookbackData[] {
+function buildRange(days: number, referenceDate = new Date()): DailyLookbackData[] {
   // 按日期升序排列：最早 → 最近（左 → 右）
   const out: DailyLookbackData[] = [];
-  const today = new Date();
+  const today = new Date(referenceDate);
   today.setHours(0, 0, 0, 0);
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(today);
@@ -499,10 +499,14 @@ function buildRange(days: number): DailyLookbackData[] {
 /* —— 按月生成数据：生成指定 year/month 的所有日期（升序）——
  * 未来日期（晚于今天）不生成，避免出现「未来记录」。
  * 当月只生成到今天；历史月份生成整月。 */
-export function buildMonthRange(year: number, month: number): DailyLookbackData[] {
+export function buildMonthRange(
+  year: number,
+  month: number,
+  referenceDate = new Date(),
+): DailyLookbackData[] {
   // month: 1-12
   const out: DailyLookbackData[] = [];
-  const today = new Date();
+  const today = new Date(referenceDate);
   today.setHours(0, 0, 0, 0);
   const daysInMonth = new Date(year, month, 0).getDate(); // month 是 1-based，day=0 取上月末
   for (let day = 1; day <= daysInMonth; day++) {
@@ -523,9 +527,12 @@ export function monthHasRecords(year: number, month: number): boolean {
 
 /* —— 按周生成数据：从 weekStart（周一）开始生成 7 天（升序）——
  * 未来日期（晚于今天）不生成。当前周只生成到今天。 */
-export function buildWeekRange(weekStart: Date): DailyLookbackData[] {
+export function buildWeekRange(
+  weekStart: Date,
+  referenceDate = new Date(),
+): DailyLookbackData[] {
   const out: DailyLookbackData[] = [];
-  const today = new Date();
+  const today = new Date(referenceDate);
   today.setHours(0, 0, 0, 0);
   const start = new Date(weekStart);
   start.setHours(0, 0, 0, 0);

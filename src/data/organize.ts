@@ -494,6 +494,11 @@ export const RECORD_SCOPE_LABELS = [
 export const MATERIAL_DESCRIPTION =
   "本材料整理自 2026 年 6 月 15 日至 7 月 17 日共 33 天的应用内自我记录，其中 24 天存在记录。";
 
+/** 按当前会话生成材料说明，避免 demo/历史材料与固定 mock 日期不一致 */
+export function buildMaterialDescription(session: CommunicationSession): string {
+  return `本材料整理自 ${formatDateRangeChinese(session.startDate, session.endDate)} 共 ${session.totalDays} 天的应用内自我记录，其中 ${session.recordedDays} 天存在记录。`;
+}
+
 /** 免责声明 */
 export const DISCLAIMER =
   "本材料由『在呀』应用根据用户自我记录整理生成，经用户本人确认后导出。内容为用户主观记录与应用使用状态数据，未经临床核实，不构成任何诊断或治疗建议。";
@@ -622,7 +627,7 @@ export function buildFullMaterial(session: CommunicationSession): MaterialSectio
   sections.push({
     id: "description",
     title: "材料说明",
-    paragraph: MATERIAL_DESCRIPTION,
+    paragraph: buildMaterialDescription(session),
   });
 
   // 2. 本次希望讨论的问题
@@ -720,7 +725,7 @@ export function buildShareText(session: CommunicationSession): string {
     }
   }
 
-  lines.push(MATERIAL_DESCRIPTION);
+  lines.push(buildMaterialDescription(session));
   lines.push("");
   lines.push(DISCLAIMER);
   return lines.join("\n");

@@ -678,7 +678,7 @@ function RecordHome({
           >
             <t.Icon
               className="h-6 w-6 shrink-0 text-ink-soft"
-              strokeWidth={1.6}
+              strokeWidth={1.8}
             />
             <span className="flex-1 text-left text-[15px] font-medium tracking-tight text-ink">
               {t.name}
@@ -1208,7 +1208,7 @@ function RecordWizard({
                         {/* 上按钮：+ 0.1 KG（轻量胶囊） */}
                         <button
                           onClick={() => stepWeight(WEIGHT_STEP)}
-                          className="flex h-8 min-w-[92px] items-center justify-center rounded-full border border-[rgba(177,194,113,0.45)] bg-[rgba(177,194,113,0.10)] px-[14px] text-[13px] font-medium text-[rgba(44,59,39,0.72)] transition-transform active:scale-[0.96] active:bg-[rgba(177,194,113,0.18)]"
+                          className="flex h-8 min-w-[92px] items-center justify-center rounded-full border border-status-mood/45 bg-status-mood/10 px-[14px] text-[13px] font-medium text-ink/[0.72] transition-transform active:scale-[0.96] active:bg-status-mood/[0.18]"
                         >
                           + {WEIGHT_STEP.toFixed(1)} KG
                         </button>
@@ -1217,17 +1217,17 @@ function RecordWizard({
                           onClick={() => setEditingWeight(true)}
                           className="my-[10px] flex items-baseline justify-center"
                         >
-                          <span className="text-[34px] font-[650] leading-[42px] tracking-tight text-[#2C3B27]">
+                          <span className="text-[34px] font-[650] leading-[42px] tracking-tight text-ink">
                             {numberValue || "—"}
                           </span>
-                          <span className="ml-1 text-[13px] font-medium text-[rgba(44,59,39,0.58)]">
+                          <span className="ml-1 text-[13px] font-medium text-ink/[0.58]">
                             KG
                           </span>
                         </button>
                         {/* 下按钮：- 0.1 KG（轻量胶囊） */}
                         <button
                           onClick={() => stepWeight(-WEIGHT_STEP)}
-                          className="flex h-8 min-w-[92px] items-center justify-center rounded-full border border-[rgba(177,194,113,0.45)] bg-[rgba(177,194,113,0.10)] px-[14px] text-[13px] font-medium text-[rgba(44,59,39,0.72)] transition-transform active:scale-[0.96] active:bg-[rgba(177,194,113,0.18)]"
+                          className="flex h-8 min-w-[92px] items-center justify-center rounded-full border border-status-mood/45 bg-status-mood/10 px-[14px] text-[13px] font-medium text-ink/[0.72] transition-transform active:scale-[0.96] active:bg-status-mood/[0.18]"
                         >
                           - {WEIGHT_STEP.toFixed(1)} KG
                         </button>
@@ -1284,14 +1284,14 @@ function RecordWizard({
                       {type.id === "weight" &&
                         lastWeight !== null &&
                         !editingWeight && (
-                          <p className="text-[12px] leading-[20px] text-[rgba(44,59,39,0.48)]">
+                          <p className="text-[12px] leading-[20px] text-ink/[0.48]">
                             上次记录：{lastWeight.toFixed(1)} KG
                           </p>
                         )}
                       {bmiPreview !== null &&
                         bmiPreviewInfo &&
                         getUserProfile().heightCm && (
-                          <p className="text-[12px] leading-[20px] text-[rgba(44,59,39,0.48)]">
+                          <p className="text-[12px] leading-[20px] text-ink/[0.48]">
                             <span>BMI {bmiPreview}</span>
                             <span className="mx-1">·</span>
                             <span>{bmiPreviewInfo.label}</span>
@@ -1498,14 +1498,14 @@ function CustomAnswerCard({
           aria-label="修改"
           className="grid h-14 w-[70px] place-items-center rounded-2xl bg-line-soft text-ink-soft transition-colors hover:text-ink"
         >
-          <Pencil className="h-4 w-4" strokeWidth={1.6} />
+          <Pencil className="h-4 w-4" strokeWidth={1.8} />
         </button>
         <button
           onClick={onDelete}
           aria-label="删除"
           className="grid h-14 w-[70px] place-items-center rounded-2xl bg-ink/10 text-ink-soft transition-colors hover:text-ink"
         >
-          <Trash2 className="h-4 w-4" strokeWidth={1.6} />
+          <Trash2 className="h-4 w-4" strokeWidth={1.8} />
         </button>
       </div>
 
@@ -1848,7 +1848,7 @@ function RecordConfirmPage({
                 animate={{ scale: 1 }}
                 exit={{ scale: 0.96 }}
                 transition={{ duration: 0.25, ease }}
-                className="whitespace-nowrap rounded-full border border-[rgba(177,194,113,0.4)] bg-[#EEF2E4] px-4 py-2 text-[14px] font-semibold tracking-tight text-[#2C3B27] shadow-[0_6px_16px_rgba(44,59,39,0.12)]"
+                className="whitespace-nowrap rounded-full border border-status-mood/40 bg-canvas-soft px-4 py-2 text-[14px] font-semibold tracking-tight text-ink shadow-[0_6px_16px_rgba(44,59,39,0.12)]"
               >
                 记录收好了 · +{FULL_RECORD_ENERGY_REWARD} 能量
               </motion.div>
@@ -1912,14 +1912,14 @@ function RecordConfirmPage({
                           }}
                           className="flex w-full items-center gap-2 px-2 py-3 text-left text-[13px] text-ink-soft transition-colors hover:bg-line-soft"
                         >
-                          <Pencil className="h-3.5 w-3.5 shrink-0" strokeWidth={1.6} />
+                          <Pencil className="h-3.5 w-3.5 shrink-0" strokeWidth={1.8} />
                           修改
                         </button>
                         <button
                           onClick={openDeleteConfirm}
                           className="flex w-full items-center gap-2 px-2 py-3 text-left text-[13px] text-ink-soft transition-colors hover:bg-line-soft"
                         >
-                          <Trash2 className="h-3.5 w-3.5 shrink-0" strokeWidth={1.6} />
+                          <Trash2 className="h-3.5 w-3.5 shrink-0" strokeWidth={1.8} />
                           删除
                         </button>
                       </motion.div>

@@ -7,7 +7,7 @@ import { Zap } from "lucide-react";
  * 所有模块右上角能量入口均使用此组件，统一控制：
  *   - 图标（Zap h-3 w-3）+ 数字
  *   - 浅色圆角胶囊样式（rounded-full, px-2.5 py-1, text-[12px]）
- *   - 配色：常态 rgba(177,194,113,0.15)；pulse 态 rgba(226,245,91,0.48) + 阴影
+ *   - 配色：常态 status-mood/15；pulse 态 action-primary/[0.48] + 阴影
  *   - 点击反馈：紧贴下方展开轻提示，1.8s 自动淡出
  *   - pulse 动画：能量飞抵后 scale 脉冲
  *
@@ -73,10 +73,10 @@ export default function EnergyBadge({
         onClick={handleClick}
         animate={pulse ? { scale: [1, 1.08, 1] } : { scale: 1 }}
         transition={{ duration: 0.36, ease }}
-        className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-medium text-[#2C3B27] transition-colors hover:bg-[rgba(177,194,113,0.25)] ${
+        className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-medium text-ink transition-colors hover:bg-status-mood/25 ${
           pulse
-            ? "bg-[rgba(226,245,91,0.48)] shadow-[0_6px_18px_rgba(177,194,113,0.22)]"
-            : "bg-[rgba(177,194,113,0.15)]"
+            ? "bg-action-primary/[0.48] shadow-[0_6px_18px_rgb(var(--z-action-primary-rgb)/0.22)]"
+            : "bg-status-mood/15"
         }`}
       >
         <Zap className="h-3 w-3" />
@@ -91,7 +91,7 @@ export default function EnergyBadge({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.2, ease }}
-            className="pointer-events-none absolute right-0 top-full z-40 mt-1 w-max min-w-[160px] max-w-[280px] whitespace-nowrap rounded-2xl bg-[rgba(177,194,113,0.9)] px-3.5 py-2 text-center text-[12px] font-medium leading-relaxed text-white shadow-[0_6px_16px_rgba(44,59,39,0.18)]"
+            className="pointer-events-none absolute right-0 top-full z-40 mt-1 w-max min-w-[160px] max-w-[280px] whitespace-nowrap rounded-2xl bg-status-mood/90 px-3.5 py-2 text-center text-[12px] font-medium leading-relaxed text-white shadow-[0_6px_16px_rgba(44,59,39,0.18)]"
           >
             {hint}
           </motion.div>

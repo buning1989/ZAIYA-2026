@@ -111,7 +111,7 @@ export function CloseButton({
         viewBox="0 0 14 14"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.5"
+        strokeWidth="1.8"
         strokeLinecap="round"
       >
         <path d="M3 3l8 8M11 3l-8 8" />

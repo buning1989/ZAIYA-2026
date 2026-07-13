@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { GuidedScenario, GuidedScenarioStep } from "./types";
 
 /* —— 案例演示播放器：管理脚本步骤状态 + 暴露导航 API ——
@@ -45,6 +45,12 @@ type Props = {
 
 export default function GuidedScenarioPlayer({ scenario, children }: Props) {
   const [stepIndex, setStepIndex] = useState(0);
+
+  // 切换 scenario（第一天 ↔ 第二天）时回到第一步。
+  // 手机 DemoPhoneFrame 不卸载，只通过 step.demoState 更新内部状态。
+  useEffect(() => {
+    setStepIndex(0);
+  }, [scenario.id]);
 
   const total = scenario.steps.length;
   const step = scenario.steps[stepIndex] ?? scenario.steps[0];

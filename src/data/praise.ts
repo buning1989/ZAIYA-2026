@@ -44,7 +44,12 @@ export const PRAISE_MAX_LENGTH = 60;
 
 /* —— 卡片纯色定义 ——
  * 纯色背景，低饱和，不刺眼。
- * 每个颜色有唯一 id，创建卡片时随机分配一个，持久化后不再变化。 */
+ * 每个颜色有唯一 id，创建卡片时随机分配一个，持久化后不再变化。
+ *
+ * 设计例外：多彩背景是「夸夸自己」既定产品设计，用于让每张卡片具有独立感、
+ * 形成收集积累的视觉感受、减少连续卡片的单调感、与其他模块白底表单区分。
+ * 调色板固定为 8 种，通过 CSS 变量（--z-praise-card-1..8）集中管理，
+ * 不得在此数组之外新增临时浅色，也不得用于卡片背景以外的任何区域。 */
 export type CardGradient = {
   id: string;
   from: string; // 纯色（保留 from 字段以兼容现有类型）
@@ -52,14 +57,14 @@ export type CardGradient = {
 };
 
 export const CARD_GRADIENTS: CardGradient[] = [
-  { id: "g1", from: "#F1F3E8", to: "#F1F3E8" }, // 苔灰绿
-  { id: "g2", from: "#EEF1E2", to: "#EEF1E2" }, // 浅米
-  { id: "g3", from: "#E6F0F1", to: "#E6F0F1" }, // 浅青
-  { id: "g4", from: "#FBF6E9", to: "#FBF6E9" }, // 暖米
-  { id: "g5", from: "#F4F8DD", to: "#F4F8DD" }, // 浅柠
-  { id: "g6", from: "#F2EFF7", to: "#F2EFF7" }, // 浅藤紫
-  { id: "g7", from: "#F6F8EF", to: "#F6F8EF" }, // 空间底
-  { id: "g8", from: "#EDF4ED", to: "#EDF4ED" }, // 浅绿
+  { id: "g1", from: "var(--z-praise-card-1)", to: "var(--z-praise-card-1)" }, // 苔灰绿
+  { id: "g2", from: "var(--z-praise-card-2)", to: "var(--z-praise-card-2)" }, // 浅米
+  { id: "g3", from: "var(--z-praise-card-3)", to: "var(--z-praise-card-3)" }, // 浅青
+  { id: "g4", from: "var(--z-praise-card-4)", to: "var(--z-praise-card-4)" }, // 暖米
+  { id: "g5", from: "var(--z-praise-card-5)", to: "var(--z-praise-card-5)" }, // 浅柠
+  { id: "g6", from: "var(--z-praise-card-6)", to: "var(--z-praise-card-6)" }, // 浅藤紫
+  { id: "g7", from: "var(--z-praise-card-7)", to: "var(--z-praise-card-7)" }, // 空间底
+  { id: "g8", from: "var(--z-praise-card-8)", to: "var(--z-praise-card-8)" }, // 浅绿
 ];
 
 /* —— 随机分配一个渐变 —— */

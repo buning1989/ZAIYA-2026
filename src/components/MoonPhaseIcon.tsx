@@ -9,7 +9,7 @@ type MoonPhaseIconProps = {
   className?: string;
 };
 
-const DEFAULT_MOON_COLOR = "#A7B765";
+const DEFAULT_MOON_COLOR = "var(--z-status-mood)";
 
 const shadowCircleX: Partial<Record<MoonPhaseLevel, number>> = {
   2: 6.5,

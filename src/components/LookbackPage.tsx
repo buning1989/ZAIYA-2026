@@ -62,8 +62,15 @@ function toColloquialTime(hhmm: string | null): string {
 }
 
 /* —— 6 场景独立主题色（低饱和、生活记录感）——
- * 按 zaiya 五类颜色语义映射：status-mood / status-sleep / chart-line-3(饮食) /
- * status-medicine / status-activity / chart-line-4(体重)。状态色只表达生活维度，不表达好坏。 */
+ * 分类状态色作为「数据可视化例外」保留：不同类别使用不同颜色帮助用户快速识别数据类型。
+ * 所有颜色通过 CSS 变量（--z-status-xxx / --z-status-xxx-rgb / --z-status-xxx-bg）集中管理，
+ * 不得在组件内硬编码类别色。
+ *
+ * 使用边界：
+ *   允许 —— 数据点、趋势线、柱形图、月相标记、图例、分类小图标、分类卡片辅助标识
+ *   禁止 —— 页面主按钮、返回按钮、通用选中态、Tab 激活态、输入框焦点、通用进度条、弹窗确认按钮
+ * 通用交互继续使用 action-primary / accent / neutral 等通用 Token。
+ * 分类色在白底页面中仅承担「识别」而非「大面积装饰」，不因 Token 化而扩大彩色区域。 */
 type Theme = {
   bg: string; // 场景面板底色（柔色卡片，不铺满）
   mark: string; // 主图形色：点、线、格、选中
@@ -72,48 +79,59 @@ type Theme = {
   softer: string; // 更弱：选中态浅背景
 };
 
+/* —— 记录类别 → 状态 Token 唯一映射 ——
+ * 全项目唯一的分类色映射，LookbackPage / 卡片组件 / 图表组件均从此处取色。 */
+const RECORD_CATEGORY_COLOR: Record<SceneKey, string> = {
+  mood: "var(--z-status-mood)",
+  sleep: "var(--z-status-sleep)",
+  med: "var(--z-status-medication)",
+  meals: "var(--z-status-meal)",
+  activity: "var(--z-status-activity)",
+  weight: "var(--z-status-weight)",
+} as const;
+
 const themes: Record<SceneKey, Theme> = {
   mood: {
-    bg: "#EFF1E5",
-    mark: "#A7B765",
-    text: "#27331F",
-    soft: "rgba(167,183,101,0.16)",
-    softer: "rgba(167,183,101,0.10)",
+    bg: "var(--z-status-mood-bg)",
+    mark: RECORD_CATEGORY_COLOR.mood,
+    text: "var(--z-text-main)",
+    soft: "rgb(var(--z-status-mood-rgb) / 0.16)",
+    softer: "rgb(var(--z-status-mood-rgb) / 0.10)",
   },
   sleep: {
-    bg: "#E6F0F1",
-    mark: "#88C6CD",
-    text: "#27331F",
-    soft: "rgba(136,198,205,0.18)",
-    softer: "rgba(136,198,205,0.10)",
+    bg: "var(--z-status-sleep-bg)",
+    mark: RECORD_CATEGORY_COLOR.sleep,
+    text: "var(--z-text-main)",
+    soft: "rgb(var(--z-status-sleep-rgb) / 0.18)",
+    softer: "rgb(var(--z-status-sleep-rgb) / 0.10)",
   },
   meals: {
-    bg: "#FCF1E3",
-    mark: "#F2C98F",
-    text: "#27331F",
-    soft: "rgba(242,201,143,0.18)",
-    softer: "rgba(242,201,143,0.10)",
+    bg: "var(--z-status-meal-bg)",
+    mark: RECORD_CATEGORY_COLOR.meals,
+    text: "var(--z-text-main)",
+    soft: "rgb(var(--z-status-meal-rgb) / 0.18)",
+    softer: "rgb(var(--z-status-meal-rgb) / 0.10)",
   },
   med: {
-    bg: "#F4F8DD",
-    mark: "#D9E98C",
-    text: "#27331F",
-    soft: "rgba(217,233,140,0.20)",
-    softer: "rgba(217,233,140,0.12)",
+    bg: "var(--z-status-medication-bg)",
+    mark: RECORD_CATEGORY_COLOR.med,
+    text: "var(--z-text-main)",
+    soft: "rgb(var(--z-status-medication-rgb) / 0.20)",
+    softer: "rgb(var(--z-status-medication-rgb) / 0.12)",
   },
   activity: {
-    bg: "#EDF4ED",
-    mark: "#B7D8B7",
-    text: "#27331F",
-    soft: "rgba(183,216,183,0.20)",
-    softer: "rgba(183,216,183,0.12)",
+    bg: "var(--z-status-activity-bg)",
+    mark: RECORD_CATEGORY_COLOR.activity,
+    text: "var(--z-text-main)",
+    soft: "rgb(var(--z-status-activity-rgb) / 0.20)",
+    softer: "rgb(var(--z-status-activity-rgb) / 0.12)",
   },
   weight: {
-    bg: "#F2EFF7",
-    mark: "#CDBFEA",
-    text: "#27331F",
-    soft: "rgba(205,191,234,0.18)",
-    softer: "rgba(205,191,234,0.10)",
+    bg: "var(--z-status-weight-bg)",
+    mark: RECORD_CATEGORY_COLOR.weight,
+    text: "var(--z-text-main)",
+    soft: "rgb(var(--z-status-weight-rgb) / 0.18)",
+    softer: "rgb(var(--z-status-weight-rgb) / 0.10)",
   },
 };
 
@@ -160,6 +178,15 @@ const sceneVariants = {
 
 /* —— 时间模式：按周查看 / 按月查看 —— */
 type TimeMode = "week" | "month";
+type LookbackSceneKey = SceneKey;
+
+export type LookbackDemoOptions = {
+  referenceDate: Date;
+  initialTimeMode?: TimeMode;
+  initialScene?: LookbackSceneKey;
+  dataOverrides?: Record<string, Partial<DailyLookbackData>>;
+  readOnly?: boolean;
+};
 
 /* —— 月份 key：YYYY-MM（用于状态与比较）—— */
 function toMonthKey(year: number, month: number): string {
@@ -194,21 +221,35 @@ function weekRangeLabel(weekStartKey: string): string {
 /* =========================================================
  * LookbackPage —— 单屏单场景 + 横滑切换
  * ======================================================= */
-export default function LookbackPage({ onBack }: { onBack: () => void }) {
+export default function LookbackPage({
+  onBack,
+  demoOptions,
+}: {
+  onBack: () => void;
+  demoOptions?: LookbackDemoOptions;
+}) {
+  const [fallbackReferenceDate] = useState(() => new Date());
+  const referenceDate = demoOptions?.referenceDate ?? fallbackReferenceDate;
   // 时间模式：默认「按周查看」
-  const [timeMode, setTimeMode] = useState<TimeMode>("week");
+  const [timeMode, setTimeMode] = useState<TimeMode>(
+    () => demoOptions?.initialTimeMode ?? "week",
+  );
   // 当前周起始（周一），默认本周
   const [currentWeekStart, setCurrentWeekStart] = useState<string>(() => {
-    return toDateKey(getWeekStart(new Date()));
+    return toDateKey(getWeekStart(referenceDate));
   });
   // 当前月份 key，默认本月
   const [currentMonth, setCurrentMonth] = useState<string>(() => {
-    const now = new Date();
+    const now = referenceDate;
     return toMonthKey(now.getFullYear(), now.getMonth() + 1);
   });
   const [timeDirection, setTimeDirection] = useState(0);
 
-  const [sceneIdx, setSceneIdx] = useState(0);
+  const [sceneIdx, setSceneIdx] = useState(() => {
+    const initialScene = demoOptions?.initialScene;
+    if (!initialScene) return 0;
+    return Math.max(0, scenes.findIndex((scene) => scene.key === initialScene));
+  });
   // 详情抽屉：点某天打开；null = 关闭
   const [detailIdx, setDetailIdx] = useState<number | null>(null);
   // 编辑表单：null = 关闭
@@ -230,16 +271,18 @@ export default function LookbackPage({ onBack }: { onBack: () => void }) {
 
   // 本地覆盖：按 date 维度记录被删除/被编辑后的数据
   // 删除：将该日期对应场景字段置空；编辑：覆盖该日期数据
-  const [overrides, setOverrides] = useState<Record<string, Partial<DailyLookbackData>>>({});
+  const [overrides, setOverrides] = useState<Record<string, Partial<DailyLookbackData>>>(
+    () => demoOptions?.dataOverrides ?? {},
+  );
 
   // 按时间模式派生数据：按周用 buildWeekRange；按月用 buildMonthRange
   const baseData = useMemo(() => {
     if (timeMode === "month") {
       const { year, month } = parseMonthKey(currentMonth);
-      return buildMonthRange(year, month);
+      return buildMonthRange(year, month, referenceDate);
     }
-    return buildWeekRange(parseDateKey(currentWeekStart));
-  }, [timeMode, currentWeekStart, currentMonth]);
+    return buildWeekRange(parseDateKey(currentWeekStart), referenceDate);
+  }, [timeMode, currentWeekStart, currentMonth, referenceDate]);
   const data = useMemo(
     () => baseData.map((d) => (overrides[d.date] ? { ...d, ...overrides[d.date] } : d)),
     [baseData, overrides],
@@ -271,13 +314,13 @@ export default function LookbackPage({ onBack }: { onBack: () => void }) {
       const newStart = new Date(start);
       newStart.setDate(newStart.getDate() + delta * 7);
       // 不能超过本周（未来周）
-      const thisWeekStart = getWeekStart(new Date());
+      const thisWeekStart = getWeekStart(referenceDate);
       if (newStart > thisWeekStart) return;
       setCurrentWeekStart(toDateKey(newStart));
     } else {
       const { year, month } = parseMonthKey(currentMonth);
       const d = new Date(year, month - 1 + delta, 1);
-      const now = new Date();
+      const now = referenceDate;
       const nowKey = toMonthKey(now.getFullYear(), now.getMonth() + 1);
       const newKey = toMonthKey(d.getFullYear(), d.getMonth() + 1);
       if (newKey > nowKey) return; // 不能超过当前月
@@ -369,6 +412,7 @@ export default function LookbackPage({ onBack }: { onBack: () => void }) {
           timeMode={timeMode}
           weekStartKey={currentWeekStart}
           monthKey={currentMonth}
+          referenceDate={referenceDate}
           onPrev={() => goTime(-1)}
           onNext={() => goTime(1)}
         />
@@ -450,6 +494,7 @@ export default function LookbackPage({ onBack }: { onBack: () => void }) {
             day={detailDay}
             sceneKey={currentScene.key}
             theme={theme}
+            readOnly={demoOptions?.readOnly === true}
             onClose={() => setDetailIdx(null)}
             onToast={showToast}
             onEdit={() => {
@@ -549,16 +594,18 @@ function TimeRangeSwitcher({
   timeMode,
   weekStartKey,
   monthKey,
+  referenceDate,
   onPrev,
   onNext,
 }: {
   timeMode: TimeMode;
   weekStartKey: string;
   monthKey: string;
+  referenceDate: Date;
   onPrev: () => void;
   onNext: () => void;
 }) {
-  const now = new Date();
+  const now = referenceDate;
   // 判断是否已到当前时间（右箭头禁用）
   const isCurrent = timeMode === "week"
     ? weekStartKey === toDateKey(getWeekStart(now))
@@ -1611,12 +1658,14 @@ function DetailSheet({
   day,
   sceneKey,
   theme,
+  readOnly = false,
   onClose,
   onToast,
 }: {
   day: DailyLookbackData;
   sceneKey: SceneKey;
   theme: Theme;
+  readOnly?: boolean;
   onClose: () => void;
   /* onToast：轻量提示回调，由 LookbackPage 根节点统一挂载到手机内容区全局 toast layer，
    * 避免在 bottom sheet / 按钮局部容器内渲染导致水平居中漂移。 */
@@ -1706,6 +1755,7 @@ function DetailSheet({
             )}
           </div>
 
+          {!readOnly && (
           <div className="relative" ref={menuRef}>
             {/* 更多菜单入口 */}
             <button
@@ -1744,6 +1794,7 @@ function DetailSheet({
               )}
             </AnimatePresence>
           </div>
+          )}
         </div>
 
         {/* 内容区：可滚动；min-h-0 保证 flex 子项内部 overflow 生效，不被内容撑满 */}

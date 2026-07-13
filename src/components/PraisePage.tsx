@@ -278,7 +278,7 @@ function HomeView({
         aria-label="新建夸夸"
         className="absolute bottom-7 right-5 z-20 grid h-11 w-11 place-items-center rounded-full border border-action-primary bg-action-primary text-action-primary-text shadow-[0_4px_18px_-6px_rgba(0,0,0,0.14)] transition-opacity hover:opacity-90"
       >
-        <Plus className="h-5 w-5" strokeWidth={1.8} />
+        <Plus className="h-5 w-5" strokeWidth={2.4} />
       </button>
     </div>
   );
@@ -508,7 +508,7 @@ function DetailView({
           aria-label="删除"
           className="grid h-8 w-8 place-items-center rounded-full bg-white/50 text-ink-faint backdrop-blur-sm transition-colors hover:bg-white/70 hover:text-ink"
         >
-          <Trash2 className="h-4 w-4" strokeWidth={1.6} />
+          <Trash2 className="h-4 w-4" strokeWidth={1.8} />
         </button>
       </div>
 

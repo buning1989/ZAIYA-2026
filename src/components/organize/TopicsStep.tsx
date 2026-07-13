@@ -179,7 +179,7 @@ export default function TopicsStep({ session, onBack, onNext }: Props) {
           onClick={() => setAddingTopic(true)}
           className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-line bg-card-soft/20 px-4 py-3.5 text-[13px] font-medium text-ink-soft transition-colors hover:bg-card-soft/40"
         >
-          <Plus className="h-4 w-4" strokeWidth={2} />
+          <Plus className="h-4 w-4" strokeWidth={2.4} />
           补充一条
         </button>
       </div>
@@ -221,7 +221,7 @@ export default function TopicsStep({ session, onBack, onNext }: Props) {
                       </div>
                     </div>
                     {rangeKey === opt.value && (
-                      <Check className="h-4 w-4 text-accent" strokeWidth={2.5} />
+                      <Check className="h-4 w-4 text-accent" strokeWidth={2.4} />
                     )}
                   </button>
                 );
@@ -308,7 +308,7 @@ const TopicCard = forwardRef<HTMLDivElement, TopicCardProps>(function TopicCard(
           }`}
         >
           {topic.selected && (
-            <Check className="h-3 w-3 text-white" strokeWidth={3} />
+            <Check className="h-3 w-3 text-white" strokeWidth={2.4} />
           )}
         </span>
 

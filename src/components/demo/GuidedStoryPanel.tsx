@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import type { GuidedScenarioStep } from "./types";
+import { moduleLabelMap, type GuidedScenarioStep } from "./types";
 
 type Props = {
   step: GuidedScenarioStep;
@@ -15,11 +15,12 @@ const ease = [0.22, 1, 0.36, 1] as const;
  * 顶部加入小晨小头像作为身份锚点，与进度标签同行：
  *   [小晨小头像] 小晨第一天 · 1/6
  *
- * 文字 4 层级（由强到弱）：
- *   1. story-step   12px  浅色  字距略大  —— 进度标签
- *   2. story-title  30px  深色  加粗     —— 当前节点标题（时间 + 标题合并）
- *   3. story-summary 18px 深色  半加粗   —— 一句话场景
- *   4. story-detail  15px  浅色  常规     —— 产品动作解释
+ * 文字层级（由强到弱）：
+ *   1. story-step    12px  浅色  字距略大  —— 进度标签
+ *   2. story-title   30px  深色  加粗     —— 当前节点标题（时间 + 标题合并）
+ *   3. module-tags   11px  浅色  胶囊      —— 涉及的产品模块（低调但可见）
+ *   4. story-summary 18px  深色  半加粗   —— 一句话场景
+ *   5. story-detail  15px  浅色  常规     —— 产品动作解释
  *
  * 小晨小头像只作为身份锚点，不抢主标题。
  * 步骤切换时整体柔和淡入，保持安静节奏。
@@ -29,6 +30,8 @@ export default function GuidedStoryPanel({
   scenarioName,
   total,
 }: Props) {
+  const tags = step.moduleTags ?? [];
+
   return (
     <div className="flex h-full w-full max-w-[440px] flex-col justify-center lg:w-[420px]">
       <AnimatePresence mode="wait">
@@ -50,12 +53,29 @@ export default function GuidedStoryPanel({
             <span className="ml-2">{step.title}</span>
           </h2>
 
-          {/* 第 3 层：一句话场景（半加粗） */}
+          {/* 第 3 层：涉及的产品模块标签（低调但可见） */}
+          {tags.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] tracking-[0.08em] text-ink-faint">
+                涉及模块
+              </span>
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full border border-line bg-white/60 px-2 py-0.5 text-[11px] text-ink-soft"
+                >
+                  {moduleLabelMap[tag]}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* 第 4 层：一句话场景（半加粗） */}
           <p className="mt-5 text-[18px] font-medium leading-[1.6] text-ink">
             {step.summary}
           </p>
 
-          {/* 第 4 层：产品动作解释（浅色、行高舒适） */}
+          {/* 第 5 层：产品动作解释（浅色、行高舒适） */}
           {step.detail && (
             <p className="mt-4 text-[15px] leading-[1.7] text-ink-soft">
               {step.detail}

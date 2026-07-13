@@ -7,6 +7,8 @@ import {
   Utensils,
   BookOpen,
   ChevronLeft,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { CollapseButton } from "./FeaturePageTransition";
 
@@ -127,7 +129,7 @@ export function SocialSceneSelectContent({
                 className={`h-6 w-6 ${
                   s.open ? "text-ink-soft" : "text-ink-faint"
                 }`}
-                strokeWidth={1.6}
+                strokeWidth={1.8}
               />
               <div>
                 <div
@@ -198,7 +200,8 @@ const dazePostures: DazePosture[] = [
   },
 ];
 
-const SCENE_GIF = "/assets/social/daze/scene-together-1.gif";
+const SCENE_VIDEO = "/assets/social/daze/scene-together-15s.webm";
+const DAZE_BGM = "/assets/social/daze/together-bgm.mp3";
 
 /**
  * 「一起发呆」完整流程（准备态 → 正式发呆态 → 长按退出）。
@@ -219,6 +222,38 @@ export function DazeFlow({
 }) {
   const [phase, setPhase] = useState<"ready" | "dazing">("ready");
   const [selected, setSelected] = useState<string>("quick-idle");
+  const [isMuted, setIsMuted] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    audio.volume = 0.42;
+    audio.muted = isMuted;
+
+    if (!isMuted) {
+      void audio.play().catch(() => {
+        audio.muted = true;
+        setIsMuted(true);
+      });
+    }
+  }, [isMuted]);
+
+  const toggleAudio = () => {
+    const nextMuted = !isMuted;
+    const audio = audioRef.current;
+    setIsMuted(nextMuted);
+
+    if (!audio) return;
+    audio.muted = nextMuted;
+    if (!nextMuted) {
+      void audio.play().catch(() => {
+        audio.muted = true;
+        setIsMuted(true);
+      });
+    }
+  };
 
   return (
     <motion.div
@@ -229,13 +264,31 @@ export function DazeFlow({
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       className="absolute inset-0 z-[60] overflow-hidden bg-ink"
     >
-      {/* 全屏场景 GIF：准备态与正式态共用同一画面背景 */}
-      <img
-        src={SCENE_GIF}
-        alt="一起发呆"
+      {/* 全屏场景视频：准备态与正式态共用同一画面背景 */}
+      <video
+        src={SCENE_VIDEO}
+        aria-label="一起发呆"
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
         className="absolute inset-0 h-full w-full object-cover"
-        draggable={false}
       />
+      <audio ref={audioRef} src={DAZE_BGM} autoPlay loop preload="auto" />
+
+      <button
+        type="button"
+        onClick={toggleAudio}
+        aria-label={isMuted ? "打开背景音乐" : "静音背景音乐"}
+        className="absolute right-5 top-12 z-30 grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-black/20 text-white/85 shadow-[0_10px_30px_rgba(0,0,0,0.18)] backdrop-blur-md transition-colors hover:bg-white/12 hover:text-white"
+      >
+        {isMuted ? (
+          <VolumeX className="h-[18px] w-[18px]" strokeWidth={1.8} />
+        ) : (
+          <Volume2 className="h-[18px] w-[18px]" strokeWidth={1.8} />
+        )}
+      </button>
 
       <AnimatePresence mode="wait">
         {phase === "ready" ? (
@@ -392,7 +445,7 @@ function DazeReady({
               <CarouselCard
                 key={trackIdx}
                 trackIdx={trackIdx}
-                posture={posture}
+                item={posture}
                 x={x}
                 onClick={() => {
                   if (draggedRef.current) return;
@@ -417,17 +470,27 @@ function DazeReady({
   );
 }
 
-/* —— carousel 单卡：透明度/缩放/描边均由 x 派生，拖拽过程中无重渲染 —— */
+/* —— carousel 通用条目类型（发呆姿势 / 食物均满足此结构）—— */
+type CarouselItem = {
+  id: string;
+  label: string;
+  src: string;
+};
+
+/* —— carousel 单卡：透明度/缩放/描边均由 x 派生，拖拽过程中无重渲染 ——
+ * mediaKind="image" 渲染 <img>（发呆姿势 GIF）；"video" 渲染 <video>（食物 webm）。 */
 function CarouselCard({
   trackIdx,
-  posture,
+  item,
   x,
   onClick,
+  mediaKind = "image",
 }: {
   trackIdx: number;
-  posture: DazePosture;
+  item: CarouselItem;
   x: ReturnType<typeof useMotionValue<number>>;
   onClick: () => void;
+  mediaKind?: "image" | "video";
 }) {
   // 当前中心卡索引 = -x / step
   const center = useTransform(x, (xv) => -xv / CARD_STEP);
@@ -465,18 +528,30 @@ function CarouselCard({
             opacity: ringOpacity,
           }}
         />
-        <img
-          src={posture.src}
-          alt={posture.label}
-          className="h-full w-full object-contain"
-          draggable={false}
-        />
+        {mediaKind === "video" ? (
+          <video
+            src={item.src}
+            aria-label={item.label}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="h-full w-full object-contain"
+          />
+        ) : (
+          <img
+            src={item.src}
+            alt={item.label}
+            className="h-full w-full object-contain"
+            draggable={false}
+          />
+        )}
       </motion.div>
       <motion.p
         className="mt-2 text-center text-[12px] font-medium text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]"
         style={{ opacity }}
       >
-        {posture.label}
+        {item.label}
       </motion.p>
     </div>
   );
@@ -541,14 +616,20 @@ function formatHHMM(d: Date): string {
   return `${h}:${m}`;
 }
 
-function PresencePulse() {
+function PresencePulse({
+  messages = PRESENCE_MESSAGES,
+  mainText = "正在一起发呆",
+}: {
+  messages?: string[];
+  mainText?: string;
+}) {
   const [entries, setEntries] = useState<PresenceEntry[]>(() => {
     // 初始 3 条，时间从当前向前递减 15 分钟一档，营造「最近有人来过」
     const now = Date.now();
     return [0, 1, 2].map((i) => ({
       id: i,
       time: formatHHMM(new Date(now - i * 15 * 60 * 1000)),
-      text: PRESENCE_MESSAGES[i % PRESENCE_MESSAGES.length],
+      text: messages[i % messages.length],
     }));
   });
   const idRef = useRef(3);
@@ -560,13 +641,13 @@ function PresencePulse() {
       const next: PresenceEntry = {
         id: idRef.current++,
         time: formatHHMM(new Date()),
-        text: PRESENCE_MESSAGES[msgIdxRef.current % PRESENCE_MESSAGES.length],
+        text: messages[msgIdxRef.current % messages.length],
       };
       msgIdxRef.current += 1;
       setEntries((prev) => [...prev.slice(-2), next]);
     }, 5000);
     return () => clearInterval(t);
-  }, []);
+  }, [messages]);
 
   return (
     <div className="absolute left-5 top-12 z-10 flex max-w-[200px] flex-col gap-1.5">
@@ -586,7 +667,7 @@ function PresencePulse() {
 
       {/* 第二行：当前状态主体文案（比动态列表更醒目） */}
       <p className="relative text-[14px] font-semibold tracking-tight text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]">
-        正在一起发呆
+        {mainText}
       </p>
 
       {/* 第三行起：其他用户动态列表，缓慢上滚更新 */}
@@ -626,7 +707,13 @@ const STROKE = 2;
 const R = (BTN_SIZE - STROKE) / 2;
 const CIRC = 2 * Math.PI * R;
 
-function LongPressExitButton({ onComplete }: { onComplete: () => void }) {
+function LongPressExitButton({
+  onComplete,
+  ariaLabel = "长按结束发呆",
+}: {
+  onComplete: () => void;
+  ariaLabel?: string;
+}) {
   const [progress, setProgress] = useState(0);
   const rafRef = useRef<number | null>(null);
   const startRef = useRef(0);
@@ -676,7 +763,7 @@ function LongPressExitButton({ onComplete }: { onComplete: () => void }) {
       onPointerUp={cancel}
       onPointerLeave={cancel}
       onPointerCancel={cancel}
-      aria-label="长按结束发呆"
+      aria-label={ariaLabel}
       className="relative grid place-items-center rounded-full bg-transparent ring-1 ring-white/40 transition-colors hover:bg-white/5 select-none"
       style={{ width: BTN_SIZE, height: BTN_SIZE, touchAction: "none" }}
     >
@@ -715,7 +802,7 @@ function LongPressExitButton({ onComplete }: { onComplete: () => void }) {
         viewBox="0 0 14 14"
         fill="none"
         stroke="white"
-        strokeWidth="1.5"
+        strokeWidth="1.8"
         strokeLinecap="round"
         className={`transition-transform ${pressing ? "scale-90" : "scale-100"}`}
       >
@@ -725,49 +812,280 @@ function LongPressExitButton({ onComplete }: { onComplete: () => void }) {
   );
 }
 
-/* —— 「一起吃饭」占位页 ——
- * Demo 阶段仅保留入口与基础占位，不展开完整流程。 */
-export function EatPlaceholderContent({ onExit }: { onExit: () => void }) {
+/* —— 「一起吃饭」食物配置 + 场景视频 ——
+ * 食物仅作为轻社交场景中的陪伴道具，不进入饮食记录数据结构、不评价健康。
+ * 默认选中「粥」，更温和，也符合慢慢吃的状态。 */
+const eatFoods: CarouselItem[] = [
+  { id: "milk-tea", label: "奶茶", src: "/assets/social/eat/food-milk-tea.webm" },
+  { id: "greens", label: "青菜", src: "/assets/social/eat/food-greens.webm" },
+  { id: "meat", label: "肉", src: "/assets/social/eat/food-meat.webm" },
+  { id: "fruit", label: "水果", src: "/assets/social/eat/food-fruit.webm" },
+  { id: "dessert", label: "甜品", src: "/assets/social/eat/food-dessert.webm" },
+  { id: "congee", label: "粥", src: "/assets/social/eat/food-congee.webm" },
+];
+
+const EAT_SCENE_VIDEO = "/assets/social/eat/scene-eating-plaza.webm";
+const EAT_DEFAULT_FOOD = "congee";
+
+const EAT_PRESENCE_MESSAGES = [
+  "小王正在吃饭",
+  "小李也坐下来了",
+  "阿木正在慢慢吃",
+  "可可也在这一桌",
+  "小鱼正在一起吃饭",
+  "又有朋友来了",
+  "木木也安静坐着吃",
+];
+
+/**
+ * 「一起吃饭」完整流程（准备态 → 正式吃饭态 → 长按退出）。
+ *
+ * 结构与「一起发呆」一致：点击后直接进入沉浸场景，先在场景内的准备态中
+ * 通过横滑选择想一起吃的食物，确认后进入正式吃饭态。
+ * 正式态仅保留沉浸画面 + 左上角共在动态 + 底部状态文案 + 透明圆形长按退出。
+ *
+ * - onExit：准备态返回（无能量）
+ * - onFinish：正式吃饭态长按结束（触发能量奖励并返回）
+ */
+export function EatFlow({
+  onExit,
+  onFinish,
+}: {
+  onExit: () => void;
+  onFinish: () => void;
+}) {
+  const [phase, setPhase] = useState<"ready" | "eating">("ready");
+  const [selected, setSelected] = useState<string>(EAT_DEFAULT_FOOD);
+
   return (
     <motion.div
+      key="eat-flow"
       initial={{ y: "100%", opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: "100%", opacity: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="absolute inset-0 z-[60] bg-white"
+      className="absolute inset-0 z-[60] overflow-hidden bg-ink"
     >
-      <div className="relative flex h-full flex-col bg-white">
-        {/* 顶部返回 */}
-        <div className="flex items-center gap-3 px-5 pt-14 pb-2">
-          <button
-            onClick={onExit}
-            aria-label="返回场景选择"
-            className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </button>
-        </div>
+      {/* 全屏场景视频：准备态与正式态共用同一画面背景 */}
+      <video
+        src={EAT_SCENE_VIDEO}
+        aria-label="一起吃饭"
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        className="absolute inset-0 h-full w-full object-cover"
+      />
 
-        {/* 标题 + 文案 */}
-        <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
-          <Utensils className="h-8 w-8 text-ink-faint" strokeWidth={1.4} />
-          <h2 className="mt-5 text-[20px] font-semibold tracking-tight text-ink">
-            一起吃饭
-          </h2>
-          <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">
-            围坐一桌，慢慢吃。
-          </p>
-        </div>
+      <AnimatePresence mode="wait">
+        {phase === "ready" ? (
+          <EatReady
+            key="ready"
+            selected={selected}
+            onSelect={setSelected}
+            onBack={onExit}
+            onConfirm={() => setPhase("eating")}
+          />
+        ) : (
+          <EatActive key="eating" onExit={onFinish} />
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
 
-        {/* 底部返回入口 */}
-        <div className="px-6 pb-8">
-          <button
-            onClick={onExit}
-            className="w-full rounded-xl border border-line bg-white px-6 py-3.5 text-[15px] font-medium text-ink transition-colors hover:border-ink-faint"
+/* —— 准备态：沉浸场景内的食物选择（无限循环横滑 carousel） ——
+ * 复用与发呆准备态相同的 carousel 机制，食物卡渲染为 <video>（mediaKind="video"）。 */
+function EatReady({
+  selected,
+  onSelect,
+  onBack,
+  onConfirm,
+}: {
+  selected: string;
+  onSelect: (id: string) => void;
+  onBack: () => void;
+  onConfirm: () => void;
+}) {
+  const n = eatFoods.length;
+  const total = n * REPEAT;
+  const defaultRealIdx = Math.max(
+    0,
+    eatFoods.findIndex((f) => f.id === selected),
+  );
+  const [vIdx, setVIdx] = useState(HOME_COPY * n + defaultRealIdx);
+  const x = useMotionValue(-vIdx * CARD_STEP);
+  const draggedRef = useRef(false);
+
+  const realIdx = ((vIdx % n) + n) % n;
+
+  // 选中食物变化时同步到父级（仅当 id 真正变化时调用）
+  useEffect(() => {
+    const id = eatFoods[realIdx].id;
+    if (id !== selected) onSelect(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [realIdx]);
+
+  // 键盘左右方向键无限循环切换（仅在准备态生效，离开即卸载）
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        snapTo(vIdx - 1);
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        snapTo(vIdx + 1);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vIdx]);
+
+  const snapTo = (newV: number) => {
+    const clamped = Math.max(0, Math.min(total - 1, newV));
+    setVIdx(clamped);
+    const controls = animate(x, -clamped * CARD_STEP, {
+      type: "spring",
+      stiffness: 320,
+      damping: 32,
+    });
+    controls.then(() => {
+      // 落在中段副本之外则静默归一化：同一食物卡片仍在中心，视觉无跳变
+      if (clamped < HOME_COPY * n || clamped >= (HOME_COPY + 1) * n) {
+        const homeV = HOME_COPY * n + (((clamped % n) + n) % n);
+        x.set(-homeV * CARD_STEP);
+        setVIdx(homeV);
+      }
+    });
+  };
+
+  // 构造多份副本卡片列表
+  const cards: { trackIdx: number; food: CarouselItem }[] = [];
+  for (let c = 0; c < REPEAT; c++) {
+    for (let i = 0; i < n; i++) {
+      cards.push({ trackIdx: c * n + i, food: eatFoods[i] });
+    }
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.25, ease }}
+      className="absolute inset-0"
+    >
+      {/* 轻微毛玻璃蒙层：仍能看见吃饭广场场景，但不喧宾夺主 */}
+      <div className="absolute inset-0 bg-ink/30 backdrop-blur-[2px]" />
+
+      {/* 左上角返回 */}
+      <button
+        onClick={onBack}
+        aria-label="返回场景选择"
+        className="absolute left-5 top-12 z-20 grid h-8 w-8 place-items-center rounded-full text-white/80 transition-colors hover:bg-white/10"
+      >
+        <ChevronLeft className="h-6 w-6" />
+      </button>
+
+      {/* 顶部文案 */}
+      <div className="absolute inset-x-0 top-24 px-6 text-center">
+        <p className="text-[15px] font-medium tracking-tight text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]">
+          选一个想一起吃的东西
+        </p>
+        <p className="mt-1.5 text-[12px] leading-relaxed text-white/70 drop-shadow-[0_1px_3px_rgba(0,0,0,0.45)]">
+          不用选得很认真。
+        </p>
+      </div>
+
+      {/* 无限循环横滑 carousel：选中项居中，两侧露出弱化 */}
+      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2">
+        <div className="no-scrollbar overflow-x-auto px-[calc(50%-70px)]">
+          <motion.div
+            className="flex"
+            style={{ x, gap: CARD_GAP }}
+            drag="x"
+            dragConstraints={{
+              left: -(total - 1) * CARD_STEP,
+              right: 0,
+            }}
+            dragElastic={0.12}
+            onDragStart={() => {
+              draggedRef.current = true;
+            }}
+            onDragEnd={(_, info) => {
+              const moved = Math.round(-info.offset.x / CARD_STEP);
+              snapTo(vIdx + moved);
+              setTimeout(() => {
+                draggedRef.current = false;
+              }, 0);
+            }}
           >
-            返回
-          </button>
+            {cards.map(({ trackIdx, food }) => (
+              <CarouselCard
+                key={trackIdx}
+                trackIdx={trackIdx}
+                item={food}
+                x={x}
+                mediaKind="video"
+                onClick={() => {
+                  if (draggedRef.current) return;
+                  snapTo(trackIdx);
+                }}
+              />
+            ))}
+          </motion.div>
         </div>
+      </div>
+
+      {/* 底部确认按钮 */}
+      <div className="absolute inset-x-0 bottom-8 px-6">
+        <button
+          onClick={onConfirm}
+          className="mx-auto block rounded-full bg-white/15 px-7 py-3 text-[14px] font-medium text-white/95 backdrop-blur-md ring-1 ring-white/40 transition-colors hover:bg-white/25"
+        >
+          就这样慢慢吃
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+/* —— 正式吃饭态 ——
+ * 无顶部标题；左上角轻量共在动态流（LIVE + 主状态 + 动态列表）；
+ * 底部仅保留「长按结束吃饭」+ 透明圆形长按退出。 */
+function EatActive({ onExit }: { onExit: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3, ease }}
+      className="absolute inset-0"
+    >
+      {/* 左上角共在动态流 */}
+      <PresencePulse
+        messages={EAT_PRESENCE_MESSAGES}
+        mainText="正在一起吃饭"
+      />
+
+      {/* 底部轻渐变蒙层：保证文案与按钮可读 */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/55 to-transparent" />
+
+      {/* 底部文案：主状态已移至左上角，底部仅保留操作提示 */}
+      <div className="absolute inset-x-0 bottom-24 px-6 text-center">
+        <p className="text-[12px] font-medium text-white/85 drop-shadow-[0_1px_3px_rgba(0,0,0,0.45)]">
+          长按结束吃饭
+        </p>
+      </div>
+
+      {/* 底部透明圆形长按退出按钮 */}
+      <div className="absolute inset-x-0 bottom-7 flex justify-center">
+        <LongPressExitButton
+          onComplete={onExit}
+          ariaLabel="长按结束吃饭"
+        />
       </div>
     </motion.div>
   );

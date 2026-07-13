@@ -12,7 +12,7 @@ export function StepProgress({ current, total }: { current: number; total: numbe
       <div className="flex items-center gap-2.5">
         <div className="h-[2px] flex-1 overflow-hidden rounded-full bg-line-soft">
           <motion.div
-            className="h-full rounded-full bg-[rgba(177,194,113,0.7)]"
+            className="h-full rounded-full bg-status-mood/70"
             initial={false}
             animate={{ width: `${pct}%` }}
             transition={{ duration: 0.3, ease }}
@@ -46,7 +46,7 @@ export function SelectMark({ checked }: { checked: boolean }) {
       }`}
       style={{ height: 18, width: 18 }}
     >
-      {checked && <Check className="h-3 w-3" strokeWidth={3} />}
+      {checked && <Check className="h-3 w-3" strokeWidth={2.4} />}
     </span>
   );
 }

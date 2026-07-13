@@ -17,6 +17,7 @@
 
   /* Action / 行动 */
   --z-action-primary: #E6F46B;
+  --z-action-primary-rgb: 230 244 107;
   --z-action-primary-text: #27331F;
   --z-action-pressed: #536652;
   --z-action-disabled: #D8DDD6;
@@ -24,13 +25,38 @@
   --z-action-deep: #27331F;
   --z-action-deep-text: #F8FAEF;
 
-  /* Status / 状态 */
+  /* Status / 状态（记录分类色 —— 仅用于数据可视化，不得用于通用交互） */
   --z-status-mood: #A7B765;
+  --z-status-mood-rgb: 167 183 101;
+  --z-status-mood-bg: #EFF1E5;
   --z-status-sleep: #88C6CD;
+  --z-status-sleep-rgb: 136 198 205;
+  --z-status-sleep-bg: #E6F0F1;
   --z-status-food: #F2DDBB;
   --z-status-medicine: #D9E98C;
+  --z-status-medication: #D9E98C;
+  --z-status-medication-rgb: 217 233 140;
+  --z-status-medication-bg: #F4F8DD;
+  --z-status-meal: #F2C98F;
+  --z-status-meal-rgb: 242 201 143;
+  --z-status-meal-bg: #FCF1E3;
   --z-status-activity: #B7D8B7;
+  --z-status-activity-rgb: 183 216 183;
+  --z-status-activity-bg: #EDF4ED;
   --z-status-social: #CDBFEA;
+  --z-status-weight: #CDBFEA;
+  --z-status-weight-rgb: 205 191 234;
+  --z-status-weight-bg: #F2EFF7;
+
+  /* Praise / 夸夸卡片装饰色例外（仅用于夸夸卡片背景，8 种固定色） */
+  --z-praise-card-1: #F1F3E8;
+  --z-praise-card-2: #EEF1E2;
+  --z-praise-card-3: #E6F0F1;
+  --z-praise-card-4: #FBF6E9;
+  --z-praise-card-5: #F4F8DD;
+  --z-praise-card-6: #F2EFF7;
+  --z-praise-card-7: #F6F8EF;
+  --z-praise-card-8: #EDF4ED;
 
   /* Risk / 风险 */
   --z-risk-low: #D7C8A3;
@@ -91,17 +117,33 @@
 
   /* Action / 行动 */
   --z-action-primary: #E6F46B;
+  --z-action-primary-rgb: 230 244 107;
   --z-action-primary-text: #27331F;
   --z-action-deep: #D6E08E;
   --z-action-deep-text: #22301A;
 
-  /* Status / 状态 */
+  /* Status / 状态（记录分类色 —— 仅用于数据可视化，不得用于通用交互） */
   --z-status-mood: #9BAA63;
+  --z-status-mood-rgb: 155 170 99;
+  --z-status-mood-bg: #2D3A25;
   --z-status-sleep: #8DBDC3;
+  --z-status-sleep-rgb: 141 189 195;
+  --z-status-sleep-bg: #202A1B;
   --z-status-food: #C6AC73;
   --z-status-medicine: #D6E08E;
+  --z-status-medication: #D6E08E;
+  --z-status-medication-rgb: 214 224 142;
+  --z-status-medication-bg: #2D3A25;
+  --z-status-meal: #C6AC73;
+  --z-status-meal-rgb: 198 172 115;
+  --z-status-meal-bg: #2D3A25;
   --z-status-activity: #88A878;
+  --z-status-activity-rgb: 136 168 120;
+  --z-status-activity-bg: #202A1B;
   --z-status-social: #A99BCC;
+  --z-status-weight: #A99BCC;
+  --z-status-weight-rgb: 169 155 204;
+  --z-status-weight-bg: #2D3A25;
 
   /* Risk / 风险 */
   --z-risk-low: #B9A676;

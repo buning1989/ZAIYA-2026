@@ -94,6 +94,7 @@ export const xiaochenDay1Scenario: GuidedScenario = {
       title: "起床失败",
       summary: "小晨没有回应，在呀没有继续催她。",
       detail: "它没有弹窗、没有响铃、没有继续追问。第一步只是稳定在场。",
+      moduleTags: ["home"],
       demoState: {
         enabled: true,
         now: makeDate("06:40"),
@@ -108,6 +109,7 @@ export const xiaochenDay1Scenario: GuidedScenario = {
       title: "崩溃开口",
       summary: "她现在答不出“怎么办”。在呀先接住崩溃，而不是追问原因。",
       detail: "没有评判“你怎么这样”，也没有立刻给方案。只是让她知道：这里能说，说完不会更糟。",
+      moduleTags: ["dialog"],
       demoState: {
         enabled: true,
         now: makeDate("07:35"),
@@ -122,6 +124,7 @@ export const xiaochenDay1Scenario: GuidedScenario = {
       title: "呼吸练习",
       summary: "不要求她马上解决问题，只先把身体从情绪高峰里带下来一点。",
       detail: "情绪先落地，思路才有可能回来。这是身体层面的兜底，不是任务推进。",
+      moduleTags: ["relief"],
       demoState: {
         enabled: true,
         now: makeDate("07:35"),
@@ -135,6 +138,7 @@ export const xiaochenDay1Scenario: GuidedScenario = {
       title: "拒绝吃饭",
       summary: "她拒绝了。在呀没有把“没吃饭”变成一次失败。",
       detail: "没有提醒热量、没有补打卡、没有把这一餐标记为异常。只是把门留着，等她想吃的时候。",
+      moduleTags: ["dialog"],
       demoState: {
         enabled: true,
         now: makeDate("12:00"),
@@ -149,6 +153,7 @@ export const xiaochenDay1Scenario: GuidedScenario = {
       title: "学习启动失败",
       summary: "不是让她“完成学习”，而是把无法启动的任务拆到能动一下。",
       detail: "“补三张”被放回桌上。只翻开一题、抄下条件，就停。能动一下，今天就成立。",
+      moduleTags: ["dialog"],
       demoState: {
         enabled: true,
         now: makeDate("14:20"),
@@ -163,6 +168,7 @@ export const xiaochenDay1Scenario: GuidedScenario = {
       title: "一起发呆",
       summary: "这里没有人追问，也没有人喊她振作。她只是看到：这个点，还有别人也在这里待着。",
       detail: "陪伴不一定有对话。共同在场本身就是一种回应。",
+      moduleTags: ["social"],
       demoState: {
         enabled: true,
         now: makeDate("20:00"),

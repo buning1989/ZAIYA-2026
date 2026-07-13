@@ -12,6 +12,9 @@ import {
   type CommunicationSession,
 } from "@/data/organize";
 import { Toast } from "./shared";
+import MaterialExportConfirmDialog, {
+  type MaterialExportAction,
+} from "./MaterialExportConfirmDialog";
 import { AnimatePresence } from "framer-motion";
 
 interface Props {
@@ -19,6 +22,8 @@ interface Props {
   onBack: () => void;
   onHome: () => void;
   onViewMaterial: () => void;
+  /** 演示只读态：按钮保留视觉，但不触发分享/下载副作用 */
+  readOnly?: boolean;
 }
 
 export default function DoneStep({
@@ -26,8 +31,11 @@ export default function DoneStep({
   onBack,
   onHome,
   onViewMaterial,
+  readOnly = false,
 }: Props) {
   const [toast, setToast] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] =
+    useState<MaterialExportAction | null>(null);
   const name = session.contactSnapshot.displayName;
 
   const showToast = (msg: string) => {
@@ -42,8 +50,29 @@ export default function DoneStep({
   const selectedRecordCount = disclosure.originalRecords.filter(
     (r) => r.selected,
   ).length;
+  // 进入材料的高风险记录数量（未纳入披露时为 0）
+  const highRiskCount = disclosureIncluded ? selectedRecordCount : 0;
 
-  const handleShare = async () => {
+  // 点击「分享 / 保存」只打开确认弹层，不直接执行导出
+  const handleShare = () => {
+    if (readOnly) {
+      showToast("演示模式不执行真实分享");
+      return;
+    }
+    setPendingAction("share");
+  };
+
+  const handleSave = () => {
+    if (readOnly) {
+      showToast("演示模式不执行真实保存");
+      return;
+    }
+    setPendingAction("save");
+  };
+
+  // 用户在确认弹层中点击「继续分享」后才执行真实分享
+  const executeShare = async () => {
+    setPendingAction(null);
     const text = buildShareText(session);
     if (navigator.share) {
       try {
@@ -64,7 +93,9 @@ export default function DoneStep({
     }
   };
 
-  const handleSave = () => {
+  // 用户在确认弹层中点击「继续保存」后才执行真实下载
+  const executeSave = () => {
+    setPendingAction(null);
     const text = buildShareText(session);
     const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -99,7 +130,7 @@ export default function DoneStep({
           aria-label="返回帮我整理首页"
           className="grid h-8 w-8 place-items-center rounded-full text-ink transition-colors hover:bg-line-soft"
         >
-          <FolderOpen className="h-[19px] w-[19px]" strokeWidth={1.5} />
+          <FolderOpen className="h-[19px] w-[19px]" strokeWidth={1.8} />
         </button>
       </div>
 
@@ -175,6 +206,20 @@ export default function DoneStep({
           </button>
         </div>
       </div>
+
+      <AnimatePresence>
+        {pendingAction && (
+          <MaterialExportConfirmDialog
+            action={pendingAction}
+            recipientLabel={pendingAction === "share" ? name : undefined}
+            highRiskCount={highRiskCount}
+            onConfirm={
+              pendingAction === "share" ? executeShare : executeSave
+            }
+            onClose={() => setPendingAction(null)}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {toast && <Toast message={toast} />}

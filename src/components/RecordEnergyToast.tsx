@@ -164,7 +164,7 @@ export default function RecordEnergyToast({
                     : [0, 0.12, 0.875, 1],
                   ease,
                 }}
-                className="whitespace-nowrap rounded-full border border-[rgba(177,194,113,0.4)] bg-[#EEF2E4] px-4 py-2 text-[14px] font-semibold tracking-tight text-[#2C3B27] shadow-[0_6px_16px_rgba(44,59,39,0.12)]"
+                className="whitespace-nowrap rounded-full border border-status-mood/40 bg-canvas-soft px-4 py-2 text-[14px] font-semibold tracking-tight text-ink shadow-[0_6px_16px_rgba(44,59,39,0.12)]"
               >
                 {readableText}
               </motion.div>
@@ -193,13 +193,13 @@ export default function RecordEnergyToast({
                       times: [0, 0.14, 1],
                       ease,
                     }}
-                    className="absolute grid h-6 w-6 place-items-center rounded-full border border-[rgba(177,194,113,0.45)] bg-[#F3F7D2] text-[#2C3B27] shadow-[0_8px_18px_rgba(44,59,39,0.16)]"
+                    className="absolute grid h-6 w-6 place-items-center rounded-full border border-status-mood/45 bg-action-primary/20 text-ink shadow-[0_8px_18px_rgba(44,59,39,0.16)]"
                     style={{
                       left: geometry.origin.x - 12,
                       top: geometry.origin.y - 12,
                     }}
                   >
-                    <Zap className="h-3.5 w-3.5 fill-current" strokeWidth={2.2} />
+                    <Zap className="h-3.5 w-3.5 fill-current" strokeWidth={1.8} />
                   </motion.div>
                 );
               })}

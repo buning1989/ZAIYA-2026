@@ -642,7 +642,7 @@ function BasicProfileEdit({
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <Camera className="h-5 w-5" strokeWidth={1.6} />
+                <Camera className="h-5 w-5" strokeWidth={1.8} />
               )}
             </button>
             <div className="flex flex-col gap-2">
@@ -1068,7 +1068,7 @@ function ContactList({
                   >
                     {copiedId === c.id ? (
                       <>
-                        <Check className="h-3.5 w-3.5" strokeWidth={1.8} />
+                        <Check className="h-3.5 w-3.5" strokeWidth={2.4} />
                         已复制
                       </>
                     ) : (
@@ -1119,7 +1119,7 @@ function ContactList({
         aria-label={addLabel}
         className="absolute bottom-7 right-5 z-20 grid h-11 w-11 place-items-center rounded-full border border-action-primary bg-action-primary text-action-primary-text shadow-[0_4px_18px_-6px_rgba(0,0,0,0.14)] transition-opacity hover:opacity-90"
       >
-        <Plus className="h-5 w-5" strokeWidth={1.8} />
+        <Plus className="h-5 w-5" strokeWidth={2.4} />
       </button>
 
       <AnimatePresence>
@@ -1315,7 +1315,7 @@ function MedsList({
                   </div>
                   <Trash2
                     className="h-4 w-4 shrink-0 text-ink-faint transition-colors hover:text-risk-medium"
-                    strokeWidth={1.6}
+                    strokeWidth={1.8}
                     onClick={(e) => {
                       e.stopPropagation();
                       setDeleteId(m.id);
@@ -1333,7 +1333,7 @@ function MedsList({
         aria-label="新增服用安排"
         className="absolute bottom-7 right-5 z-20 grid h-11 w-11 place-items-center rounded-full border border-action-primary bg-action-primary text-action-primary-text shadow-[0_4px_18px_-6px_rgba(0,0,0,0.14)] transition-opacity hover:opacity-90"
       >
-        <Plus className="h-5 w-5" strokeWidth={1.8} />
+        <Plus className="h-5 w-5" strokeWidth={2.4} />
       </button>
 
       <AnimatePresence>

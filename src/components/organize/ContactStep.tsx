@@ -99,7 +99,7 @@ export default function ContactStep({ onBack, onSelectContact }: Props) {
           aria-label="历史记录暂未开放"
           className="grid h-8 w-8 place-items-center rounded-full text-ink-faint"
         >
-          <Clock className="h-4 w-4" strokeWidth={1.6} />
+          <Clock className="h-4 w-4" strokeWidth={1.8} />
         </button>
       </div>
 
@@ -123,7 +123,7 @@ export default function ContactStep({ onBack, onSelectContact }: Props) {
           onClick={() => setShowAddSheet(true)}
           className="mt-4 inline-flex items-center gap-1.5 text-[12.5px] text-ink-faint transition-colors hover:text-ink-soft"
         >
-          <Plus className="h-3.5 w-3.5" strokeWidth={1.8} />
+          <Plus className="h-3.5 w-3.5" strokeWidth={2.4} />
           添加沟通对象
         </button>
       </div>
@@ -221,7 +221,7 @@ function AddContactSheet({
                 }`}
               >
                 {selectedTrustedId === candidate.id && (
-                  <Check className="h-3 w-3" strokeWidth={3} />
+                  <Check className="h-3 w-3" strokeWidth={2.4} />
                 )}
               </span>
             </button>
@@ -391,7 +391,7 @@ function SwipeableContactCard({
           <div className="mt-2 text-[12px] text-ink-soft">{rangeLabel}</div>
         </div>
         <div className="flex items-center gap-1 text-[13px] font-medium text-accent">
-          <ChevronRight className="h-4 w-4" strokeWidth={2} />
+          <ChevronRight className="h-4 w-4" strokeWidth={1.8} />
         </div>
       </motion.div>
     </div>

@@ -18,7 +18,7 @@ import VoiceInputBar from "./VoiceInputBar";
 import {
   SocialSceneSelectContent,
   DazeFlow,
-  EatPlaceholderContent,
+  EatFlow,
   type SceneId,
 } from "./PresenceRoom";
 import FeaturePageTransition, { CollapseButton } from "./FeaturePageTransition";
@@ -49,11 +49,19 @@ import type {
   DialogMessageItem,
   DialogTimeItem,
 } from "./demo/types";
+import DemoRecordPreview from "./demo/DemoRecordPreview";
+import DemoPraisePreview from "./demo/DemoPraisePreview";
+import LookbackPage from "./LookbackPage";
+import MaterialDetailView from "./organize/MaterialDetailView";
+import DoneStep from "./organize/DoneStep";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
 /* —— 轻社交：一起发呆结束获得的能量值（Demo 固定，不按时长计算）—— */
 const SOCIAL_DAZE_ENERGY_REWARD = 3;
+
+/* —— 轻社交：一起吃饭结束获得的能量值（Demo 固定，不按时长计算）—— */
+const SOCIAL_EAT_ENERGY_REWARD = 3;
 
 /* —— 应用锁受保护入口 ——
  * 仅这 4 个入口被应用锁保护；首页 / 记一下的新建入口 / 帮助与反馈 /
@@ -313,7 +321,7 @@ export function PhoneStatusBar({
             <div className="h-2.5 w-1 rounded-[1px] bg-ink" />
           </div>
           {/* Wi-Fi */}
-          <Wifi className="h-3.5 w-3.5" strokeWidth={2.2} />
+          <Wifi className="h-3.5 w-3.5" strokeWidth={1.8} />
           {/* 电池 */}
           <div className="relative ml-0.5 h-3 w-6 rounded-[3px] border border-ink/55 p-[1.5px]">
             <div className="absolute -right-[3px] top-1/2 h-1.5 w-[2px] -translate-y-1/2 rounded-r bg-ink/55" />
@@ -351,6 +359,10 @@ type SurfaceMode =
   | "breathing"
   | "socialSelect"
   | "socialFlow"
+  | "record"
+  | "praise"
+  | "lookback"
+  | "organize"
   | "more"
   | "moreDetail"
   | "verify";
@@ -472,6 +484,21 @@ export default function AppMainSurface({
     setSocialEnergyReward({
       id: socialEnergyRewardIdRef.current,
       reward: SOCIAL_DAZE_ENERGY_REWARD,
+      toEnergy: newEnergy,
+    });
+    setMode("socialSelect");
+  };
+
+  // 一起吃饭结束 → 累加能量并触发 toast（复用与发呆一致的能量反馈链路）
+  // 演示模式下不触发能量奖励与状态变更
+  const handleEatFinish = () => {
+    if (demoEnabled) return;
+    freezeSocialEnergy();
+    const newEnergy = addEnergy(SOCIAL_EAT_ENERGY_REWARD);
+    socialEnergyRewardIdRef.current += 1;
+    setSocialEnergyReward({
+      id: socialEnergyRewardIdRef.current,
+      reward: SOCIAL_EAT_ENERGY_REWARD,
       toEnergy: newEnergy,
     });
     setMode("socialSelect");
@@ -976,7 +1003,12 @@ export default function AppMainSurface({
           damping: 30,
         }}
       >
-        {effectiveMode !== "socialFlow" && effectiveMode !== "breathing" && (
+        {effectiveMode !== "socialFlow" &&
+          effectiveMode !== "breathing" &&
+          effectiveMode !== "record" &&
+          effectiveMode !== "praise" &&
+          effectiveMode !== "lookback" &&
+          effectiveMode !== "organize" && (
           <div className="relative">
             {effectiveMode === "home" && variant === "immersive" ? (
               <ZaizaiHomeScene
@@ -989,6 +1021,12 @@ export default function AppMainSurface({
                     }
                   />
                 }
+              />
+            ) : effectiveMode === "home" && variant === "hero" ? (
+              // 落地页 Hero 预览：固定 morning 时段拉开窗帘动画，与 Demo 主页视觉结构一致（不接入实时）
+              <ZaizaiHomeScene
+                phase="morning"
+                guide={<HomeBubbleCopy phase="morning" />}
               />
             ) : effectiveMode === "dialog" ? (
               <DialogueZaiyaAnimation
@@ -1017,7 +1055,7 @@ export default function AppMainSurface({
           仅 immersive 首页；由 AnimatePresence 控制挂载/卸载——每次回到 home 重新交错入场，
           进入底部三个功能模块时轻上移淡出。动效复用全局 softReveal 语言（与「更多」菜单一致）。 */}
       <AnimatePresence>
-        {effectiveMode === "home" && variant === "immersive" && (
+        {effectiveMode === "home" && (variant === "immersive" || variant === "hero") && (
           <HomeTimeAnchor key="home-time-anchor" now={effectiveNow} />
         )}
       </AnimatePresence>
@@ -1083,7 +1121,7 @@ export default function AppMainSurface({
             onClick={enterRecordFromShortcut}
             className="absolute right-6 top-14 p-1 transition-colors hover:text-ink text-ink/80"
           >
-            <BookOpen className="h-5 w-5" strokeWidth={1.6} />
+            <BookOpen className="h-5 w-5" strokeWidth={1.8} />
           </button>
         )}
 
@@ -1254,7 +1292,7 @@ export default function AppMainSurface({
                       disabled={sending}
                       className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-white transition-transform active:scale-95 disabled:opacity-50"
                     >
-                      <ArrowUp className="h-4 w-4" strokeWidth={2.2} />
+                      <ArrowUp className="h-4 w-4" strokeWidth={1.8} />
                     </button>
                   ) : (
                     <button
@@ -1262,7 +1300,7 @@ export default function AppMainSurface({
                       aria-label="关闭对话"
                       className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-action-deep text-white transition-transform active:scale-95"
                     >
-                      <X className="h-4 w-4" strokeWidth={2.2} />
+                      <X className="h-4 w-4" strokeWidth={1.8} />
                     </button>
                   )}
                 </div>
@@ -1307,7 +1345,7 @@ export default function AppMainSurface({
                       className={`h-7 w-7 ${
                         m.enabled ? "text-ink-soft" : "text-ink-faint/50"
                       }`}
-                      strokeWidth={1.6}
+                      strokeWidth={1.8}
                     />
                     <span
                       className={`text-[13px] ${
@@ -1366,7 +1404,11 @@ export default function AppMainSurface({
               targetRef={socialEnergyBtnRef}
               onArrive={handleSocialEnergyArrive}
               onDone={handleSocialEnergyDone}
-              text={`获得 +${SOCIAL_DAZE_ENERGY_REWARD} 能量`}
+              text={
+                socialEnergyReward
+                  ? `获得 +${socialEnergyReward.reward} 能量`
+                  : undefined
+              }
             />
           </>
         )}
@@ -1386,9 +1428,96 @@ export default function AppMainSurface({
               />
             )}
             {effectiveSocialScene === "eat" && (
-              <EatPlaceholderContent onExit={() => setMode("socialSelect")} />
+              <EatFlow
+                onExit={() => setMode("socialSelect")}
+                onFinish={handleEatFinish}
+              />
             )}
           </>
+        )}
+      </AnimatePresence>
+
+      {/* record 模式：演示用「记一下」完成态预览。
+          仅 demoState.recordPreset 驱动，不走真实记录流程。
+          全屏白底覆盖，在在退出；复用 RecordSummaryCard 展示字段 + 已保存盖章。 */}
+      <AnimatePresence>
+        {effectiveMode === "record" && demoState?.recordPreset && (
+          <DemoRecordPreview preset={demoState.recordPreset} />
+        )}
+      </AnimatePresence>
+
+      {/* praise 模式：演示用真实结构「夸夸自己」首页 feed。
+          仅 demoState.praiseDemo 驱动，不写入 localStorage、不触发能量奖励。 */}
+      <AnimatePresence>
+        {effectiveMode === "praise" && demoState?.praiseDemo && (
+          <DemoPraisePreview preset={demoState.praiseDemo} />
+        )}
+      </AnimatePresence>
+
+      {/* lookback 模式：演示用真实「回头看看」受控只读结果态。
+          复用 LookbackPage 的周/月、分类标签和记录详情结构，不走旁路总结卡。 */}
+      <AnimatePresence>
+        {effectiveMode === "lookback" && demoState?.lookbackDemo && (
+          <motion.div
+            key="demo-lookback"
+            className="absolute inset-0 z-30 bg-white"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.28, ease }}
+          >
+            <LookbackPage
+              onBack={() => {
+                /* 演示预览：由外部 story panel 导航控制 */
+              }}
+              demoOptions={{
+                referenceDate: new Date(demoState.lookbackDemo.referenceDate),
+                initialTimeMode: demoState.lookbackDemo.initialTimeMode,
+                initialScene: demoState.lookbackDemo.initialScene,
+                dataOverrides: demoState.lookbackDemo.dataOverrides,
+                readOnly: demoState.lookbackDemo.readOnly,
+              }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* organize 模式：演示用真实「帮我整理」结果态。
+          view="done" 展示完成页；保留 materialDetail 作为后续演示可选详情态。 */}
+      <AnimatePresence>
+        {effectiveMode === "organize" && demoState?.organizeDemo && (
+          <motion.div
+            key="demo-organize"
+            className="absolute inset-0 z-30 bg-white"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.28, ease }}
+          >
+            {demoState.organizeDemo.view === "materialDetail" ? (
+              <MaterialDetailView
+                session={demoState.organizeDemo.historyEntry.session}
+                title="沟通材料详情"
+                onBack={() => {
+                  /* 演示预览：由外部 story panel 导航控制 */
+                }}
+              />
+            ) : (
+              <DoneStep
+                session={demoState.organizeDemo.historyEntry.session}
+                onBack={() => {
+                  /* 演示预览：由外部 story panel 导航控制 */
+                }}
+                onHome={() => {
+                  /* 演示预览：由外部 story panel 导航控制 */
+                }}
+                onViewMaterial={() => {
+                  /* 演示预览：由外部 story panel 导航控制 */
+                }}
+                readOnly
+              />
+            )}
+          </motion.div>
         )}
       </AnimatePresence>
 

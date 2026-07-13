@@ -104,7 +104,7 @@ export function MoreContent({
                 >
                   <item.Icon
                     className="h-[21px] w-[21px] shrink-0 text-ink-soft"
-                    strokeWidth={1.6}
+                    strokeWidth={1.8}
                   />
                   <span className="text-[17px] font-medium tracking-tight text-ink">
                     {item.label}
@@ -141,7 +141,7 @@ export function MoreContent({
               >
                 <item.Icon
                   className="h-[19px] w-[19px] shrink-0 text-ink-faint"
-                  strokeWidth={1.5}
+                  strokeWidth={1.8}
                 />
                 <span className="text-[15px] text-ink-soft">
                   {item.label}
@@ -515,7 +515,7 @@ function HelpFeedbackPage({ onBack }: { onBack: () => void }) {
                     aria-label="删除图片"
                     className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-ink/55 text-white backdrop-blur-sm transition-colors hover:bg-ink/75"
                   >
-                    <X className="h-3 w-3" strokeWidth={2.2} />
+                    <X className="h-3 w-3" strokeWidth={1.8} />
                   </button>
                 </div>
               ))}
@@ -525,7 +525,7 @@ function HelpFeedbackPage({ onBack }: { onBack: () => void }) {
                   aria-label="添加图片"
                   className="grid h-16 w-16 place-items-center rounded-xl border border-action-primary bg-action-primary text-action-primary-text transition-opacity hover:opacity-90"
                 >
-                  <Plus className="h-5 w-5" strokeWidth={1.8} />
+                  <Plus className="h-5 w-5" strokeWidth={2.4} />
                 </button>
               )}
             </div>
@@ -540,7 +540,7 @@ function HelpFeedbackPage({ onBack }: { onBack: () => void }) {
                 disabled={images.length >= 3}
                 className="grid h-9 w-9 place-items-center rounded-lg bg-action-primary text-action-primary-text transition-opacity hover:opacity-90 disabled:opacity-30"
               >
-                <ImagePlus className="h-5 w-5" strokeWidth={1.8} />
+                <ImagePlus className="h-5 w-5" strokeWidth={2.4} />
               </button>
               <VoiceInputBar
                 compact

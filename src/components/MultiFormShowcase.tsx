@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { ChevronRight } from "lucide-react";
 import AppMainSurface from "./AppMainSurface";
 import ZaiyaWakeAnimation from "./ZaiyaWakeAnimation";
 
@@ -49,35 +50,40 @@ function PlaceholderIcons({ count, offset = 0 }: { count: number; offset?: numbe
 
 function WidgetCard() {
   return (
-    <div className="col-start-3 row-start-1 col-span-2 row-span-2 flex flex-col items-center justify-center gap-1.5 overflow-hidden rounded-[24px] border border-white/80 bg-white/90 px-3 shadow-[0_10px_28px_-18px_rgba(0,0,0,0.24)] backdrop-blur-md">
-      <ZaiyaWakeAnimation variant="desktop-widget" />
+    <div className="col-start-3 row-start-1 col-span-2 row-span-2 relative overflow-hidden rounded-[24px] border border-white/80 bg-white/92 shadow-[0_10px_28px_-18px_rgba(0,0,0,0.24)] backdrop-blur-md">
+      <div className="absolute left-3.5 top-3 z-20 font-display text-[16px] font-semibold leading-[1.16] tracking-normal text-ink">
+        <div>珍视每一次</div>
+        <div>小胜，</div>
+        <div>积攒勇气</div>
+      </div>
+      <div className="absolute bottom-3 left-3 z-20 grid h-7 w-7 place-items-center rounded-full bg-line-soft text-ink shadow-[0_3px_10px_-7px_rgba(39,51,31,0.38)]">
+        <ChevronRight className="h-4 w-4" strokeWidth={1.8} />
+      </div>
+      <div className="absolute bottom-1.5 right-1.5 z-10">
+        <ZaiyaWakeAnimation variant="desktop-widget" />
+      </div>
     </div>
   );
 }
 
-/* —— Widget 形态：手机桌面局部裁切（外层固定高 + 内部更高手机 mockup，只露上半） —— */
+/* —— Widget 形态：手机桌面局部裁切，展示小组件在屏幕中的位置 —— */
 function WidgetSurface() {
   return (
     <div className="mx-auto w-full max-w-[420px]">
-      {/* 外层是真实裁切手机框：黑色边框包住屏幕，底部半屏渐隐 */}
       <div className="relative h-[440px] overflow-hidden rounded-t-[42px] bg-ink p-[7px] pb-0 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.14)]">
         <div className="relative h-full overflow-hidden rounded-t-[33px] bg-white">
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(251,252,245,0.9),rgba(255,255,255,1))]" />
 
-          {/* 状态栏 + 动态岛 */}
           <div className="relative z-20 flex items-center justify-between px-6 pt-3 pb-1 text-[11px] font-semibold text-ink-faint">
             <span>9:41</span>
             <div className="absolute left-1/2 top-2.5 h-[25px] w-[88px] -translate-x-1/2 rounded-full bg-ink" />
             <div className="flex items-center gap-1.5">
-              {/* 信号条 */}
               <div className="flex items-end gap-[2px]">
                 <div className="h-1.5 w-1 rounded-[1px] bg-ink-faint" />
                 <div className="h-2 w-1 rounded-[1px] bg-ink-faint" />
                 <div className="h-2.5 w-1 rounded-[1px] bg-ink-faint" />
               </div>
-              {/* wifi 抽象占位 */}
               <div className="h-2 w-3 rounded-[2px] bg-ink-faint" />
-              {/* 电量 */}
               <div className="relative ml-0.5 h-3 w-6 rounded-[3px] border border-ink-faint/45 p-[1.5px]">
                 <div className="absolute -right-[3px] top-1/2 h-1.5 w-[2px] -translate-y-1/2 rounded-r bg-ink-faint/45" />
                 <div className="h-full w-3/4 rounded-[1px] bg-ink-faint" />
@@ -85,14 +91,12 @@ function WidgetSurface() {
             </div>
           </div>
 
-          {/* 桌面占位网格：固定单元尺寸，widget 严格占据 2x2 */}
           <div className="relative z-10 mt-6 grid grid-cols-[repeat(4,68px)] grid-flow-dense auto-rows-[68px] justify-center gap-[13px] px-6">
             <PlaceholderIcons count={2} />
             <WidgetCard />
             <PlaceholderIcons count={10} offset={2} />
           </div>
 
-          {/* 底部渐隐：融入屏幕色，自然收住，不露完整底部 */}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white via-white/65 to-transparent" />
         </div>
       </div>
@@ -103,18 +107,18 @@ function WidgetSurface() {
 /* —— Watch 形态：智能手表表盘（薄壳、大圆角、轻微竖向、单表冠） —— */
 function WatchSurface() {
   return (
-    <div className="mx-auto w-full max-w-[300px]">
+    <div className="mx-auto w-full max-w-[310px]">
       <div className="relative">
-        {/* 表壳：轻薄边框，接近方形的轻微竖向比例 */}
-        <div className="relative aspect-[4/5] overflow-hidden rounded-[38px] border-[6px] border-ink bg-ink shadow-[0_8px_40px_-12px_rgba(0,0,0,0.22)]">
+        {/* 表壳：轻薄边框，内部接近参考图的圆角方形表盘 */}
+        <div className="relative aspect-square overflow-hidden rounded-[42px] border-[6px] border-ink bg-ink shadow-[0_8px_40px_-12px_rgba(0,0,0,0.22)]">
           {/* 表盘屏幕 */}
-          <div className="relative h-full overflow-hidden rounded-[32px] bg-white">
-            {/* 时间：手表表盘的主信息，字号接近日常 glance 的阅读比例 */}
-            <div className="absolute left-0 right-0 top-8 text-center text-[30px] font-semibold leading-none tracking-normal text-ink">
-              20:00
+          <div className="relative h-full overflow-hidden rounded-[36px] bg-white">
+            {/* 时间作为表盘主信息，和在在形成轻微叠压关系 */}
+            <div className="absolute left-0 right-0 top-7 z-20 text-center font-watch text-[78px] font-medium leading-none tracking-normal text-ink sm:text-[84px]">
+              20:48
             </div>
             {/* 在在按 GIF 主体视觉中心定位，不按透明画布居中 */}
-            <div className="absolute left-1/2 top-[58%] -translate-x-1/2 -translate-y-1/2">
+            <div className="absolute left-1/2 top-[66%] z-10 -translate-x-1/2 -translate-y-1/2">
               <ZaiyaWakeAnimation variant="watch" />
             </div>
           </div>

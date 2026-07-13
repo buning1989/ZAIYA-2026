@@ -361,16 +361,16 @@ export default function SleepRecordWizard({
   const chipClass = (selected: boolean) =>
     `inline-flex items-center justify-center rounded-full border px-4 py-2 text-[14px] font-medium whitespace-nowrap max-w-[240px] overflow-hidden text-ellipsis transition-all active:scale-[0.97] ${
       selected
-        ? "border-[rgba(177,194,113,0.9)] bg-[rgba(177,194,113,0.22)] text-[#2C3B27]"
-        : "border-[rgba(177,194,113,0.45)] bg-white text-[#2C3B27] hover:border-[rgba(177,194,113,0.7)]"
+        ? "border-status-mood/90 bg-status-mood/[0.22] text-ink"
+        : "border-status-mood/45 bg-white text-ink hover:border-status-mood/70"
     }`;
 
   // 时间范围胶囊（两列网格用）
   const timeChipClass = (selected: boolean) =>
     `flex items-center justify-center rounded-xl border px-3 py-3 text-[14px] font-medium transition-all active:scale-[0.97] ${
       selected
-        ? "border-[rgba(177,194,113,0.9)] bg-[rgba(177,194,113,0.22)] text-[#2C3B27]"
-        : "border-[rgba(177,194,113,0.45)] bg-white text-[#2C3B27] hover:border-[rgba(177,194,113,0.7)]"
+        ? "border-status-mood/90 bg-status-mood/[0.22] text-ink"
+        : "border-status-mood/45 bg-white text-ink hover:border-status-mood/70"
     }`;
 
   // 判断选项是否为「记不清 / 几乎没睡着」→ 结算页不展示该行
@@ -431,7 +431,7 @@ export default function SleepRecordWizard({
           <div className="flex items-center gap-2.5">
             <div className="h-[2px] flex-1 rounded-full bg-line-soft">
               <div
-                className="h-full rounded-full bg-[rgba(177,194,113,0.7)] transition-all duration-300"
+                className="h-full rounded-full bg-status-mood/70 transition-all duration-300"
                 style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
               />
             </div>
@@ -472,17 +472,17 @@ export default function SleepRecordWizard({
                         onClick={() => handleSelectLevel(opt.value)}
                         className={`flex h-14 items-center gap-3 rounded-2xl border px-5 text-left transition-all active:scale-[0.99] ${
                           selected
-                            ? "border-[rgba(177,194,113,0.5)] bg-[rgba(177,194,113,0.08)] text-[#2C3B27]"
+                            ? "border-status-mood/50 bg-status-mood/[0.08] text-ink"
                             : "border-line bg-white text-ink hover:border-ink-faint"
                         }`}
                       >
-                        <span className="h-2 w-2 shrink-0 rounded-full bg-[rgba(177,194,113,0.7)]" />
+                        <span className="h-2 w-2 shrink-0 rounded-full bg-status-mood/70" />
                         <span className="flex-1 text-[15px] font-medium tracking-tight">
                           {opt.label}
                         </span>
                         {selected && (
                           <Check
-                            className="h-4 w-4 text-[#2C3B27]"
+                            className="h-4 w-4 text-ink"
                             strokeWidth={2.4}
                           />
                         )}
