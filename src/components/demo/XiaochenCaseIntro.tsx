@@ -1,5 +1,4 @@
 import { calculateAge, MOCK_USER_PROFILE } from "@/data/userProfile";
-import ZaizaiVideo from "@/components/ZaizaiVideo";
 
 type Props = {
   onStart: () => void;
@@ -94,30 +93,7 @@ export default function XiaochenCaseIntro({ onStart }: Props) {
         </div>
       </section>
 
-      {/* —— C. 认识在在 —— */}
-      <section
-        aria-label="认识在在"
-        className="mt-10 border-t border-line-soft pt-8"
-      >
-        <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:gap-8">
-          {/* 在在动画：透明背景，96-128px */}
-          <ZaizaiVideo
-            className="h-24 w-24 shrink-0 sm:h-28 sm:w-28"
-            shadow={false}
-          />
-          {/* 文字说明 */}
-          <div className="flex-1 text-center sm:text-left">
-            <p className="text-[12px] tracking-[0.18em] text-ink-faint">
-              认识在在
-            </p>
-            <p className="mt-3 text-[16px] leading-[1.75] text-ink">
-              在在，是「在呀 ZÀIYA」中持续在场的虚拟伙伴。它不会催促或评判，而是在起床、吃饭、学习、睡前等生活节点里，陪用户完成下一小步。
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* —— D. 观看提示区 —— */}
+      {/* —— C. 观看提示区 —— */}
       <section
         aria-label="评委观看提示"
         className="mt-10 border-t border-line-soft pt-8"

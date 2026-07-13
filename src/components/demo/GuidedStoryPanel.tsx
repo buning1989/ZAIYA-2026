@@ -18,8 +18,8 @@ const ease = [0.22, 1, 0.36, 1] as const;
  *   4. "为什么这样做" + 心理学方法（principles）+ 作用说明（explanation）
  *
  * 特殊：第一天第一个节点（order=1 且 scenarioName 含"第一天"）时，
- * 在"涉及模块"下方展示一次"在在 · 在呀 ZÀIYA 的虚拟伙伴"名称标识，
- * 后续节点不重复。
+ * 在"涉及模块"下方、故事正文上方展示一次"这是在在"轻量说明区，
+ * 后续节点不重复。该说明为演示辅助，不写入 narrative 数据。
  *
  * 不缩小正文字号。
  * 必要时允许右侧区域内部纵向滚动。
@@ -73,11 +73,16 @@ export default function GuidedStoryPanel({
             </div>
           )}
 
-          {/* 第一天第一节点：在在名称标识（仅出现一次） */}
+          {/* 第一天第一节点：这是在在（轻量说明区，仅出现一次） */}
           {showZaizaiIntro && (
-            <p className="mt-3 text-[12px] tracking-[0.08em] text-ink-faint">
-              在在 · 在呀 ZÀIYA 的虚拟伙伴
-            </p>
+            <div className="mt-4 border-t border-line-soft pt-4">
+              <p className="text-[13px] font-semibold tracking-[0.04em] text-ink-soft">
+                这是在在
+              </p>
+              <p className="mt-1.5 text-[14px] leading-[1.7] text-ink-faint">
+                它不会催促或评判，而是在起床、吃饭、学习、睡前等生活节点里，陪用户完成下一小步。
+              </p>
+            </div>
           )}
 
           {/* 连续故事正文 */}

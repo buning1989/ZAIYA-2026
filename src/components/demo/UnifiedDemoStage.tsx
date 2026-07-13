@@ -305,6 +305,12 @@ export default function UnifiedDemoStage({
                   <DemoPhoneFrame
                     demoState={mode === "guided" ? step.demoState : undefined}
                   />
+                  {/* 第一天第一节点：在在名称标识（仅出现一次，靠近手机底部） */}
+                  {mode === "guided" && phase === "day1" && day1Index === 0 && (
+                    <p className="mt-3 text-center text-[11px] tracking-[0.06em] text-ink-faint">
+                      在在 · 在呀 ZÀIYA 的虚拟伙伴
+                    </p>
+                  )}
                 </div>
 
                 {/* 固定说明槽位：左右模式按标签方向柔和替换 */}
