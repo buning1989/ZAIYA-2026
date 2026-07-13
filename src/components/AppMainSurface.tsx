@@ -35,9 +35,9 @@ import DialogueZaiyaAnimation, {
 } from "./DialogueZaiyaAnimation";
 import { getHomeTimePhase } from "@/lib/homeTimePhase";
 import BreathingFlow from "./BreathingFlow";
-import RecordEnergyToast, {
-  type RecordEnergyRewardEvent,
-} from "./RecordEnergyToast";
+import EnergyRewardFeedback, {
+  type EnergyRewardEvent,
+} from "./EnergyRewardFeedback";
 import EnergyBadge from "./EnergyBadge";
 import { useEnergy } from "@/hooks/useEnergy";
 import type { Answers, RecordEntry, RecordTypeId } from "@/data/record";
@@ -468,7 +468,7 @@ export default function AppMainSurface({
   // useEnergy 订阅全局 pub/sub，跨模块同步；freeze/unfreeze 用于 toast 飞行期间冻结展示
   const { value: socialEnergy, freeze: freezeSocialEnergy, unfreeze: unfreezeSocialEnergy } = useEnergy();
   const [socialEnergyReward, setSocialEnergyReward] =
-    useState<(RecordEnergyRewardEvent & { toEnergy: number }) | null>(null);
+    useState<(EnergyRewardEvent & { toEnergy: number }) | null>(null);
   const [socialEnergyPulse, setSocialEnergyPulse] = useState(false);
   const socialEnergyBtnRef = useRef<HTMLButtonElement | null>(null);
   const socialEnergyPulseTimer = useRef<number | null>(null);
@@ -1399,7 +1399,7 @@ export default function AppMainSurface({
               position="floating"
             />
             {/* 能量获得 toast：复用记一下模块组件，飞向右上角能量入口 */}
-            <RecordEnergyToast
+            <EnergyRewardFeedback
               event={socialEnergyReward}
               targetRef={socialEnergyBtnRef}
               onArrive={handleSocialEnergyArrive}

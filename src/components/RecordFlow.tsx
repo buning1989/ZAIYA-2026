@@ -24,9 +24,9 @@ import MealRecordWizard from "./MealRecordWizard";
 import SleepRecordWizard from "./SleepRecordWizard";
 import ActivityRecordWizard from "./ActivityRecordWizard";
 import WeightRecordWizard from "./WeightRecordWizard";
-import RecordEnergyToast, {
-  type RecordEnergyRewardEvent,
-} from "./RecordEnergyToast";
+import EnergyRewardFeedback, {
+  type EnergyRewardEvent,
+} from "./EnergyRewardFeedback";
 import EnergyBadge from "./EnergyBadge";
 import { useEnergy } from "@/hooks/useEnergy";
 import { PhoneStatusBar } from "./AppMainSurface";
@@ -52,7 +52,7 @@ import { SAFETY_DIALOG_STARTER } from "@/data/crisisResources";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-type ActiveEnergyReward = RecordEnergyRewardEvent & {
+type ActiveEnergyReward = EnergyRewardEvent & {
   toEnergy: number;
 };
 
@@ -500,7 +500,7 @@ export default function RecordFlow({
         </AnimatePresence>
       </div>
 
-      <RecordEnergyToast
+      <EnergyRewardFeedback
         event={activeEnergyReward}
         onDone={handleEnergyRewardDone}
       />

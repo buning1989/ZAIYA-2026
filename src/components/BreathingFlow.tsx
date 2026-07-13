@@ -4,7 +4,7 @@ import { ChevronLeft, Volume2, VolumeX } from "lucide-react";
 import { BREATHING_EXERCISE_ENERGY_REWARD, grantEnergy } from "@/data/userProfile";
 import ZaizaiVideo, { ZAIZAI_RELIEF_VIDEO_SRC } from "./ZaizaiVideo";
 import EnergyBadge from "./EnergyBadge";
-import RecordEnergyToast, { type RecordEnergyRewardEvent } from "./RecordEnergyToast";
+import EnergyRewardFeedback, { type EnergyRewardEvent } from "./EnergyRewardFeedback";
 import { useEnergy } from "@/hooks/useEnergy";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -167,7 +167,7 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
   // energyGrantedRef 防止完成页重复渲染造成重复发放；grantEnergy 再做幂等兜底。
   const { value: breathEnergy, freeze: freezeBreathEnergy, unfreeze: unfreezeBreathEnergy } = useEnergy();
   const [breathEnergyReward, setBreathEnergyReward] =
-    useState<RecordEnergyRewardEvent | null>(null);
+    useState<EnergyRewardEvent | null>(null);
   const [breathEnergyPulse, setBreathEnergyPulse] = useState(false);
   const breathBadgeRef = useRef<HTMLButtonElement | null>(null);
   const breathPulseTimer = useRef<number | null>(null);
@@ -754,8 +754,8 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
           position="floating"
         />
       )}
-      {/* 能量获得 toast：统一「收下一点光」反馈 */}
-      <RecordEnergyToast
+      {/* 能量获得 toast：复用「一起发呆」组件，飞向右上角能量入口 */}
+      <EnergyRewardFeedback
         event={breathEnergyReward}
         onDone={handleBreathEnergyDone}
       />

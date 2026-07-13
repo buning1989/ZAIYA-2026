@@ -477,3 +477,62 @@ export function getTertiaryPoolBySelectedSecondaryWords(
     options: negativeOptions,
   };
 }
+
+/* —— 情绪记录步骤选择模式基线 ——
+ * 固化每一步的单选 / 多选规则，防止后续审计或开发按旧规则误改。
+ *
+ * 正式规则（不允许回退为旧规则）：
+ *   - 一级情绪（level）：单选，选中后自动进入下一步
+ *   - 具体感受（feelings）：多选，底部按钮确认
+ *   - 可能相关原因（reasons）：多选，底部按钮确认
+ *   - 特殊情况大类（specialCategory）：单选，选中后自动进入下一步
+ *   - 特殊情况细项（specialDetails）：多选，底部按钮确认
+ *
+ * 交互规则：
+ *   - 单选（selectionMode: 'single'）：选中即自动前进（autoAdvance: true）
+ *   - 多选（selectionMode: 'multiple'）：需底部按钮确认（autoAdvance: false），
+ *     第一次点击不会自动前进
+ */
+export type SelectionMode = "single" | "multiple";
+
+export interface MoodStepRule {
+  selectionMode: SelectionMode;
+  autoAdvance: boolean;
+}
+
+export const MOOD_STEP_CONFIG = {
+  level: {
+    selectionMode: "single",
+    autoAdvance: true,
+  },
+  feelings: {
+    selectionMode: "multiple",
+    autoAdvance: false,
+  },
+  reasons: {
+    selectionMode: "multiple",
+    autoAdvance: false,
+  },
+  specialCategory: {
+    selectionMode: "single",
+    autoAdvance: true,
+  },
+  specialDetails: {
+    selectionMode: "multiple",
+    autoAdvance: false,
+  },
+} as const satisfies Record<string, MoodStepRule>;
+
+/** 查询某一步骤是否为单选模式 */
+export function isSingleSelectStep(
+  step: keyof typeof MOOD_STEP_CONFIG,
+): boolean {
+  return MOOD_STEP_CONFIG[step].selectionMode === "single";
+}
+
+/** 查询某一步骤选中后是否自动前进 */
+export function shouldAutoAdvance(
+  step: keyof typeof MOOD_STEP_CONFIG,
+): boolean {
+  return MOOD_STEP_CONFIG[step].autoAdvance;
+}

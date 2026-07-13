@@ -136,7 +136,25 @@ export function BottomSheet({
   );
 }
 
-/** 底部居中 toast 反馈 */
+/** 底部居中 toast 反馈
+ *
+ * —— Toast 使用白名单 ——
+ * 允许用于轻量、即时、可自动消失的操作结果反馈：
+ *   - 已复制 / 已保存 / 已删除（操作结果）
+ *   - 复制失败 / 保存失败（错误提示）
+ *   - Demo 阶段暂未开放（轻量提示）
+ *
+ * 禁止用于以下场景（改用 Dialog / Confirm modal / 页面内说明）：
+ *   - 隐私后果或分享风险（使用 MaterialExportConfirmDialog）
+ *   - 诊断或治疗相关信息
+ *   - 必须阅读的重要说明
+ *   - 需要用户作出决定的信息
+ *   - 长篇内容或主动打扰式通知
+ *
+ * 规则：
+ *   - 同一时刻最多显示一个 Toast，不连续堆叠
+ *   - Toast 不遮挡主要操作
+ *   - 能量奖励动效使用 EnergyRewardFeedback，不与本组件混用 */
 export function Toast({ message }: { message: string }) {
   return (
     <motion.div

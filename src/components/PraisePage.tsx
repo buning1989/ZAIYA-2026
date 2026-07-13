@@ -20,9 +20,9 @@ import {
 import ZaizaiVideo from "./ZaizaiVideo";
 import VoiceInputBar from "./VoiceInputBar";
 import EnergyBadge from "./EnergyBadge";
-import RecordEnergyToast, {
-  type RecordEnergyRewardEvent,
-} from "./RecordEnergyToast";
+import EnergyRewardFeedback, {
+  type EnergyRewardEvent,
+} from "./EnergyRewardFeedback";
 import { useEnergy } from "@/hooks/useEnergy";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -65,7 +65,7 @@ export default function PraisePage({ onBack }: Props) {
   // useEnergy 订阅全局 pub/sub，跨模块同步；freeze/unfreeze 用于 toast 飞行期间冻结展示
   const { value: praiseEnergy, freeze: freezePraiseEnergy, unfreeze: unfreezePraiseEnergy } = useEnergy();
   const [praiseEnergyReward, setPraiseEnergyReward] =
-    useState<RecordEnergyRewardEvent | null>(null);
+    useState<EnergyRewardEvent | null>(null);
   const [praiseEnergyPulse, setPraiseEnergyPulse] = useState(false);
   const praiseBadgeRef = useRef<HTMLButtonElement | null>(null);
   const praisePulseTimer = useRef<number | null>(null);
@@ -193,7 +193,7 @@ export default function PraisePage({ onBack }: Props) {
         />
       )}
       {/* 能量获得 toast：复用「一起发呆」组件，飞向右上角能量入口 */}
-      <RecordEnergyToast
+      <EnergyRewardFeedback
         event={praiseEnergyReward}
         targetRef={praiseBadgeRef}
         onArrive={handlePraiseEnergyArrive}

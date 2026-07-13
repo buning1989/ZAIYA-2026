@@ -23,7 +23,7 @@ type EnergyBadgeProps = {
   value: number;
   /** 是否触发 pulse 动画（toast 抵达时置 true） */
   pulse?: boolean;
-  /** 按钮引用（RecordEnergyToast 飞行目标） */
+  /** 按钮引用（EnergyRewardFeedback 飞行目标） */
   buttonRef?: RefObject<HTMLButtonElement | null>;
   /** 定位模式 */
   position?: "inline" | "floating";
