@@ -6,13 +6,12 @@
  * - 白色手机主屏（只保留极轻过渡）
  * - 4×5 iPhone 主屏布局（普通 App 仅作低噪声占位符）
  * - 2×2 浅绿白在呀小组件（视觉中心偏右）
- * - 小组件内：在在静态关键帧 + 短文案
+ * - 小组件内：在在拉开窗帘动画 + 短文案
  * - 不显示 App 的侧边菜单和底部导航
- * - 不使用循环 WebM 视频
  * - 无点击提示、无箭头、无手指素材
  */
 
-import LazyVideo from "@/components/LazyVideo";
+import { useEffect, useRef, useState } from "react";
 
 type Props = {
   /** 系统时间显示 */
@@ -99,24 +98,49 @@ export default function DemoWidgetScreen({ time = "06:40" }: Props) {
  *   窗帘拉开了一点，
  *   光会自己进来
  *
- * 素材为 9:16 透明背景 WebM（由原 GIF 转换，VP9 + yuva420p），
- * 按"组件专用裁切参数"放大定位，让窗帘和在在主体铺满组件有效区域，裁掉透明留白。
- * 性能优化（2026-07-13）：GIF → 透明 WebM，poster 静态首帧先于视频淡入。
+ * 素材为 9:16 WebM，按"组件专用裁切参数"放大定位，
+ * 让窗帘和在在主体铺满组件有效区域，裁掉透明留白。
+ * 使用原生 video + poster img 叠放，autoPlay + muted 确保自动播放。
  */
 function WidgetCard() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoReady, setVideoReady] = useState(false);
+
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    const onReady = () => setVideoReady(true);
+    v.addEventListener("loadeddata", onReady, { once: true });
+    v.addEventListener("canplay", onReady, { once: true });
+    v.play().catch(() => {});
+    return () => {
+      v.removeEventListener("loadeddata", onReady);
+      v.removeEventListener("canplay", onReady);
+    };
+  }, []);
+
   return (
     <div className="relative h-full w-full overflow-hidden rounded-[24px] border border-white/60 bg-[#FBFCF5] shadow-[0_8px_24px_-12px_rgba(39,51,31,0.18)]">
-      {/* 在在拉开窗帘的场景图（按主体 bbox 校准，裁掉透明留白） */}
-      <LazyVideo
-        src="./assets/zaiya/wake-up.webm"
-        poster="./assets/zaiya/wake-up-poster.png"
-        eager
-        layout="natural"
-        className="absolute inset-0 h-full w-full"
-        mediaClassName="absolute left-[48%] top-[53%] h-[250%] w-auto max-w-none -translate-x-1/2 -translate-y-1/2 object-contain"
-        mediaStyle={{ transformOrigin: "center center" }}
+      {/* poster 静态首帧：视频 ready 前显示，ready 后隐藏 */}
+      <img
+        src="./assets/zaiya/wake-up-poster.png"
         alt="在在拉开窗帘"
-        fadeDuration={300}
+        aria-hidden="true"
+        draggable={false}
+        className="pointer-events-none absolute left-[48%] top-[53%] block h-[250%] w-auto max-w-none -translate-x-1/2 -translate-y-1/2 select-none object-contain transition-opacity duration-300"
+        style={{ opacity: videoReady ? 0 : 1, transformOrigin: "center center" }}
+      />
+      {/* 在在拉开窗帘的场景图（按主体 bbox 校准，裁掉透明留白） */}
+      <video
+        ref={videoRef}
+        src="./assets/zaiya/wake-up.webm"
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="auto"
+        className="pointer-events-none absolute left-[48%] top-[53%] block h-[250%] w-auto max-w-none -translate-x-1/2 -translate-y-1/2 select-none object-contain transition-opacity duration-300"
+        style={{ opacity: videoReady ? 1 : 0, transformOrigin: "center center" }}
       />
 
       {/* 顶部渐变遮罩：保证文案可读性 */}
