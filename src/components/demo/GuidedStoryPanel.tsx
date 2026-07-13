@@ -10,16 +10,11 @@ type Props = {
 const ease = [0.22, 1, 0.36, 1] as const;
 
 /* —— 右侧故事说明面板 ——
- * 取消"小晨 / 在呀 / 意义 / 变化"标签。
  * 统一四层结构：
  *   1. 进度标签 + 时间｜标题
  *   2. 涉及模块标签
  *   3. 连续故事正文（narrative 数组自然分段）
  *   4. "为什么这样做" + 心理学方法（principles）+ 作用说明（explanation）
- *
- * 特殊：第一天第一个节点（order=1 且 scenarioName 含"第一天"）时，
- * 在"涉及模块"下方、故事正文上方展示一次"这是在在"轻量说明区，
- * 后续节点不重复。该说明为演示辅助，不写入 narrative 数据。
  *
  * 不缩小正文字号。
  * 必要时允许右侧区域内部纵向滚动。
@@ -30,9 +25,6 @@ export default function GuidedStoryPanel({
   total,
 }: Props) {
   const tags = step.moduleTags ?? [];
-  // 仅第一天第一节点出现一次名称标识
-  const showZaizaiIntro =
-    step.order === 1 && scenarioName.includes("第一天");
 
   return (
     <div className="flex h-full w-full max-w-[480px] flex-col justify-center overflow-y-auto lg:w-[460px] lg:pr-2">
@@ -70,18 +62,6 @@ export default function GuidedStoryPanel({
                   {moduleLabelMap[tag]}
                 </span>
               ))}
-            </div>
-          )}
-
-          {/* 第一天第一节点：这是在在（轻量说明区，仅出现一次） */}
-          {showZaizaiIntro && (
-            <div className="mt-4 border-t border-line-soft pt-4">
-              <p className="text-[13px] font-semibold tracking-[0.04em] text-ink-soft">
-                这是在在
-              </p>
-              <p className="mt-1.5 text-[14px] leading-[1.7] text-ink-faint">
-                它不会催促或评判，而是在起床、吃饭、学习、睡前等生活节点里，陪用户完成下一小步。
-              </p>
             </div>
           )}
 
