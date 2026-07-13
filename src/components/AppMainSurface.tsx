@@ -14,10 +14,15 @@ import {
   HandHeart,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
 } from "lucide-react";
 import VoiceInputBar from "./VoiceInputBar";
 import type { SceneId } from "./PresenceRoom";
 import FeaturePageTransition, { CollapseButton } from "./FeaturePageTransition";
+import {
+  BreathingCarousel,
+  BREATHING_METHODS,
+} from "./BreathingCarousel";
 import {
   MoreContent,
   MoreDetailContent,
@@ -504,6 +509,20 @@ export default function AppMainSurface({
 
   // —— 缓解模式状态 ——
   // 未开放能力项已在卡片上标识「暂未开放」标签，不再使用 Toast 提醒。
+  // 呼吸法 inline 选择状态机：collapsed → expanded → countingDown → navigating
+  // collapsed：呼吸法卡片收起，底部显示 CollapseButton
+  // expanded：原地展开 BreathingCarousel，底部切换为"开始"按钮
+  // countingDown：倒计时期间锁定 carousel 与收起，按钮原位显示 3/2/1
+  // navigating：倒计时结束，进入 breathing 模式（由 BreathingFlow 接管）
+  type BreathingEntryState = "collapsed" | "expanded" | "countingDown" | "navigating";
+  const [breathingEntryState, setBreathingEntryState] = useState<BreathingEntryState>("collapsed");
+  const [breathingActiveCard, setBreathingActiveCard] = useState(0);
+  const [breathingCountdown, setBreathingCountdown] = useState<number | null>(null);
+  const breathingCountdownTimerRef = useRef<number | null>(null);
+  // 倒计时结束时锁定的呼吸法索引，传递给 BreathingFlow 直接进入练习
+  const [pendingBreathingMethod, setPendingBreathingMethod] = useState(0);
+  // 标记是否从 inline 入口进入（控制 BreathingFlow 初始子视图）
+  const [breathingEntryInline, setBreathingEntryInline] = useState(false);
 
   // —— 轻社交状态 ——
   const [socialScene, setSocialScene] = useState<SceneId | null>(null);
@@ -974,12 +993,69 @@ export default function AppMainSurface({
         : "idle";
 
   // 选择缓解能力项：仅「呼吸法」可进入；未开放卡片已标识「暂未开放」标签，点击无反馈。
+  // 呼吸法卡片点击：原地展开/收起（不再跳转 breathing 模式）
   const selectRelief = (m: { id: ReliefMethodId; enabled: boolean }) => {
     if (!m.enabled) return;
     if (m.id === "breathing") {
-      setMode("breathing");
+      // countingDown/navigating 状态下不响应，避免干扰倒计时
+      setBreathingEntryState((s) =>
+        s === "collapsed" ? "expanded" : s === "expanded" ? "collapsed" : s,
+      );
     }
   };
+
+  // —— 呼吸法 inline 倒计时 ——
+  // 单一 setInterval，可统一清理；倒计时期间锁定 carousel 与收起
+  const startBreathingCountdown = () => {
+    if (breathingEntryState !== "expanded") return;
+    if (breathingCountdownTimerRef.current) return; // 防止重复触发
+
+    // 锁定当前选择的呼吸法
+    setPendingBreathingMethod(breathingActiveCard);
+    setBreathingEntryState("countingDown");
+    // 倒计时开始时预加载 BreathingFlow 资源，避免进入时白屏
+    loadBreathingFlow();
+
+    let next = 3;
+    setBreathingCountdown(next);
+    breathingCountdownTimerRef.current = window.setInterval(() => {
+      next -= 1;
+      if (next <= 0) {
+        if (breathingCountdownTimerRef.current) {
+          window.clearInterval(breathingCountdownTimerRef.current);
+          breathingCountdownTimerRef.current = null;
+        }
+        setBreathingEntryState("navigating");
+        setBreathingEntryInline(true);
+        setBreathingCountdown(null);
+        // 进入呼吸练习页（BreathingFlow 用 pendingBreathingMethod + practice 初始化）
+        setMode("breathing");
+        return;
+      }
+      setBreathingCountdown(next);
+    }, 1000);
+  };
+
+  // 从呼吸页返回时重置 inline 状态（避免残留 countingDown/navigating）
+  const resetBreathingEntry = () => {
+    setBreathingEntryInline(false);
+    setBreathingEntryState("collapsed");
+    setBreathingCountdown(null);
+    if (breathingCountdownTimerRef.current) {
+      window.clearInterval(breathingCountdownTimerRef.current);
+      breathingCountdownTimerRef.current = null;
+    }
+  };
+
+  // 组件卸载时清理倒计时 timer
+  useEffect(() => {
+    return () => {
+      if (breathingCountdownTimerRef.current) {
+        window.clearInterval(breathingCountdownTimerRef.current);
+        breathingCountdownTimerRef.current = null;
+      }
+    };
+  }, []);
 
   // —— Intent Prefetch：首页核心 icon hover/focus 时预加载对应模块 ——
   const prefetchBreathing = usePrefetch(() => {
@@ -1510,7 +1586,11 @@ export default function AppMainSurface({
                   onFocus={prefetchBreathing}
                   onTouchStart={prefetchBreathing}
                   onPointerDown={prefetchBreathing}
-                  className="flex w-full items-center gap-[14px] rounded-2xl bg-white p-[16px_18px] text-left transition-colors hover:border-[#C7CCBF]"
+                  disabled={
+                    breathingEntryState === "countingDown" ||
+                    breathingEntryState === "navigating"
+                  }
+                  className="flex w-full items-center gap-[14px] rounded-2xl bg-white p-[16px_18px] text-left transition-colors hover:border-[#C7CCBF] disabled:cursor-default"
                   style={{ border: "1px solid #D8DDD3", boxShadow: "none", minHeight: 88 }}
                 >
                   <Waves className="h-7 w-7 text-ink-soft" strokeWidth={1.8} />
@@ -1519,62 +1599,140 @@ export default function AppMainSurface({
                       呼吸法
                     </div>
                     <div className="mt-[3px] text-[13px] font-normal leading-5 text-[#737A70]">
-                      四种节奏可选
+                      {breathingEntryState === "collapsed"
+                        ? "四种节奏可选"
+                        : "选择一种适合现在的节奏"}
                     </div>
                   </div>
-                  <ChevronRight className="h-5 w-5 text-ink-faint" strokeWidth={1.8} />
+                  {breathingEntryState === "collapsed" ? (
+                    <ChevronRight className="h-5 w-5 text-ink-faint" strokeWidth={1.8} />
+                  ) : (
+                    <ChevronUp className="h-5 w-5 text-ink-faint" strokeWidth={1.8} />
+                  )}
                 </button>
               </motion.div>
 
-              {/* 更多方式：3 个紧凑预告（不可点击） */}
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, ease, delay: 0.15 }}
-                style={{ marginTop: 22 }}
-              >
-                <div className="mb-[10px] text-[13px] font-medium leading-5 text-[#7B8376]">
-                  更多方式
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {reliefMethods
-                    .filter((m) => !m.enabled)
-                    .map((m) => (
-                      <div
-                        key={m.id}
-                        className="flex min-h-[86px] flex-col items-center justify-center rounded-[14px] bg-white p-[12px_8px]"
-                        style={{
-                          border: "1px solid #E5E6E2",
-                          boxShadow: "none",
-                          cursor: "default",
+              {/* 呼吸法 inline 展开区域：原地展开 BreathingCarousel（不跳转路由） */}
+              <AnimatePresence initial={false}>
+                {breathingEntryState !== "collapsed" && (
+                  <motion.div
+                    key="breathing-inline"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.28, ease: "easeOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="pt-6">
+                      <BreathingCarousel
+                        methods={BREATHING_METHODS}
+                        activeIndex={breathingActiveCard}
+                        onActiveChange={(i) => {
+                          // countingDown/navigating 状态下锁定 carousel
+                          if (breathingEntryState === "expanded") {
+                            setBreathingActiveCard(i);
+                          }
                         }}
-                      >
-                        <m.Icon className="h-6 w-6 text-[#858B82]" strokeWidth={1.8} />
-                        <div className="mt-[7px] text-[13px] font-medium leading-[19px] text-[#858B82]">
-                          {m.label}
-                        </div>
-                        <div className="mt-[2px] text-[10px] leading-[15px] text-[#A0A49D]">
-                          即将开放
-                        </div>
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* 更多方式：3 个紧凑预告（不可点击）；展开时隐藏 */}
+              <AnimatePresence initial={false}>
+                {breathingEntryState === "collapsed" && (
+                  <motion.div
+                    key="more-methods"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.28, ease: "easeOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div style={{ marginTop: 22 }}>
+                      <div className="mb-[10px] text-[13px] font-medium leading-5 text-[#7B8376]">
+                        更多方式
                       </div>
-                    ))}
-                </div>
-              </motion.div>
+                      <div className="grid grid-cols-3 gap-2">
+                        {reliefMethods
+                          .filter((m) => !m.enabled)
+                          .map((m) => (
+                            <div
+                              key={m.id}
+                              className="flex min-h-[86px] flex-col items-center justify-center rounded-[14px] bg-white p-[12px_8px]"
+                              style={{
+                                border: "1px solid #E5E6E2",
+                                boxShadow: "none",
+                                cursor: "default",
+                              }}
+                            >
+                              <m.Icon className="h-6 w-6 text-[#858B82]" strokeWidth={1.8} />
+                              <div className="mt-[7px] text-[13px] font-medium leading-[19px] text-[#858B82]">
+                                {m.label}
+                              </div>
+                              <div className="mt-[2px] text-[10px] leading-[15px] text-[#A0A49D]">
+                                即将开放
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
 
-            {/* 底部中央收起按钮 */}
-            <CollapseButton onClick={() => setMode("home")} ariaLabel="返回首页" />
+            {/* 底部按钮：collapsed 显示收起按钮；expanded/countingDown 显示开始按钮（原位倒计时） */}
+            {breathingEntryState === "collapsed" ? (
+              <CollapseButton onClick={() => setMode("home")} ariaLabel="返回首页" />
+            ) : (
+              <div className="absolute inset-x-0 bottom-6 z-40 mx-auto flex justify-center px-6">
+                <button
+                  onClick={startBreathingCountdown}
+                  disabled={breathingEntryState !== "expanded"}
+                  aria-label={breathingCountdown === null ? "开始呼吸练习" : `倒计时 ${breathingCountdown}`}
+                  className="grid min-w-[104px] place-items-center rounded-full bg-action-primary px-12 py-3 text-[15px] font-medium tracking-wide text-action-primary-text transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-80"
+                >
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={breathingCountdown ?? "start"}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      {breathingCountdown === null ? "开始" : `${breathingCountdown}`}
+                    </motion.span>
+                  </AnimatePresence>
+                </button>
+              </div>
+            )}
           </FeaturePageTransition>
         )}
       </AnimatePresence>
 
-      {/* breathing 模式：呼吸法选择 / 练习 / 完成全流程（独立全屏覆盖层） */}
+      {/* breathing 模式：呼吸法选择 / 练习 / 完成全流程（独立全屏覆盖层）
+          * 从缓解首页 inline 入口进入时（breathingEntryInline=true）直接传 practice 子视图 + 锁定的呼吸法；
+          * 其他入口（如演示模式）走默认 select 子视图。旧 select 子视图代码保留，仅正常入口不再跳转到它。 */}
       <AnimatePresence>
         {effectiveMode === "breathing" && (
           <Suspense fallback={null}>
             <BreathingFlow
-              onBackToRelief={() => setMode("reliefSelect")}
-              onGoHome={() => setMode("home")}
+              onBackToRelief={() => {
+                resetBreathingEntry();
+                setMode("reliefSelect");
+              }}
+              onGoHome={() => {
+                resetBreathingEntry();
+                setMode("home");
+              }}
+              initialMethodIndex={
+                breathingEntryInline ? pendingBreathingMethod : 0
+              }
+              initialSubView={
+                breathingEntryInline ? "practice" : "select"
+              }
             />
           </Suspense>
         )}
