@@ -15,7 +15,7 @@ export default function TwoWeekTransition() {
     <div className="mx-auto w-full max-w-[680px]">
       {/* —— A. 小标签 —— */}
       <p className="text-center text-[12px] tracking-[0.18em] text-ink-faint">
-        第二周第一天
+        第三周第一天
       </p>
 
       {/* —— B. 主标题 + 正文 —— */}

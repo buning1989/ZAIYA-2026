@@ -2,23 +2,16 @@
  * Guided Demo 第一张总结页。独立阶段页，只讲案例人物的两周变化。
  *
  * 结构：
- *   A. 主标题（两行）
+ *   A. 主标题
  *   B. 副标题
  *   C. 三张变化卡片（桌面端横向排列）
- *   D. 收束语
- *   E. 主按钮（进入第二张总结页）
  *
  * 不包含：医生 / 咨询师 / 学校 / 家长角色卡片、GPM 理论、
  * 产品机制解释、"进入自由体验"等最终操作。
  * 这些内容属于第二张总结页（guided-product-value）。
  *
- * 主按钮与右箭头触发相同的下一页逻辑，由 UnifiedDemoStage 统一承载左右切换。
+ * 导航由 UnifiedDemoStage 统一承载左右箭头与键盘切换。
  */
-
-type Props = {
-  /** 主按钮点击：进入第二张总结页 */
-  onNext: () => void;
-};
 
 type ChangeCard = {
   tag: string;
@@ -44,20 +37,16 @@ const changeCards: ChangeCard[] = [
   },
 ];
 
-export default function GuidedCaseResultPage({ onNext }: Props) {
+export default function GuidedCaseResultPage() {
   return (
     <div className="mx-auto w-full max-w-[920px]">
       {/* —— A. 主标题 —— */}
       <h1 className="text-[26px] font-semibold leading-[1.5] text-ink">
-        改变还很小，也并不稳定。
-        <br />
-        <span className="text-ink">
-          但小晨的生活，已经不再是一段无人看见的空白。
-        </span>
+        小晨的生活，不再是一段无人看见的空白。
       </h1>
 
       {/* —— B. 副标题 —— */}
-      <p className="mt-6 max-w-[640px] text-[17px] leading-[1.8] text-ink-soft">
+      <p className="mt-6 max-w-[640px] text-[17px] leading-[1.8] text-ink">
         两周里，她从被动获得支持，慢慢开始记录、整理、回看，
         也开始参与自己的恢复过程。
       </p>
@@ -80,27 +69,6 @@ export default function GuidedCaseResultPage({ onNext }: Props) {
             </p>
           </div>
         ))}
-      </div>
-
-      {/* —— D. 收束语 —— */}
-      <div className="mt-10 border-t border-line-soft pt-8">
-        <p className="text-[16px] leading-[1.8] text-ink-soft">
-          恢复不是一条直线。
-        </p>
-        <p className="mt-1 text-[16px] leading-[1.8] text-ink-soft">
-          但生活中的每一点变化，都开始被留下来。
-        </p>
-      </div>
-
-      {/* —— E. 主按钮 —— */}
-      <div className="mt-10 flex justify-center">
-        <button
-          type="button"
-          onClick={onNext}
-          className="rounded-full bg-ink px-8 py-3 text-[15px] font-medium text-white transition-colors hover:bg-ink/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/25 focus-visible:ring-offset-4"
-        >
-          继续看看，在呀还做了什么
-        </button>
       </div>
     </div>
   );
