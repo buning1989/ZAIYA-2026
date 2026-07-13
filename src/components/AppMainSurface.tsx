@@ -38,10 +38,9 @@ import EnergyRewardFeedback, {
   type EnergyRewardEvent,
 } from "./EnergyRewardFeedback";
 import EnergyBadge from "./EnergyBadge";
-import { useEnergy } from "@/hooks/useEnergy";
 import type { Answers, RecordEntry, RecordTypeId } from "@/data/record";
 import type { OrganizeHistoryEntry } from "@/data/organize";
-import { addEnergy } from "@/data/userProfile";
+import { grantEnergy } from "@/data/userProfile";
 import type {
   AppMainSurfaceDemoState,
   DialogItem,
@@ -84,11 +83,12 @@ const DoneStep = lazy(doneStepLoader);
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-/* —— 轻社交：一起发呆结束获得的能量值（Demo 固定，不按时长计算）—— */
-const SOCIAL_DAZE_ENERGY_REWARD = 3;
-
-/* —— 轻社交：一起吃饭结束获得的能量值（Demo 固定，不按时长计算）—— */
-const SOCIAL_EAT_ENERGY_REWARD = 3;
+function createSocialSessionId(scene: SceneId): string {
+  if (typeof window !== "undefined" && window.crypto?.randomUUID) {
+    return `${scene}-${window.crypto.randomUUID()}`;
+  }
+  return `${scene}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
 
 /* —— 应用锁受保护入口 ——
  * 仅这 4 个入口被应用锁保护；首页 / 记一下的新建入口 / 帮助与反馈 /
@@ -333,7 +333,7 @@ export function PhoneStatusBar({
 
   return (
     <>
-      <div className="absolute left-0 right-0 top-0 z-[80] flex items-center justify-between px-6 pt-3.5 pb-1 text-ink">
+      <div className="absolute left-0 right-0 top-0 z-[30] flex items-center justify-between px-6 pt-3.5 pb-1 text-ink">
         {/* 左：时间 */}
         <span className="text-[12px] font-semibold tracking-wide">
           {formatHHMM(displayNow)}
@@ -523,69 +523,53 @@ export default function AppMainSurface({
   const hideInputDialog =
     demoEnabled && !!(demoState?.dialogItems && demoState.dialogItems.length > 0);
 
-  // —— 轻社交能量（发呆结束获得 +3 能量，与记一下模块一致）——
-  // useEnergy 订阅全局 pub/sub，跨模块同步；freeze/unfreeze 用于 toast 飞行期间冻结展示
-  const { value: socialEnergy, freeze: freezeSocialEnergy, unfreeze: unfreezeSocialEnergy } = useEnergy();
+  // —— 轻社交光反馈（底层仍沿用能量奖励数据）——
   const [socialEnergyReward, setSocialEnergyReward] =
-    useState<(EnergyRewardEvent & { toEnergy: number }) | null>(null);
-  const [socialEnergyPulse, setSocialEnergyPulse] = useState(false);
-  const socialEnergyBtnRef = useRef<HTMLButtonElement | null>(null);
-  const socialEnergyPulseTimer = useRef<number | null>(null);
+    useState<EnergyRewardEvent | null>(null);
   const socialEnergyRewardIdRef = useRef(0);
+  const socialSessionIdRef = useRef<string>("");
 
-  // 发呆结束 → 累加能量并触发 toast（与记一下模块完成记录后的反馈一致）
+  // 发呆结束 → 底层发放能量，前台只触发「收下一点光」
   // 演示模式下不触发能量奖励与状态变更，避免评委误触长按结束导致脚本偏移
   const handleDazeFinish = () => {
     if (demoEnabled) return;
-    freezeSocialEnergy();
-    const newEnergy = addEnergy(SOCIAL_DAZE_ENERGY_REWARD);
-    socialEnergyRewardIdRef.current += 1;
-    setSocialEnergyReward({
-      id: socialEnergyRewardIdRef.current,
-      reward: SOCIAL_DAZE_ENERGY_REWARD,
-      toEnergy: newEnergy,
+    const sourceId = socialSessionIdRef.current || createSocialSessionId("daze");
+    socialSessionIdRef.current = sourceId;
+    const result = grantEnergy({
+      source: "social_daze_completed",
+      sourceId,
     });
+    if (result.granted) {
+      socialEnergyRewardIdRef.current += 1;
+      setSocialEnergyReward({
+        id: socialEnergyRewardIdRef.current,
+      });
+    }
     setMode("socialSelect");
   };
 
-  // 一起吃饭结束 → 累加能量并触发 toast（复用与发呆一致的能量反馈链路）
+  // 一起吃饭结束 → 底层发放能量，前台只触发「收下一点光」
   // 演示模式下不触发能量奖励与状态变更
   const handleEatFinish = () => {
     if (demoEnabled) return;
-    freezeSocialEnergy();
-    const newEnergy = addEnergy(SOCIAL_EAT_ENERGY_REWARD);
-    socialEnergyRewardIdRef.current += 1;
-    setSocialEnergyReward({
-      id: socialEnergyRewardIdRef.current,
-      reward: SOCIAL_EAT_ENERGY_REWARD,
-      toEnergy: newEnergy,
+    const sourceId = socialSessionIdRef.current || createSocialSessionId("eat");
+    socialSessionIdRef.current = sourceId;
+    const result = grantEnergy({
+      source: "social_meal_completed",
+      sourceId,
     });
+    if (result.granted) {
+      socialEnergyRewardIdRef.current += 1;
+      setSocialEnergyReward({
+        id: socialEnergyRewardIdRef.current,
+      });
+    }
     setMode("socialSelect");
   };
-
-  // toast 粒子飞抵右上角：解冻展示值 + pulse
-  const handleSocialEnergyArrive = useCallback(() => {
-    if (!socialEnergyReward) return;
-    unfreezeSocialEnergy();
-    setSocialEnergyPulse(true);
-    if (socialEnergyPulseTimer.current)
-      window.clearTimeout(socialEnergyPulseTimer.current);
-    socialEnergyPulseTimer.current = window.setTimeout(() => {
-      setSocialEnergyPulse(false);
-      socialEnergyPulseTimer.current = null;
-    }, 420);
-  }, [socialEnergyReward, unfreezeSocialEnergy]);
 
   // toast 整段动画结束：清空 event
   const handleSocialEnergyDone = useCallback(() => {
     setSocialEnergyReward(null);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (socialEnergyPulseTimer.current)
-        window.clearTimeout(socialEnergyPulseTimer.current);
-    };
   }, []);
 
   // —— 更多状态 ——
@@ -1042,8 +1026,9 @@ export default function AppMainSurface({
   return (
     <div className="relative h-full w-full bg-white">
       {/* iOS 风格状态栏
-          z-[80] 确保覆盖所有模块覆盖层（回头看看 / 夸夸自己 / 帮我整理 / 设置 / 隐私 等），
-          使各模块顶部一致显示时间 / 信号 / Wi-Fi / 电池。
+          z-[30] 高于内容模块(z-10)和渐变遮罩(z-25)，但低于全屏覆盖层
+          （侧边栏 z-40/41、moreDetail z-60、verify z-70、关闭按钮 z-80），
+          使侧边栏等全屏覆盖时状态栏被正确遮挡。
           socialFlow 为暗色沉浸场景（一起发呆 / 一起吃饭），隐藏状态栏。 */}
       {effectiveMode !== "socialFlow" && <PhoneStatusBar now={effectiveNow} />}
 
@@ -1451,8 +1436,8 @@ export default function AppMainSurface({
             onExit={() => setMode("home")}
             enableDragExit={!demoEnabled}
           >
-            {/* 右上角能量入口：统一组件（floating），与记一下 / 轻社交同一位置规则 */}
-            <EnergyBadge value={socialEnergy} position="floating" />
+            {/* 右上角我的光入口：统一组件（floating），与记一下 / 轻社交同一位置规则 */}
+            <EnergyBadge position="floating" />
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1525,29 +1510,18 @@ export default function AppMainSurface({
               <SocialSceneSelectContent
                 onSelect={(s) => {
                   setSocialScene(s);
+                  socialSessionIdRef.current = createSocialSessionId(s);
                   setMode("socialFlow");
                 }}
                 onClose={() => setMode("home")}
               />
             </Suspense>
-            {/* 右上角能量入口：统一组件（floating），top-14 与记一下 pt-14 一致 */}
-            <EnergyBadge
-              value={socialEnergy}
-              pulse={socialEnergyPulse}
-              buttonRef={socialEnergyBtnRef}
-              position="floating"
-            />
-            {/* 能量获得 toast：复用记一下模块组件，飞向右上角能量入口 */}
+            {/* 右上角我的光入口：统一组件（floating），top-14 与记一下 pt-14 一致 */}
+            <EnergyBadge position="floating" />
+            {/* 光反馈：完成有效行动后轻轻浮现，不飞向入口 */}
             <EnergyRewardFeedback
               event={socialEnergyReward}
-              targetRef={socialEnergyBtnRef}
-              onArrive={handleSocialEnergyArrive}
               onDone={handleSocialEnergyDone}
-              text={
-                socialEnergyReward
-                  ? `获得 +${socialEnergyReward.reward} 能量`
-                  : undefined
-              }
             />
           </>
         )}
@@ -1682,7 +1656,7 @@ export default function AppMainSurface({
             {/* 右侧遮罩：压暗主页背景，点击关闭 */}
             <motion.div
               key="more-overlay"
-              className="absolute inset-0 z-40 bg-ink/40"
+              className="absolute inset-0 z-[40] bg-ink/40"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -1692,7 +1666,7 @@ export default function AppMainSurface({
             {/* 侧边栏面板：左侧贴边，宽度 78%，右侧大圆角 */}
             <motion.div
               key="more-layer"
-              className="absolute inset-y-0 left-0 z-50 w-[78%] rounded-r-[32px] overflow-hidden shadow-[8px_0_30px_-12px_rgba(0,0,0,0.18)]"
+              className="absolute inset-y-0 left-0 z-[41] w-[78%] rounded-r-[32px] overflow-hidden shadow-[8px_0_30px_-12px_rgba(0,0,0,0.18)]"
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
@@ -1710,7 +1684,7 @@ export default function AppMainSurface({
               {moreToastMsg && (
                 <motion.div
                   key="more-toast"
-                  className="pointer-events-none absolute bottom-24 left-1/2 z-[60] -translate-x-1/2 max-w-[calc(100%-48px)] whitespace-nowrap rounded-full bg-ink/85 px-4 py-2 text-[12px] text-white shadow-[0_4px_14px_rgba(0,0,0,0.18)]"
+                  className="pointer-events-none absolute bottom-24 left-1/2 z-[42] -translate-x-1/2 max-w-[calc(100%-48px)] whitespace-nowrap rounded-full bg-ink/85 px-4 py-2 text-[12px] text-white shadow-[0_4px_14px_rgba(0,0,0,0.18)]"
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 6 }}
@@ -1772,7 +1746,7 @@ export default function AppMainSurface({
       </AnimatePresence>
 
       {/* verify 模式：应用锁模拟验证页（受保护入口被拦截时显示）
-          * 全屏覆盖，z-[70] 盖在 moreDetail (z-60) 与 more 侧边栏 (z-50) 之上
+          * 全屏覆盖，z-[70] 盖在 moreDetail (z-60)、侧边栏 (z-41) 与状态栏 (z-30) 之上
           * 标题「验证后查看」+ 说明「此内容受应用锁保护。」+ 按钮「验证并进入」
           * 点击验证 → 本会话标记已验证 → 进入目标受保护页；返回 → 回到更多侧边栏 */}
       <AnimatePresence>
