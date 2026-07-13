@@ -383,7 +383,7 @@ export default function UnifiedDemoStage({
       {/* 主内容区 */}
       <div className="relative mt-6 flex flex-1 flex-col justify-center">
         {showGuidedNav && (
-          <div className="pointer-events-none absolute inset-y-0 left-0 right-0 z-20 hidden items-center justify-between lg:flex">
+          <div className="pointer-events-none absolute inset-y-0 z-20 hidden items-center justify-between lg:-left-10 lg:-right-10 lg:flex xl:-left-20 xl:-right-20 2xl:-left-28 2xl:-right-28">
             <div className="pointer-events-auto">
               <NavArrow direction="left" disabled={phase === "intro"} onClick={prev} />
             </div>
