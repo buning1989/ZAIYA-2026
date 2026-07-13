@@ -954,6 +954,8 @@ export default function AppMainSurface({
   });
   const prefetchPresenceRoom = usePrefetch(() => {
     loadPresenceRoom();
+    // 一起发呆入口：预加载场景背景视频（仅背景，不预加载姿势动画）
+    preloadVideo("./assets/social/daze/scene-together-15s.webm");
   });
 
   // 核心按钮：preview 仅瞬时反馈；interactive 触发回调

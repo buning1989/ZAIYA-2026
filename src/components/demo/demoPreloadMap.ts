@@ -69,6 +69,7 @@ const DAY1_3: NodeResources = {
   preloadModule: () => {
     loadPresenceRoom();
   },
+  videos: ["./assets/social/daze/scene-together-15s.webm"],
   audio: ["./assets/social/daze/together-bgm.mp3"],
 };
 
