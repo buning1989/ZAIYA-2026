@@ -13,6 +13,7 @@ import {
   Leaf,
   HandHeart,
   ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import VoiceInputBar from "./VoiceInputBar";
 import type { SceneId } from "./PresenceRoom";
@@ -526,6 +527,9 @@ export default function AppMainSurface({
   // —— 轻社交光反馈（底层仍沿用能量奖励数据）——
   const [socialEnergyReward, setSocialEnergyReward] =
     useState<EnergyRewardEvent | null>(null);
+  const [socialEnergyPulse, setSocialEnergyPulse] = useState(false);
+  const socialEnergyBtnRef = useRef<HTMLButtonElement | null>(null);
+  const socialEnergyPulseTimer = useRef<number | null>(null);
   const socialEnergyRewardIdRef = useRef(0);
   const socialSessionIdRef = useRef<string>("");
 
@@ -543,6 +547,7 @@ export default function AppMainSurface({
       socialEnergyRewardIdRef.current += 1;
       setSocialEnergyReward({
         id: socialEnergyRewardIdRef.current,
+        occurredAt: Date.now(),
       });
     }
     setMode("socialSelect");
@@ -562,14 +567,32 @@ export default function AppMainSurface({
       socialEnergyRewardIdRef.current += 1;
       setSocialEnergyReward({
         id: socialEnergyRewardIdRef.current,
+        occurredAt: Date.now(),
       });
     }
     setMode("socialSelect");
   };
 
+  const handleSocialEnergyArrive = useCallback(() => {
+    setSocialEnergyPulse(true);
+    if (socialEnergyPulseTimer.current)
+      window.clearTimeout(socialEnergyPulseTimer.current);
+    socialEnergyPulseTimer.current = window.setTimeout(() => {
+      setSocialEnergyPulse(false);
+      socialEnergyPulseTimer.current = null;
+    }, 420);
+  }, []);
+
   // toast 整段动画结束：清空 event
   const handleSocialEnergyDone = useCallback(() => {
     setSocialEnergyReward(null);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (socialEnergyPulseTimer.current)
+        window.clearTimeout(socialEnergyPulseTimer.current);
+    };
   }, []);
 
   // —— 更多状态 ——
@@ -1427,7 +1450,9 @@ export default function AppMainSurface({
       </AnimatePresence>
 
       {/* reliefSelect 模式：缓解能力项选择区（首页内展开，非独立页面）
-          * 4 个能力项 2×2 网格；仅「呼吸法」可进入，其余标识「暂未开放」并弱化。 */}
+          * 三层结构：顶部在在透明动画（无文案）→ 当前可用（呼吸法主卡片）→ 更多方式（3 个预告）。
+          * 顶部只承担“在在安静存在”的作用，不增加任何文案、提示或行动引导。
+          * 用不透明 bg-white z-20 层覆盖底下的 zaizai-eating 视频，避免视觉冲突。 */}
       <AnimatePresence>
         {effectiveMode === "reliefSelect" && (
           <FeaturePageTransition
@@ -1439,53 +1464,102 @@ export default function AppMainSurface({
             {/* 右上角我的光入口：统一组件（floating），与记一下 / 轻社交同一位置规则 */}
             <EnergyBadge position="floating" />
             <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 16 }}
-              transition={{ duration: 0.35, ease, delay: 0.05 }}
-              className="absolute inset-x-0 px-6"
-              style={{ top: "54%" }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3, ease }}
+              className="absolute inset-0 z-20 flex flex-col bg-white px-6"
             >
-              <div className="grid grid-cols-2 gap-3">
-                {reliefMethods.map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => selectRelief(m)}
-                    onPointerEnter={prefetchBreathing}
-                    onFocus={prefetchBreathing}
-                    onTouchStart={prefetchBreathing}
-                    onPointerDown={prefetchBreathing}
-                    className={`relative flex flex-col items-center justify-center gap-2 rounded-2xl border py-5 transition-colors ${
-                      m.enabled
-                        ? "border-line bg-white hover:border-ink-faint"
-                        : "border-line/60 bg-line-soft/40 opacity-60"
-                    }`}
-                  >
-                    <m.Icon
-                      className={`h-7 w-7 ${
-                        m.enabled ? "text-ink-soft" : "text-ink-faint/50"
-                      }`}
-                      strokeWidth={1.8}
-                    />
-                    <span
-                      className={`text-[13px] ${
-                        m.enabled ? "text-ink" : "text-ink-faint/60"
-                      }`}
-                    >
-                      {m.label}
-                    </span>
-                    {!m.enabled && (
-                      <span className="absolute right-3 top-3 rounded-full bg-line-soft px-2 py-0.5 text-[10px] text-ink-faint">
-                        暂未开放
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
+              {/* 顶部在在透明动画：无文案、无气泡、无提示 */}
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease, delay: 0.05 }}
+                className="flex justify-center"
+                style={{ paddingTop: 84 }}
+              >
+                <video
+                  src="./assets/zaiya/zaiya-transparent.webm"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload="auto"
+                  className="block h-[118px] w-[118px] select-none object-contain"
+                  style={{ transform: "scale(1.12)", transformOrigin: "center center" }}
+                />
+              </motion.div>
+
+              {/* 当前可用：呼吸法主卡片 */}
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease, delay: 0.1 }}
+                style={{ marginTop: 42 }}
+              >
+                <div className="mb-[10px] text-[13px] font-medium leading-5 text-[#7B8376]">
+                  当前可用
+                </div>
+                <button
+                  onClick={() => selectRelief({ id: "breathing", enabled: true })}
+                  onPointerEnter={prefetchBreathing}
+                  onFocus={prefetchBreathing}
+                  onTouchStart={prefetchBreathing}
+                  onPointerDown={prefetchBreathing}
+                  className="flex w-full items-center gap-[14px] rounded-2xl bg-white p-[16px_18px] text-left transition-colors hover:border-[#C7CCBF]"
+                  style={{ border: "1px solid #D8DDD3", boxShadow: "none", minHeight: 88 }}
+                >
+                  <Waves className="h-7 w-7 text-ink-soft" strokeWidth={1.8} />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[16px] font-semibold leading-6 text-[#2F392B]">
+                      呼吸法
+                    </div>
+                    <div className="mt-[3px] text-[13px] font-normal leading-5 text-[#737A70]">
+                      四种节奏可选
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-ink-faint" strokeWidth={1.8} />
+                </button>
+              </motion.div>
+
+              {/* 更多方式：3 个紧凑预告（不可点击） */}
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease, delay: 0.15 }}
+                style={{ marginTop: 22 }}
+              >
+                <div className="mb-[10px] text-[13px] font-medium leading-5 text-[#7B8376]">
+                  更多方式
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {reliefMethods
+                    .filter((m) => !m.enabled)
+                    .map((m) => (
+                      <div
+                        key={m.id}
+                        className="flex min-h-[86px] flex-col items-center justify-center rounded-[14px] bg-white p-[12px_8px]"
+                        style={{
+                          border: "1px solid #E5E6E2",
+                          boxShadow: "none",
+                          cursor: "default",
+                        }}
+                      >
+                        <m.Icon className="h-6 w-6 text-[#858B82]" strokeWidth={1.8} />
+                        <div className="mt-[7px] text-[13px] font-medium leading-[19px] text-[#858B82]">
+                          {m.label}
+                        </div>
+                        <div className="mt-[2px] text-[10px] leading-[15px] text-[#A0A49D]">
+                          即将开放
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </motion.div>
             </motion.div>
 
             {/* 底部中央收起按钮 */}
-            <CollapseButton onClick={() => setMode("home")} ariaLabel="收起缓解" />
+            <CollapseButton onClick={() => setMode("home")} ariaLabel="返回首页" />
           </FeaturePageTransition>
         )}
       </AnimatePresence>
@@ -1517,10 +1591,16 @@ export default function AppMainSurface({
               />
             </Suspense>
             {/* 右上角我的光入口：统一组件（floating），top-14 与记一下 pt-14 一致 */}
-            <EnergyBadge position="floating" />
-            {/* 光反馈：完成有效行动后轻轻浮现，不飞向入口 */}
+            <EnergyBadge
+              pulse={socialEnergyPulse}
+              buttonRef={socialEnergyBtnRef}
+              position="floating"
+            />
+            {/* 光反馈：完成有效行动后飞向右上角入口 */}
             <EnergyRewardFeedback
               event={socialEnergyReward}
+              targetRef={socialEnergyBtnRef}
+              onArrive={handleSocialEnergyArrive}
               onDone={handleSocialEnergyDone}
             />
           </>
