@@ -538,7 +538,7 @@ export default function UnifiedDemoStage({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.28, ease: SOFT_EASE }}
             >
-              <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-[390px_420px] lg:justify-center lg:gap-x-16 lg:gap-y-0 lg:px-10 xl:gap-x-24 xl:px-20">
+              <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-[390px_560px] lg:justify-center lg:gap-x-10 lg:gap-y-0 lg:px-10">
                 {/* 设备 Demo：06:40 桌面小组件 / 12:00 手表 / 其他 手机 App */}
                 <div className="relative justify-self-center lg:col-start-1">
                   {phase === "day1" && day1Index === 0 ? (

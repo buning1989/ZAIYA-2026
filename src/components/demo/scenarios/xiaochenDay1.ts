@@ -186,8 +186,16 @@ export const xiaochenDay1Scenario: GuidedScenario = {
         "在在没有让她“别想了”，而是把念头比作一台关不掉的电视，引导她暂时不去看，",
         "再把注意力慢慢带回被子、呼吸和身体。对话结束，在在重新躺下，小晨也逐渐回到休息。",
       ],
+      narrativeLeads: [
+        "夜已经很深",
+        "小晨点开在呀 ZÀIYA",
+        "在在没有让她",
+        "再把注意力",
+      ],
       principles: "ACT 接纳与认知去融合 × CBT-I 担忧推迟 × 刺激控制 × 正念锚定",
-      explanation: "减少睡前反刍，帮助大脑重新建立“床用于休息”的联结。",
+      plainExplanation:
+        "不是要求小晨立刻停止思考，而是先允许念头存在，再把注意力从反刍带回身体和当下。",
+      explanation: "减少睡前反刍，重新建立“床用于休息”的联结。",
       moduleTags: ["dialog"],
       demoState: {
         enabled: true,
