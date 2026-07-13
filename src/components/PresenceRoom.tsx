@@ -108,14 +108,14 @@ export function SocialSceneSelectContent({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease, delay: 0.05 }}
         className="flex flex-row items-center justify-center gap-3 px-[18px] max-[360px]:gap-[9px] max-[360px]:px-[12px]"
-        style={{ marginTop: 54, marginBottom: 34 }}
+        style={{ marginTop: 80, marginBottom: 34 }}
       >
-        <div className="flex h-[88px] w-[84px] flex-shrink-0 items-center justify-center overflow-visible max-[360px]:h-[80px] max-[360px]:w-[76px]">
+        <div className="flex h-[104px] w-[100px] flex-shrink-0 items-center justify-center overflow-visible max-[360px]:h-[94px] max-[360px]:w-[90px]">
           <img
             src={COMPANION_GIF}
             alt="在在"
-            className="block h-[84px] w-[84px] flex-shrink-0 select-none object-contain object-center max-[360px]:h-[76px] max-[360px]:w-[76px]"
-            style={{ transform: "scale(1.08)", transformOrigin: "center center" }}
+            className="block h-[100px] w-[100px] flex-shrink-0 select-none object-contain object-center max-[360px]:h-[90px] max-[360px]:w-[90px]"
+            style={{ transform: "scale(1.2)", transformOrigin: "center center" }}
           />
         </div>
         <div
