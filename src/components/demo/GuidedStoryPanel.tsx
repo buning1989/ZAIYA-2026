@@ -99,7 +99,7 @@ export default function GuidedStoryPanel({
           </div>
 
           {/* 4. 设计依据：为什么这样设计 */}
-          <div className="mt-[28px] border-t border-t-[#E6E8E2] border-l-2 border-l-[#52604A] pt-[22px] pl-4">
+          <div className="mt-[28px] border-t border-t-[#E6E8E2] pt-[22px]">
             <p className="text-[13px] font-medium tracking-[0.08em] text-[#657060]">
               为什么这样设计
             </p>

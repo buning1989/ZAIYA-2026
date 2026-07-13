@@ -49,14 +49,14 @@ export default function DemoWatchFrame({ time = "12:00" }: Props) {
                 preload="auto"
                 className="block h-full w-full select-none object-contain"
                 style={{
-                  transform: "scale(1.5)",
+                  transform: "scale(1.95) translateY(-10%)",
                   transformOrigin: "center center",
                 }}
               />
             </div>
 
             {/* 文案区域（标题 + 辅助文案） */}
-            <div className="mt-[5px] w-full text-center">
+            <div className="mt-auto w-full pb-[20px] text-center">
               <p className="text-[15px] font-semibold leading-[21px] text-[#34402F]">
                 到饭点啦
               </p>
