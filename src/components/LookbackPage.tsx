@@ -597,6 +597,8 @@ function TimeRangeSwitcher({
   referenceDate,
   onPrev,
   onNext,
+  label: labelOverride,
+  disableNav = false,
 }: {
   timeMode: TimeMode;
   weekStartKey: string;
@@ -604,21 +606,27 @@ function TimeRangeSwitcher({
   referenceDate: Date;
   onPrev: () => void;
   onNext: () => void;
+  /** 覆盖默认日期范围文案（Guided Demo 固定近两周时使用） */
+  label?: string;
+  /** 禁用左右切换箭头（Guided Demo 固定时间段时使用） */
+  disableNav?: boolean;
 }) {
   const now = referenceDate;
   // 判断是否已到当前时间（右箭头禁用）
   const isCurrent = timeMode === "week"
     ? weekStartKey === toDateKey(getWeekStart(now))
     : monthKey === toMonthKey(now.getFullYear(), now.getMonth() + 1);
-  const label = timeMode === "week"
+  const label = labelOverride ?? (timeMode === "week"
     ? weekRangeLabel(weekStartKey)
-    : monthLabelCN(monthKey);
+    : monthLabelCN(monthKey));
+  const navDisabled = disableNav;
   return (
     <div className="flex items-center justify-between py-0.5">
       <button
         onClick={onPrev}
+        disabled={navDisabled}
         aria-label={timeMode === "week" ? "上一周" : "上个月"}
-        className="grid h-9 w-9 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft active:scale-95"
+        className="grid h-9 w-9 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft active:scale-95 disabled:opacity-25 disabled:hover:bg-transparent"
       >
         <ChevronLeft className="h-5 w-5" />
       </button>
@@ -627,7 +635,7 @@ function TimeRangeSwitcher({
       </span>
       <button
         onClick={onNext}
-        disabled={isCurrent}
+        disabled={isCurrent || navDisabled}
         aria-label={timeMode === "week" ? "下一周" : "下个月"}
         className="grid h-9 w-9 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft active:scale-95 disabled:opacity-25 disabled:hover:bg-transparent"
       >
@@ -2641,3 +2649,11 @@ function sleepToRatio(t: string): number {
     (SLEEP_MAX - SLEEP_MIN)
   );
 }
+
+/* =========================================================
+ * 共享导出 —— 供 Guided Demo 复用正式「回头看看」UI 组件
+ * 不改变正式页面行为，仅暴露内部组件供 Demo 引用
+ * ======================================================= */
+export { TimeModeTabs, TimeRangeSwitcher, SceneTabs, TrendArea };
+export { themes, scenes, reviewTypography as tx, RECORD_CATEGORY_COLOR, PAGE_BG, ease };
+export type { Theme, SceneKey, TimeMode };

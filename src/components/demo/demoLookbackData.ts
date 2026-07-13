@@ -14,6 +14,8 @@
  * 这些数据只用于 Guided Demo，不写入正式产品数据源。
  */
 
+import type { DailyLookbackData } from "@/data/lookback";
+
 /** 单日睡眠趋势数据点 */
 export interface SleepDataPoint {
   /** 日期 YYYY-MM-DD */
@@ -78,4 +80,51 @@ export function averageSleepMinutes(
   const slice = data.slice(startIdx, endIdx + 1);
   const total = slice.reduce((sum, d) => sum + d.sleepTimeMinutes, 0);
   return Math.round(total / slice.length);
+}
+
+/** 将 Demo 睡眠数据转换为 DailyLookbackData 格式
+ *
+ *  供正式 LookbackPage 的 TrendArea / SleepTrend 组件直接消费。
+ *  仅填充 sleepTime 与日期字段，其余场景字段全部置空 / unknown，
+ *  确保 Demo 数据不混入正式产品数据源。
+ */
+export function toDailyLookbackData(data: SleepDataPoint[]): DailyLookbackData[] {
+  return data.map((point) => {
+    const [, m, d] = point.date.split("-").map(Number);
+    return {
+      date: point.date,
+      displayDate: `${m}月${d}日`,
+      mood: null,
+      moodWords: null,
+      moodTrigger: null,
+      moodBody: null,
+      moodNote: null,
+      moodEntries: null,
+      sleepTime: formatSleepTime(point.sleepTimeMinutes),
+      wakeTime: null,
+      sleepDurationMin: null,
+      nightWake: null,
+      wakeFeeling: null,
+      sleepLevel: null,
+      sleepBedTime: null,
+      sleepNote: null,
+      sleepRecordTime: null,
+      meals: { breakfast: "unknown", lunch: "unknown", dinner: "unknown" },
+      mealFeeling: null,
+      mealEntries: null,
+      medication: { morning: "unknown", evening: "unknown" },
+      medChangeNote: null,
+      medEntries: null,
+      activityLevel: null,
+      activityContent: null,
+      activityNote: null,
+      activityDuration: null,
+      activityFeeling: null,
+      activityRecordTime: null,
+      weight: null,
+      weightMeasureContext: null,
+      weightNote: null,
+      weightRecordTime: null,
+    } satisfies DailyLookbackData;
+  });
 }
