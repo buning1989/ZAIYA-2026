@@ -167,7 +167,7 @@ export const moduleLabelMap: Record<ProductModuleTag, string> = {
   organize: "帮我整理",
   praise: "夸夸自己",
   privacy: "我的隐私",
-  energy: "我的能量",
+  energy: "我的光",
 };
 
 /** 案例演示单步配置 */

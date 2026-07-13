@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { AnimatePresence, motion, type PanInfo } from "framer-motion";
 import { ChevronLeft, Volume2, VolumeX } from "lucide-react";
-import { BREATHING_EXERCISE_ENERGY_REWARD, grantEnergy } from "@/data/userProfile";
+import { grantEnergy } from "@/data/userProfile";
 import ZaizaiVideo, { ZAIZAI_RELIEF_VIDEO_SRC } from "./ZaizaiVideo";
 import EnergyBadge from "./EnergyBadge";
 import EnergyRewardFeedback, { type EnergyRewardEvent } from "./EnergyRewardFeedback";
-import { useEnergy } from "@/hooks/useEnergy";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -162,15 +161,11 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
   const [stopSheet, setStopSheet] = useState(false);
   const statusBeforeStop = useRef<PlayStatus>("playing");
 
-  // —— 能量奖励：复用「一起发呆」完成后的反馈方式 ——
+  // —— 光反馈：底层仍沿用能量奖励数据 ——
   // 单次练习只发放一次：practiceIdRef 每次开始 / 重来时重新生成，
   // energyGrantedRef 防止完成页重复渲染造成重复发放；grantEnergy 再做幂等兜底。
-  const { value: breathEnergy, freeze: freezeBreathEnergy, unfreeze: unfreezeBreathEnergy } = useEnergy();
   const [breathEnergyReward, setBreathEnergyReward] =
     useState<EnergyRewardEvent | null>(null);
-  const [breathEnergyPulse, setBreathEnergyPulse] = useState(false);
-  const breathBadgeRef = useRef<HTMLButtonElement | null>(null);
-  const breathPulseTimer = useRef<number | null>(null);
   const breathRewardIdRef = useRef(0);
   const practiceIdRef = useRef<string>("");
   const energyGrantedRef = useRef(false);
@@ -280,7 +275,6 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
     energyGrantedRef.current = true;
 
     const grantTimer = window.setTimeout(() => {
-      freezeBreathEnergy();
       const result = grantEnergy({
         source: "breathing_exercise_completed",
         sourceId: practiceIdRef.current,
@@ -289,40 +283,16 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
         breathRewardIdRef.current += 1;
         setBreathEnergyReward({
           id: breathRewardIdRef.current,
-          reward: result.reward,
         });
-      } else {
-        // 已发放过（幂等拦截）：立即解冻，不展示反馈
-        unfreezeBreathEnergy();
       }
     }, 600);
 
     return () => window.clearTimeout(grantTimer);
-  }, [subView, freezeBreathEnergy, unfreezeBreathEnergy]);
-
-  // toast 粒子飞抵右上角：解冻展示值 + pulse
-  const handleBreathEnergyArrive = useCallback(() => {
-    if (!breathEnergyReward) return;
-    unfreezeBreathEnergy();
-    setBreathEnergyPulse(true);
-    if (breathPulseTimer.current)
-      window.clearTimeout(breathPulseTimer.current);
-    breathPulseTimer.current = window.setTimeout(() => {
-      setBreathEnergyPulse(false);
-      breathPulseTimer.current = null;
-    }, 420);
-  }, [breathEnergyReward, unfreezeBreathEnergy]);
+  }, [subView]);
 
   // toast 整段动画结束：清空 event
   const handleBreathEnergyDone = useCallback(() => {
     setBreathEnergyReward(null);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (breathPulseTimer.current)
-        window.clearTimeout(breathPulseTimer.current);
-    };
   }, []);
 
   const startPractice = (idx: number) => {
@@ -745,20 +715,13 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
         )}
       </AnimatePresence>
 
-      {/* 右上角能量入口：仅呼吸法模块主页展示；练习 / 完成态保持专注。 */}
+      {/* 右上角我的光入口：仅呼吸法模块主页展示；练习 / 完成态保持专注。 */}
       {subView === "select" && (
-        <EnergyBadge
-          value={breathEnergy}
-          pulse={breathEnergyPulse}
-          buttonRef={breathBadgeRef}
-          position="floating"
-        />
+        <EnergyBadge position="floating" />
       )}
-      {/* 能量获得 toast：复用「一起发呆」组件，飞向右上角能量入口 */}
+      {/* 光反馈：完成有效行动后轻轻浮现，不飞向入口 */}
       <EnergyRewardFeedback
         event={breathEnergyReward}
-        targetRef={breathBadgeRef}
-        onArrive={handleBreathEnergyArrive}
         onDone={handleBreathEnergyDone}
       />
     </motion.div>

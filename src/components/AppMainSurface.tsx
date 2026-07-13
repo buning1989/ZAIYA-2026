@@ -62,7 +62,7 @@ import {
   loadBreathingFlow,
   loadPresenceRoom,
 } from "@/lib/moduleLoaders";
-import { preloadVideo, preloadImage } from "@/lib/mediaPreloader";
+import { preloadVideo } from "@/lib/mediaPreloader";
 import { usePrefetch } from "@/lib/usePrefetch";
 
 const SocialSceneSelectContent = lazy(() =>
@@ -841,7 +841,7 @@ export default function AppMainSurface({
       enterRecordFromMore();
       return;
     }
-    // 「我的能量」入口暂未开放，不执行路由跳转（正常由 MoreContent 拦截，此处兜底）
+    // 「我的光」入口暂未开放，不执行路由跳转（正常由 MoreContent 拦截，此处兜底）
     if (id === "energy") return;
     if (
       appLock &&
@@ -1529,7 +1529,7 @@ export default function AppMainSurface({
 
       {/* socialFlow 模式：选中场景后的流程页（一起发呆 / 一起吃饭）。
           全屏覆盖，在在退出；退出后回到轻社交场景选择页。
-          一起发呆：onExit=准备态返回（无能量），onFinish=长按结束（+3 能量并回主页）
+          一起发呆：onExit=准备态返回（无奖励），onFinish=长按结束（收下一点光并回主页）
           演示模式下 socialScene 由 demoState 注入；onExit/onFinish 在演示模式下不会触发状态变更。 */}
       <AnimatePresence>
         {effectiveMode === "socialFlow" && effectiveSocialScene && (

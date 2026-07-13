@@ -12,7 +12,7 @@ import {
   ImagePlus,
   X,
   Plus,
-  Zap,
+  Sprout,
   type LucideProps,
 } from "lucide-react";
 import type { ForwardRefExoticComponent } from "react";
@@ -80,7 +80,7 @@ export const moreMenuItems: {
   { id: "review", label: "回头看看", Icon: Clock },
   { id: "organize", label: "帮我整理", Icon: FolderOpen },
   { id: "praise", label: "夸夸自己", Icon: Sparkles },
-  { id: "energy", label: "我的能量", Icon: Zap },
+  { id: "energy", label: "我的光", Icon: Sprout },
   { id: "privacy", label: "我的隐私", Icon: Shield },
 ];
 
@@ -95,7 +95,7 @@ const bottomMenuItems: {
 ];
 
 /* —— 更多侧边栏内容 ——
- * 上半部分：功能区（记一下 / 回头看看 / 帮我整理 / 夸夸自己 / 我的能量 / 我的隐私）
+ * 上半部分：功能区（记一下 / 回头看看 / 帮我整理 / 夸夸自己 / 我的光 / 我的隐私）
  * 底部固定：应用级入口（帮助与反馈 / 设置），低权重色 */
 export function MoreContent({
   onSelect,

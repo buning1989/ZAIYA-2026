@@ -28,10 +28,9 @@ import EnergyRewardFeedback, {
   type EnergyRewardEvent,
 } from "./EnergyRewardFeedback";
 import EnergyBadge from "./EnergyBadge";
-import { useEnergy } from "@/hooks/useEnergy";
 import { PhoneStatusBar } from "./AppMainSurface";
 import { MoonPhaseIcon, type MoonPhaseLevel } from "./MoonPhaseIcon";
-import { calculateBMI, getUserProfile, addEnergy, FULL_RECORD_ENERGY_REWARD } from "@/data/userProfile";
+import { calculateBMI, getUserProfile, grantEnergy } from "@/data/userProfile";
 import {
   CUSTOM_INPUT_VALUE,
   getNextStep,
@@ -52,9 +51,7 @@ import { SAFETY_DIALOG_STARTER } from "@/data/crisisResources";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-type ActiveEnergyReward = EnergyRewardEvent & {
-  toEnergy: number;
-};
+type ActiveEnergyReward = EnergyRewardEvent;
 
 /* —— 月相图标（与 LookbackPage MoodBead 同步）—— */
 const intensityValueToLevel: Record<string, MoonPhaseLevel> = {
@@ -72,6 +69,13 @@ function parseWeightKg(value: string | undefined): number | null {
   const weight = Number(value);
   if (!Number.isFinite(weight) || weight <= 0) return null;
   return weight;
+}
+
+function createRecordSessionId(typeId: RecordTypeId): string {
+  if (typeof window !== "undefined" && window.crypto?.randomUUID) {
+    return `${typeId}-${window.crypto.randomUUID()}`;
+  }
+  return `${typeId}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 function getBmiStatus(bmi: number): {
@@ -171,13 +175,10 @@ export default function RecordFlow({
 
   // 是否已完成保存（success 态），用于返回按钮跳过放弃确认
   const [isRecordSaved, setIsRecordSaved] = useState(false);
-  // 当前能量值（useEnergy 订阅全局 pub/sub，跨模块同步）
-  const { value: energyValue } = useEnergy();
   const [activeEnergyReward, setActiveEnergyReward] =
     useState<ActiveEnergyReward | null>(null);
   const energyRewardIdRef = useRef(0);
-  const energyButtonRef = useRef<HTMLButtonElement | null>(null);
-  const rewardedRecordIds = useRef<Set<string>>(new Set());
+  const recordSessionIdRef = useRef<string>("");
   // 上一次体重记录值（用于体重页默认填入 + 步进调节）
   // 从 recordHistory 中读取最近一条带 weight 值的体重记录；无历史时为 null（页面渲染手动输入框）
   const [lastWeight, setLastWeight] = useState<number | null>(
@@ -202,6 +203,7 @@ export default function RecordFlow({
 
   const goWizard = (id: RecordTypeId) => {
     setTypeId(id);
+    recordSessionIdRef.current = createRecordSessionId(id);
     setWizardAnswers({});
     setSavedMessage(null);
     setIsRecordSaved(false);
@@ -258,16 +260,16 @@ export default function RecordFlow({
       (a) => a && (a.label?.trim() || a.value.trim()),
     );
     if (hasValidInput && typeId) {
-      const recordId = `${typeId}-${Date.now()}`;
-      if (!rewardedRecordIds.current.has(recordId)) {
-        rewardedRecordIds.current.add(recordId);
-        // 底层仍累加能量值（保持原有逻辑），但前台只展示「收下一点光」
-        addEnergy(FULL_RECORD_ENERGY_REWARD);
+      const sourceId = recordSessionIdRef.current || createRecordSessionId(typeId);
+      recordSessionIdRef.current = sourceId;
+      const result = grantEnergy({
+        source: "record_completed",
+        sourceId,
+      });
+      if (result.granted) {
         energyRewardIdRef.current += 1;
         setActiveEnergyReward({
           id: energyRewardIdRef.current,
-          reward: FULL_RECORD_ENERGY_REWARD,
-          toEnergy: 0, // 不再展示数值，此字段仅用于类型兼容
         });
       }
     }
@@ -358,10 +360,6 @@ export default function RecordFlow({
     setActiveEnergyReward(null);
   }, []);
 
-  const handleEnergyRewardArrive = useCallback(() => {
-    // 粒子飞抵能量入口时的回调（目前无需额外处理）
-  }, []);
-
   return (
     <div className="relative flex h-full flex-col bg-white">
       <PhoneStatusBar />
@@ -379,12 +377,8 @@ export default function RecordFlow({
           {title}
         </h2>
         {layer === "wizard" && !isSafetyPhase && (isFullRecordReady || isRecordSaved) ? (
-          /* 确认页 / 已保存：能量入口（统一组件，点击提示 Demo 暂未开放） */
-          <EnergyBadge
-            value={energyValue}
-            buttonRef={energyButtonRef}
-            position="inline"
-          />
+          /* 确认页 / 已保存：我的光入口（统一组件，点击提示 Demo 暂未开放） */
+          <EnergyBadge position="inline" />
         ) : layer === "wizard" && !isSafetyPhase && canSavePartial ? (
           /* 第二项及以后、未到确认页：先记到这儿（部分保存） */
           <button
@@ -507,8 +501,6 @@ export default function RecordFlow({
 
       <EnergyRewardFeedback
         event={activeEnergyReward}
-        targetRef={energyButtonRef}
-        onArrive={handleEnergyRewardArrive}
         onDone={handleEnergyRewardDone}
       />
 
@@ -1642,9 +1634,9 @@ function RecordConfirmPage({
   const [supplement, setSupplement] = useState("");
   // 是否正在编辑补充说明（点击「修改补充」后展开输入框）
   const [editingSupplement, setEditingSupplement] = useState(false);
-  // 完成反馈流程：confirm → toast → done
+  // 完成反馈流程：confirm → done；奖励反馈由父级 EnergyRewardFeedback 统一承载
   const [completionPhase, setCompletionPhase] = useState<
-    "confirm" | "toast" | "done"
+    "confirm" | "done"
   >("confirm");
 
   // 修改 / 删除相关状态
@@ -1679,12 +1671,11 @@ function RecordConfirmPage({
     setEditingSupplement(true);
   };
 
-  // 完成记录：保存（含补充说明）+ 发放能量 + 进入完成反馈流程
+  // 完成记录：保存（含补充说明）+ 发放奖励 + 进入完成态
   // 补充说明已由 handleSaveSupplement 写入 answers，这里直接用当前 answers
   const handleComplete = () => {
     onFinishRecord(answers);
-    setCompletionPhase("toast");
-    window.setTimeout(() => setCompletionPhase("done"), 1300);
+    setCompletionPhase("done");
   };
 
   // 摘要卡：从 steps 中提取已填写的非 isLast 字段，附带 step 引用以读取 options
@@ -1754,9 +1745,7 @@ function RecordConfirmPage({
 
   const timeStr = "刚刚";
 
-  // —— 完成反馈 Toast（inline 覆盖在确认页中央，不切换独立页面）——
-  // toast：实色能量胶囊，居中弹出，1.3s 后原地淡出
-  // done：底部按钮切换为「回到记一下」
+  // —— 完成态：底部按钮切换为「回到记一下」——
   if (completionPhase !== "confirm") {
     return (
       <div className="no-scrollbar relative flex flex-1 flex-col overflow-y-auto bg-white px-5">
@@ -1819,29 +1808,6 @@ function RecordConfirmPage({
             回到记一下
           </button>
         </div>
-
-        {/* 能量 Toast：居中弹出，避免压在标题/摘要卡之间 */}
-        <AnimatePresence>
-          {completionPhase === "toast" && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25, ease }}
-              className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center"
-            >
-              <motion.div
-                initial={{ scale: 0.96 }}
-                animate={{ scale: 1 }}
-                exit={{ scale: 0.96 }}
-                transition={{ duration: 0.25, ease }}
-                className="whitespace-nowrap rounded-full border border-status-mood/40 bg-canvas-soft px-4 py-2 text-[14px] font-semibold tracking-tight text-ink shadow-[0_6px_16px_rgba(44,59,39,0.12)]"
-              >
-                记录收好了 · +{FULL_RECORD_ENERGY_REWARD} 能量
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
     );
   }

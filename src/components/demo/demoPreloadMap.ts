@@ -19,8 +19,6 @@ import {
   loadDemoPraisePreview,
   loadLookbackPage,
   loadOrganizePage,
-  loadMaterialDetailView,
-  loadDoneStep,
 } from "@/lib/moduleLoaders";
 import { preloadVideo, preloadImage, preloadAudio } from "@/lib/mediaPreloader";
 

@@ -37,7 +37,7 @@ export default function DemoPraisePreview({ preset }: Props) {
           <h2 className="flex-1 text-[17px] font-semibold tracking-tight text-ink">
             夸夸自己
           </h2>
-          <EnergyBadge value={preset.energyValue} />
+          <EnergyBadge />
         </header>
 
         <section className="relative z-20 h-[96px] shrink-0 overflow-visible px-5">
