@@ -1096,6 +1096,7 @@ export default function AppMainSurface({
             {effectiveMode === "home" && variant === "immersive" ? (
               <ZaizaiHomeScene
                 phase={effectiveHomePhase}
+                preloadAll
                 guide={
                   onDemoBubbleClick && demoEnabled ? (
                     <motion.button
