@@ -1,7 +1,11 @@
 /* —— 全局 Mock 用户资料（Demo 阶段唯一数据源）——
  *
- * 定位：集中管理用户基础信息（昵称 / 出生日期 / 年龄 / 性别 / 身高 / 体重 等），
+ * 定位：集中管理用户基础信息（昵称 / 出生日期 / 性别 / 身高 / 体重 等），
  *   供「回头看看」「我的隐私」「记一下」等模块统一读取。
+ *
+ * 年龄一致性：不再手工维护 age 字段，所有页面通过 calculateAge(birthDate) 从
+ *   出生日期推导，避免生日与年龄冲突。Demo 阶段使用固定 DEMO_REFERENCE_DATE
+ *   作为参考日期，保证展示稳定；上线后改为 new Date()。
  *
  * 数据持久化：localStorage，与 privacy.ts 一致的 mock 模式。
  *   - 首次访问返回 MOCK_USER_PROFILE（已填写）。
@@ -17,17 +21,54 @@
 
 export type Gender = "male" | "female" | "other";
 
-/* —— 基础资料 —— */
+/* —— Demo 参考日期 ——
+ * Demo 的"当前"锚定在 2026-07-13（第一天案例 2026-07-12 之后），用于：
+ *   - 年龄推导（calculateAge 默认参考日期）
+ *   - 保证 Demo 展示不随真实系统日期漂移
+ * 上线时改为 new Date() 即可。 */
+export const DEMO_REFERENCE_DATE = new Date("2026-07-13T00:00:00+08:00");
+
+/* —— 基础资料 ——
+ * 注意：不再包含 age 字段。年龄统一由 calculateAge(birthDate) 推导，
+ *   避免手工 age 与 birthDate 冲突。 */
 export type BasicInfo = {
   nickname: string;
   birthDate: string; // YYYY-MM-DD
-  age: number;
   gender: Gender;
   grade: string;
   city: string;
   /** 头像：本地 dataURL 或空（UI 资产，不参与 BMI 计算） */
   avatar?: string;
 };
+
+/**
+ * 根据出生日期计算年龄（周岁）。
+ * - 默认参考日期为 DEMO_REFERENCE_DATE（Demo 阶段固定），保证展示稳定。
+ * - 上线时将默认值改为 new Date()。
+ * - 测试应传入固定 referenceDate 以避免随真实系统日期变化。
+ *
+ * 算法：周岁 = 参考年 - 出生年 - (今年生日是否已过 ? 0 : 1)
+ */
+export function calculateAge(
+  birthDate: string,
+  referenceDate: Date = DEMO_REFERENCE_DATE,
+): number {
+  const birth = new Date(birthDate + "T00:00:00+08:00");
+  if (Number.isNaN(birth.getTime())) return 0;
+  let age = referenceDate.getFullYear() - birth.getFullYear();
+  const refMonth = referenceDate.getMonth();
+  const refDay = referenceDate.getDate();
+  const birthMonth = birth.getMonth();
+  const birthDay = birth.getDate();
+  // 今年生日尚未到达，年龄减 1
+  if (
+    refMonth < birthMonth ||
+    (refMonth === birthMonth && refDay < birthDay)
+  ) {
+    age -= 1;
+  }
+  return age >= 0 ? age : 0;
+}
 
 /* —— 身体资料 —— */
 export type BodyInfo = {
@@ -47,10 +88,12 @@ export type UserProfile = {
   energy?: number;
 };
 
-/* —— 便捷字段：从 basicInfo / bodyInfo 提升到顶层，便于直接读取 —— */
+/* —— 便捷字段：从 basicInfo / bodyInfo 提升到顶层，便于直接读取 ——
+ * 注意：age 为计算字段（由 birthDate 经 calculateAge 推导），不持久化。 */
 export type UserProfileFlat = UserProfile & {
   nickname: string;
   birthDate: string;
+  /** 由 birthDate 经 calculateAge 推导，不持久化 */
   age: number;
   gender: Gender;
   grade: string;
@@ -61,16 +104,16 @@ export type UserProfileFlat = UserProfile & {
 
 /* =========================================================
  * Mock 默认资料（已填写）
+ * 小晨：15 岁（2026-07 时由 birthDate 2010-09-12 推导得 15 周岁），高一
  * ======================================================= */
 export const MOCK_USER_PROFILE: UserProfile = {
   id: "mock_user_001",
   profileCompleted: true,
   basicInfo: {
     nickname: "小晨",
-    birthDate: "2010-04-12",
-    age: 15,
+    birthDate: "2010-09-12",
     gender: "female",
-    grade: "初三",
+    grade: "高一",
     city: "北京",
     avatar: undefined,
   },
@@ -116,14 +159,15 @@ function persistProfile(p: UserProfile): void {
  * 读取 / 保存接口
  * ======================================================= */
 
-/** 获取当前用户资料（带便捷顶层字段） */
+/** 获取当前用户资料（带便捷顶层字段）。
+ *  age 由 birthDate 经 calculateAge 推导，不读取持久化的 age 字段。 */
 export function getUserProfile(): UserProfileFlat {
   const p = loadProfile();
   return {
     ...p,
     nickname: p.basicInfo.nickname,
     birthDate: p.basicInfo.birthDate,
-    age: p.basicInfo.age,
+    age: calculateAge(p.basicInfo.birthDate),
     gender: p.basicInfo.gender,
     grade: p.basicInfo.grade,
     city: p.basicInfo.city,

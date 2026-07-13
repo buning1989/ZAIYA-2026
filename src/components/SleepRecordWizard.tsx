@@ -298,6 +298,15 @@ export default function SleepRecordWizard({
     }
   };
 
+  // Step 2：「暂不补充」→ 直接进入下一步（具体感受为非必填主观字段）
+  const handleSkipSubwords = () => {
+    if (editMode) {
+      exitEditMode();
+    } else {
+      setStep(3);
+    }
+  };
+
   // Steps 3-6：时间范围单选 → 自动进入
   const handleSelectTimeRange = (
     value: string,
@@ -605,20 +614,28 @@ export default function SleepRecordWizard({
         </AnimatePresence>
       </div>
 
-      {/* 底部按钮：仅 Step 2（多选需确认，无「先不补充」） */}
+      {/* 底部按钮：仅 Step 2（多选需确认，「暂不补充」可跳过主观感受） */}
       {step === 2 && (
         <div className="bg-white px-5 pb-6 pt-3">
-          <button
-            onClick={handleNextFromSubwords}
-            disabled={sleepSubwords.length === 0 && !customFeelingText.trim()}
-            className={`w-full rounded-xl px-4 py-3 text-[14px] font-medium transition-opacity ${
-              sleepSubwords.length > 0 || customFeelingText.trim()
-                ? "bg-action-primary text-action-primary-text hover:opacity-90"
-                : "bg-line-soft text-ink-faint"
-            }`}
-          >
-            {editMode ? "确认修改" : "确认这些感受"}
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={handleSkipSubwords}
+              className="flex-1 rounded-xl border border-line bg-white px-4 py-3 text-[14px] font-medium text-ink-soft transition-colors hover:border-ink-faint"
+            >
+              暂不补充
+            </button>
+            <button
+              onClick={handleNextFromSubwords}
+              disabled={sleepSubwords.length === 0 && !customFeelingText.trim()}
+              className={`flex-1 rounded-xl px-4 py-3 text-[14px] font-medium transition-opacity ${
+                sleepSubwords.length > 0 || customFeelingText.trim()
+                  ? "bg-action-primary text-action-primary-text hover:opacity-90"
+                  : "bg-line-soft text-ink-faint"
+              }`}
+            >
+              {editMode ? "确认修改" : "确认这些感受"}
+            </button>
+          </div>
         </div>
       )}
 

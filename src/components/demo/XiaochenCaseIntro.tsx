@@ -1,3 +1,5 @@
+import { calculateAge, MOCK_USER_PROFILE } from "@/data/userProfile";
+
 type Props = {
   onStart: () => void;
 };
@@ -30,6 +32,9 @@ const impairmentPoints: ImpairmentPoint[] = [
  * 进入产品演示前的案例背景页，把"长段故事"重构为"案例简报"。
  * 让评委在 10 秒内建立判断：小晨不是普通心情不好，而是生活功能已经卡住。
  *
+ * 人物身份（昵称 / 年龄 / 年级）统一从 MOCK_USER_PROFILE 读取，
+ * 年龄由 calculateAge(birthDate) 推导，避免硬编码与数据源不一致。
+ *
  * 三个视觉区域：
  *   A. 身份区：小标签 + 主标题 + 副标题 + 内心句
  *   B. 功能受损证据区：4 个短信息块（作息/饮食/学习/关系）
@@ -39,6 +44,8 @@ const impairmentPoints: ImpairmentPoint[] = [
  * Rive 形象此前已移除，采用单列居中结构。
  */
 export default function XiaochenCaseIntro({ onStart }: Props) {
+  const { nickname, birthDate, grade } = MOCK_USER_PROFILE.basicInfo;
+  const age = calculateAge(birthDate);
   return (
     <div className="mx-auto w-full max-w-[680px]">
       {/* —— A. 身份区 —— */}
@@ -50,7 +57,7 @@ export default function XiaochenCaseIntro({ onStart }: Props) {
 
         {/* 主标题 */}
         <h1 className="mt-3 text-center text-[40px] font-bold leading-[1.2] text-ink">
-          小晨，15 岁，高一
+          {nickname}，{age} 岁，{grade}
         </h1>
 
         {/* 副标题 */}

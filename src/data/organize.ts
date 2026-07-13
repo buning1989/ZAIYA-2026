@@ -15,7 +15,16 @@
  *   - 沟通对象为具体人物（王医生），不写死"医生"
  *   - 沟通对象与「我的隐私」可信联系人分开建模
  *
- * 数据源：本文件内统一 Mock（小晨数据），不分散硬编码。 */
+ * 完整材料 vs 沟通清单：
+ *   - 沟通清单：给用户自己看，简短可扫读，聚焦本次沟通内容
+ *   - 完整材料：给专业人士看，信息完整、结构严谨、事实可追溯
+ *   - 完整材料包含 11 个结构化段落，区分记录事实 / 用户主观表达 /
+ *     系统整理摘要 / 待专业人士判断的问题，不将系统推断写成确定事实
+ *
+ * 数据源：本文件内统一 Mock（小晨数据），不分散硬编码。
+ *   用户基本信息（昵称 / 年龄 / 年级）从 userProfile 统一读取，不在此处重复维护。 */
+
+import { calculateAge, MOCK_USER_PROFILE } from "@/data/userProfile";
 
 /* =========================================================
  * 沟通对象与可信联系人
@@ -504,6 +513,91 @@ export const DISCLAIMER =
   "本材料由『在呀』应用根据用户自我记录整理生成，经用户本人确认后导出。内容为用户主观记录与应用使用状态数据，未经临床核实，不构成任何诊断或治疗建议。";
 
 /* =========================================================
+ * 完整材料补充数据（Mock）
+ * 以下数据为 Demo 阶段固定 Mock，用于完整材料中
+ * 「本阶段主要变化」「关键时间节点」「异常变化」「信息缺失」等段落。
+ * 语言遵循事实分层原则：记录事实 / 用户主观表达 / 系统整理摘要 /
+ * 待专业人士判断的问题，不将系统推断写成确定事实。
+ * ======================================================= */
+
+/** 本阶段主要变化（系统整理摘要，非临床结论） */
+export const MAIN_CHANGES: { title: string; items: string[] }[] = [
+  {
+    title: "体重",
+    items: [
+      "6 月 16 日记录 49.5kg，7 月 12 日记录 48.7kg，下降 0.8kg",
+      "仅有 2 个体重记录点，趋势需更多数据确认",
+    ],
+  },
+  {
+    title: "睡眠",
+    items: [
+      "多数记录日入睡时间在 00:30—02:00",
+      "7 月 9 日、10 日、14 日在 0 点前入睡",
+      "起床困难记录贯穿整个时间段",
+    ],
+  },
+  {
+    title: "用药",
+    items: [
+      "舍曲林 50mg 每日一次，24 个记录日中规律服用 20 天",
+      "漏服 4 次：6/19、6/28、7/3、7/11",
+    ],
+  },
+  {
+    title: "到校",
+    items: [
+      "33 天内 4 天未到校：6/22、6/29、7/8、7/13",
+      "4 个未到校日均有晨起困难相关记录",
+    ],
+  },
+];
+
+/** 关键时间节点（可核对的记录事实） */
+export const KEY_TIME_POINTS: { title: string; items: string[] }[] = [
+  {
+    title: "记录时间线",
+    items: [
+      "6/15 记录开始",
+      "6/22 首次未到校",
+      "6/29 第二次未到校",
+      "7/4 完成一次呼吸/接地练习",
+      "7/8 第三次未到校",
+      "7/13 第四次未到校",
+      "7/17 记录结束",
+    ],
+  },
+];
+
+/** 异常变化或特殊情况（系统整理，具体临床意义需由专业人士判断） */
+export const ABNORMAL_CHANGES: { title: string; items: string[] }[] = [
+  {
+    title: "记录中出现的异常变化",
+    items: [
+      "体重在 26 天内下降 0.8kg，记录点较少，趋势不确定",
+      "漏服药物 4 次，分布在不同月份",
+      "11 天存在深夜反复思考相关记录",
+      "白天困倦记录 18 天，与服药时间的相关性需由专业人士判断",
+      "6 次与父母冲突记录，多数发生在晚间",
+    ],
+  },
+];
+
+/** 信息缺失或不确定项 */
+export const MISSING_INFO: { title: string; items: string[] }[] = [
+  {
+    title: "记录覆盖与缺失",
+    items: [
+      "33 天中 9 天无记录，无法确认状态",
+      "5 天打开应用但未产生记录",
+      "体重记录仅有 2 个时间点，无法判断完整趋势",
+      "仅 1 条同伴相关记录，社交情况信息不足",
+      "白天困倦是否与药物相关，记录中无法确认因果关系",
+    ],
+  },
+];
+
+/* =========================================================
  * 会话与历史构建
  * ======================================================= */
 
@@ -618,24 +712,115 @@ export interface MaterialSection {
   otherRecords?: { title: string; items: string[] }[];
 }
 
-/** 构建完整材料结构 */
+/** 构建完整材料结构（11 段，给专业人士查看）
+ *
+ * 与沟通清单的差异：
+ *   - 沟通清单只列出本次要讨论的问题 + 高风险记录
+ *   - 完整材料包含基本信息、时间范围、主要变化、记录概况、关键时间节点、
+ *     异常变化、用户主观感受、可核对事实、待判断问题、信息缺失、免责声明
+ *   - 事实分层：记录事实 / 用户主观表达 / 系统整理摘要 / 待专业人士判断的问题
+ *   - 不将系统推断写成确定事实
+ *   - 不增加诊断、治疗、用药建议 */
 export function buildFullMaterial(session: CommunicationSession): MaterialSection[] {
   const sections: MaterialSection[] = [];
   const name = session.contactSnapshot.displayName;
+  const materialTopics = getMaterialTopics(session);
+  const { nickname, birthDate, grade } = MOCK_USER_PROFILE.basicInfo;
+  const age = calculateAge(birthDate);
 
-  // 1. 材料说明
+  // 1. 基本信息
   sections.push({
-    id: "description",
-    title: "材料说明",
-    paragraph: buildMaterialDescription(session),
+    id: "basic-info",
+    title: "基本信息",
+    otherRecords: [
+      {
+        title: "用户信息",
+        items: [
+          `昵称：${nickname}`,
+          `年龄：${age} 岁（由出生日期推算）`,
+          `年级：${grade}`,
+          `沟通对象：${name}（${session.contactSnapshot.roleLabel}）`,
+          `材料创建日期：${formatCreatedAt(session.createdAt)}`,
+        ],
+      },
+    ],
   });
 
-  // 2. 本次希望讨论的问题
-  const materialTopics = getMaterialTopics(session);
+  // 2. 材料时间范围
+  sections.push({
+    id: "time-range",
+    title: "材料时间范围",
+    paragraph: `${formatDateRangeChinese(session.startDate, session.endDate)}，共 ${session.totalDays} 天，其中 ${session.recordedDays} 天有记录。记录类型覆盖：${session.recordCategories.join("、")}。`,
+  });
+
+  // 3. 本阶段主要变化（系统整理摘要，非临床结论）
+  sections.push({
+    id: "main-changes",
+    title: "本阶段主要变化",
+    paragraph: "以下为应用内记录的系统整理摘要，不构成临床判断。",
+    otherRecords: MAIN_CHANGES,
+  });
+
+  // 4. 记录概况（按类别分组的可核对事实）
+  sections.push({
+    id: "record-overview",
+    title: "记录概况",
+    paragraph: "以下为各记录类别的概况，数据均来自应用内用户自我记录。",
+    otherRecords: OTHER_RECORD_SECTIONS.map((s) => ({
+      title: s.title,
+      items: s.items,
+    })),
+  });
+
+  // 5. 关键时间节点（可核对的记录事实）
+  sections.push({
+    id: "key-time-points",
+    title: "关键时间节点",
+    otherRecords: KEY_TIME_POINTS,
+  });
+
+  // 6. 异常变化或特殊情况（系统整理，具体临床意义需由专业人士判断）
+  sections.push({
+    id: "abnormal-changes",
+    title: "异常变化或特殊情况",
+    paragraph: "以下为记录中出现的异常变化或特殊情况。具体原因及临床意义需由专业人士进一步判断。",
+    otherRecords: ABNORMAL_CHANGES,
+  });
+
+  // 7. 用户主观感受（用户原话，仅展示经确认纳入的高风险记录）
+  if (session.specialDisclosure.allowedInMaterial) {
+    const selectedRecords = session.specialDisclosure.originalRecords.filter(
+      (r) => r.selected,
+    );
+    if (selectedRecords.length > 0) {
+      sections.push({
+        id: "subjective-feelings",
+        title: "用户主观感受",
+        paragraph: "以下为用户在应用内记录的原话，经用户确认后纳入材料。内容为用户主观表达，未经核实。",
+        disclosureRecords: selectedRecords,
+      });
+    }
+  }
+
+  // 8. 可核对的记录事实（与沟通重点相关的证据摘要）
   if (materialTopics.length > 0) {
     sections.push({
-      id: "topics",
-      title: `本次希望和${name}讨论的问题`,
+      id: "verifiable-facts",
+      title: "可核对的记录事实",
+      paragraph: "以下为与本次沟通重点相关的记录事实摘要，均可在应用内对应记录中溯源。",
+      facts: materialTopics.map((t) => ({
+        topicTitle: t.title,
+        evidence: t.evidenceSummary,
+      })),
+    });
+  }
+
+  // 9. 希望专业人士协助判断的问题
+  if (materialTopics.length > 0) {
+    sections.push({
+      id: "questions-for-professional",
+      title: `希望和${name}协助判断的问题`,
+      paragraph: "以下为用户希望与专业人士讨论的问题，由用户确认后纳入材料。",
       topics: materialTopics.map((t) => ({
         title: t.title,
         content: t.content,
@@ -644,44 +829,15 @@ export function buildFullMaterial(session: CommunicationSession): MaterialSectio
     });
   }
 
-  // 3. 与所选问题相关的记录事实
-  if (materialTopics.length > 0) {
-    sections.push({
-      id: "facts",
-      title: "与所选问题相关的记录事实",
-      facts: materialTopics.map((t) => ({
-        topicTitle: t.title,
-        evidence: t.evidenceSummary,
-      })),
-    });
-  }
-
-  // 4. 经用户确认纳入的高风险记录（仅展示用户勾选的原话）
-  if (session.specialDisclosure.allowedInMaterial) {
-    const selectedRecords = session.specialDisclosure.originalRecords.filter(
-      (r) => r.selected,
-    );
-    if (selectedRecords.length > 0) {
-      sections.push({
-        id: "disclosure",
-        title: "经用户确认纳入的高风险记录",
-        paragraph: "以下记录经用户确认后纳入材料。",
-        disclosureRecords: selectedRecords,
-      });
-    }
-  }
-
-  // 5. 其他记录概览
+  // 10. 信息缺失或不确定项
   sections.push({
-    id: "other-records",
-    title: "其他记录概览",
-    otherRecords: OTHER_RECORD_SECTIONS.map((s) => ({
-      title: s.title,
-      items: s.items,
-    })),
+    id: "missing-info",
+    title: "信息缺失或不确定项",
+    paragraph: "以下为记录中信息不完整或无法确认的部分，供专业人士参考。",
+    otherRecords: MISSING_INFO,
   });
 
-  // 6. 免责声明
+  // 11. 免责声明
   sections.push({
     id: "disclaimer",
     title: "免责声明",
@@ -691,32 +847,71 @@ export function buildFullMaterial(session: CommunicationSession): MaterialSectio
   return sections;
 }
 
-/** 构建可分享/复制的纯文本 */
+/** 构建可分享/复制的纯文本（与完整材料结构一致） */
 export function buildShareText(session: CommunicationSession): string {
   const name = session.contactSnapshot.displayName;
   const lines: string[] = [];
+  const { nickname, birthDate, grade } = MOCK_USER_PROFILE.basicInfo;
+  const age = calculateAge(birthDate);
+  const materialTopics = getMaterialTopics(session);
+
   lines.push(`给${name}的沟通材料`);
-  lines.push(
-    `时间范围：${formatDateRange(session.startDate, session.endDate)}（共 ${session.totalDays} 天，${session.recordedDays} 天有记录）`,
-  );
   lines.push("");
 
-  const materialTopics = getMaterialTopics(session);
-  if (materialTopics.length > 0) {
-    lines.push(`本次希望和${name}讨论的问题：`);
-    materialTopics.forEach((t, i) => {
-      lines.push(`${i + 1}. ${t.title}`);
-      lines.push(`   ${t.content}`);
-    });
-    lines.push("");
-  }
+  // 1. 基本信息
+  lines.push("【基本信息】");
+  lines.push(`用户：${nickname}，${age} 岁，${grade}`);
+  lines.push(`沟通对象：${name}（${session.contactSnapshot.roleLabel}）`);
+  lines.push(`材料创建日期：${formatCreatedAt(session.createdAt)}`);
+  lines.push("");
 
+  // 2. 材料时间范围
+  lines.push("【材料时间范围】");
+  lines.push(
+    `${formatDateRangeChinese(session.startDate, session.endDate)}，共 ${session.totalDays} 天，其中 ${session.recordedDays} 天有记录`,
+  );
+  lines.push(`记录类型：${session.recordCategories.join("、")}`);
+  lines.push("");
+
+  // 3. 本阶段主要变化
+  lines.push("【本阶段主要变化】");
+  MAIN_CHANGES.forEach((s) => {
+    lines.push(s.title);
+    s.items.forEach((it) => lines.push(`  - ${it}`));
+  });
+  lines.push("");
+
+  // 4. 记录概况
+  lines.push("【记录概况】");
+  OTHER_RECORD_SECTIONS.forEach((s) => {
+    lines.push(s.title);
+    s.items.forEach((it) => lines.push(`  - ${it}`));
+  });
+  lines.push("");
+
+  // 5. 关键时间节点
+  lines.push("【关键时间节点】");
+  KEY_TIME_POINTS.forEach((s) => {
+    s.items.forEach((it) => lines.push(`  - ${it}`));
+  });
+  lines.push("");
+
+  // 6. 异常变化或特殊情况
+  lines.push("【异常变化或特殊情况】");
+  lines.push("具体原因及临床意义需由专业人士进一步判断。");
+  ABNORMAL_CHANGES.forEach((s) => {
+    s.items.forEach((it) => lines.push(`  - ${it}`));
+  });
+  lines.push("");
+
+  // 7. 用户主观感受
   if (session.specialDisclosure.allowedInMaterial) {
     const selectedRecords = session.specialDisclosure.originalRecords.filter(
       (r) => r.selected,
     );
     if (selectedRecords.length > 0) {
-      lines.push("经确认纳入的高风险记录：");
+      lines.push("【用户主观感受】");
+      lines.push("以下为用户原话，经确认后纳入材料。");
       selectedRecords.forEach((r) => {
         lines.push(`- 来源：${r.sourceLabel} · ${formatHighRiskRecordTime(r.recordedAt)}`);
         lines.push(`  ${r.originalText}`);
@@ -725,8 +920,35 @@ export function buildShareText(session: CommunicationSession): string {
     }
   }
 
-  lines.push(buildMaterialDescription(session));
+  // 8. 可核对的记录事实
+  if (materialTopics.length > 0) {
+    lines.push("【可核对的记录事实】");
+    materialTopics.forEach((t) => {
+      lines.push(t.title);
+      t.evidenceSummary.forEach((e) => lines.push(`  - ${e}`));
+    });
+    lines.push("");
+  }
+
+  // 9. 希望专业人士协助判断的问题
+  if (materialTopics.length > 0) {
+    lines.push(`【希望和${name}协助判断的问题】`);
+    materialTopics.forEach((t, i) => {
+      lines.push(`${i + 1}. ${t.title}`);
+      lines.push(`   ${t.content}`);
+    });
+    lines.push("");
+  }
+
+  // 10. 信息缺失或不确定项
+  lines.push("【信息缺失或不确定项】");
+  MISSING_INFO.forEach((s) => {
+    s.items.forEach((it) => lines.push(`  - ${it}`));
+  });
   lines.push("");
+
+  // 11. 免责声明
+  lines.push("【免责声明】");
   lines.push(DISCLAIMER);
   return lines.join("\n");
 }

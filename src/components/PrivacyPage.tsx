@@ -33,6 +33,7 @@ import {
   type TeacherRole,
 } from "@/data/privacy";
 import {
+  calculateAge,
   calculateBMI,
   getBMIRemark,
   getUserProfile,
@@ -588,16 +589,15 @@ function BasicProfileEdit({
   const [nickname, setNickname] = useState(value.nickname ?? "");
   const [birthDate, setBirthDate] = useState(value.birthDate ?? "");
   const [gender, setGender] = useState<Gender | "">(value.gender ?? "");
-  const [age, setAge] = useState(value.age !== undefined ? String(value.age) : "");
   const [grade, setGrade] = useState(value.grade ?? "");
   const [city, setCity] = useState(value.city ?? "");
   const [avatar, setAvatar] = useState<string | undefined>(value.avatar);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const ageNum = age.trim() === "" ? undefined : Number(age);
-  const ageValid = age.trim() === "" || (ageNum !== undefined && ageNum > 0 && ageNum < 150);
+  // 年龄由出生日期推导，不再手工输入
+  const computedAge = birthDate.trim() ? calculateAge(birthDate) : null;
 
-  const canSave = ageValid && (nickname.trim() !== "" || gender !== "" || avatar !== undefined || age.trim() !== "" || birthDate.trim() !== "" || grade.trim() !== "" || city.trim() !== "");
+  const canSave = nickname.trim() !== "" || gender !== "" || avatar !== undefined || birthDate.trim() !== "" || grade.trim() !== "" || city.trim() !== "";
 
   const handleAvatar = (file?: File) => {
     if (!file) return;
@@ -613,7 +613,6 @@ function BasicProfileEdit({
     const next: BasicInfo = {
       nickname: nickname.trim() || "未填写",
       birthDate: birthDate.trim() || "",
-      age: ageNum ?? 0,
       gender: gender || "other",
       grade: grade.trim() || "",
       city: city.trim() || "",
@@ -683,7 +682,7 @@ function BasicProfileEdit({
           </FieldRow>
         </div>
 
-        {/* 出生日期 */}
+        {/* 出生日期 + 推导年龄 */}
         <div className="mt-2.5">
           <FieldRow label="出生日期">
             <input
@@ -693,21 +692,9 @@ function BasicProfileEdit({
               className="w-full bg-transparent text-[15px] text-ink focus:outline-none"
             />
           </FieldRow>
-        </div>
-
-        {/* 年龄 */}
-        <div className="mt-2.5">
-          <FieldRow label="年龄">
-            <TextInput
-              value={age}
-              onChange={setAge}
-              placeholder="年龄"
-              type="number"
-            />
-          </FieldRow>
-          {!ageValid && (
-            <p className="mt-2 px-1 text-[12px] text-risk-medium">
-              请输入有效的年龄。
+          {computedAge !== null && (
+            <p className="mt-1.5 px-1 text-[12px] text-ink-faint">
+              按出生日期推算：{computedAge} 岁
             </p>
           )}
         </div>
@@ -744,7 +731,7 @@ function BasicProfileEdit({
             <TextInput
               value={grade}
               onChange={setGrade}
-              placeholder="如 初三"
+              placeholder="如 高一"
               maxLength={20}
             />
           </FieldRow>

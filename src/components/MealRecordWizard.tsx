@@ -239,6 +239,12 @@ export default function MealRecordWizard({
     else setPhase("confirm");
   };
 
+  // Step 3：「暂不补充」→ 直接进入确认页（吃完感受为非必填主观字段）
+  const handleSkipBody = () => {
+    if (editMode) exitEditMode();
+    else setPhase("confirm");
+  };
+
   // —— 统一输入抽屉保存：根据当前 panel 写入对应字段 ——
   const handleInputSave = (value: string) => {
     if (inputPanel === "food") setCustomFoodText(value);
@@ -486,17 +492,25 @@ export default function MealRecordWizard({
       )}
       {step === 3 && (
         <div className="bg-white px-5 pb-6 pt-3">
-          <button
-            onClick={handleNextFromBody}
-            disabled={!bodyValid}
-            className={`w-full rounded-xl px-4 py-3 text-[14px] font-medium transition-opacity ${
-              bodyValid
-                ? "bg-action-primary text-action-primary-text hover:opacity-90"
-                : "bg-line-soft text-ink-faint"
-            }`}
-          >
-            {editMode ? "确认修改" : "下一步"}
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={handleSkipBody}
+              className="flex-1 rounded-xl border border-line bg-white px-4 py-3 text-[14px] font-medium text-ink-soft transition-colors hover:border-ink-faint"
+            >
+              暂不补充
+            </button>
+            <button
+              onClick={handleNextFromBody}
+              disabled={!bodyValid}
+              className={`flex-1 rounded-xl px-4 py-3 text-[14px] font-medium transition-opacity ${
+                bodyValid
+                  ? "bg-action-primary text-action-primary-text hover:opacity-90"
+                  : "bg-line-soft text-ink-faint"
+              }`}
+            >
+              {editMode ? "确认修改" : "下一步"}
+            </button>
+          </div>
         </div>
       )}
 

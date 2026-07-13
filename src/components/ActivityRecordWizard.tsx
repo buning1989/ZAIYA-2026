@@ -214,6 +214,15 @@ export default function ActivityRecordWizard({
     }
   };
 
+  // Step 4：「暂不补充」→ 直接进入确认页（感受为非必填主观字段）
+  const handleSkipFeelings = () => {
+    if (editMode) {
+      exitEditMode();
+    } else {
+      setPhase("confirm");
+    }
+  };
+
   // 确认页："完成记录" → 原地保存 + 发能量 + 盖章 + Toast
   // 幂等：已保存后再次点击直接返回，不重复发能量
   const handleCompleteRecord = () => {
@@ -450,17 +459,25 @@ export default function ActivityRecordWizard({
       )}
       {step === 4 && (
         <div className="bg-white px-5 pb-6 pt-3">
-          <button
-            onClick={handleNextFromFeelings}
-            disabled={feelings.length === 0}
-            className={`w-full rounded-xl px-4 py-3 text-[14px] font-medium transition-opacity ${
-              feelings.length > 0
-                ? "bg-action-primary text-action-primary-text hover:opacity-90"
-                : "bg-line-soft text-ink-faint"
-            }`}
-          >
-            {editMode ? "确认修改" : "确认这些感受"}
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={handleSkipFeelings}
+              className="flex-1 rounded-xl border border-line bg-white px-4 py-3 text-[14px] font-medium text-ink-soft transition-colors hover:border-ink-faint"
+            >
+              暂不补充
+            </button>
+            <button
+              onClick={handleNextFromFeelings}
+              disabled={feelings.length === 0}
+              className={`flex-1 rounded-xl px-4 py-3 text-[14px] font-medium transition-opacity ${
+                feelings.length > 0
+                  ? "bg-action-primary text-action-primary-text hover:opacity-90"
+                  : "bg-line-soft text-ink-faint"
+              }`}
+            >
+              {editMode ? "确认修改" : "确认这些感受"}
+            </button>
+          </div>
         </div>
       )}
 

@@ -30,6 +30,32 @@ const BASE_MIN = 0.72;
 const INHALE_MAX = 1.04;
 const TOPUP_MAX = 1.1;
 
+/* —— 低动态版本（prefers-reduced-motion: reduce）——
+ * 不关闭呼吸引导，仅缩小圆圈缩放幅度、移除模糊装饰；
+ * 保留吸气 / 停住 / 呼气文字、倒计时与呼吸节奏。 */
+const REDUCED_BASE_MIN = 0.9;
+const REDUCED_INHALE_MAX = 1.0;
+const REDUCED_TOPUP_MAX = 1.02;
+
+function reduceScale(original: number): number {
+  if (original === BASE_MIN) return REDUCED_BASE_MIN;
+  if (original === INHALE_MAX) return REDUCED_INHALE_MAX;
+  if (original === TOPUP_MAX) return REDUCED_TOPUP_MAX;
+  return original;
+}
+
+function usePrefersReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  return reduced;
+}
+
 const SELECT_GUIDE_MESSAGES = [
   "先把肩膀放下来一点。",
   "不用做得标准，跟着节奏就好。",
@@ -112,6 +138,7 @@ type Props = {
 };
 
 export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
+  const prefersReducedMotion = usePrefersReducedMotion();
   const [subView, setSubView] = useState<SubView>("select");
   const [methodIndex, setMethodIndex] = useState(0);
   const [activeCard, setActiveCard] = useState(0);
@@ -238,6 +265,8 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
       if (timerRef.current) window.clearInterval(timerRef.current);
       if (progressTimer.current) window.clearInterval(progressTimer.current);
       if (prepTimerRef.current) window.clearInterval(prepTimerRef.current);
+      // 组件卸载时显式暂停背景音乐，避免依赖 DOM 移除导致部分浏览器继续播放
+      audioRef.current?.pause();
     };
   }, []);
 
@@ -417,16 +446,21 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
   };
 
   // —— 当前 ring 缩放：按阶段进度插值 ——
+  // 低动态模式下缩小缩放幅度，保留呼吸节奏引导
   const phase = method.phases[phaseIndex];
   const phaseMs = phase.duration * 1000;
-  const prevScale =
+  const rawPrevScale =
     method.phases[(phaseIndex - 1 + method.phases.length) % method.phases.length]
       .scale;
+  const prevScale = prefersReducedMotion ? reduceScale(rawPrevScale) : rawPrevScale;
+  const phaseScale = prefersReducedMotion ? reduceScale(phase.scale) : phase.scale;
   const progress = 1 - Math.min(phaseRemainingMs / phaseMs, 1);
   const ringScale =
     subView === "practice"
-      ? prevScale + (phase.scale - prevScale) * easeInOut(progress)
-      : BASE_MIN;
+      ? prevScale + (phaseScale - prevScale) * easeInOut(progress)
+      : prefersReducedMotion
+        ? REDUCED_BASE_MIN
+        : BASE_MIN;
   const countdown = Math.ceil(phaseRemainingMs / 1000);
 
   return (
@@ -555,7 +589,9 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
               {/* 呼吸圆环（内含阶段 + 倒计时） */}
               <div className="relative grid h-[300px] w-[300px] place-items-center">
                 <div
-                  className="absolute h-[260px] w-[260px] rounded-full bg-line-soft/55 blur-[1px]"
+                  className={`absolute h-[260px] w-[260px] rounded-full bg-line-soft/55 ${
+                    prefersReducedMotion ? "" : "blur-[1px]"
+                  }`}
                   style={{
                     transform: `scale(${ringScale})`,
                     transition: "transform 0.1s linear",

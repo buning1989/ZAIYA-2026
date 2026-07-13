@@ -303,7 +303,8 @@ export default function MoodRecordWizard({
   );
 
   // —— 派生数据 ——
-  // Step 2：按一级情绪 polarity 取二级分组，再展平为词列表（负向 4 组 / 正向 2 组）
+  // Step 2：按一级情绪 polarity 取二级分组，再展平为词列表
+  //   negative → 4 组 / neutral → 1 组 / positive → 2 组
   const feelingGroups = primaryMood
     ? getSecondaryGroupsForPolarity(primaryMood.polarity)
     : [];

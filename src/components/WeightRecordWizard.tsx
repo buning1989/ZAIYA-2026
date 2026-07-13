@@ -190,6 +190,16 @@ export default function WeightRecordWizard({
     }, SELECTION_FEEDBACK_MS);
   };
 
+  // Step 2：「暂不补充」→ 直接进入确认页（测量场景为非必填辅助上下文）
+  const handleSkipContext = () => {
+    clearAutoAdvance();
+    if (editMode) {
+      exitEditMode();
+    } else {
+      setPhase("confirm");
+    }
+  };
+
   // 确认页："完成记录" → 原地保存 + 发能量 + 盖章 + Toast
   // 幂等：已保存后再次点击直接返回，不重复发能量
   const handleCompleteRecord = () => {
@@ -391,6 +401,17 @@ export default function WeightRecordWizard({
                   }`}
                 >
                   {editMode ? "确认修改" : "继续"}
+                </button>
+              </div>
+            )}
+            {/* 底部按钮：Step 2（测量场景为非必填，提供「暂不补充」跳过） */}
+            {step === 2 && (
+              <div className="bg-white px-5 pb-6 pt-3">
+                <button
+                  onClick={handleSkipContext}
+                  className="w-full rounded-full border border-line-soft bg-line-soft/55 px-4 py-3 text-[13px] font-medium text-ink-soft transition-colors hover:border-ink-faint hover:bg-white"
+                >
+                  暂不补充
                 </button>
               </div>
             )}

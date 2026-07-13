@@ -1,13 +1,15 @@
 /* —— 情绪记录模块配置数据 ——
  *
  * 严格按照《mood三级映射关系_开发查阅版》建立层级关系：
- *   1. 一级情绪（5 个）→ 决定 polarity（负向 / 正向）
- *   2. 二级词分组（4 负向 + 2 正向）→ 由 polarity 决定展示哪些分组
+ *   1. 一级情绪（5 个）→ 决定 polarity（负向 / 中性 / 正向）
+ *      1-2 分 → negative / 3 分 → neutral / 4-5 分 → positive
+ *   2. 二级词分组（4 负向 + 1 中性 + 2 正向）→ 由 polarity 决定展示哪些分组
  *      二级只负责记录感受，并决定三级题干。
  *   3. 三级选项池收敛为两套统一池：
  *        - 负向统一池（36 项，按 4 个展示小标题分组）
  *        - 正向统一池（16 项，不分小标题）
  *      三级选项不再跟随每个二级分组独立变化，变的只有三级题干。
+ *      中性（neutral）在三级池选择上与正向同池，因为用户不处于负向状态。
  *   4. 特殊情况大类 → 独立于前三层，不受前面选择影响
  *
  * 组件只读取本文件配置并渲染，不在此处写死 UI 逻辑。
@@ -15,7 +17,7 @@
 
 /* —— 一级情绪状态 —— */
 export type PrimaryMoodScore = 1 | 2 | 3 | 4 | 5;
-export type MoodPolarity = "negative" | "positive";
+export type MoodPolarity = "negative" | "neutral" | "positive";
 /** @deprecated 旧别名，等价于 MoodPolarity，保留以兼容旧引用。 */
 export type PrimaryMoodPolarity = MoodPolarity;
 
@@ -28,10 +30,21 @@ export type PrimaryMood = {
 export const primaryMoods: PrimaryMood[] = [
   { label: "很糟", score: 1, polarity: "negative" },
   { label: "不太好", score: 2, polarity: "negative" },
-  { label: "一般", score: 3, polarity: "positive" },
+  { label: "一般", score: 3, polarity: "neutral" },
   { label: "还行", score: 4, polarity: "positive" },
   { label: "很好", score: 5, polarity: "positive" },
 ];
+
+/**
+ * 由一级情绪分数推导极性（用于报告 / 趋势 / 回头看看等不直接读取 PrimaryMolarity 的位置）。
+ * 与 primaryMoods 配置中的 polarity 保持一致，二者只维护一套真实数据源
+ * （primaryMoods），此函数仅作便捷派生。
+ */
+export function getMoodPolarity(score: PrimaryMoodScore): MoodPolarity {
+  if (score <= 2) return "negative";
+  if (score === 3) return "neutral";
+  return "positive";
+}
 
 /* —— 二级感受分组 ——
  * 每个分组只包含：polarity、二级词、单组选择时的专属题干（prompt）。
@@ -80,7 +93,7 @@ export const secondaryMoodGroups: SecondaryMoodGroup[] = [
   },
   {
     id: "neutral_ok",
-    polarity: "positive",
+    polarity: "neutral",
     words: ["平静", "还可以"],
     prompt: "和哪些有关？",
   },
@@ -344,10 +357,12 @@ export function getSecondaryWordsForPolarity(
 /**
  * 根据已选二级词计算三级题干。
  * - 无分组命中：返回通用兜底
- * - 负向+正向混选：返回「这些感觉和哪些有关？」
- * - 仅正向：返回「和哪些有关？」
+ * - 负向+（中性或正向）混选：返回「这些感觉和哪些有关？」
+ * - 仅中性或正向：返回「和哪些有关？」
  * - 仅负向且命中单一分组：返回该分组专属题干
  * - 仅负向且跨组：返回「这些感觉和哪些有关？」
+ *
+ * 中性（neutral）在题干上与正向同口径，因为用户不处于负向状态。
  */
 export function getTertiaryPromptBySelectedSecondaryWords(
   selectedWords: string[],
@@ -363,11 +378,12 @@ export function getTertiaryPromptBySelectedSecondaryWords(
   if (uniqueGroups.length === 0) return "可能和哪些有关？";
 
   const hasNegative = uniqueGroups.some((g) => g.polarity === "negative");
-  const hasPositive = uniqueGroups.some((g) => g.polarity === "positive");
+  // 中性在三级题干上与正向同口径
+  const hasNonNegative = uniqueGroups.some((g) => g.polarity !== "negative");
 
-  if (hasNegative && hasPositive) return "这些感觉和哪些有关？";
+  if (hasNegative && hasNonNegative) return "这些感觉和哪些有关？";
 
-  if (hasPositive) return "和哪些有关？";
+  if (hasNonNegative) return "和哪些有关？";
 
   if (hasNegative && uniqueGroups.length === 1) {
     return uniqueGroups[0].prompt;
@@ -405,9 +421,10 @@ export type TertiaryPoolResult =
 /**
  * 根据已选二级词返回三级选项池：
  * - 仅负向：返回负向统一池（grouped）
- * - 仅正向：返回正向统一池（平铺）
- * - 负向+正向混选：负向池在前 + 正向池在后，去重「说不上来」只保留一个
+ * - 仅中性或正向：返回正向统一池（平铺）
+ * - 负向+（中性或正向）混选：负向池在前 + 正向池在后，去重「说不上来」只保留一个
  *
+ * 中性（neutral）在三级池选择上与正向同池，因为用户不处于负向状态。
  * 正常流程中一级情绪会限制二级词库，通常不会出现混选；
  * mixed 作为确认页修改或异常状态下的兜底。
  */
@@ -419,11 +436,12 @@ export function getTertiaryPoolBySelectedSecondaryWords(
     .filter((group): group is SecondaryMoodGroup => Boolean(group));
 
   const hasNegative = groups.some((g) => g.polarity === "negative");
-  const hasPositive = groups.some((g) => g.polarity === "positive");
+  // 中性在三级池选择上与正向同口径
+  const hasNonNegative = groups.some((g) => g.polarity !== "negative");
 
   const negativeOptions = flattenNegativeTertiaryPool();
 
-  if (hasNegative && hasPositive) {
+  if (hasNegative && hasNonNegative) {
     const merged = [...negativeOptions, ...positiveTertiaryPool].filter(
       (item, index, arr) =>
         item !== "说不上来" || index === arr.lastIndexOf("说不上来"),
@@ -443,7 +461,7 @@ export function getTertiaryPoolBySelectedSecondaryWords(
     };
   }
 
-  if (hasPositive) {
+  if (hasNonNegative) {
     return {
       mode: "positive",
       grouped: false,
