@@ -111,6 +111,19 @@
   --tw-ring-color: var(--z-action-primary);
 }
 
+/* 陪伴文案：首页在在气泡短句，区别于功能字体（时间/日期/导航/按钮/标签）。
+ * 中文字体栈 + 柔和深灰绿 + 宽松行高，营造轻声陪伴感而非系统提示感。 */
+.bubble-copy {
+  font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  font-size: 17px;
+  line-height: 1.75;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  color: #4C5348;
+  text-align: center;
+  max-width: 240px;
+}
+
 /* 预留深夜色 token：当前 Demo 无模式切换入口，仅保留变量，不接交互 */
 [data-theme="night"] {
   /* Space / 空间 */

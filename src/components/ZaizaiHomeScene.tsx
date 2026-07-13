@@ -40,9 +40,9 @@ export default function ZaizaiHomeScene({
   const phases = preloadAll ? HOME_PHASE_ORDER : [phase];
 
   return (
-    <div className="pointer-events-none relative h-[280px] w-[220px] overflow-visible">
+    <div className="pointer-events-none relative h-[304px] w-[220px] overflow-visible">
       {guide && (
-        <div className="absolute left-1/2 top-0 z-10 w-[226px] -translate-x-1/2 text-center">
+        <div className="absolute left-1/2 top-0 z-10 w-[240px] -translate-x-1/2 text-center">
           {guide}
         </div>
       )}
