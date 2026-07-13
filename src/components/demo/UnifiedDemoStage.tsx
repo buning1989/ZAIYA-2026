@@ -9,7 +9,7 @@ import DayOneSummaryPage from "./DayOneSummaryPage";
 import TwoWeekTransition from "./TwoWeekTransition";
 import ConsultationPrepPage from "./ConsultationPrepPage";
 import ConclusionSummaryPage from "./ConclusionSummaryPage";
-import DemoPhoneFrame from "./DemoPhoneFrame";
+import DemoPhoneFrame, { type WidgetLaunchStage } from "./DemoPhoneFrame";
 import FreeExperiencePanel from "./FreeExperiencePanel";
 import { xiaochenDay1Scenario } from "./scenarios/xiaochenDay1";
 import { xiaochenDay2Scenario } from "./scenarios/xiaochenDay2";
@@ -68,6 +68,20 @@ export default function UnifiedDemoStage({
   const [phase, setPhase] = useState<GuidedPhase>("intro");
   const [day1Index, setDay1Index] = useState(0);
   const [day2Index, setDay2Index] = useState(0);
+  // 小组件启动 App 的子状态（仅服务于 06:40 → 07:35 的页面切换）
+  const [launchStage, setLaunchStage] = useState<WidgetLaunchStage>("desktop");
+
+  // 检测 prefers-reduced-motion：减少动态模式下跳过缩放动画
+  const prefersReducedMotion = useRef(
+    typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches,
+  );
+
+  // 跟踪上一步以检测 06:40 → 07:35 的过渡
+  const prevStepRef = useRef<{ phase: GuidedPhase; day1Index: number }>({
+    phase: "intro",
+    day1Index: 0,
+  });
 
   const isDay2 = phase === "day2";
   const scenario = isDay2 ? xiaochenDay2Scenario : xiaochenDay1Scenario;
@@ -141,8 +155,53 @@ export default function UnifiedDemoStage({
   // 阶段页（无手机 Demo、无圆点，但保留左右箭头）
   const showPhasePage = mode === "guided" && isPhasePage(phase);
 
-  // 第一天第一节点使用桌面小组件场景
-  const isWidgetScene = phase === "day1" && day1Index === 0;
+  /* —— 小组件启动 App 的过渡序列 ——
+   * 检测 day1[0] → day1[1] 的过渡，自动播放：
+   *   desktop → launching → home → dialog
+   *
+   * 时序：
+   * - 正常模式：launching 500ms（按压+放大）→ home 1000ms（首页停留）→ dialog
+   * - 减少动态模式：跳过 launching，home 900ms → dialog
+   *
+   * 返回 day1[0] 时重置为 desktop。
+   * 其他 day1 步骤（非从 [0] 过来）直接设为 dialog，不播放启动动画。
+   * 计时器在卸载、返回或快速切换时由 cleanup 清理。
+   */
+  useEffect(() => {
+    const prev = prevStepRef.current;
+    const cameFromWidget = prev.phase === "day1" && prev.day1Index === 0;
+    const goingToStep1 = phase === "day1" && day1Index === 1;
+
+    const timers: ReturnType<typeof setTimeout>[] = [];
+
+    if (phase === "day1" && day1Index === 0) {
+      // 在 widget 步骤：重置为桌面
+      setLaunchStage("desktop");
+    } else if (cameFromWidget && goingToStep1) {
+      // 从 06:40 过渡到 07:35：播放启动序列
+      if (prefersReducedMotion.current) {
+        // 减少动态：直接淡入首页，停留后进入对话
+        setLaunchStage("home");
+        const t = setTimeout(() => setLaunchStage("dialog"), 900);
+        timers.push(t);
+      } else {
+        // 正常模式：按压+放大 → 首页停留 → 对话
+        setLaunchStage("launching");
+        const t1 = setTimeout(() => setLaunchStage("home"), 500);
+        const t2 = setTimeout(() => setLaunchStage("dialog"), 500 + 1000);
+        timers.push(t1, t2);
+      }
+    } else if (phase === "day1" && day1Index >= 1) {
+      // 在 day1[1+] 但非从 widget 过来（如圆点跳转）：直接显示对话
+      setLaunchStage("dialog");
+    }
+
+    prevStepRef.current = { phase, day1Index };
+
+    return () => {
+      timers.forEach(clearTimeout);
+    };
+  }, [phase, day1Index]);
 
   // 统一键盘事件：覆盖所有 guided 阶段
   useEffect(() => {
@@ -369,9 +428,8 @@ export default function UnifiedDemoStage({
                 <div className="justify-self-center lg:col-start-2">
                   <DemoPhoneFrame
                     demoState={mode === "guided" ? step.demoState : undefined}
-                    showWidget={isWidgetScene}
-                    showZaizaiLabel={isWidgetScene}
-                    widgetTime={isWidgetScene ? step.time : undefined}
+                    launchStage={phase === "day1" ? launchStage : undefined}
+                    widgetTime={phase === "day1" && day1Index === 0 ? step.time : undefined}
                   />
                 </div>
 
