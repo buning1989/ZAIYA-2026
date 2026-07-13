@@ -102,23 +102,25 @@ export function SocialSceneSelectContent({
       transition={{ duration: 0.3, ease }}
       className="absolute inset-0 z-20 flex flex-col bg-white"
     >
-      {/* 顶部陪伴区：在在 GIF + 气泡文案 */}
+      {/* 顶部陪伴区：在在 GIF（左）+ 气泡文案（右）横向组合 */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease, delay: 0.05 }}
-        className="flex flex-col items-center px-6"
-        style={{ paddingTop: 72 }}
+        className="flex flex-row items-center justify-center gap-3 px-[18px] max-[360px]:gap-[9px] max-[360px]:px-[12px]"
+        style={{ marginTop: 54, marginBottom: 34 }}
       >
-        <img
-          src={COMPANION_GIF}
-          alt="在在"
-          className="h-[108px] w-[108px] select-none object-contain"
-          style={{ transform: "scale(1.12)", transformOrigin: "center center" }}
-        />
+        <div className="flex h-[88px] w-[84px] flex-shrink-0 items-center justify-center overflow-visible max-[360px]:h-[80px] max-[360px]:w-[76px]">
+          <img
+            src={COMPANION_GIF}
+            alt="在在"
+            className="block h-[84px] w-[84px] flex-shrink-0 select-none object-contain object-center max-[360px]:h-[76px] max-[360px]:w-[76px]"
+            style={{ transform: "scale(1.08)", transformOrigin: "center center" }}
+          />
+        </div>
         <div
-          className="mt-[14px] max-w-[240px] rounded-[16px] border bg-white px-[14px] py-[9px] text-center text-[15px] font-normal leading-[1.6] text-[#4C5348]"
-          style={{ borderColor: "#E3E5DF", boxShadow: "none" }}
+          className="max-w-[178px] rounded-[16px] border bg-white px-[14px] py-[10px] text-left text-[15px] font-normal leading-[1.6] text-[#4C5348] max-[360px]:max-w-[164px] max-[360px]:px-[12px] max-[360px]:py-[9px] max-[360px]:text-[14px]"
+          style={{ borderColor: "#E1E4DE", boxShadow: "none" }}
         >
           {COMPANION_COPY}
         </div>
@@ -129,7 +131,7 @@ export function SocialSceneSelectContent({
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease, delay: 0.1 }}
-        className="mt-[36px] px-6"
+        className="px-6"
       >
         <div className="text-[13px] font-medium leading-5 text-[#7B8376]">
           现在可以一起
