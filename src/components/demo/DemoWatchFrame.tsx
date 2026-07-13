@@ -46,7 +46,7 @@ export default function DemoWatchFrame({ time = "12:00" }: Props) {
                 loop
                 muted
                 playsInline
-                preload="none"
+                preload="auto"
                 className="block h-full w-auto max-w-none select-none object-contain"
                 style={{
                   transform: "scale(1.42)",

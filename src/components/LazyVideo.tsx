@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
  * 1. 非首屏视频初始不挂载 <source>，仅渲染 poster 静态首帧。
  * 2. IntersectionObserver 检测可视区域，接近时（rootMargin 预加载）才挂载 source 并 load()。
  * 3. 进入可视区域后调用 play()；离开后 pause()。
- * 4. preload="none"，muted/loop/playsInline。
+ * 4. preload="auto"（video 元素仅在 shouldLoad=true 时渲染，此时应立即加载），muted/loop/playsInline。
  * 5. loadeddata/canplay 后用淡入替换 poster。
  * 6. 加载失败保留 poster，不显示破损图标。
  * 7. 同一页面避免多个不可见视频继续播放（离开可视区即暂停）。
@@ -250,7 +250,7 @@ const LazyVideo = forwardRef<LazyVideoHandle, Props>(function LazyVideo(
           muted
           loop={loop}
           playsInline
-          preload="none"
+          preload="auto"
           aria-label={ariaLabel}
           aria-hidden={ariaLabel ? undefined : true}
           onLoadedData={handleCanPlay}
