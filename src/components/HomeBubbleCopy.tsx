@@ -16,6 +16,7 @@ import { HOME_PHASE_BUBBLE_TEXT, type HomeTimePhase } from "@/lib/homeTimePhase"
 
 const TYPEWRITER_INTERVAL_MS = 80;
 const OVERRIDE_TYPEWRITER_INTERVAL_MS = 55;
+const COPY_HOLD_MS = 3200;
 
 export default function HomeBubbleCopy({
   phase,
