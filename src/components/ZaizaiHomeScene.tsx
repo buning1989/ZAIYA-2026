@@ -47,7 +47,6 @@ export default function ZaizaiHomeScene({
         <motion.video
           key={src}
           src={src}
-          alt={render.alt}
           draggable={false}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
