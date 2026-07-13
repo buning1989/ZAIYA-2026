@@ -142,6 +142,7 @@ export type ScenarioId = "day1" | "day2";
 /** 产品模块标签：用于在故事面板中标识当前步骤涉及的硬功能 */
 export type ProductModuleTag =
   | "widget"
+  | "watch"
   | "home"
   | "dialog"
   | "relief"
@@ -156,6 +157,7 @@ export type ProductModuleTag =
 /** 模块标签 → 产品内真实名称映射 */
 export const moduleLabelMap: Record<ProductModuleTag, string> = {
   widget: "桌面小组件",
+  watch: "手表",
   home: "首页",
   dialog: "对话",
   relief: "缓解",
@@ -185,8 +187,10 @@ export type GuidedScenarioStep = {
   explanation: string;
   /** 当前步骤涉及的产品模块标签（用于故事面板硬功能标识） */
   moduleTags: ProductModuleTag[];
-  /** 该步骤对应的产品演示状态 */
+  /** 该步骤对应的产品演示状态（主场景） */
   demoState?: AppMainSurfaceDemoState;
+  /** 该步骤的次要产品演示状态（用于一个节点包含两个内部场景的情况，如 07:35 对话+呼吸） */
+  secondaryDemoState?: AppMainSurfaceDemoState;
 };
 
 /** 案例脚本：一个完整案例由若干步骤组成 */
