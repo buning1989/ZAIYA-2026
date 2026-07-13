@@ -5,6 +5,8 @@ import GuidedStoryPanel from "./GuidedStoryPanel";
 import GuidedDemoControls, { NavArrow } from "./GuidedDemoControls";
 import XiaochenCaseIntro from "./XiaochenCaseIntro";
 import TwoWeekTransition from "./TwoWeekTransition";
+import ConsultationPrepPage from "./ConsultationPrepPage";
+import ConclusionSummaryPage from "./ConclusionSummaryPage";
 import DemoPhoneFrame from "./DemoPhoneFrame";
 import FreeExperiencePanel from "./FreeExperiencePanel";
 import { xiaochenDay1Scenario } from "./scenarios/xiaochenDay1";
@@ -19,15 +21,17 @@ type Props = {
 };
 
 /* —— 线性叙事相位 ——
- * intro       → 案例介绍
- * day1        → 第一天 1/6 … 6/6
- * transition  → 两周后过渡页
- * day2        → 小晨两周后 1/8 … 8/8
+ * intro         → 案例介绍
+ * day1          → 第一天 1/7 … 7/7
+ * transition    → 两周后过渡页
+ * day2          → 小晨两周后 1/9 … 9/9
+ * consultation  → 复诊整理页
+ * conclusion    → 结尾总结页
  *
  * 评委不再通过 Tab 切换第一天/第二天，而是通过「下一步」线性推进。
- * 第一天末步 → transition → 第二天第 1 步。
+ * 第一天末步 → transition → 第二天第 1 步 → … → 第二天末步 → consultation → conclusion
  */
-type GuidedPhase = "intro" | "day1" | "transition" | "day2";
+type GuidedPhase = "intro" | "day1" | "transition" | "day2" | "consultation" | "conclusion";
 
 /* —— 统一演示舞台 ——
  * 案例演示（guided）和自由体验（free）共用同一个舞台容器。
@@ -59,9 +63,15 @@ export default function UnifiedDemoStage({
     setDay2Index(0);
     setPhase("day2");
   }, []);
+  const enterConsultation = useCallback(() => setPhase("consultation"), []);
+  const enterConclusion = useCallback(() => setPhase("conclusion"), []);
   const backToDay1 = useCallback(() => {
     setDay1Index(xiaochenDay1Scenario.steps.length - 1);
     setPhase("day1");
+  }, []);
+  const backToDay2 = useCallback(() => {
+    setDay2Index(xiaochenDay2Scenario.steps.length - 1);
+    setPhase("day2");
   }, []);
 
   const isDay2 = phase === "day2";
@@ -72,7 +82,7 @@ export default function UnifiedDemoStage({
 
   const atStart = stepIndex <= 0;
   const atEnd = stepIndex >= total - 1;
-  // 仅第二天末步才真正"完成 → 进入自由体验"；第一天末步下一步是 transition
+  // 仅第二天末步才真正"完成 → 进入复诊整理页"；第一天末步下一步是 transition
   const isFinalEnd = isDay2 && atEnd;
 
   const next = useCallback(() => {
@@ -80,10 +90,10 @@ export default function UnifiedDemoStage({
       if (atEnd) setPhase("transition");
       else setDay1Index((i) => Math.min(i + 1, xiaochenDay1Scenario.steps.length - 1));
     } else if (phase === "day2") {
-      if (atEnd) onSwitchToFree();
+      if (atEnd) setPhase("consultation");
       else setDay2Index((i) => Math.min(i + 1, xiaochenDay2Scenario.steps.length - 1));
     }
-  }, [phase, atEnd, onSwitchToFree]);
+  }, [phase, atEnd]);
 
   const prev = useCallback(() => {
     if (phase === "day1") {
@@ -107,11 +117,13 @@ export default function UnifiedDemoStage({
 
   const showIntro = mode === "guided" && phase === "intro";
   const showTransition = mode === "guided" && phase === "transition";
+  const showConsultation = mode === "guided" && phase === "consultation";
+  const showConclusion = mode === "guided" && phase === "conclusion";
   const showStage = mode === "guided" && (phase === "day1" || phase === "day2");
 
   const stageKey = useMemo(
-    () => (showIntro ? "intro" : showTransition ? "transition" : "stage"),
-    [showIntro, showTransition],
+    () => (showIntro ? "intro" : showTransition ? "transition" : showConsultation ? "consultation" : showConclusion ? "conclusion" : "stage"),
+    [showIntro, showTransition, showConsultation, showConclusion],
   );
 
   return (
@@ -163,6 +175,26 @@ export default function UnifiedDemoStage({
               transition={{ duration: 0.28, ease: SOFT_EASE }}
             >
               <TwoWeekTransition onEnter={enterDay2} onBack={backToDay1} />
+            </motion.div>
+          ) : showConsultation ? (
+            <motion.div
+              key="consultation"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.28, ease: SOFT_EASE }}
+            >
+              <ConsultationPrepPage onNext={enterConclusion} onBack={backToDay2} />
+            </motion.div>
+          ) : showConclusion ? (
+            <motion.div
+              key="conclusion"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.28, ease: SOFT_EASE }}
+            >
+              <ConclusionSummaryPage onBack={enterConsultation} />
             </motion.div>
           ) : (
             <motion.div

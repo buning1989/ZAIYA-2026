@@ -11,20 +11,20 @@ type ImpairmentPoint = {
 
 const impairmentPoints: ImpairmentPoint[] = [
   {
-    title: "作息卡住",
-    detail: "早上起不来，频繁请假。",
+    title: "起不来床",
+    detail: "早上起不来,频繁请假,无法正常上学。",
   },
   {
-    title: "饮食卡住",
-    detail: "饭点到了，但吃饭变少、没胃口。",
+    title: "饮食失控",
+    detail: "三餐不定时,有时吃不下,有时暴饮暴食。",
   },
   {
-    title: "学习卡住",
-    detail: "知道该写作业，但一打开就崩溃。",
+    title: "学业受阻",
+    detail: "对成绩极度焦虑,学不进去,一开始学习就难受。",
   },
   {
-    title: "关系卡住",
-    detail: "家人越着急追问，她越说不清楚。",
+    title: "家庭冲突",
+    detail: "难以和父母正常交流,家人也越来越焦虑,经常争吵。",
   },
 ];
 
@@ -57,17 +57,17 @@ export default function XiaochenCaseIntro({ onStart }: Props) {
 
         {/* 主标题 */}
         <h1 className="mt-3 text-center text-[40px] font-bold leading-[1.2] text-ink">
-          {nickname}，{age} 岁，{grade}
+          {nickname},{age} 岁,重度抑郁、重度焦虑
         </h1>
 
         {/* 副标题 */}
         <p className="mt-4 text-center text-[21px] font-medium leading-[1.5] text-ink">
-          最近，她的一天开始变得很难启动。
+          她的一天,从起床就开始卡住。
         </p>
 
         {/* 内心句 */}
         <p className="mt-4 text-center text-[19px] leading-[1.6] text-ink-soft">
-          “我知道我应该做，但我真的动不了。”
+          "我知道该做什么,但我真的做不到。"
         </p>
       </section>
 
@@ -99,10 +99,10 @@ export default function XiaochenCaseIntro({ onStart }: Props) {
         className="mt-10 border-t border-line-soft pt-8"
       >
         <p className="text-[16px] leading-[1.7] text-ink">
-          <span className="font-semibold">接下来不是展示在呀 ZÀIYA 如何帮她治疗。</span>
+          <span className="font-semibold">在呀不替小晨治疗。</span>
         </p>
         <p className="mt-3 text-[16px] leading-[1.7] text-ink-soft">
-          而是看在她状态很差、几乎没有力气主动记录的时候，在呀 ZÀIYA 如何在一天里的几个关键节点稳定在场、轻轻回应，并尽量不增加新的压力。
+          接下来,通过她刚开始使用的一天和两周后的一天,看支持如何从崩溃之后,慢慢前移到失控之前。
         </p>
 
         {/* 主按钮 */}

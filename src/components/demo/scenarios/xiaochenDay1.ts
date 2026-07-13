@@ -1,11 +1,12 @@
 /* —— 小晨首日案例脚本 ——
- * 6 个步骤串联首日关键生活断点：
+ * 7 个步骤串联首日关键生活断点：
  *   1. 06:40 起床失败：在呀不催促
  *   2. 7:35 崩溃开口：从"怎么办"里接住她
  *   3. 7:35 呼吸练习：从对话进入身体调节
  *   4. 12:00 拒绝吃饭：接住拒绝，而不是记录饮食
  *   5. 14:20 学习启动失败：把"不可能完成"拆到能动一下
  *   6. 20:00 一起发呆：低风险的平行陪伴
+ *   7. 01:30 反刍失眠：把注意力带回身体，让这一天能够结束
  *
  * 脚本独立于组件，便于后续加入"1–2 周后的一天"或其他案例。
  * 所有对话严格按脚本展示，禁用本地模拟回复与发送。
@@ -48,7 +49,7 @@ const step2Dialog: DialogItem[] = [
   timeLabel("s2-t", "今天 07:35", step2Base),
   msg("s2-1", "user", "我又没去学校。", step2Base),
   msg("s2-2", "user", "我妈一直问我怎么办，我不知道，我真的不知道。", step2Base),
-  msg("s2-3", "zaizai", "一早上被问了好多“怎么办”呀。", step2Base),
+  msg("s2-3", "zaizai", "一早上被问了好多'怎么办'呀。", step2Base),
   msg("s2-4", "zaizai", "听起来真的是个很难的问题呢。", step2Base),
   msg("s2-5", "zaizai", "要不要我陪你纾解一下情绪？", step2Base),
   msg("s2-6", "user", "……怎么弄。", step2Base),
@@ -73,7 +74,7 @@ const step5Dialog: DialogItem[] = [
   msg("s5-1", "user", "落了三张数学卷子，刚才想补，打开三分钟就受不了了。", step5Base),
   msg("s5-2", "user", "我知道我该学，但我真的动不了。", step5Base),
   msg("s5-3", "zaizai", "三张堆在一起，看着是挺吓人的。", step5Base),
-  msg("s5-4", "zaizai", "那就先不碰“补三张”这件事，太重了，不搬。", step5Base),
+  msg("s5-4", "zaizai", "那就先不碰'补三张'这件事，太重了，不搬。", step5Base),
   msg("s5-5", "zaizai", "先干一件小的：翻开，就看一眼第 1 题长什么样。不用做。", step5Base),
   msg("s5-6", "user", "……是函数题。", step5Base),
   msg("s5-7", "zaizai", "那再把已知条件抄下来。就抄，解不解的先不管。", step5Base),
@@ -86,14 +87,20 @@ export const xiaochenDay1Scenario: GuidedScenario = {
   name: "小晨第一天",
   description:
     "首日的小晨状态很差，演示重点不是记录—回看—报告，而是在呀如何通过稳定在场、克制响应、轻对话、呼吸练习、任务最小化拆解和低压力陪伴，接住几个真实生活中的崩溃点。",
+  intro:
+    "这一天，小晨几乎没有力气主动记录。在呀没有催她完成任务，只在几个关键时刻，先让下一步有可能发生。",
+  outro:
+    "她没有突然好起来。但情绪被接住了，第一个动作发生了，饭点没有消失，深夜也终于有了出口。",
   steps: [
     {
       id: "wake-up-failed",
       order: 1,
       time: "06:40",
       title: "起床失败",
-      summary: "小晨没有回应，在呀没有继续催她。",
-      detail: "它没有弹窗、没有响铃、没有继续追问。第一步只是稳定在场。",
+      userState: "妈妈叫她起床，她翻身埋回枕头，没有回应。",
+      zaiyaAction: "没有弹窗、没有响铃、没有继续催促，只保留安静的晨起场景。",
+      resultLabel: "意义",
+      result: "不用新的任务压力放大焦虑，也保留下一次行动的可能。",
       moduleTags: ["home"],
       demoState: {
         enabled: true,
@@ -107,8 +114,10 @@ export const xiaochenDay1Scenario: GuidedScenario = {
       order: 2,
       time: "07:35",
       title: "崩溃开口",
-      summary: "她现在答不出“怎么办”。在呀先接住崩溃，而不是追问原因。",
-      detail: "没有评判“你怎么这样”，也没有立刻给方案。只是让她知道：这里能说，说完不会更糟。",
+      userState: "面对'接下来怎么办'的追问，她崩溃大哭，说自己真的不知道。",
+      zaiyaAction: "先接住她正在承受的压力，不追问原因，也不急着给方案。",
+      resultLabel: "意义",
+      result: "让她知道这里可以开口，说完不会更糟。",
       moduleTags: ["dialog"],
       demoState: {
         enabled: true,
@@ -122,8 +131,10 @@ export const xiaochenDay1Scenario: GuidedScenario = {
       order: 3,
       time: "07:35",
       title: "呼吸练习",
-      summary: "不要求她马上解决问题，只先把身体从情绪高峰里带下来一点。",
-      detail: "情绪先落地，思路才有可能回来。这是身体层面的兜底，不是任务推进。",
+      userState: "她喘不上气，也无法继续表达。",
+      zaiyaAction: "带她完成一轮呼气更长的呼吸练习，先把身体从情绪高峰带下来一点。",
+      resultLabel: "意义",
+      result: "情绪先落地，语言和思考才有可能回来。",
       moduleTags: ["relief"],
       demoState: {
         enabled: true,
@@ -136,8 +147,10 @@ export const xiaochenDay1Scenario: GuidedScenario = {
       order: 4,
       time: "12:00",
       title: "拒绝吃饭",
-      summary: "她拒绝了。在呀没有把“没吃饭”变成一次失败。",
-      detail: "没有提醒热量、没有补打卡、没有把这一餐标记为异常。只是把门留着，等她想吃的时候。",
+      userState: "她没有胃口，只说'不想吃'。",
+      zaiyaAction: "接受拒绝，不劝、不批评，也不把这一餐标记为失败，只告诉她随时可以加入。",
+      resultLabel: "意义",
+      result: "拒绝没有变成争执，饭点也没有从这一天里彻底消失。",
       moduleTags: ["dialog"],
       demoState: {
         enabled: true,
@@ -150,9 +163,11 @@ export const xiaochenDay1Scenario: GuidedScenario = {
       id: "study-stuck",
       order: 5,
       time: "14:20",
-      title: "学习启动失败",
-      summary: "不是让她“完成学习”，而是把无法启动的任务拆到能动一下。",
-      detail: "“补三张”被放回桌上。只翻开一题、抄下条件，就停。能动一下，今天就成立。",
+      title: "无法开始学习",
+      userState: "她知道要补三张卷子，但一打开就难受。",
+      zaiyaAction: "把任务缩成'看一眼第一题'，再缩成'只抄下已知条件'。",
+      resultLabel: "意义",
+      result: "不要求完成学习，只让第一个动作真正发生。",
       moduleTags: ["dialog"],
       demoState: {
         enabled: true,
@@ -166,14 +181,32 @@ export const xiaochenDay1Scenario: GuidedScenario = {
       order: 6,
       time: "20:00",
       title: "一起发呆",
-      summary: "这里没有人追问，也没有人喊她振作。她只是看到：这个点，还有别人也在这里待着。",
-      detail: "陪伴不一定有对话。共同在场本身就是一种回应。",
+      userState: "她不想说话，也不想再向任何人解释。",
+      zaiyaAction: "让她进入无需发言、无需回应的共同在场空间。",
+      resultLabel: "意义",
+      result: "陪伴不一定需要对话。看到还有别人也在这里，孤立感就少一点。",
       moduleTags: ["social"],
       demoState: {
         enabled: true,
         now: makeDate("20:00"),
         surfaceMode: "socialFlow",
         socialScene: "daze",
+      },
+    },
+    {
+      id: "rumination-insomnia",
+      order: 7,
+      time: "01:30",
+      title: "反刍失眠",
+      userState: "白天的争吵、哭泣和未完成的作业，在脑子里反复播放。",
+      zaiyaAction: "没有让她'别想了'，而是把注意力带回被子、呼吸和身体。",
+      resultLabel: "意义",
+      result: "不是立刻解决所有问题，而是先让这一天能够结束。",
+      moduleTags: ["relief"],
+      demoState: {
+        enabled: true,
+        now: makeDate("01:30"),
+        surfaceMode: "breathing",
       },
     },
   ],

@@ -13,16 +13,13 @@ const ease = [0.22, 1, 0.36, 1] as const;
  * 与左侧手机 Demo 在同一 grid 行内垂直居中对齐。
  *
  * 顶部加入小晨小头像作为身份锚点，与进度标签同行：
- *   [小晨小头像] 小晨第一天 · 1/6
+ *   [小晨小头像] 小晨第一天 · 1/7
  *
- * 文字层级（由强到弱）：
- *   1. story-step    12px  浅色  字距略大  —— 进度标签
- *   2. story-title   30px  深色  加粗     —— 当前节点标题（时间 + 标题合并）
- *   3. module-tags   11px  浅色  胶囊      —— 涉及的产品模块（低调但可见）
- *   4. story-summary 18px  深色  半加粗   —— 一句话场景
- *   5. story-detail  15px  浅色  常规     —— 产品动作解释
+ * 三层叙事结构：
+ *   1. 小晨：用户状态描述
+ *   2. 在呀：产品回应/行动
+ *   3. 意义/变化：结果说明
  *
- * 小晨小头像只作为身份锚点，不抢主标题。
  * 步骤切换时整体柔和淡入，保持安静节奏。
  */
 export default function GuidedStoryPanel({
@@ -47,13 +44,13 @@ export default function GuidedStoryPanel({
             {scenarioName} · {step.order}/{total}
           </p>
 
-          {/* 第 2 层：节点标题（时间 + 标题合并，最大字号、加粗） */}
+          {/* 节点标题（时间 + 标题合并，最大字号、加粗） */}
           <h2 className="mt-4 text-[30px] font-bold leading-[1.2] text-ink">
             <span className="tabular-nums">{step.time}</span>
             <span className="ml-2">{step.title}</span>
           </h2>
 
-          {/* 第 3 层：涉及的产品模块标签（低调但可见） */}
+          {/* 涉及的产品模块标签（低调但可见） */}
           {tags.length > 0 && (
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
               <span className="text-[11px] tracking-[0.08em] text-ink-faint">
@@ -70,17 +67,38 @@ export default function GuidedStoryPanel({
             </div>
           )}
 
-          {/* 第 4 层：一句话场景（半加粗） */}
-          <p className="mt-5 text-[18px] font-medium leading-[1.6] text-ink">
-            {step.summary}
-          </p>
+          {/* 三层叙事结构 */}
+          <div className="mt-5 space-y-4">
+            {/* 第一层：小晨 */}
+            <div>
+              <p className="text-[12px] font-medium tracking-[0.08em] text-ink-faint">
+                小晨
+              </p>
+              <p className="mt-1.5 text-[16px] leading-[1.7] text-ink">
+                {step.userState}
+              </p>
+            </div>
 
-          {/* 第 5 层：产品动作解释（浅色、行高舒适） */}
-          {step.detail && (
-            <p className="mt-4 text-[15px] leading-[1.7] text-ink-soft">
-              {step.detail}
-            </p>
-          )}
+            {/* 第二层：在呀 */}
+            <div>
+              <p className="text-[12px] font-medium tracking-[0.08em] text-ink-faint">
+                在呀
+              </p>
+              <p className="mt-1.5 text-[16px] leading-[1.7] text-ink">
+                {step.zaiyaAction}
+              </p>
+            </div>
+
+            {/* 第三层：意义/变化 */}
+            <div>
+              <p className="text-[12px] font-medium tracking-[0.08em] text-ink-faint">
+                {step.resultLabel}
+              </p>
+              <p className="mt-1.5 text-[16px] leading-[1.7] text-ink-soft">
+                {step.result}
+              </p>
+            </div>
+          </div>
         </motion.div>
       </AnimatePresence>
     </div>

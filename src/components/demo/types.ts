@@ -173,18 +173,17 @@ export type GuidedScenarioStep = {
   time: string;
   /** 步骤标题，例如 "起床失败" */
   title: string;
-  /** 一句话场景说明（右侧故事面板主文案） */
-  summary: string;
-  /** 可选补充说明（右侧故事面板次文案，更克制的注解） */
-  detail?: string;
+  /** 小晨的状态描述（三层叙事·第一层） */
+  userState: string;
+  /** 在呀的回应/行动描述（三层叙事·第二层） */
+  zaiyaAction: string;
+  /** 结果标签："意义"（第一天）或 "变化"（两周后） */
+  resultLabel: "意义" | "变化";
+  /** 结果描述（三层叙事·第三层） */
+  result: string;
   /** 当前步骤涉及的产品模块标签（用于故事面板硬功能标识） */
   moduleTags: ProductModuleTag[];
-  /** 可选：与第一天的对比说明（第二天脚本使用） */
-  contrast?: {
-    label: string;
-    text: string;
-  };
-  /** 该步骤对应的产品演示状态（第二天脚本可暂不提供，仅展示 story panel） */
+  /** 该步骤对应的产品演示状态 */
   demoState?: AppMainSurfaceDemoState;
 };
 
@@ -195,5 +194,9 @@ export type GuidedScenario = {
   name: string;
   /** 案例简短描述 */
   description?: string;
+  /** 开场说明（显示在第一步之前或第一步面板内） */
+  intro?: string;
+  /** 收束文案（显示在最后一步之后） */
+  outro?: string;
   steps: GuidedScenarioStep[];
 };
