@@ -6,6 +6,8 @@ import {
   Moon,
   Utensils,
   BookOpen,
+  Sun,
+  Footprints,
   ChevronLeft,
   Volume2,
   VolumeX,
@@ -16,9 +18,8 @@ import LazyVideo from "./LazyVideo";
 const ease = [0.22, 1, 0.36, 1] as const;
 
 /* —— 轻社交场景配置 ——
- * Demo 阶段仅开放「一起发呆」「一起吃饭」；「一起睡」「一起学习」暂未开放。
- * 已移除原「一起上课」场景。 */
-export type SceneId = "daze" | "eat" | "sleep" | "study";
+ * Demo 阶段仅开放「一起发呆」「一起吃饭」；其余为预告场景（不可点击）。 */
+export type SceneId = "daze" | "eat" | "sleep" | "study" | "sun" | "walk";
 
 type SceneConfig = {
   id: SceneId;
@@ -45,7 +46,7 @@ export const scenes: SceneConfig[] = [
   },
   {
     id: "sleep",
-    label: "一起睡",
+    label: "一起睡觉",
     desc: "安静的夜晚，各自安睡。",
     Icon: Moon,
     open: false,
@@ -57,16 +58,31 @@ export const scenes: SceneConfig[] = [
     Icon: BookOpen,
     open: false,
   },
+  {
+    id: "sun",
+    label: "一起晒太阳",
+    desc: "暖洋洋，慢慢晒。",
+    Icon: Sun,
+    open: false,
+  },
+  {
+    id: "walk",
+    label: "一起散步",
+    desc: "慢慢走，不赶路。",
+    Icon: Footprints,
+    open: false,
+  },
 ];
 
-const CLOSED_TOAST = "Demo 阶段暂未开放";
+const COMPANION_GIF = "./assets/social/social-home-companion.gif";
+const COMPANION_COPY = "今天想和大家一起待一会儿吗？";
 
 /**
  * 轻社交场景选择内容层（在 AppMainSurface 内部渲染）。
  *
- * ZaiZai 由 AppMainSurface 上移到中上部并保留气泡；
- * 本组件只渲染下方 2×2 场景卡片 + 收起按钮。
- * 开放场景点击后进入对应流程；关闭场景点击仅轻提示。
+ * 三层结构：顶部陪伴区（在在 GIF + 气泡文案）→ 已开放场景 → 预告场景。
+ * 预告场景不可点击、不触发路由或弹窗，仅表达「未来场景预告」。
+ * 底部保留轻量返回箭头收起轻社交。
  */
 export function SocialSceneSelectContent({
   onSelect,
@@ -75,103 +91,115 @@ export function SocialSceneSelectContent({
   onSelect: (s: SceneId) => void;
   onClose: () => void;
 }) {
-  const [toast, setToast] = useState<string | null>(null);
-  const toastTimer = useRef<number | null>(null);
-
-  const showToast = (msg: string) => {
-    setToast(msg);
-    if (toastTimer.current) window.clearTimeout(toastTimer.current);
-    toastTimer.current = window.setTimeout(() => setToast(null), 1600);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (toastTimer.current) window.clearTimeout(toastTimer.current);
-    };
-  }, []);
-
-  const handleClick = (s: SceneConfig) => {
-    if (!s.open) {
-      showToast(CLOSED_TOAST);
-      return;
-    }
-    onSelect(s.id);
-  };
+  const openScenes = scenes.filter((s) => s.open);
+  const previewScenes = scenes.filter((s) => !s.open);
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
+      initial={{ opacity: 1 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3, ease }}
-      className="absolute inset-0"
+      className="absolute inset-0 z-20 flex flex-col bg-white"
     >
-      {/* 场景卡片：位于 ZaiZai 下方 */}
+      {/* 顶部陪伴区：在在 GIF + 气泡文案 */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease, delay: 0.05 }}
+        className="flex flex-col items-center px-6"
+        style={{ paddingTop: 72 }}
+      >
+        <img
+          src={COMPANION_GIF}
+          alt="在在"
+          className="h-[108px] w-[108px] select-none object-contain"
+          style={{ transform: "scale(1.12)", transformOrigin: "center center" }}
+        />
+        <div
+          className="mt-[14px] max-w-[240px] rounded-[16px] border bg-white px-[14px] py-[9px] text-center text-[15px] font-normal leading-[1.6] text-[#4C5348]"
+          style={{ borderColor: "#E3E5DF", boxShadow: "none" }}
+        >
+          {COMPANION_COPY}
+        </div>
+      </motion.div>
+
+      {/* 已开放场景 */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 16 }}
-        transition={{ duration: 0.35, ease, delay: 0.05 }}
-        className="absolute inset-x-0 px-6"
-        style={{ top: "52%" }}
+        transition={{ duration: 0.35, ease, delay: 0.1 }}
+        className="mt-[36px] px-6"
       >
-        <div className="grid grid-cols-2 gap-3">
-          {scenes.map((s) => (
+        <div className="text-[13px] font-medium leading-5 text-[#7B8376]">
+          现在可以一起
+        </div>
+        <div className="mt-[10px] grid grid-cols-2 gap-3">
+          {openScenes.map((s) => (
             <button
               key={s.id}
-              onClick={() => handleClick(s)}
-              className={`relative flex flex-col items-start gap-2 rounded-2xl border bg-white p-4 text-left transition-colors ${
-                s.open
-                  ? "border-line hover:border-ink-faint"
-                  : "border-line/60 opacity-60 hover:border-line/60"
-              }`}
+              onClick={() => onSelect(s.id)}
+              className="flex flex-col items-start gap-2 rounded-2xl bg-white p-4 text-left transition-colors hover:border-[#C7CCBF]"
+              style={{ border: "1px solid #DDE1D8", boxShadow: "none" }}
             >
-              <s.Icon
-                className={`h-6 w-6 ${
-                  s.open ? "text-ink-soft" : "text-ink-faint"
-                }`}
-                strokeWidth={1.8}
-              />
+              <s.Icon className="h-6 w-6 text-ink-soft" strokeWidth={1.8} />
               <div>
-                <div
-                  className={`text-[14px] font-medium ${
-                    s.open ? "text-ink" : "text-ink-faint"
-                  }`}
-                >
+                <div className="text-[14px] font-medium text-ink">
                   {s.label}
                 </div>
                 <div className="mt-0.5 text-[11px] leading-relaxed text-ink-faint">
                   {s.desc}
                 </div>
               </div>
-              {!s.open && (
-                <span className="absolute right-3 top-3 rounded-full bg-line-soft px-2 py-0.5 text-[10px] text-ink-faint">
-                  暂未开放
-                </span>
-              )}
             </button>
           ))}
         </div>
       </motion.div>
 
-      {/* 底部中央收起按钮 */}
-      <CollapseButton onClick={onClose} ariaLabel="收起轻社交" />
+      {/* 预告场景（不可点击） */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease, delay: 0.15 }}
+        className="mt-[24px] px-6"
+      >
+        <div className="text-[13px] font-medium leading-5 text-[#7B8376]">
+          更多一起做的事
+        </div>
+        <div className="mt-[10px] grid grid-cols-2 gap-[10px]">
+          {previewScenes.map((s) => (
+            <div
+              key={s.id}
+              className="relative flex min-h-[72px] flex-col items-start gap-1.5 rounded-[14px] bg-white p-[13px]"
+              style={{
+                border: "1px solid #E5E6E2",
+                boxShadow: "none",
+                cursor: "default",
+              }}
+            >
+              <s.Icon
+                className="h-5 w-5 text-[#858B82]"
+                strokeWidth={1.8}
+              />
+              <div className="text-[13px] font-medium text-[#858B82]">
+                {s.label}
+              </div>
+              <span
+                className="absolute right-3 top-3 rounded-full px-[7px] py-[2px] text-[10px] leading-4 text-[#999E96]"
+                style={{
+                  border: "1px solid #E0E2DD",
+                  background: "transparent",
+                }}
+              >
+                即将开放
+              </span>
+            </div>
+          ))}
+        </div>
+      </motion.div>
 
-      {/* 关闭场景轻提示 */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            key="social-toast"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.18, ease }}
-            className="pointer-events-none absolute bottom-24 left-1/2 z-[9999] -translate-x-1/2 whitespace-nowrap rounded-full bg-ink/85 px-4 py-2 text-[12px] text-white shadow-[0_4px_14px_rgba(0,0,0,0.18)]"
-          >
-            {toast}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* 底部中央返回箭头 */}
+      <CollapseButton onClick={onClose} ariaLabel="收起轻社交" />
     </motion.div>
   );
 }
