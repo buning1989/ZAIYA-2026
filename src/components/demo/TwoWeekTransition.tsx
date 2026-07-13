@@ -22,17 +22,17 @@ export default function TwoWeekTransition() {
       <h1 className="mt-3 text-center text-[36px] font-bold leading-[1.25] text-ink">
         两周后
         <br />
-        她开始主动使用这些能力
+        小晨开始主动使用这些能力
       </h1>
 
       <p className="mt-6 text-center text-[18px] leading-[1.7] text-ink-soft">
         变化还没有稳定发生。
       </p>
       <p className="mt-3 text-center text-[18px] leading-[1.7] text-ink-soft">
-        但在呀 ZÀIYA 已经不再只在她崩溃时出现。
+        但在呀 ZÀIYA 已经不再只在小晨崩溃时出现。
       </p>
       <p className="mt-3 text-center text-[18px] leading-[1.7] text-ink-soft">
-        她开始主动记录、整理、回看，也开始尝试理解自己正在经历什么。
+        小晨开始主动记录、整理、回看，也开始尝试理解自己正在经历什么。
       </p>
     </div>
   );
