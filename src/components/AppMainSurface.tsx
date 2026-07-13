@@ -1019,6 +1019,9 @@ export default function AppMainSurface({
                     overrideCopy={
                       demoEnabled ? demoState?.bubbleCopy : undefined
                     }
+                    emphasisText={
+                      demoEnabled ? demoState?.bubbleEmphasis : undefined
+                    }
                   />
                 }
               />

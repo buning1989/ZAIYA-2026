@@ -304,9 +304,6 @@ export default function UnifiedDemoStage({
                 <div className="justify-self-center lg:col-start-2">
                   <DemoPhoneFrame
                     demoState={mode === "guided" ? step.demoState : undefined}
-                    showZaizaiLabel={
-                      mode === "guided" && phase === "day1" && day1Index === 0
-                    }
                   />
                 </div>
 

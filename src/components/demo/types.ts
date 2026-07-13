@@ -111,6 +111,7 @@ export type OrganizeDemoConfig = {
  *   - surfaceMode：覆盖首页内部模式（home / dialog / reliefSelect / breathing / socialSelect / socialFlow）
  *   - socialScene：当 surfaceMode=socialFlow 时，指定场景（daze / eat）
  *   - bubbleCopy：覆盖首页轻状态气泡文案（仅 home 模式生效）
+ *   - bubbleEmphasis：在覆盖文案内轻量强调首个匹配片段（仅 home 模式生效）
  *   - dialogItems：替换对话区消息列表（仅 dialog 模式生效，同时禁用本地输入与发送）
  *   - recordPreset：surfaceMode="record" 时驱动「记一下」完成态预览（不走真实记录流程，仅展示已保存态）
  *   - praiseDemo：surfaceMode="praise" 时驱动真实结构的「夸夸自己」首页 feed
@@ -123,6 +124,7 @@ export type AppMainSurfaceDemoState = {
   surfaceMode?: DemoSurfaceMode;
   socialScene?: DemoSocialScene | null;
   bubbleCopy?: string;
+  bubbleEmphasis?: string;
   dialogItems?: DialogItem[];
   /** 演示用记录预填：surfaceMode="record" 时驱动「记一下」完成态预览 */
   recordPreset?: RecordDemoPreset;

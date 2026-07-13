@@ -10,8 +10,8 @@ import type { HomeTimePhase } from "@/lib/homeTimePhase";
  * 视觉：普通居中文案，无卡片背景；增加对比度和行高，避免弱到不像引导语。
  * 动效：跟随动画模块的 soft reveal。
  *
- * 演示模式：传入 overrideCopy 时只展示该文案，不循环、不打字机，
- * 随首页挂载柔和出现。自由体验模式不受影响。
+ * 演示模式：传入 overrideCopy 时只展示该文案，并循环使用打字机增强在场感。
+ * 自由体验模式不受影响。
  */
 
 const HOME_BUBBLE_COPY = [
@@ -21,6 +21,7 @@ const HOME_BUBBLE_COPY = [
 ];
 
 const TYPEWRITER_INTERVAL_MS = 80;
+const OVERRIDE_TYPEWRITER_INTERVAL_MS = 55;
 const COPY_HOLD_MS = 3200;
 
 function nextCopyIndex(idx: number): number {
@@ -30,10 +31,13 @@ function nextCopyIndex(idx: number): number {
 export default function HomeBubbleCopy({
   phase,
   overrideCopy,
+  emphasisText,
 }: {
   phase: HomeTimePhase;
-  /** 演示模式注入的固定文案。提供时只展示该文案，不循环、不打字机。 */
+  /** 演示模式注入的固定文案。提供时只展示该文案，并循环打字。 */
   overrideCopy?: string;
+  /** 演示模式下需要轻量强调的首个片段。 */
+  emphasisText?: string;
 }) {
   const [idx, setIdx] = useState(0);
   const [visibleCount, setVisibleCount] = useState(0);
@@ -52,15 +56,51 @@ export default function HomeBubbleCopy({
   const visibleText = prefersReducedMotion
     ? text
     : textChars.slice(0, visibleCount).join("");
-  // 演示模式（overrideCopy 存在）直接展示完整文案，不显示打字光标
+  // 打字中显示轻光标；减少动态效果时直接展示完整文案。
   const isTyping =
-    !overrideCopy && !prefersReducedMotion && visibleCount < textChars.length;
+    !prefersReducedMotion && visibleCount < textChars.length;
+  const emphasisStart =
+    overrideCopy && emphasisText ? visibleText.indexOf(emphasisText) : -1;
+  const hasEmphasis = emphasisStart >= 0 && !!emphasisText;
 
   useEffect(() => {
-    // 演示模式：直接展示完整文案，不启动打字机定时器
     if (overrideCopy) {
-      setVisibleCount(textChars.length);
-      return;
+      if (prefersReducedMotion) {
+        setVisibleCount(textChars.length);
+        return;
+      }
+
+      setVisibleCount(0);
+
+      let typingTimer: number | undefined;
+      let holdTimer: number | undefined;
+
+      const play = () => {
+        let nextCount = 0;
+        setVisibleCount(0);
+        typingTimer = window.setInterval(() => {
+          nextCount += 1;
+          setVisibleCount(nextCount);
+
+          if (nextCount >= textChars.length) {
+            if (typingTimer !== undefined) {
+              window.clearInterval(typingTimer);
+            }
+            holdTimer = window.setTimeout(play, COPY_HOLD_MS);
+          }
+        }, OVERRIDE_TYPEWRITER_INTERVAL_MS);
+      };
+
+      play();
+
+      return () => {
+        if (typingTimer !== undefined) {
+          window.clearInterval(typingTimer);
+        }
+        if (holdTimer !== undefined) {
+          window.clearTimeout(holdTimer);
+        }
+      };
     }
 
     const chars = Array.from(text);
@@ -113,7 +153,17 @@ export default function HomeBubbleCopy({
       className="min-h-[40px] max-w-[226px] text-left text-[14px] font-normal leading-[20px]"
       style={{ color: "rgba(0, 0, 0, 0.68)" }}
     >
-      {visibleText}
+      {hasEmphasis ? (
+        <>
+          {visibleText.slice(0, emphasisStart)}
+          <span className="font-semibold decoration-[#7d9b7d] decoration-[1px] underline underline-offset-[3px]">
+            {visibleText.slice(emphasisStart, emphasisStart + emphasisText.length)}
+          </span>
+          {visibleText.slice(emphasisStart + emphasisText.length)}
+        </>
+      ) : (
+        visibleText
+      )}
       {isTyping && (
         <span
           aria-hidden="true"

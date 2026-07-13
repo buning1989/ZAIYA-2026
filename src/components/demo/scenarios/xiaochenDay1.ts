@@ -124,7 +124,8 @@ export const xiaochenDay1Scenario: GuidedScenario = {
         enabled: true,
         now: makeDate("06:40"),
         surfaceMode: "home",
-        bubbleCopy: "我只把窗帘拉开了一条小缝，光就自己挤进来了。",
+        bubbleCopy: "你好，我是在在。我只把窗帘拉开了一条小缝，光就自己挤进来了。",
+        bubbleEmphasis: "你好，我是在在。",
       },
     },
     {
