@@ -20,6 +20,11 @@
   --text-secondary: #596255;
   --text-muted: #7B8376;
 
+  /* Chat / 对话气泡文字色（中性色，不使用浅绿） */
+  --chat-text-primary: #252A24;
+  --chat-text-secondary: #3F443D;
+  --chat-text-muted: #A2A59F;
+
   /* Action / 行动 */
   --z-action-primary: #E6F46B;
   --z-action-primary-rgb: 230 244 107;

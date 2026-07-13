@@ -1307,7 +1307,7 @@ export default function AppMainSurface({
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.25, ease }}
                           className={[
-                            "w-fit self-center rounded-full bg-ink/10 px-3 py-1 text-[11px] font-medium leading-[16px] text-ink/50 backdrop-blur-sm",
+                            "w-fit self-center text-[11px] font-medium leading-[16px] text-[var(--chat-text-muted)]",
                             i === 0 ? "" : "mt-4",
                             i === dialogMessages.length - 1 ? "" : "mb-2",
                           ].join(" ")}
@@ -1328,10 +1328,10 @@ export default function AppMainSurface({
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.25, ease }}
                         className={[
-                          "w-fit max-w-[78%] rounded-[18px] px-3.5 py-2.5 text-[14px] leading-relaxed",
+                          "w-fit max-w-[78%] rounded-[18px] py-[11px] px-[15px] text-[14px] leading-[1.65]",
                           isUser
-                            ? "self-end bg-accent-soft text-ink"
-                            : "self-start bg-card-soft text-ink-soft",
+                            ? "self-end bg-[#F2F2F0] text-[var(--chat-text-primary)]"
+                            : "self-start border border-[#E7E7E3] bg-white text-[var(--chat-text-secondary)]",
                           i === 0 ? "" : sameAsPrev ? "mt-1.5" : "mt-4",
                         ].join(" ")}
                       >
@@ -1343,7 +1343,7 @@ export default function AppMainSurface({
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="mt-4 w-fit max-w-[78%] self-start rounded-[18px] bg-card-soft px-3.5 py-2.5 text-[13px] text-ink-faint"
+                      className="mt-4 w-fit max-w-[78%] self-start rounded-[18px] border border-[#E7E7E3] bg-white py-[11px] px-[15px] text-[13px] text-[var(--chat-text-muted)]"
                     >
                       在在正在听…
                     </motion.div>
