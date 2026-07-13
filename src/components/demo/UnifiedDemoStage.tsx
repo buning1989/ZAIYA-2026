@@ -524,12 +524,12 @@ export default function UnifiedDemoStage({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.28, ease: SOFT_EASE }}
             >
-              <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-[390px_420px] lg:justify-center lg:gap-x-24 lg:gap-y-0">
-                <div className="justify-self-center">
+              <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-[auto_400px] lg:justify-center lg:gap-x-20 lg:gap-y-0">
+                <div className="order-2 justify-self-center lg:order-1">
                   <DemoPhoneFrame />
                 </div>
 
-                <div className="w-full lg:h-full">
+                <div className="order-1 w-full lg:order-2">
                   <AnimatePresence mode="wait" initial={false}>
                     <motion.div
                       key="free-panel"
@@ -537,7 +537,6 @@ export default function UnifiedDemoStage({
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 24 }}
                       transition={{ duration: 0.32, ease: SOFT_EASE }}
-                      className="h-full"
                     >
                       <FreeExperiencePanel />
                     </motion.div>
