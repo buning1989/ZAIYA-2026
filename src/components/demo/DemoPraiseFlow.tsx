@@ -18,8 +18,14 @@ import { getGradient } from "@/data/praise";
  * 数据隔离：所有数据为组件内固定 Demo 数据，不写入 localStorage、
  * 不触发能量奖励、不调用真实业务接口、不影响自由体验模式。
  *
- * 视觉对齐：复用 PraisePage.EditView 的渐变沉浸结构（左返回/右保存 + 中央居中文案）。
- * 卡片颜色使用固定 g4（暖米），避免每次返回随机变化。
+ * 视觉对齐：复用 PraisePage.EditView 的沉浸式卡片编辑结构
+ *   - 整页渐变背景即卡片本体（与 EditView 一致）
+ *   - 顶部左返回 / 右保存（按钮样式与 EditView 完全一致）
+ *   - 引导文案去除白色气泡，改为与 EditView guide-text 同宽的纯文本
+ *   - 正文放入 praise-card-editor 区域，排版参数与 EditView textarea 一致
+ *   - 不显示底纹 placeholder（已有正文）
+ *
+ * 卡片颜色：固定 g4（暖米），避免每次演示刷新后颜色变化。
  *
  * 状态重置：组件卸载（离开节点）后重新挂载时，自动恢复到状态 A。
  */
@@ -57,12 +63,12 @@ export default function DemoPraiseFlow() {
             background: `linear-gradient(140deg, ${gradient.from} 0%, ${gradient.to} 100%)`,
           }}
         >
-          {/* 顶部：左返回 / 右保存（对齐真实 EditView） */}
+          {/* 顶部：左返回 / 右保存（样式与 EditView 完全一致） */}
           <div className="flex items-center justify-between px-5 pt-14 pb-2">
             <button
               type="button"
               aria-label="返回"
-              className="grid h-8 w-8 place-items-center rounded-full bg-white/50 text-ink-soft backdrop-blur-sm"
+              className="grid h-8 w-8 place-items-center rounded-full bg-white/50 text-ink-soft backdrop-blur-sm transition-colors hover:bg-white/70"
             >
               <ChevronLeft className="h-6 w-6" />
             </button>
@@ -75,29 +81,25 @@ export default function DemoPraiseFlow() {
             </button>
           </div>
 
-          {/* 在在气泡 */}
+          {/* 引导文案：去除白色气泡，改为与 EditView guide-text 同宽的纯文本 */}
           <div className="px-5 pt-2">
-            <div className="mx-auto max-w-[260px] rounded-lg bg-white/70 px-3 py-2 backdrop-blur-sm">
-              <p className="text-center text-[13px] leading-relaxed text-ink-soft">
-                {BUBBLE_TEXT}
-              </p>
-            </div>
+            <p className="mx-auto w-[72%] text-center text-[13px] leading-relaxed text-ink-soft">
+              {BUBBLE_TEXT}
+            </p>
           </div>
 
-          {/* 中央已填写好的卡片内容 */}
-          <div className="flex flex-1 flex-col items-center justify-center px-8">
+          {/* 卡片正文区域：复用 EditView 的 praise-card-editor 结构，
+              正文排版参数与 EditView textarea 完全一致；不显示底纹 placeholder */}
+          <div className="praise-card-editor relative flex-1">
             <motion.p
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: prefersReducedMotion ? 0 : 0.5, ease }}
-              className="whitespace-pre-line text-center text-[18px] leading-[1.6] tracking-normal text-ink"
+              className="absolute left-1/2 top-1/2 min-h-[120px] w-[72%] -translate-x-1/2 -translate-y-1/2 whitespace-pre-line text-center text-[18px] leading-[1.6] tracking-normal text-ink"
             >
               {CARD_TEXT}
             </motion.p>
           </div>
-
-          {/* 底部留白 */}
-          <div className="h-10" />
         </motion.div>
       ) : (
         <motion.div
@@ -111,12 +113,12 @@ export default function DemoPraiseFlow() {
             background: `linear-gradient(140deg, ${gradient.from} 0%, ${gradient.to} 100%)`,
           }}
         >
-          {/* 顶部：左返回（保存后不展示保存按钮） */}
+          {/* 顶部：左返回（保存后不展示保存按钮，结构与 DetailView 一致） */}
           <div className="flex items-center justify-between px-5 pt-14 pb-2">
             <button
               type="button"
               aria-label="返回"
-              className="grid h-8 w-8 place-items-center rounded-full bg-white/50 text-ink-soft backdrop-blur-sm"
+              className="grid h-8 w-8 place-items-center rounded-full bg-white/50 text-ink-soft backdrop-blur-sm transition-colors hover:bg-white/70"
             >
               <ChevronLeft className="h-6 w-6" />
             </button>
@@ -124,12 +126,12 @@ export default function DemoPraiseFlow() {
 
           {/* 轻量提示 */}
           <div className="px-5 pt-2">
-            <p className="text-center text-[13px] text-ink-soft">
+            <p className="mx-auto w-[72%] text-center text-[13px] text-ink-soft">
               {SAVED_HINT}
             </p>
           </div>
 
-          {/* 主体：完整卡片内容 */}
+          {/* 主体：完整卡片内容（结构与 DetailView 一致） */}
           <div className="flex flex-1 flex-col items-center justify-center px-8">
             <motion.p
               initial={{ opacity: 0, scale: 0.96, y: 8 }}
@@ -140,9 +142,6 @@ export default function DemoPraiseFlow() {
               {CARD_TEXT}
             </motion.p>
           </div>
-
-          {/* 底部留白 */}
-          <div className="h-10" />
         </motion.div>
       )}
     </AnimatePresence>
