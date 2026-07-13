@@ -35,13 +35,13 @@ export function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** 选中标记（行动绿色勾选） */
+/** 选中标记（淡绿勾选） */
 export function SelectMark({ checked }: { checked: boolean }) {
   return (
     <span
       className={`mt-0.5 grid shrink-0 place-items-center rounded-[5px] border transition-colors ${
         checked
-          ? "border-action-primary bg-action-primary text-action-primary-text"
+          ? "border-accent bg-accent text-white"
           : "border-line bg-white"
       }`}
       style={{ height: 18, width: 18 }}

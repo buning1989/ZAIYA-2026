@@ -1032,7 +1032,7 @@ function ContactList({
                     onClick={() => handleToggleEmergency(c)}
                     className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-[13px] transition-colors ${
                       c.isEmergencyContact
-                        ? "bg-action-soft text-action-primary-text border border-action-primary"
+                        ? "bg-accent-soft text-accent border border-accent"
                         : "bg-surface-soft text-ink-soft hover:bg-surface-muted"
                     }`}
                   >

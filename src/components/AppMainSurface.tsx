@@ -1096,6 +1096,7 @@ export default function AppMainSurface({
       >
         {effectiveMode !== "socialFlow" &&
           effectiveMode !== "breathing" &&
+          effectiveMode !== "reliefSelect" &&
           effectiveMode !== "record" &&
           effectiveMode !== "praise" &&
           effectiveMode !== "lookback" &&
@@ -1470,13 +1471,13 @@ export default function AppMainSurface({
               transition={{ duration: 0.3, ease }}
               className="absolute inset-0 z-20 flex flex-col bg-white px-6"
             >
-              {/* 顶部在在透明动画：无文案、无气泡、无提示 */}
+              {/* 顶部在在透明动画 + 气泡引导 */}
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, ease, delay: 0.05 }}
-                className="flex justify-center"
-                style={{ paddingTop: 84 }}
+                className="flex flex-col items-center"
+                style={{ paddingTop: 68 }}
               >
                 <video
                   src="./assets/zaiya/zaiya-transparent.webm"
@@ -1485,9 +1486,12 @@ export default function AppMainSurface({
                   muted
                   playsInline
                   preload="auto"
-                  className="block h-[118px] w-[118px] select-none object-contain"
+                  className="block h-[152px] w-[152px] select-none object-contain"
                   style={{ transform: "scale(1.12)", transformOrigin: "center center" }}
                 />
+                <p className="mt-1 text-[13px] leading-relaxed text-ink-soft/80">
+                  不着急，先让自己慢下来。
+                </p>
               </motion.div>
 
               {/* 当前可用：呼吸法主卡片 */}
@@ -1495,7 +1499,7 @@ export default function AppMainSurface({
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, ease, delay: 0.1 }}
-                style={{ marginTop: 42 }}
+                style={{ marginTop: 28 }}
               >
                 <div className="mb-[10px] text-[13px] font-medium leading-5 text-[#7B8376]">
                   当前可用

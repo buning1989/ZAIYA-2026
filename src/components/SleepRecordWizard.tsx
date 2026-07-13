@@ -370,7 +370,7 @@ export default function SleepRecordWizard({
   const chipClass = (selected: boolean) =>
     `inline-flex items-center justify-center rounded-full border px-4 py-2 text-[14px] font-medium whitespace-nowrap max-w-[240px] overflow-hidden text-ellipsis transition-all active:scale-[0.97] ${
       selected
-        ? "border-action-primary bg-action-soft text-ink"
+        ? "border-accent bg-accent-soft text-ink"
         : "border-line bg-white text-ink hover:border-action-primary/60"
     }`;
 
@@ -378,7 +378,7 @@ export default function SleepRecordWizard({
   const timeChipClass = (selected: boolean) =>
     `flex items-center justify-center rounded-xl border px-3 py-3 text-[14px] font-medium transition-all active:scale-[0.97] ${
       selected
-        ? "border-action-primary bg-action-soft text-ink"
+        ? "border-accent bg-accent-soft text-ink"
         : "border-line bg-white text-ink hover:border-action-primary/60"
     }`;
 
@@ -481,7 +481,7 @@ export default function SleepRecordWizard({
                         onClick={() => handleSelectLevel(opt.value)}
                         className={`flex h-14 items-center gap-3 rounded-2xl border px-5 text-left transition-all active:scale-[0.99] ${
                           selected
-                            ? "border-action-primary/60 bg-action-soft text-ink"
+                            ? "border-accent/60 bg-accent-soft text-ink"
                             : "border-line bg-white text-ink hover:border-ink-faint"
                         }`}
                       >

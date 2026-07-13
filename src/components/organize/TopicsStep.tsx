@@ -208,7 +208,7 @@ export default function TopicsStep({ session, onBack, onNext }: Props) {
                     onClick={() => handleRangeSelect(opt.value)}
                     className={`flex items-center justify-between rounded-xl border px-4 py-3.5 text-left transition-colors ${
                       rangeKey === opt.value
-                        ? "border-action-primary bg-action-soft"
+                        ? "border-accent bg-accent-soft"
                         : "border-line bg-white hover:bg-surface-soft/30"
                     }`}
                   >
@@ -221,7 +221,7 @@ export default function TopicsStep({ session, onBack, onNext }: Props) {
                       </div>
                     </div>
                     {rangeKey === opt.value && (
-                      <Check className="h-4 w-4 text-action-primary" strokeWidth={2.4} />
+                      <Check className="h-4 w-4 text-accent" strokeWidth={2.4} />
                     )}
                   </button>
                 );
@@ -291,7 +291,7 @@ const TopicCard = forwardRef<HTMLDivElement, TopicCardProps>(function TopicCard(
       transition={{ duration: 0.25, ease }}
       className={`relative overflow-hidden rounded-2xl border bg-white transition-colors ${
         topic.selected
-          ? "border-action-primary"
+          ? "border-accent"
           : "border-line"
       }`}
     >
@@ -303,12 +303,12 @@ const TopicCard = forwardRef<HTMLDivElement, TopicCardProps>(function TopicCard(
         <span
           className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-[5px] border transition-colors ${
             topic.selected
-              ? "border-action-primary bg-action-primary"
+              ? "border-accent bg-accent"
               : "border-line bg-white"
           }`}
         >
           {topic.selected && (
-            <Check className="h-3 w-3 text-action-primary-text" strokeWidth={2.4} />
+            <Check className="h-3 w-3 text-accent-text" strokeWidth={2.4} />
           )}
         </span>
 
@@ -401,7 +401,7 @@ function EditSheet({
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="mt-1.5 w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-[14px] text-ink outline-none focus:border-action-primary"
+          className="mt-1.5 w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-[14px] text-ink outline-none focus:border-accent"
           placeholder="简要标题"
         />
       </div>
@@ -411,7 +411,7 @@ function EditSheet({
           value={content}
           onChange={(e) => setContent(e.target.value)}
           rows={4}
-          className="mt-1.5 w-full resize-none rounded-xl border border-line bg-white px-3.5 py-2.5 text-[14px] leading-relaxed text-ink outline-none focus:border-action-primary"
+          className="mt-1.5 w-full resize-none rounded-xl border border-line bg-white px-3.5 py-2.5 text-[14px] leading-relaxed text-ink outline-none focus:border-accent"
           placeholder="具体说明"
         />
       </div>
@@ -424,7 +424,7 @@ function EditSheet({
         </button>
         <button
           onClick={() => onSave(title.trim() || topic.title, content.trim())}
-          className="flex-1 rounded-xl bg-action-primary py-3 text-[13px] font-medium text-action-primary-text"
+          className="flex-1 rounded-xl bg-action-primary py-3 text-[13px] font-medium text-accent-text"
         >
           保存
         </button>
@@ -455,7 +455,7 @@ function AddSheet({
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="mt-1.5 w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-[14px] text-ink outline-none focus:border-action-primary"
+          className="mt-1.5 w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-[14px] text-ink outline-none focus:border-accent"
           placeholder="简要标题"
           autoFocus
         />
@@ -466,7 +466,7 @@ function AddSheet({
           value={content}
           onChange={(e) => setContent(e.target.value)}
           rows={4}
-          className="mt-1.5 w-full resize-none rounded-xl border border-line bg-white px-3.5 py-2.5 text-[14px] leading-relaxed text-ink outline-none focus:border-action-primary"
+          className="mt-1.5 w-full resize-none rounded-xl border border-line bg-white px-3.5 py-2.5 text-[14px] leading-relaxed text-ink outline-none focus:border-accent"
           placeholder="具体说明"
         />
       </div>
@@ -480,7 +480,7 @@ function AddSheet({
         <button
           onClick={() => canSave && onSave(title.trim(), content.trim())}
           disabled={!canSave}
-          className="flex-1 rounded-xl bg-action-primary py-3 text-[13px] font-medium text-action-primary-text disabled:opacity-30"
+          className="flex-1 rounded-xl bg-action-primary py-3 text-[13px] font-medium text-accent-text disabled:opacity-30"
         >
           添加
         </button>

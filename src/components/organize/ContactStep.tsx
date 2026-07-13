@@ -201,7 +201,7 @@ function AddContactSheet({
               onClick={() => setSelectedTrustedId(candidate.id)}
               className={`flex items-center justify-between rounded-xl border px-4 py-3.5 text-left transition-colors ${
                 selectedTrustedId === candidate.id
-                  ? "border-action-primary bg-action-soft"
+                  ? "border-accent bg-accent-soft"
                   : "border-line bg-white hover:bg-surface-soft/30"
               }`}
             >
@@ -216,7 +216,7 @@ function AddContactSheet({
               <span
                 className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border transition-colors ${
                   selectedTrustedId === candidate.id
-                    ? "border-action-primary bg-action-primary text-white"
+                    ? "border-accent bg-accent text-white"
                     : "border-line bg-white"
                 }`}
               >
@@ -271,7 +271,7 @@ function NewContactForm({
         <input
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
-          className="mt-1.5 w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-[14px] text-ink outline-none focus:border-action-primary"
+          className="mt-1.5 w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-[14px] text-ink outline-none focus:border-accent"
           placeholder="如：王医生、李老师"
           autoFocus
         />
@@ -285,7 +285,7 @@ function NewContactForm({
               onClick={() => setRoleType(opt.value)}
               className={`rounded-full border px-3.5 py-1.5 text-[12.5px] transition-colors ${
                 roleType === opt.value
-                  ? "border-action-primary bg-action-soft text-ink"
+                  ? "border-accent bg-accent-soft text-ink"
                   : "border-line bg-white text-ink-soft"
               }`}
             >

@@ -218,7 +218,7 @@ export default function WeightRecordWizard({
   const chipClass = (selected: boolean) =>
     `inline-flex items-center justify-center rounded-full border px-4 py-2 text-[14px] font-medium whitespace-nowrap transition-all active:scale-[0.97] ${
       selected
-        ? "border-action-primary bg-action-soft text-ink"
+        ? "border-accent bg-accent-soft text-ink"
         : "border-line bg-white text-ink hover:border-action-primary/60"
     }`;
 

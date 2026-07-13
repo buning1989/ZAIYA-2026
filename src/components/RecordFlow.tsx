@@ -1212,7 +1212,7 @@ function RecordWizard({
                         {/* 上按钮：+ 0.1 KG（轻量胶囊） */}
                         <button
                           onClick={() => stepWeight(WEIGHT_STEP)}
-                          className="flex h-8 min-w-[92px] items-center justify-center rounded-full border border-action-primary/45 bg-action-soft px-[14px] text-[13px] font-medium text-ink/[0.72] transition-transform active:scale-[0.96] active:bg-action-primary/20"
+                          className="flex h-8 min-w-[92px] items-center justify-center rounded-full border border-accent/45 bg-accent-soft px-[14px] text-[13px] font-medium text-ink/[0.72] transition-transform active:scale-[0.96] active:bg-accent-pressed/20"
                         >
                           + {WEIGHT_STEP.toFixed(1)} KG
                         </button>
@@ -1231,7 +1231,7 @@ function RecordWizard({
                         {/* 下按钮：- 0.1 KG（轻量胶囊） */}
                         <button
                           onClick={() => stepWeight(-WEIGHT_STEP)}
-                          className="flex h-8 min-w-[92px] items-center justify-center rounded-full border border-action-primary/45 bg-action-soft px-[14px] text-[13px] font-medium text-ink/[0.72] transition-transform active:scale-[0.96] active:bg-action-primary/20"
+                          className="flex h-8 min-w-[92px] items-center justify-center rounded-full border border-accent/45 bg-accent-soft px-[14px] text-[13px] font-medium text-ink/[0.72] transition-transform active:scale-[0.96] active:bg-accent-pressed/20"
                         >
                           - {WEIGHT_STEP.toFixed(1)} KG
                         </button>

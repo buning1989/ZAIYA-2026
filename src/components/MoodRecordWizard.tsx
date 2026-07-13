@@ -174,9 +174,9 @@ function ChoiceCarousel({
                 onClick={() => onCardClick(index)}
                 className={`absolute left-1/2 top-1/2 flex min-h-[118px] w-[72%] items-center justify-center rounded-2xl border px-5 py-6 text-center shadow-sm outline-none transition-[border-color,background-color,box-shadow] duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary/50 focus-visible:ring-offset-0 active:scale-[0.97] ${
                   selectedFeedback && active
-                    ? "border-action-primary bg-action-soft shadow-[0_12px_26px_rgba(44,59,39,0.12)]"
+                    ? "border-accent bg-accent-soft shadow-[0_12px_26px_rgba(44,59,39,0.12)]"
                     : selected
-                      ? "border-action-primary/80 bg-action-soft shadow-[0_10px_22px_rgba(44,59,39,0.08)]"
+                      ? "border-accent/80 bg-accent-soft shadow-[0_10px_22px_rgba(44,59,39,0.08)]"
                       : active
                         ? "border-action-primary/40 bg-card shadow-[0_10px_22px_rgba(44,59,39,0.07)]"
                         : "border-line bg-card"
@@ -221,7 +221,7 @@ function ChoiceCarousel({
                     }
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.22, ease }}
-                    className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-action-soft text-ink"
+                    className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-accent-soft text-accent"
                   >
                     <Check className="h-3.5 w-3.5" strokeWidth={2.4} />
                   </motion.span>
@@ -595,7 +595,7 @@ export default function MoodRecordWizard({
   const chipClass = (selected: boolean) =>
     `inline-flex items-center justify-center rounded-full border px-4 py-2 text-[14px] font-medium whitespace-nowrap transition-all active:scale-[0.97] ${
       selected
-        ? "border-action-primary bg-action-soft text-ink"
+        ? "border-accent bg-accent-soft text-ink"
         : "border-line bg-white text-ink hover:border-action-primary/60"
     }`;
 
@@ -858,7 +858,7 @@ export default function MoodRecordWizard({
                         onClick={() => handleSelectPrimary(mood)}
                         className={`flex h-14 items-center gap-3 rounded-2xl border px-5 text-left transition-all active:scale-[0.99] ${
                           selected
-                            ? "border-action-primary/60 bg-action-soft text-ink"
+                            ? "border-accent/60 bg-accent-soft text-ink"
                             : "border-line bg-white text-ink hover:border-ink-faint"
                         }`}
                       >
@@ -1047,7 +1047,7 @@ export default function MoodRecordWizard({
                       {specialDetails.map((detail) => (
                         <div
                           key={detail}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-action-primary/50 bg-action-soft px-3 py-1.5 text-[13px] text-ink"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-accent/50 bg-accent-soft px-3 py-1.5 text-[13px] text-ink"
                         >
                           <span>{detail}</span>
                           <button
