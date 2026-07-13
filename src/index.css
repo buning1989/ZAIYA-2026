@@ -15,6 +15,11 @@
   --z-text-secondary: #68735C;
   --z-text-tertiary: #8B947D;
 
+  /* Readability tokens / 案例演示页阅读优化专用（更高对比度） */
+  --text-primary: #243020;
+  --text-secondary: #596255;
+  --text-muted: #7B8376;
+
   /* Action / 行动 */
   --z-action-primary: #E6F46B;
   --z-action-primary-rgb: 230 244 107;

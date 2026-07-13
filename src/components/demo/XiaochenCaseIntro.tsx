@@ -37,26 +37,26 @@ export default function XiaochenCaseIntro() {
   const { nickname, birthDate } = MOCK_USER_PROFILE.basicInfo;
   const age = calculateAge(birthDate);
   return (
-    <div className="mx-auto w-full max-w-[680px]">
+    <div className="mx-auto w-[min(680px,calc(100vw-48px))] max-w-[680px]">
       {/* —— A. 身份区 —— */}
       <section aria-label="人物身份">
         {/* 小标签 */}
-        <p className="text-center text-[12px] tracking-[0.18em] text-ink-faint">
+        <p className="text-center text-[13px] leading-5 font-medium tracking-[0.18em] text-[var(--text-muted)]">
           案例演示
         </p>
 
         {/* 主标题 */}
-        <h1 className="mt-3 text-center text-[40px] font-bold leading-[1.2] text-ink">
+        <h1 className="mt-3 text-center text-[30px] font-[650] leading-[1.3] text-[var(--text-primary)]">
           {nickname}，{age} 岁，重度抑郁重度焦虑。
         </h1>
 
         {/* 副标题 */}
-        <p className="mt-4 text-center text-[21px] font-medium leading-[1.5] text-ink">
+        <p className="mt-3 text-center text-[17px] font-medium leading-[1.6] text-[var(--text-primary)]">
           她的一天，从起床就开始卡住。
         </p>
 
         {/* 内心句 */}
-        <p className="mt-4 text-center text-[19px] leading-[1.6] text-ink-soft">
+        <p className="mt-2 text-center text-[16px] font-normal leading-[1.65] text-[var(--text-secondary)]">
           “我知道该做什么，但我真的做不到。”
         </p>
       </section>
@@ -64,18 +64,18 @@ export default function XiaochenCaseIntro() {
       {/* —— B. 功能受损证据区 —— */}
       <section
         aria-label="功能受损证据点"
-        className="mt-10"
+        className="mt-7"
       >
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-x-4 sm:gap-y-3">
           {impairmentPoints.map((point) => (
             <div
               key={point.title}
-              className="rounded-2xl border border-line-soft bg-card-soft/60 px-5 py-4"
+              className="rounded-xl border border-[#E5E8E1] bg-white px-[18px] py-4"
             >
-              <p className="text-[16px] font-semibold leading-[1.4] text-ink">
+              <p className="text-[16px] font-semibold leading-6 text-[var(--text-primary)]">
                 {point.title}
               </p>
-              <p className="mt-1.5 text-[14px] leading-[1.6] text-ink-soft">
+              <p className="mt-1.5 text-[15px] font-normal leading-[1.65] text-[var(--text-secondary)]">
                 {point.detail}
               </p>
             </div>
@@ -86,12 +86,12 @@ export default function XiaochenCaseIntro() {
       {/* —— C. 观看提示区 —— */}
       <section
         aria-label="评委观看提示"
-        className="mt-10 border-t border-line-soft pt-8"
+        className="mt-7 border-t border-line-soft pt-6"
       >
-        <p className="text-[16px] leading-[1.7] text-ink">
-          <span className="font-semibold">这是无数饱受精神心理问题困扰的青少年的缩影。</span>
+        <p className="text-[16px] font-semibold leading-[1.6] text-[var(--text-primary)]">
+          这是无数饱受精神心理问题困扰的青少年的缩影。
         </p>
-        <p className="mt-3 text-[16px] leading-[1.7] text-ink-soft">
+        <p className="mt-3 text-[15px] font-normal leading-[1.7] text-[var(--text-secondary)]">
           接下来，我们将通过小晨的故事，展示在呀 ZÀIYA 是如何帮助小晨开始好转。
         </p>
       </section>
