@@ -14,6 +14,7 @@ import DemoWatchFrame from "./DemoWatchFrame";
 import DemoSleepRecordFlow from "./DemoSleepRecordFlow";
 import DemoOrganizeFlow from "./DemoOrganizeFlow";
 import DemoPraiseFlow from "./DemoPraiseFlow";
+import DemoLookbackFlow from "./DemoLookbackFlow";
 import FreeExperiencePanel from "./FreeExperiencePanel";
 import { xiaochenDay1Scenario } from "./scenarios/xiaochenDay1";
 import { xiaochenDay2Scenario } from "./scenarios/xiaochenDay2";
@@ -129,6 +130,7 @@ export default function UnifiedDemoStage({
   const isDay2SelfRecordNode = phase === "day2" && day2Index === 1;
   const isDay2OrganizeNode = phase === "day2" && day2Index === 2;
   const isDay2PraiseNode = phase === "day2" && day2Index === 3;
+  const isDay2LookbackNode = phase === "day2" && day2Index === 4;
   const reducedMotion = useReducedMotion();
 
   // 进入 / 返回 day2[0] 时重置星星状态
@@ -557,6 +559,12 @@ export default function UnifiedDemoStage({
                     <DemoPhoneFrame
                       demoState={step.demoState}
                       overlay={<DemoPraiseFlow />}
+                    />
+                  ) : isDay2LookbackNode && mode === "guided" ? (
+                    /* 第二周 21:00：回头看看 近两周睡眠趋势 + 饮食摘要 */
+                    <DemoPhoneFrame
+                      demoState={step.demoState}
+                      overlay={<DemoLookbackFlow />}
                     />
                   ) : (
                     <DemoPhoneFrame
