@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import AppMainSurface from "@/components/AppMainSurface";
 import DemoWidgetScreen from "./DemoWidgetScreen";
 import type { AppMainSurfaceDemoState } from "./types";
@@ -16,6 +17,10 @@ type Props = {
   showWidget?: boolean;
   /** 桌面态显示的系统时间 */
   widgetTime?: string;
+  /** 首页气泡点击回调：用于 06:40 第二周节点星星反馈 */
+  onDemoBubbleClick?: () => void;
+  /** 手机屏幕内叠加层（如星星、睡眠记录流程），渲染在 App 内容之上、屏幕圆角裁切内 */
+  overlay?: ReactNode;
 };
 
 /* —— 共享手机壳 ——
@@ -29,6 +34,8 @@ export default function DemoPhoneFrame({
   dialogActionCard,
   showWidget,
   widgetTime,
+  onDemoBubbleClick,
+  overlay,
 }: Props) {
   return (
     <div className="aspect-[9/18] w-[min(390px,calc(100vw-32px),calc(50vh-16px))] shrink-0">
@@ -42,8 +49,10 @@ export default function DemoPhoneFrame({
               variant="immersive"
               demoState={demoState}
               dialogActionCard={dialogActionCard}
+              onDemoBubbleClick={onDemoBubbleClick}
             />
           )}
+          {overlay}
         </div>
       </div>
     </div>

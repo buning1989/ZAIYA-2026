@@ -390,6 +390,8 @@ type Props = {
     actionLabel: string;
     onClick: () => void;
   };
+  /** 首页气泡点击回调：用于第二周 06:40 节点星星反馈 */
+  onDemoBubbleClick?: () => void;
 };
 
 /**
@@ -419,6 +421,7 @@ export default function AppMainSurface({
   onButtonClick,
   demoState,
   dialogActionCard,
+  onDemoBubbleClick,
 }: Props) {
   const [active, setActive] = useState<number | null>(null);
 
@@ -1022,15 +1025,36 @@ export default function AppMainSurface({
               <ZaizaiHomeScene
                 phase={homePhase}
                 guide={
-                  <HomeBubbleCopy
-                    phase={homePhase}
-                    overrideCopy={
-                      demoEnabled ? demoState?.bubbleCopy : undefined
-                    }
-                    emphasisText={
-                      demoEnabled ? demoState?.bubbleEmphasis : undefined
-                    }
-                  />
+                  onDemoBubbleClick && demoEnabled ? (
+                    <motion.button
+                      type="button"
+                      onClick={onDemoBubbleClick}
+                      whileTap={{ scale: 1.02 }}
+                      whileHover={{ scale: 1.01 }}
+                      transition={{ duration: 0.2, ease }}
+                      className="pointer-events-auto block cursor-pointer rounded-lg text-left"
+                    >
+                      <HomeBubbleCopy
+                        phase={homePhase}
+                        overrideCopy={
+                          demoEnabled ? demoState?.bubbleCopy : undefined
+                        }
+                        emphasisText={
+                          demoEnabled ? demoState?.bubbleEmphasis : undefined
+                        }
+                      />
+                    </motion.button>
+                  ) : (
+                    <HomeBubbleCopy
+                      phase={homePhase}
+                      overrideCopy={
+                        demoEnabled ? demoState?.bubbleCopy : undefined
+                      }
+                      emphasisText={
+                        demoEnabled ? demoState?.bubbleEmphasis : undefined
+                      }
+                    />
+                  )
                 }
               />
             ) : effectiveMode === "home" && variant === "hero" ? (

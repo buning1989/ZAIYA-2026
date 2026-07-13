@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { TouchEvent as ReactTouchEvent } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { Star } from "lucide-react";
 import GuidedModeSwitch from "./GuidedModeSwitch";
 import GuidedStoryPanel from "./GuidedStoryPanel";
 import GuidedDemoControls, { NavArrow } from "./GuidedDemoControls";
@@ -10,6 +11,7 @@ import TwoWeekTransition from "./TwoWeekTransition";
 import ConclusionSummaryPage from "./ConclusionSummaryPage";
 import DemoPhoneFrame from "./DemoPhoneFrame";
 import DemoWatchFrame from "./DemoWatchFrame";
+import DemoSleepRecordFlow from "./DemoSleepRecordFlow";
 import FreeExperiencePanel from "./FreeExperiencePanel";
 import { xiaochenDay1Scenario } from "./scenarios/xiaochenDay1";
 import { xiaochenDay2Scenario } from "./scenarios/xiaochenDay2";
@@ -46,7 +48,6 @@ type GuidedPhase =
 
 /* 阶段页：无手机 Demo、无分页圆点，但保留左右箭头 */
 const PHASE_PAGES: GuidedPhase[] = [
-  "intro",
   "day1-summary",
   "week2-intro",
   "conclusion",
@@ -114,6 +115,25 @@ export default function UnifiedDemoStage({
   const total = scenario.steps.length;
   const step = scenario.steps[stepIndex] ?? scenario.steps[0];
 
+  /* —— 第二周 06:40 节点：气泡点击 → 角落星星反馈 ——
+   * starCollected：评委是否已点击气泡（星星是否已出现）
+   * - 仅在 day2[0] 生效；进入 / 返回该节点时重置为 false
+   * - 点击后星星从气泡附近移动到屏幕角落，停留至离开节点
+   * - 重复点击不生成多颗星星、不累计、不重播动画
+   * - Guided Demo 状态完全隔离，不影响自由体验模式
+   */
+  const [starCollected, setStarCollected] = useState(false);
+  const isDay2WakeLookNode = phase === "day2" && day2Index === 0;
+  const isDay2SelfRecordNode = phase === "day2" && day2Index === 1;
+  const reducedMotion = useReducedMotion();
+
+  // 进入 / 返回 day2[0] 时重置星星状态
+  useEffect(() => {
+    if (isDay2WakeLookNode) {
+      setStarCollected(false);
+    }
+  }, [isDay2WakeLookNode, reducedMotion]);
+
   const atStart = stepIndex <= 0;
   const atEnd = stepIndex >= total - 1;
 
@@ -170,10 +190,36 @@ export default function UnifiedDemoStage({
   const showDay1Summary = mode === "guided" && phase === "day1-summary";
   const showWeek2Intro = mode === "guided" && phase === "week2-intro";
   const showConclusion = mode === "guided" && phase === "conclusion";
-  const showStage = mode === "guided" && (phase === "day1" || phase === "day2");
+  const showGuidedNav = mode === "guided";
 
   // 阶段页（无手机 Demo、无圆点，但保留左右箭头）
   const showPhasePage = mode === "guided" && isPhasePage(phase);
+
+  const showDay1Progress = mode === "guided" && (phase === "intro" || phase === "day1");
+  const showGuidedControls = showDay1Progress || (mode === "guided" && phase === "day2");
+  const guidedControlsTotal = showDay1Progress
+    ? xiaochenDay1Scenario.steps.length + 1
+    : total;
+  const guidedControlsIndex =
+    phase === "intro" ? 0 : phase === "day1" ? day1Index + 1 : stepIndex;
+
+  const goToGuidedProgress = useCallback(
+    (index: number) => {
+      if (phase === "intro" || phase === "day1") {
+        const clampedIndex = Math.max(0, Math.min(index, xiaochenDay1Scenario.steps.length));
+        if (clampedIndex === 0) {
+          setPhase("intro");
+          return;
+        }
+        setDay1Index(clampedIndex - 1);
+        setPhase("day1");
+        return;
+      }
+
+      goTo(index);
+    },
+    [phase, goTo],
+  );
 
   /* —— 对话自动逐条出现 ——
    * 07:35（day1[1]）：短消息 400ms，长消息 750ms，对话全部出现后停留
@@ -182,7 +228,7 @@ export default function UnifiedDemoStage({
    *
    * 注意：07:35 不再自动进入呼吸练习，改为评委主动点击呼吸入口。
    */
-  const prefersReducedMotion = useRef(
+  const prefersReducedDialogMotion = useRef(
     typeof window !== "undefined" &&
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches,
   );
@@ -197,7 +243,7 @@ export default function UnifiedDemoStage({
     const messageItems = fullDialog.filter((item) => item.kind === "message");
     const totalCount = messageItems.length;
 
-    if (prefersReducedMotion.current) {
+    if (prefersReducedDialogMotion.current) {
       setDialogRevealCount(totalCount);
       return;
     }
@@ -224,7 +270,7 @@ export default function UnifiedDemoStage({
     return () => {
       timers.forEach(clearTimeout);
     };
-  }, [phase, day1Index, isDialogRevealNode, isInsomniaNode, step.demoState?.dialogItems, prefersReducedMotion]);
+  }, [phase, day1Index, isDialogRevealNode, isInsomniaNode, step.demoState?.dialogItems, prefersReducedDialogMotion]);
 
   // 07:35 呼吸入口是否显示：对话全部出现后显示
   const fullMessageCount = step.demoState?.dialogItems?.filter((i) => i.kind === "message").length ?? 0;
@@ -335,7 +381,18 @@ export default function UnifiedDemoStage({
       </div>
 
       {/* 主内容区 */}
-      <div className="mt-6 flex flex-1 flex-col justify-center">
+      <div className="relative mt-6 flex flex-1 flex-col justify-center">
+        {showGuidedNav && (
+          <div className="pointer-events-none absolute inset-y-0 left-0 right-0 z-20 hidden items-center justify-between lg:flex">
+            <div className="pointer-events-auto">
+              <NavArrow direction="left" disabled={phase === "intro"} onClick={prev} />
+            </div>
+            <div className="pointer-events-auto">
+              <NavArrow direction="right" disabled={phase === "conclusion"} onClick={next} />
+            </div>
+          </div>
+        )}
+
         <AnimatePresence mode="wait">
           {showIntro ? (
             <motion.div
@@ -345,16 +402,8 @@ export default function UnifiedDemoStage({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.28, ease: SOFT_EASE }}
             >
-              <div className="flex items-center gap-4 lg:gap-8">
-                {/* intro 无左箭头 */}
-                <div className="hidden h-12 w-12 shrink-0 lg:block" aria-hidden="true" />
-                <div className="flex-1">
-                  <XiaochenCaseIntro />
-                </div>
-                {/* 右箭头：进入 day1[0] */}
-                <div className="hidden h-12 w-12 shrink-0 lg:block">
-                  <NavArrow direction="right" disabled={false} onClick={next} />
-                </div>
+              <div className="lg:px-20">
+                <XiaochenCaseIntro />
               </div>
             </motion.div>
           ) : showDay1Summary ? (
@@ -365,16 +414,8 @@ export default function UnifiedDemoStage({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.28, ease: SOFT_EASE }}
             >
-              <div className="flex items-center gap-4 lg:gap-8">
-                <div className="hidden h-12 w-12 shrink-0 lg:block">
-                  <NavArrow direction="left" disabled={false} onClick={prev} />
-                </div>
-                <div className="flex-1">
-                  <DayOneSummaryPage />
-                </div>
-                <div className="hidden h-12 w-12 shrink-0 lg:block">
-                  <NavArrow direction="right" disabled={false} onClick={next} />
-                </div>
+              <div className="lg:px-20">
+                <DayOneSummaryPage />
               </div>
             </motion.div>
           ) : showWeek2Intro ? (
@@ -385,16 +426,8 @@ export default function UnifiedDemoStage({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.28, ease: SOFT_EASE }}
             >
-              <div className="flex items-center gap-4 lg:gap-8">
-                <div className="hidden h-12 w-12 shrink-0 lg:block">
-                  <NavArrow direction="left" disabled={false} onClick={prev} />
-                </div>
-                <div className="flex-1">
-                  <TwoWeekTransition />
-                </div>
-                <div className="hidden h-12 w-12 shrink-0 lg:block">
-                  <NavArrow direction="right" disabled={false} onClick={next} />
-                </div>
+              <div className="lg:px-20">
+                <TwoWeekTransition />
               </div>
             </motion.div>
           ) : showConclusion ? (
@@ -405,15 +438,8 @@ export default function UnifiedDemoStage({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.28, ease: SOFT_EASE }}
             >
-              <div className="flex items-center gap-4 lg:gap-8">
-                <div className="hidden h-12 w-12 shrink-0 lg:block">
-                  <NavArrow direction="left" disabled={false} onClick={prev} />
-                </div>
-                <div className="flex-1">
-                  <ConclusionSummaryPage />
-                </div>
-                {/* conclusion 只显示左箭头，不显示右箭头 */}
-                <div className="hidden h-12 w-12 shrink-0 lg:block" aria-hidden="true" />
+              <div className="lg:px-20">
+                <ConclusionSummaryPage />
               </div>
             </motion.div>
           ) : mode === "free" ? (
@@ -453,14 +479,9 @@ export default function UnifiedDemoStage({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.28, ease: SOFT_EASE }}
             >
-              <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-[48px_390px_420px_48px] lg:gap-x-24 lg:gap-y-0">
-                {/* 左箭头 */}
-                <div className="hidden h-12 w-12 items-center justify-center lg:flex lg:col-start-1">
-                  <NavArrow direction="left" disabled={false} onClick={prev} />
-                </div>
-
+              <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-[390px_420px] lg:justify-center lg:gap-x-16 lg:gap-y-0 lg:px-10 xl:gap-x-24 xl:px-20">
                 {/* 设备 Demo：06:40 桌面小组件 / 12:00 手表 / 其他 手机 App */}
-                <div className="relative justify-self-center lg:col-start-2">
+                <div className="relative justify-self-center lg:col-start-1">
                   {phase === "day1" && day1Index === 0 ? (
                     <DemoPhoneFrame
                       showWidget
@@ -489,6 +510,38 @@ export default function UnifiedDemoStage({
                           : undefined
                       }
                     />
+                  ) : isDay2WakeLookNode && mode === "guided" ? (
+                    /* 第二周 06:40：首页气泡可点击 → 角落星星反馈 */
+                    <DemoPhoneFrame
+                      demoState={step.demoState}
+                      onDemoBubbleClick={() => setStarCollected(true)}
+                      overlay={
+                        starCollected ? (
+                          <motion.div
+                            className="pointer-events-none absolute z-40"
+                            initial={
+                              reducedMotion
+                                ? { top: "5%", left: "90%", x: "-50%", opacity: 1, scale: 1 }
+                                : { top: "22%", left: "50%", x: "-50%", opacity: 0, scale: 0.3 }
+                            }
+                            animate={{ top: "5%", left: "90%", x: "-50%", opacity: 1, scale: 1 }}
+                            transition={{ duration: reducedMotion ? 0 : 0.8, ease: "easeInOut" }}
+                          >
+                            <Star
+                              className="h-4 w-4 text-ink-soft"
+                              fill="currentColor"
+                              strokeWidth={0}
+                            />
+                          </motion.div>
+                        ) : null
+                      }
+                    />
+                  ) : isDay2SelfRecordNode && mode === "guided" ? (
+                    /* 第二周 10:00：睡眠记录确认 → 结果态（内部两状态流程） */
+                    <DemoPhoneFrame
+                      demoState={step.demoState}
+                      overlay={<DemoSleepRecordFlow />}
+                    />
                   ) : (
                     <DemoPhoneFrame
                       demoState={mode === "guided" ? step.demoState : undefined}
@@ -497,7 +550,7 @@ export default function UnifiedDemoStage({
                 </div>
 
                 {/* 说明面板 */}
-                <div className="w-full lg:col-start-3 lg:h-full">
+                <div className="w-full lg:col-start-2 lg:h-full">
                   <AnimatePresence mode="wait" initial={false}>
                     <motion.div
                       key={mode}
@@ -519,23 +572,20 @@ export default function UnifiedDemoStage({
                     </motion.div>
                   </AnimatePresence>
                 </div>
-
-                {/* 右箭头 */}
-                <div className="hidden h-12 w-12 items-center justify-center lg:flex lg:col-start-4">
-                  <NavArrow direction="right" disabled={false} onClick={next} />
-                </div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* 底部控制槽：仅 stage 显示进度点 */}
-      {showStage && (
+      {/* 底部控制槽：intro + 第一天节点共用进度点；day2 保持自身进度点 */}
+      {showGuidedControls && (
         <div className="min-h-[138px] lg:min-h-[61px]">
-          {mode === "guided" && (
-            <GuidedDemoControls total={total} stepIndex={stepIndex} onGoTo={goTo} />
-          )}
+          <GuidedDemoControls
+            total={guidedControlsTotal}
+            stepIndex={guidedControlsIndex}
+            onGoTo={goToGuidedProgress}
+          />
         </div>
       )}
 
