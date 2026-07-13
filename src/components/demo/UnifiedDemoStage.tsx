@@ -206,6 +206,19 @@ export default function UnifiedDemoStage({
     [phase],
   );
 
+  /* —— 重新观看案例 ——
+   * 重置 Guided Demo 进度：phase 回到 intro，第一天 / 第二天索引归零，
+   * 清空对话与星星状态。不刷新整个官网，不进入自由体验。
+   */
+  const restartGuidedDemo = useCallback(() => {
+    setPhase("intro");
+    setDay1Index(0);
+    setDay2Index(0);
+    setDialogRevealCount(0);
+    setShowBreathing(false);
+    setStarCollected(false);
+  }, []);
+
   const showIntro = mode === "guided" && phase === "intro";
   const showDay1Summary = mode === "guided" && phase === "day1-summary";
   const showWeek2Intro = mode === "guided" && phase === "week2-intro";
@@ -427,12 +440,15 @@ export default function UnifiedDemoStage({
       <div className="relative mt-6 flex flex-1 flex-col justify-center">
         {showGuidedNav && (
           <div className="pointer-events-none absolute inset-y-0 z-20 hidden items-center justify-between lg:-left-10 lg:-right-10 lg:flex xl:-left-20 xl:-right-20 2xl:-left-28 2xl:-right-28">
+            {/* 最后一页（guided-product-value）隐藏右箭头，只保留左箭头返回 */}
             <div className="pointer-events-auto">
               <NavArrow direction="left" disabled={phase === "intro"} onClick={prev} />
             </div>
-            <div className="pointer-events-auto">
-              <NavArrow direction="right" disabled={phase === "guided-product-value"} onClick={next} />
-            </div>
+            {phase !== "guided-product-value" && (
+              <div className="pointer-events-auto">
+                <NavArrow direction="right" disabled={false} onClick={next} />
+              </div>
+            )}
           </div>
         )}
 
@@ -494,7 +510,10 @@ export default function UnifiedDemoStage({
               transition={{ duration: 0.28, ease: SOFT_EASE }}
             >
               <div className="lg:px-20">
-                <GuidedProductValuePage />
+                <GuidedProductValuePage
+                  onRestart={restartGuidedDemo}
+                  onEnterFreeExperience={onSwitchToFree}
+                />
               </div>
             </motion.div>
           ) : mode === "free" ? (
