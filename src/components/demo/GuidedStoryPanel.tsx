@@ -17,6 +17,10 @@ const ease = [0.22, 1, 0.36, 1] as const;
  *   3. 连续故事正文（narrative 数组自然分段）
  *   4. "为什么这样做" + 心理学方法（principles）+ 作用说明（explanation）
  *
+ * 特殊：第一天第一个节点（order=1 且 scenarioName 含"第一天"）时，
+ * 在"涉及模块"下方展示一次"在在 · 在呀 ZÀIYA 的虚拟伙伴"名称标识，
+ * 后续节点不重复。
+ *
  * 不缩小正文字号。
  * 必要时允许右侧区域内部纵向滚动。
  */
@@ -26,6 +30,9 @@ export default function GuidedStoryPanel({
   total,
 }: Props) {
   const tags = step.moduleTags ?? [];
+  // 仅第一天第一节点出现一次名称标识
+  const showZaizaiIntro =
+    step.order === 1 && scenarioName.includes("第一天");
 
   return (
     <div className="flex h-full w-full max-w-[480px] flex-col justify-center overflow-y-auto lg:w-[460px] lg:pr-2">
@@ -64,6 +71,13 @@ export default function GuidedStoryPanel({
                 </span>
               ))}
             </div>
+          )}
+
+          {/* 第一天第一节点：在在名称标识（仅出现一次） */}
+          {showZaizaiIntro && (
+            <p className="mt-3 text-[12px] tracking-[0.08em] text-ink-faint">
+              在在 · 在呀 ZÀIYA 的虚拟伙伴
+            </p>
           )}
 
           {/* 连续故事正文 */}
