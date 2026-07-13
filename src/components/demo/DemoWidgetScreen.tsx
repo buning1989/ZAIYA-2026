@@ -19,13 +19,14 @@ type Props = {
   time?: string;
 };
 
-const APP_PLACEHOLDER_COLOR = "#EEF1E7";
+const PLACEHOLDER_COLOR = "#F2F3EF";
+const DOCK_PLACEHOLDER_COLOR = "#F5F5F2";
 
-function AppPlaceholder() {
+function AppPlaceholder({ color = PLACEHOLDER_COLOR }: { color?: string }) {
   return (
     <div
       className="aspect-square rounded-[22%] border border-white/55 shadow-[0_1px_2px_rgba(39,51,31,0.035)]"
-      style={{ backgroundColor: APP_PLACEHOLDER_COLOR }}
+      style={{ backgroundColor: color }}
       aria-hidden="true"
     />
   );
@@ -79,7 +80,7 @@ export default function DemoWidgetScreen({ time = "06:40" }: Props) {
       <div className="px-6 pb-2">
         <div className="grid grid-cols-3 gap-6 rounded-[28px] bg-white/48 px-7 py-3 shadow-[0_10px_28px_-22px_rgba(39,51,31,0.28)] backdrop-blur-xl">
           {Array.from({ length: 3 }, (_, index) => (
-            <AppPlaceholder key={index} />
+            <AppPlaceholder key={index} color={DOCK_PLACEHOLDER_COLOR} />
           ))}
         </div>
       </div>
