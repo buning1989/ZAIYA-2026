@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Check } from "lucide-react";
+import { Check, ChevronLeft } from "lucide-react";
+import { SectionLabel } from "../organize/shared";
 
 /* —— 第二周 15:30 节点：复诊沟通确认单 → 预览 演示流程 ——
  *
@@ -8,7 +9,6 @@ import { Check } from "lucide-react";
  *   - 系统整理的沟通重点（4 条）
  *   - 我最想问医生的事（用户补充，已填写完成）
  *   - 敏感记录授权（默认不加入，评委可勾选）
- *   - 陪伴文案
  *   - 「确认这份沟通单」按钮
  *
  * 状态 B（preview）：已确认的沟通单预览
@@ -23,6 +23,9 @@ import { Check } from "lucide-react";
  *
  * 状态重置：组件卸载（离开节点）后重新挂载时，自动恢复到状态 A，
  * 敏感记录默认不加入，沟通单未确认。
+ *
+ * UI 对齐：手机内部页面结构与「帮我整理」体验模块一致——
+ * 复用 SectionLabel、导航栏、卡片、checkbox、主按钮样式。
  */
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -45,8 +48,6 @@ const USER_QUESTION = "我什么时候能回学校上课？";
 const SENSITIVE_RECORD_TEXT =
   "和家里争吵后，我会觉得自己是所有人的负担。";
 
-const COMPANION_TEXT = "把心里的事一件件摆出来，\n它们就没那么挤了。";
-
 const DISCLAIMER =
   "这仅供沟通参考，不构成任何专业性的诊断说明。";
 
@@ -66,20 +67,24 @@ export default function DemoOrganizeFlow() {
           exit={{ opacity: 0 }}
           transition={{ duration: prefersReducedMotion ? 0 : 0.28, ease }}
         >
-          {/* 状态栏占位 */}
-          <div className="h-11 shrink-0" />
-
-          {/* 顶部导航：复诊沟通确认单 */}
-          <div className="flex items-center gap-3 px-5 pt-3 pb-2">
-            <h1 className="text-[17px] font-semibold tracking-tight text-ink">
+          {/* 顶部导航：复诊沟通确认单（对齐体验模块导航栏） */}
+          <div className="flex items-center gap-3 px-5 pt-14 pb-2">
+            <button
+              type="button"
+              aria-label="返回"
+              className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+            <h1 className="text-[18px] font-medium leading-relaxed tracking-tight text-ink">
               复诊沟通确认单
             </h1>
           </div>
 
           {/* 内容区：可滚动 */}
           <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-6">
-            {/* 元信息 */}
-            <div className="mt-3 flex flex-col gap-1.5 text-[12.5px] text-ink-soft">
+            {/* 基本信息 */}
+            <div className="mt-5 flex flex-col gap-1.5 text-[12.5px] text-ink-soft">
               <div className="flex">
                 <span className="w-20 shrink-0 text-ink-faint">时间范围</span>
                 <span>{TIME_RANGE}</span>
@@ -92,20 +97,17 @@ export default function DemoOrganizeFlow() {
 
             {/* 沟通重点 */}
             <section className="mt-6">
-              <h2 className="text-[14px] font-medium text-ink">
-                沟通重点
-              </h2>
-              <div className="mt-3 rounded-2xl border border-line bg-white px-4 py-3">
-                <div className="text-[11px] tracking-[0.16em] text-ink-faint">
-                  系统整理
-                </div>
-                <ul className="mt-2 flex flex-col gap-2">
+              <SectionLabel>沟通重点</SectionLabel>
+              <div className="mt-3 rounded-xl border border-line bg-white px-4 py-3">
+                <ul className="flex flex-col gap-2">
                   {COMMUNICATION_POINTS.map((point, idx) => (
                     <li
                       key={idx}
                       className="flex gap-2 text-[14px] leading-relaxed text-ink"
                     >
-                      <span className="text-ink-faint">{idx + 1}.</span>
+                      <span className="text-[13px] font-medium text-accent">
+                        {idx + 1}.
+                      </span>
                       <span>{point}</span>
                     </li>
                   ))}
@@ -115,14 +117,12 @@ export default function DemoOrganizeFlow() {
 
             {/* 我最想问医生的事 */}
             <section className="mt-5">
-              <h2 className="text-[14px] font-medium text-ink">
-                我最想问医生的事
-              </h2>
-              <div className="mt-3 rounded-2xl border border-line bg-white px-4 py-3">
+              <SectionLabel>我最想问医生的事</SectionLabel>
+              <div className="mt-3 rounded-xl border border-line bg-white px-4 py-3">
                 <div className="flex items-center justify-between">
-                  <div className="text-[11px] tracking-[0.16em] text-ink-faint">
+                  <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-medium text-accent-pressed">
                     由你补充
-                  </div>
+                  </span>
                 </div>
                 <p className="mt-2 text-[14px] font-medium leading-relaxed text-ink">
                   {USER_QUESTION}
@@ -132,17 +132,11 @@ export default function DemoOrganizeFlow() {
 
             {/* 敏感记录授权 */}
             <section className="mt-5">
-              <h2 className="text-[14px] font-medium text-ink">
-                敏感记录
-              </h2>
+              <SectionLabel>敏感记录</SectionLabel>
               <button
                 type="button"
                 onClick={() => setSensitiveIncluded((v) => !v)}
-                className={`mt-3 w-full rounded-2xl border px-4 py-4 text-left transition-colors ${
-                  sensitiveIncluded
-                    ? "border-action-primary bg-action-primary/[0.06]"
-                    : "border-line bg-white"
-                }`}
+                className="mt-3 w-full rounded-xl border border-line bg-white px-4 py-4 text-left"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
@@ -158,7 +152,7 @@ export default function DemoOrganizeFlow() {
                   <span
                     className={`grid h-5 w-5 shrink-0 place-items-center rounded-[5px] border transition-colors ${
                       sensitiveIncluded
-                        ? "border-action-primary bg-action-primary"
+                        ? "border-accent bg-accent"
                         : "border-line bg-white"
                     }`}
                   >
@@ -169,11 +163,6 @@ export default function DemoOrganizeFlow() {
                 </div>
               </button>
             </section>
-
-            {/* 陪伴文案 */}
-            <p className="mt-6 whitespace-pre-line text-center text-[13px] leading-relaxed text-ink-faint">
-              {COMPANION_TEXT}
-            </p>
           </div>
 
           {/* 底部确认按钮：敏感记录是否加入都不影响可用性 */}
@@ -196,12 +185,17 @@ export default function DemoOrganizeFlow() {
           exit={{ opacity: 0 }}
           transition={{ duration: prefersReducedMotion ? 0 : 0.28, ease }}
         >
-          {/* 状态栏占位 */}
-          <div className="h-11 shrink-0" />
-
-          {/* 顶部导航 */}
-          <div className="flex items-center gap-3 px-5 pt-3 pb-2">
-            <h1 className="text-[17px] font-semibold tracking-tight text-ink">
+          {/* 顶部导航（对齐体验模块导航栏） */}
+          <div className="flex items-center gap-3 px-5 pt-14 pb-2">
+            <button
+              type="button"
+              onClick={() => setState("confirm")}
+              aria-label="返回"
+              className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+            <h1 className="text-[18px] font-medium leading-relaxed tracking-tight text-ink">
               复诊沟通单
             </h1>
           </div>
@@ -209,7 +203,7 @@ export default function DemoOrganizeFlow() {
           {/* 内容区 */}
           <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-6">
             {/* 确认状态 */}
-            <div className="mt-4">
+            <div className="mt-5">
               <p className="text-center text-[13px] text-ink-faint">
                 已经按你的选择整理好了
               </p>
@@ -234,17 +228,17 @@ export default function DemoOrganizeFlow() {
 
             {/* 沟通重点 */}
             <section className="mt-5">
-              <h2 className="text-[14px] font-medium text-ink">
-                沟通重点
-              </h2>
-              <div className="mt-3 rounded-2xl border border-line bg-white px-4 py-3">
+              <SectionLabel>沟通重点</SectionLabel>
+              <div className="mt-3 rounded-xl border border-line bg-white px-4 py-3">
                 <ul className="flex flex-col gap-2">
                   {COMMUNICATION_POINTS.map((point, idx) => (
                     <li
                       key={idx}
                       className="flex gap-2 text-[14px] leading-relaxed text-ink"
                     >
-                      <span className="text-ink-faint">{idx + 1}.</span>
+                      <span className="text-[13px] font-medium text-accent">
+                        {idx + 1}.
+                      </span>
                       <span>{point}</span>
                     </li>
                   ))}
@@ -254,10 +248,8 @@ export default function DemoOrganizeFlow() {
 
             {/* 我最想问医生的事 */}
             <section className="mt-5">
-              <h2 className="text-[14px] font-medium text-ink">
-                我最想问医生的事
-              </h2>
-              <div className="mt-3 rounded-2xl border border-line bg-white px-4 py-3">
+              <SectionLabel>我最想问医生的事</SectionLabel>
+              <div className="mt-3 rounded-xl border border-line bg-white px-4 py-3">
                 <p className="text-[14px] font-medium leading-relaxed text-ink">
                   {USER_QUESTION}
                 </p>
@@ -267,11 +259,9 @@ export default function DemoOrganizeFlow() {
             {/* 敏感记录：仅当评委勾选时显示 */}
             {sensitiveIncluded && (
               <section className="mt-5">
-                <h2 className="text-[14px] font-medium text-ink">
-                  敏感记录
-                </h2>
-                <div className="mt-3 rounded-2xl border border-line bg-white px-4 py-3">
-                  <div className="text-[11px] tracking-[0.16em] text-ink-faint">
+                <SectionLabel>敏感记录</SectionLabel>
+                <div className="mt-3 rounded-xl border border-line bg-white px-4 py-3">
+                  <div className="text-[11px] font-medium tracking-[0.14em] text-ink-faint">
                     已加入本次沟通材料
                   </div>
                   <p className="mt-2 whitespace-pre-wrap text-[14px] leading-relaxed text-ink">
