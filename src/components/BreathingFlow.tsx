@@ -122,7 +122,7 @@ const TICK_MS = 50;
 const LONG_PRESS_MS = 700;
 const LONG_PRESS_TICK_MS = 30;
 const SELECT_GUIDE_INTERVAL_MS = 3200;
-const BREATHING_BGM = "/assets/zaiya/breathing-bgm.mp3";
+const BREATHING_BGM = "./assets/zaiya/breathing-bgm.mp3";
 
 const easeInOut = (t: number) =>
   t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;

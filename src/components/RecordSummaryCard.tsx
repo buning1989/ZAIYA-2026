@@ -92,7 +92,7 @@ export default function RecordSummaryCard({
         <AnimatePresence>
           {saved && (
             <motion.img
-              src="/saved-stamp.svg"
+              src="./saved-stamp.svg"
               alt="已保存"
               initial={{ opacity: 0, scale: 0.7, rotate: -10 }}
               animate={{ opacity: 1, scale: 1, rotate: -10 }}

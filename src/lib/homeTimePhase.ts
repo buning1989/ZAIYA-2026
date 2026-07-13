@@ -33,8 +33,8 @@ export function getHomeTimeLabel(date: Date): string {
 
 /* —— 各时间段对应的在在首页动画素材 —— */
 export const HOME_PHASE_SCENE: Record<HomeTimePhase, string> = {
-  morning: "/assets/zaiya/wake-up.gif",
-  daytime: "/assets/zaiya/wake-up.gif",
-  evening: "/assets/zaiya/zaizai-reading-night.gif",
-  night: "/assets/zaiya/zaizai-sleeping-breathing.gif",
+  morning: "./assets/zaiya/wake-up.gif",
+  daytime: "./assets/zaiya/wake-up.gif",
+  evening: "./assets/zaiya/zaizai-reading-night.gif",
+  night: "./assets/zaiya/zaizai-sleeping-breathing.gif",
 };

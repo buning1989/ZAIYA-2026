@@ -14,6 +14,7 @@ import DemoWatchFrame from "./DemoWatchFrame";
 import FreeExperiencePanel from "./FreeExperiencePanel";
 import { xiaochenDay1Scenario } from "./scenarios/xiaochenDay1";
 import { xiaochenDay2Scenario } from "./scenarios/xiaochenDay2";
+import type { DialogItem } from "./types";
 import { SOFT_EASE } from "@/lib/motionVariants";
 
 type Props = {
@@ -57,6 +58,26 @@ function isPhasePage(phase: GuidedPhase): boolean {
   return PHASE_PAGES.includes(phase);
 }
 
+/* 根据已显示的消息条数，构造部分对话列表
+ * 时间分隔条始终保留；消息条目按 revealCount 截取
+ */
+function revealDialogItems(
+  items: DialogItem[] | undefined,
+  revealCount: number,
+): DialogItem[] | undefined {
+  if (!items) return undefined;
+  if (revealCount <= 0) {
+    // 只保留时间分隔条
+    return items.filter((item) => item.kind === "time");
+  }
+  let msgShown = 0;
+  return items.filter((item) => {
+    if (item.kind === "time") return true;
+    msgShown += 1;
+    return msgShown <= revealCount;
+  });
+}
+
 /* 移动端滑动水平阈值（px） */
 const SWIPE_THRESHOLD = 50;
 
@@ -69,6 +90,25 @@ export default function UnifiedDemoStage({
   const [phase, setPhase] = useState<GuidedPhase>("intro");
   const [day1Index, setDay1Index] = useState(0);
   const [day2Index, setDay2Index] = useState(0);
+
+  /* —— Guided Demo 自动演示序列 ——
+   * 07:35（day1[1]）：对话逐条出现 → 自动进入呼吸练习
+   * 01:30（day1[4]）：深夜对话逐条出现（更慢节奏）
+   *
+   * dialogRevealCount：当前已显示的对话条数
+   * dialogDone：对话是否全部出现
+   * showBreathing：07:35 是否已切换到呼吸练习
+   *
+   * 进入这些节点时重置为初始状态；
+   * 离开或快速切换时由 effect cleanup 清理计时器。
+   */
+  const [dialogRevealCount, setDialogRevealCount] = useState(0);
+  const [showBreathing, setShowBreathing] = useState(false);
+
+  const isDialogRevealNode =
+    phase === "day1" && (day1Index === 1 || day1Index === 4);
+  const isBreakdownNode = phase === "day1" && day1Index === 1;
+  const isInsomniaNode = phase === "day1" && day1Index === 4;
 
   const isDay2 = phase === "day2";
   const scenario = isDay2 ? xiaochenDay2Scenario : xiaochenDay1Scenario;
@@ -141,6 +181,62 @@ export default function UnifiedDemoStage({
 
   // 阶段页（无手机 Demo、无圆点，但保留左右箭头）
   const showPhasePage = mode === "guided" && isPhasePage(phase);
+
+  /* —— 对话自动逐条出现 ——
+   * 07:35（day1[1]）：短消息 400ms，长消息 750ms，对话全部出现后停留
+   * 01:30（day1[4]）：短消息 600ms，长消息 1100ms（深夜更慢）
+   * 减少动态模式：直接显示全部对话
+   *
+   * 注意：07:35 不再自动进入呼吸练习，改为评委主动点击呼吸入口。
+   */
+  const prefersReducedMotion = useRef(
+    typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches,
+  );
+
+  useEffect(() => {
+    if (!isDialogRevealNode) return;
+    // 重置状态
+    setDialogRevealCount(0);
+    setShowBreathing(false);
+
+    const fullDialog = step.demoState?.dialogItems ?? [];
+    const messageItems = fullDialog.filter((item) => item.kind === "message");
+    const totalCount = messageItems.length;
+
+    if (prefersReducedMotion.current) {
+      setDialogRevealCount(totalCount);
+      return;
+    }
+
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const shortDelay = isInsomniaNode ? 600 : 400;
+    const longDelay = isInsomniaNode ? 1100 : 750;
+
+    let elapsed = 0;
+    messageItems.forEach((item, idx) => {
+      if (idx === 0) {
+        elapsed = 200;
+      } else {
+        const prevItem = messageItems[idx - 1];
+        const text = "text" in prevItem ? prevItem.text : "";
+        elapsed += text.length > 20 ? longDelay : shortDelay;
+      }
+      const t = setTimeout(() => {
+        setDialogRevealCount(idx + 1);
+      }, elapsed);
+      timers.push(t);
+    });
+
+    return () => {
+      timers.forEach(clearTimeout);
+    };
+  }, [phase, day1Index, isDialogRevealNode, isInsomniaNode, step.demoState?.dialogItems, prefersReducedMotion]);
+
+  // 07:35 呼吸入口是否显示：对话全部出现后显示
+  const fullMessageCount = step.demoState?.dialogItems?.filter((i) => i.kind === "message").length ?? 0;
+  const dialogAllShown = dialogRevealCount >= fullMessageCount;
+  const showBreathingEntry = isBreakdownNode && dialogAllShown && !showBreathing;
 
   // 统一键盘事件：覆盖所有 guided 阶段
   useEffect(() => {
@@ -349,6 +445,35 @@ export default function UnifiedDemoStage({
                 <div className="hidden h-12 w-12 shrink-0 lg:block" aria-hidden="true" />
               </div>
             </motion.div>
+          ) : mode === "free" ? (
+            <motion.div
+              key="free"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.28, ease: SOFT_EASE }}
+            >
+              <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-[390px_420px] lg:justify-center lg:gap-x-24 lg:gap-y-0">
+                <div className="justify-self-center">
+                  <DemoPhoneFrame />
+                </div>
+
+                <div className="w-full lg:h-full">
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.div
+                      key="free-panel"
+                      initial={{ opacity: 0, x: 24 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 24 }}
+                      transition={{ duration: 0.32, ease: SOFT_EASE }}
+                      className="h-full"
+                    >
+                      <FreeExperiencePanel />
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+              </div>
+            </motion.div>
           ) : (
             <motion.div
               key={stageKey}
@@ -364,7 +489,7 @@ export default function UnifiedDemoStage({
                 </div>
 
                 {/* 设备 Demo：06:40 桌面小组件 / 12:00 手表 / 其他 手机 App */}
-                <div className="justify-self-center lg:col-start-2">
+                <div className="relative justify-self-center lg:col-start-2">
                   {phase === "day1" && day1Index === 0 ? (
                     <DemoPhoneFrame
                       showWidget
@@ -372,6 +497,27 @@ export default function UnifiedDemoStage({
                     />
                   ) : phase === "day1" && day1Index === 2 ? (
                     <DemoWatchFrame time={step.time} />
+                  ) : phase === "day1" && day1Index === 1 && showBreathing ? (
+                    <DemoPhoneFrame
+                      demoState={mode === "guided" ? step.secondaryDemoState : undefined}
+                    />
+                  ) : isDialogRevealNode && mode === "guided" && step.demoState ? (
+                    <DemoPhoneFrame
+                      demoState={{
+                        ...step.demoState,
+                        dialogItems: revealDialogItems(step.demoState.dialogItems, dialogRevealCount),
+                      }}
+                      dialogActionCard={
+                        showBreathingEntry
+                          ? {
+                              title: "和在在一起缓一缓",
+                              description: "呼气长一点，让身体先慢下来。",
+                              actionLabel: "开始呼吸练习",
+                              onClick: () => setShowBreathing(true),
+                            }
+                          : undefined
+                      }
+                    />
                   ) : (
                     <DemoPhoneFrame
                       demoState={mode === "guided" ? step.demoState : undefined}

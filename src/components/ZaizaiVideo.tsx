@@ -9,9 +9,9 @@ type Props = {
   src?: string;
 };
 
-export const ZAIZAI_VIDEO_SRC = "/assets/zaiya/zaiya-transparent.webm";
-export const ZAIZAI_RELIEF_VIDEO_SRC = "/assets/zaiya/zaiya-relief-transparent.webm";
-const ZAIZAI_VIDEO_POSTER = "/assets/zaiya/zaiya-wave-poster.png";
+export const ZAIZAI_VIDEO_SRC = "./assets/zaiya/zaiya-transparent.webm";
+export const ZAIZAI_RELIEF_VIDEO_SRC = "./assets/zaiya/zaiya-relief-transparent.webm";
+const ZAIZAI_VIDEO_POSTER = "./assets/zaiya/zaiya-wave-poster.png";
 
 export default function ZaizaiVideo({
   className = "h-24 w-24",

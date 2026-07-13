@@ -91,34 +91,42 @@ export default function DemoWidgetScreen({ time = "06:40" }: Props) {
 }
 
 /* —— 2×2 方形在呀桌面小组件 ——
- * 浅色卡片 + 大圆角 + 在在静态关键帧 + 短文案
- * 文案严格使用剧情文件原文：
- *   我把窗帘拉开了一点，
+ * 场景图铺满 + 顶部渐变遮罩 + 左上叠加文案
+ * 文案：
+ *   窗帘拉开了一点，
  *   光会自己进来
+ *
+ * 素材为 9:16 透明背景 GIF，按"组件专用裁切参数"放大定位，
+ * 让窗帘和在在主体铺满组件有效区域，裁掉透明留白。
  */
 function WidgetCard() {
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-[24px] border border-white/75 bg-[#FBFCF5] shadow-[0_8px_24px_-12px_rgba(39,51,31,0.18)] backdrop-blur-md">
-      {/* 在在名称（左上） */}
-      <p className="relative z-10 px-3.5 pt-3 text-[13px] font-semibold leading-tight text-ink">
-        在在
-      </p>
+    <div className="relative h-full w-full overflow-hidden rounded-[24px] border border-white/60 bg-[#FBFCF5] shadow-[0_8px_24px_-12px_rgba(39,51,31,0.18)]">
+      {/* 在在拉开窗帘的场景图（按主体 bbox 校准，裁掉透明留白） */}
+      <img
+        src="./assets/zaiya/wake-up.gif"
+        alt="在在拉开窗帘"
+        className="absolute left-[48%] top-[53%] h-[250%] w-auto max-w-none -translate-x-1/2 -translate-y-1/2 object-contain"
+        style={{
+          transformOrigin: "center center",
+        }}
+        draggable={false}
+      />
 
-      {/* 在在形象（晨起静态关键帧） */}
-      <div className="absolute -right-1 bottom-0 h-[88%] w-[70%]">
-        <img
-          src="/assets/zaiya/wake-up.gif"
-          alt="在在拉开窗帘"
-          className="absolute left-1/2 top-1/2 h-full w-auto max-w-none -translate-x-1/2 -translate-y-1/2 object-contain"
-          style={{ transform: "translate(-50%, -42%) scale(1.15)" }}
-          draggable={false}
-        />
-      </div>
+      {/* 顶部渐变遮罩：保证文案可读性 */}
+      <div
+        className="absolute inset-x-0 top-0 h-3/5"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.20) 50%, rgba(0,0,0,0) 100%)",
+        }}
+        aria-hidden="true"
+      />
 
-      {/* 产品文案（左下） */}
-      <div className="absolute bottom-2.5 left-3.5 right-3.5 z-10">
-        <p className="text-[11px] leading-[1.45] text-ink-soft">
-          我把窗帘拉开了一点，
+      {/* 产品文案（左上叠加，放大字号） */}
+      <div className="absolute left-4 right-4 top-4 z-10">
+        <p className="text-[16px] font-semibold leading-[1.3] text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+          窗帘拉开了一点
           <br />
           光会自己进来
         </p>

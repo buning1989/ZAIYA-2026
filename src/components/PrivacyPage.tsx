@@ -368,7 +368,7 @@ function HomeView({
             头部始终完整，仅允许腿脚从视窗底部自然裁切。 */}
         <div className="pointer-events-none absolute right-5 top-14 z-20 h-[100px] w-16 overflow-hidden rounded-2xl">
           <video
-            src="/assets/zaiya/privacy-peek-transparent.webm"
+            src="./assets/zaiya/privacy-peek-transparent.webm"
             autoPlay
             loop
             muted

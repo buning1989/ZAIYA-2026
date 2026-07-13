@@ -383,6 +383,13 @@ type Props = {
   /** 案例演示状态注入。enabled !== true 时组件完全保持自由体验逻辑；
    *  enabled === true 时允许外部覆盖内部模式 / 时间 / 气泡 / 对话 / 轻社交场景。 */
   demoState?: AppMainSurfaceDemoState;
+  /** 对话流末尾行动卡片：用于演示模式下承接下一步动作，不进入脚本数据。 */
+  dialogActionCard?: {
+    title: string;
+    description: string;
+    actionLabel: string;
+    onClick: () => void;
+  };
 };
 
 /**
@@ -411,6 +418,7 @@ export default function AppMainSurface({
   variant = "hero",
   onButtonClick,
   demoState,
+  dialogActionCard,
 }: Props) {
   const [active, setActive] = useState<number | null>(null);
 
@@ -1038,7 +1046,7 @@ export default function AppMainSurface({
               />
             ) : (
               <video
-                src="/assets/zaiya/zaizai-eating.webm"
+                src="./assets/zaiya/zaizai-eating.webm"
                 autoPlay
                 loop
                 muted
@@ -1241,6 +1249,28 @@ export default function AppMainSurface({
                     >
                       在在正在听…
                     </motion.div>
+                  )}
+                  {dialogActionCard && (
+                    <motion.button
+                      type="button"
+                      onClick={dialogActionCard.onClick}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25, ease }}
+                      className="mt-4 w-full rounded-2xl border border-line-soft bg-white px-4 py-3 text-left shadow-[0_4px_18px_-12px_rgba(39,51,31,0.22)] transition-colors hover:border-line focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/20"
+                    >
+                      <p className="text-[14px] font-semibold leading-[1.4] text-ink">
+                        {dialogActionCard.title}
+                      </p>
+                      <p className="mt-1 text-[12px] leading-[1.5] text-ink-soft">
+                        {dialogActionCard.description}
+                      </p>
+                      <div className="mt-2.5 flex justify-end">
+                        <span className="rounded-full bg-action-primary px-3.5 py-1 text-[12px] font-medium text-ink">
+                          {dialogActionCard.actionLabel}
+                        </span>
+                      </div>
+                    </motion.button>
                   )}
                 </div>
               )}

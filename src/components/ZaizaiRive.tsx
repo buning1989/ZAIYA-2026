@@ -7,7 +7,7 @@ import { Alignment, Fit, Layout, useRive } from "@rive-app/react-canvas";
  * 当前仓库统一使用 public/lil_guy.riv 作为在在角色动画。
  * 如果实际文件名不同，只需要改这里的常量，Hero、Demo、角色区会同步替换。
  */
-export const ZAIZAI_RIVE_SRC = "/lil_guy.riv";
+export const ZAIZAI_RIVE_SRC = "./lil_guy.riv";
 // 保留导出供历史调用方使用；默认不再强制动画名，避免 riv 内无对应名时加载异常
 export const ZAIZAI_IDLE_ANIMATIONS = ["idle", "blink"];
 export const ZAIZAI_WAVE_ANIMATIONS = ["idle", "blink"];

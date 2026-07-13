@@ -55,6 +55,8 @@ const step2Dialog: DialogItem[] = [
 ];
 
 // —— Step 5 对话：01:30 反刍失眠 ——
+// 注：原剧情最后引向"一起睡觉"场景，按最新产品决策不进入该路径，
+// 只修改最后一句对白使其收束到身体和休息，不再出现"一起睡觉"入口。
 const step5Base = makeDate("01:30");
 const step5Dialog: DialogItem[] = [
   timeLabel("s5-t", "今天 01:30", step5Base),
@@ -68,8 +70,7 @@ const step5Dialog: DialogItem[] = [
   msg("s5-8", "zaizai", "不用做到的。睡着这件事急不来，我自己也是躺着躺着才睡着的，从来不是努力来的。", step5Base),
   msg("s5-9", "zaizai", "眼睛闭着，身体歇着，就挺好的。", step5Base),
   msg("s5-10", "user", "可我一闭眼睛脑袋里就放电视。", step5Base),
-  msg("s5-11", "zaizai", "那我们换个“没有电视”的屋子？去“一起睡觉”的广场里，一边听虫鸣数星星，一边等睡意来找你？", step5Base),
-  msg("s5-12", "user", "好。", step5Base),
+  msg("s5-11", "zaizai", "那我们先不关电视。只把声音调小一点，先感觉一下被子、枕头和呼吸。", step5Base),
 ];
 
 export const xiaochenDay1Scenario: GuidedScenario = {

@@ -23,7 +23,7 @@ export default function Logo({
         aria-hidden="true"
       >
         <RivePlayer
-          src="/color_eyes_interaction.riv"
+          src="./color_eyes_interaction.riv"
           stateMachines="State Machine 1"
           stateMachineBooleans={{ "Following?": true, "Annoying?": false }}
           className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 ${

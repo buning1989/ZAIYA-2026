@@ -21,8 +21,8 @@ type ZaiyaWakeAnimationVariant =
   | "watch"
   | "dialog";
 
-const WAKE_UP_SRC = "/assets/zaiya/wake-up.gif";
-const IDLE_LEAN_BACK_SRC = "/assets/zaiya/zaizai-idle-lean-back-slow.gif";
+const WAKE_UP_SRC = "./assets/zaiya/wake-up.gif";
+const IDLE_LEAN_BACK_SRC = "./assets/zaiya/zaizai-idle-lean-back-slow.gif";
 
 const VARIANT_CONFIG: Record<
   ZaiyaWakeAnimationVariant,

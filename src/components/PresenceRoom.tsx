@@ -186,22 +186,22 @@ const dazePostures: DazePosture[] = [
   {
     id: "shake-head",
     label: "轻轻摇头",
-    src: "/assets/social/daze/action-shake-head.gif",
+    src: "./assets/social/daze/action-shake-head.gif",
   },
   {
     id: "quick-idle",
     label: "安静坐着",
-    src: "/assets/social/daze/action-quick-idle.gif",
+    src: "./assets/social/daze/action-quick-idle.gif",
   },
   {
     id: "lean-back",
     label: "往后靠着",
-    src: "/assets/social/daze/action-lean-back.gif",
+    src: "./assets/social/daze/action-lean-back.gif",
   },
 ];
 
-const SCENE_VIDEO = "/assets/social/daze/scene-together-15s.webm";
-const DAZE_BGM = "/assets/social/daze/together-bgm.mp3";
+const SCENE_VIDEO = "./assets/social/daze/scene-together-15s.webm";
+const DAZE_BGM = "./assets/social/daze/together-bgm.mp3";
 
 /**
  * 「一起发呆」完整流程（准备态 → 正式发呆态 → 长按退出）。
@@ -816,15 +816,15 @@ function LongPressExitButton({
  * 食物仅作为轻社交场景中的陪伴道具，不进入饮食记录数据结构、不评价健康。
  * 默认选中「粥」，更温和，也符合慢慢吃的状态。 */
 const eatFoods: CarouselItem[] = [
-  { id: "milk-tea", label: "奶茶", src: "/assets/social/eat/food-milk-tea.webm" },
-  { id: "greens", label: "青菜", src: "/assets/social/eat/food-greens.webm" },
-  { id: "meat", label: "肉", src: "/assets/social/eat/food-meat.webm" },
-  { id: "fruit", label: "水果", src: "/assets/social/eat/food-fruit.webm" },
-  { id: "dessert", label: "甜品", src: "/assets/social/eat/food-dessert.webm" },
-  { id: "congee", label: "粥", src: "/assets/social/eat/food-congee.webm" },
+  { id: "milk-tea", label: "奶茶", src: "./assets/social/eat/food-milk-tea.webm" },
+  { id: "greens", label: "青菜", src: "./assets/social/eat/food-greens.webm" },
+  { id: "meat", label: "肉", src: "./assets/social/eat/food-meat.webm" },
+  { id: "fruit", label: "水果", src: "./assets/social/eat/food-fruit.webm" },
+  { id: "dessert", label: "甜品", src: "./assets/social/eat/food-dessert.webm" },
+  { id: "congee", label: "粥", src: "./assets/social/eat/food-congee.webm" },
 ];
 
-const EAT_SCENE_VIDEO = "/assets/social/eat/scene-eating-plaza.webm";
+const EAT_SCENE_VIDEO = "./assets/social/eat/scene-eating-plaza.webm";
 const EAT_DEFAULT_FOOD = "congee";
 
 const EAT_PRESENCE_MESSAGES = [

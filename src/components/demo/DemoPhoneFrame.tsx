@@ -5,6 +5,13 @@ import type { AppMainSurfaceDemoState } from "./types";
 type Props = {
   /** 案例演示状态注入 */
   demoState?: AppMainSurfaceDemoState;
+  /** 对话流末尾行动卡片：用于 07:35 呼吸入口 */
+  dialogActionCard?: {
+    title: string;
+    description: string;
+    actionLabel: string;
+    onClick: () => void;
+  };
   /** 是否显示桌面小组件场景（替代 AppMainSurface） */
   showWidget?: boolean;
   /** 桌面态显示的系统时间 */
@@ -19,6 +26,7 @@ type Props = {
  */
 export default function DemoPhoneFrame({
   demoState,
+  dialogActionCard,
   showWidget,
   widgetTime,
 }: Props) {
@@ -33,6 +41,7 @@ export default function DemoPhoneFrame({
               interactive
               variant="immersive"
               demoState={demoState}
+              dialogActionCard={dialogActionCard}
             />
           )}
         </div>

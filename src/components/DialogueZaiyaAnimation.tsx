@@ -18,10 +18,10 @@ export type DialogueAnimState =
   | "responding";
 
 const VIDEO_SOURCES: Record<DialogueAnimState, string> = {
-  idle: "/assets/zaiya/dialogue/zaiya-dialogue-idle.webm",
-  listening: "/assets/zaiya/dialogue/zaiya-dialogue-listening.webm",
-  thinking: "/assets/zaiya/dialogue/zaiya-dialogue-thinking.webm",
-  responding: "/assets/zaiya/dialogue/zaiya-dialogue-responding.webm",
+  idle: "./assets/zaiya/dialogue/zaiya-dialogue-idle.webm",
+  listening: "./assets/zaiya/dialogue/zaiya-dialogue-listening.webm",
+  thinking: "./assets/zaiya/dialogue/zaiya-dialogue-thinking.webm",
+  responding: "./assets/zaiya/dialogue/zaiya-dialogue-responding.webm",
 };
 
 // 循环播放的状态：idle / listening / thinking；responding 只播放一次
