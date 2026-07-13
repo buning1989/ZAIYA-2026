@@ -6,6 +6,7 @@ const columns = [
     links: [
       { label: "体验 Demo", href: "#demo" },
       { label: "需求与方案", href: "#problem" },
+      { label: "产品与核心功能", href: "#product" },
       { label: "技术实践", href: "#clinical" },
     ],
   },
@@ -28,7 +29,7 @@ export default function Footer() {
             <Logo />
           </a>
           <p className="mt-4 max-w-xs text-[13px] leading-relaxed text-ink-soft">
-            占位文案：一个不急于解决问题的 AI 陪伴产品。最终文案待回填。
+            面向精神心理困扰人群的 AI 健康生活伙伴。
           </p>
         </div>
 
@@ -56,7 +57,6 @@ export default function Footer() {
       <div className="border-t border-line">
         <div className="container flex flex-col items-center justify-between gap-3 py-6 text-[12.5px] text-ink-faint sm:flex-row">
           <span>© {new Date().getFullYear()} 在呀 ZÀIYA</span>
-          <span>骨架搭建阶段</span>
         </div>
       </div>
     </footer>

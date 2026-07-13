@@ -6,6 +6,7 @@ const principles = [
   { label: "非人非动物", text: "不指向现实物种，避免用户把它理解成宠物、医生或权威角色。" },
   { label: "无嘴无鼻", text: "弱化表达和评判感，让它更像一个安静在场的生活节点提醒。" },
   { label: "低刺激", text: "减少强情绪反馈，不催促、不逼问，适合主动触发困难的人群。" },
+  { label: "帽子恒定", text: "无论在哪个场景，帽子始终都在。它是唯一不会因为你的状态而改变的部分。" },
 ];
 
 export default function CharacterDesign() {
@@ -30,7 +31,7 @@ export default function CharacterDesign() {
             />
             <Reveal delay={0.1}>
               <p className="mt-6 max-w-prose text-[15px] leading-relaxed text-ink-soft">
-                在在不是医生、咨询师，也不是替用户做决定的助手。它更像一个安静的生活节点：在起床、吃饭、睡前和复诊前出现，帮助用户把状态留下来，把下一步降到足够小。
+                在在不是医生、不是咨询师，也不替你做决定。它是一个安静的生活节点——在起床、吃饭、睡前和复诊前出现，陪你把下一步，降到足够小。
               </p>
             </Reveal>
 

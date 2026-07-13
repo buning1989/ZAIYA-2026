@@ -2,6 +2,7 @@ import { useState } from "react";
 import Nav from "@/components/Nav";
 import Hero from "@/components/Hero";
 import ProblemSolution from "@/components/ProblemSolution";
+import ProductFeatures from "@/components/ProductFeatures";
 import ClinicalFramework from "@/components/ClinicalFramework";
 import CharacterDesign from "@/components/CharacterDesign";
 import Team from "@/components/Team";
@@ -44,6 +45,7 @@ export default function App() {
         <main>
           <Hero onOpenDemo={() => setDemoOpen(true)} />
           <ProblemSolution />
+          <ProductFeatures />
           <ClinicalFramework />
           <CharacterDesign />
           <Team />

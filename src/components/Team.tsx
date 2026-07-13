@@ -12,8 +12,7 @@ export default function Team() {
         />
         <Reveal delay={0.1}>
           <p className="mt-6 max-w-prose text-[15px] leading-relaxed text-ink-soft">
-            占位文案：在呀由饼饼和步宁共同创立。饼饼的临床背景与亲历经验是产品方向
-            的起点，不是附加的「专家背书」。最终文案待回填。
+            在呀不是一个\u201c发现了市场机会\u201d的项目，是一段先经历、后设计的路。
           </p>
         </Reveal>
 
@@ -43,6 +42,12 @@ export default function Team() {
             </Reveal>
           ))}
         </div>
+
+        <Reveal delay={0.2}>
+          <p className="mt-10 text-[14px] font-medium leading-relaxed text-ink-soft">
+            我们没有从\u201c这是一个好赛道\u201d出发。我们是先活过这段经历，才知道该做什么。
+          </p>
+        </Reveal>
       </div>
     </section>
   );
