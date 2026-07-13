@@ -5,7 +5,8 @@ import { cn } from "@/lib/utils";
  * 四种状态：idle / listening / thinking / responding
  * - idle / listening / thinking：循环播放
  * - responding：播放一次短动作后回到 idle（由父级 onRespondingEnd 触发）
- * - 四个 video 常驻叠层 + preload="auto"，避免首次切换闪白/卡顿
+ * - 四个 video 常驻叠层，preload="none"：仅 active 状态由 play() 触发加载
+ *   性能优化（2026-07-13）：从 preload="auto" 改为 "none"，避免一次性加载 4 个视频
  * - 切换加 200ms 淡入淡出，容器尺寸不变，不抖动
  * - 任一视频加载失败：回退到 idle，控制台 warning，不阻断使用
  * - video 容器背景透明，承接 WebM 透明底素材
@@ -110,7 +111,7 @@ export default function DialogueZaiyaAnimation({
             src={VIDEO_SOURCES[s]}
             muted
             playsInline
-            preload="auto"
+            preload="none"
             loop={loop}
             // 初始挂载时让 idle 自动播放，其余由 effect 接管
             autoPlay={s === "idle"}

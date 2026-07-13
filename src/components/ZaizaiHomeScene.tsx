@@ -61,6 +61,7 @@ export default function ZaizaiHomeScene({
           loop
           muted
           playsInline
+          preload="none"
           controls={false}
         />
       </AnimatePresence>

@@ -373,6 +373,7 @@ function HomeView({
             loop
             muted
             playsInline
+            preload="none"
             className="h-full w-full object-cover object-[50%_18%]"
           />
         </div>

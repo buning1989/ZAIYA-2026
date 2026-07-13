@@ -23,6 +23,7 @@ export default function ZaizaiVideo({
     return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
   });
   const [failed, setFailed] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
   // 延迟一帧渲染 video：规避 StrictMode 双挂载与 AnimatePresence 切层时
   // 组件快速卸载导致的 <source> 请求被中止（net::ERR_ABORTED 控制台噪音）。
   const [canLoadVideo, setCanLoadVideo] = useState(false);
@@ -81,6 +82,10 @@ export default function ZaizaiVideo({
     v.load();
     const p = v.play();
     if (p && typeof p.catch === "function") p.catch(() => {});
+    // 视频开始播放后隐藏 poster，避免透明视频透出底层静态图
+    const onPlaying = () => setVideoReady(true);
+    v.addEventListener("playing", onPlaying);
+    return () => v.removeEventListener("playing", onPlaying);
   }, [inView]);
 
   if (reducedMotion || failed || !canLoadVideo) {
@@ -107,13 +112,15 @@ export default function ZaizaiVideo({
       {shadow && (
         <div className="absolute left-1/2 top-[84%] h-[10%] w-[56%] -translate-x-1/2 rounded-full bg-black/18 blur-[7px]" />
       )}
-      {/* 静态首帧 poster：视频未 ready 前显示，ready 后由 video 覆盖 */}
-      <img
-        src={ZAIZAI_VIDEO_POSTER}
-        alt=""
-        aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-1/2 block h-[170%] w-auto max-w-none -translate-x-1/2 -translate-y-1/2 select-none object-contain"
-      />
+      {/* 静态首帧 poster：视频未 ready 前显示，ready 后隐藏（透明视频会透出 poster） */}
+      {!videoReady && (
+        <img
+          src={ZAIZAI_VIDEO_POSTER}
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute left-1/2 top-1/2 block h-[170%] w-auto max-w-none -translate-x-1/2 -translate-y-1/2 select-none object-contain"
+        />
+      )}
       {inView && (
         <video
           ref={videoRef}

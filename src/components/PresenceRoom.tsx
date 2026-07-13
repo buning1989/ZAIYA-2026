@@ -11,6 +11,7 @@ import {
   VolumeX,
 } from "lucide-react";
 import { CollapseButton } from "./FeaturePageTransition";
+import LazyVideo from "./LazyVideo";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -269,17 +270,16 @@ export function DazeFlow({
       className="absolute inset-0 z-[60] overflow-hidden bg-ink"
     >
       {/* 全屏场景视频：准备态与正式态共用同一画面背景 */}
-      <video
+      <LazyVideo
         src={SCENE_VIDEO}
-        aria-label="一起发呆"
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="auto"
-        className="absolute inset-0 h-full w-full object-cover"
+        ariaLabel="一起发呆"
+        eager
+        layout="fill"
+        mediaClassName="object-cover"
+        className="absolute inset-0 h-full w-full"
+        fadeDuration={400}
       />
-      <audio ref={audioRef} src={DAZE_BGM} autoPlay loop preload="auto" />
+      <audio ref={audioRef} src={DAZE_BGM} autoPlay loop preload="none" />
 
       <button
         type="button"
@@ -483,19 +483,17 @@ type CarouselItem = {
 };
 
 /* —— carousel 单卡：透明度/缩放/描边均由 x 派生，拖拽过程中无重渲染 ——
- * mediaKind="image" 渲染 <img>（发呆姿势 GIF）；"video" 渲染 <video>（食物 webm）。 */
+ * 性能优化（2026-07-13）：GIF → 透明 WebM，使用 LazyVideo 懒加载。 */
 function CarouselCard({
   trackIdx,
   item,
   x,
   onClick,
-  mediaKind = "image",
 }: {
   trackIdx: number;
   item: CarouselItem;
   x: ReturnType<typeof useMotionValue<number>>;
   onClick: () => void;
-  mediaKind?: "image" | "video";
 }) {
   // 当前中心卡索引 = -x / step
   const center = useTransform(x, (xv) => -xv / CARD_STEP);
@@ -533,24 +531,17 @@ function CarouselCard({
             opacity: ringOpacity,
           }}
         />
-        {mediaKind === "video" ? (
-          <video
-            src={item.src}
-            aria-label={item.label}
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="h-full w-full object-contain"
-          />
-        ) : (
-          <img
-            src={item.src}
-            alt={item.label}
-            className="h-full w-full object-contain"
-            draggable={false}
-          />
-        )}
+        <LazyVideo
+          src={item.src}
+          poster={item.poster}
+          rootMargin="100px"
+          layout="fill"
+          mediaClassName="object-contain"
+          alt={item.label}
+          ariaLabel={item.label}
+          fadeDuration={250}
+          className="h-full w-full"
+        />
       </motion.div>
       <motion.p
         className="mt-2 text-center text-[12px] font-medium text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]"
@@ -872,15 +863,14 @@ export function EatFlow({
       className="absolute inset-0 z-[60] overflow-hidden bg-ink"
     >
       {/* 全屏场景视频：准备态与正式态共用同一画面背景 */}
-      <video
+      <LazyVideo
         src={EAT_SCENE_VIDEO}
-        aria-label="一起吃饭"
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="auto"
-        className="absolute inset-0 h-full w-full object-cover"
+        ariaLabel="一起吃饭"
+        eager
+        layout="fill"
+        mediaClassName="object-cover"
+        className="absolute inset-0 h-full w-full"
+        fadeDuration={400}
       />
 
       <AnimatePresence mode="wait">
@@ -901,7 +891,7 @@ export function EatFlow({
 }
 
 /* —— 准备态：沉浸场景内的食物选择（无限循环横滑 carousel） ——
- * 复用与发呆准备态相同的 carousel 机制，食物卡渲染为 <video>（mediaKind="video"）。 */
+ * 复用与发呆准备态相同的 carousel 机制，食物卡渲染为 LazyVideo。 */
 function EatReady({
   selected,
   onSelect,
@@ -1033,7 +1023,6 @@ function EatReady({
                 trackIdx={trackIdx}
                 item={food}
                 x={x}
-                mediaKind="video"
                 onClick={() => {
                   if (draggedRef.current) return;
                   snapTo(trackIdx);

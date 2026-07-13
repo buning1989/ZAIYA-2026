@@ -170,7 +170,6 @@ const LazyVideo = forwardRef<LazyVideoHandle, Props>(function LazyVideo(
       observer.disconnect();
       observerRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eager, rootMargin, disableAutoplay, pauseWhenOutOfView]);
 
   // shouldLoad 变化时主动 load + play
