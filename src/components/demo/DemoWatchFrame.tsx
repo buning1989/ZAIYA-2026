@@ -33,7 +33,7 @@ export default function DemoWatchFrame({ time = "12:00" }: Props) {
           <div className="relative flex h-full w-full flex-col items-center overflow-hidden rounded-[36px] bg-white px-6 pt-[28px]">
             {/* 顶部大时间（适中尺寸，不压制角色） */}
             <div className="w-full text-center">
-              <p className="font-watch text-[60px] font-medium leading-[0.95] tracking-[-0.045em] tabular-nums text-[#243020]">
+              <p className="font-watch text-[72px] font-medium leading-[0.95] tracking-[-0.045em] tabular-nums text-[#243020]">
                 {time}
               </p>
             </div>
@@ -49,7 +49,7 @@ export default function DemoWatchFrame({ time = "12:00" }: Props) {
                 preload="auto"
                 className="block h-full w-full select-none object-contain"
                 style={{
-                  transform: "scale(1.95) translateY(-10%)",
+                  transform: "scale(1.95) translateY(0%)",
                   transformOrigin: "center center",
                 }}
               />
