@@ -12,6 +12,8 @@ import ConclusionSummaryPage from "./ConclusionSummaryPage";
 import DemoPhoneFrame from "./DemoPhoneFrame";
 import DemoWatchFrame from "./DemoWatchFrame";
 import DemoSleepRecordFlow from "./DemoSleepRecordFlow";
+import DemoOrganizeFlow from "./DemoOrganizeFlow";
+import DemoPraiseFlow from "./DemoPraiseFlow";
 import FreeExperiencePanel from "./FreeExperiencePanel";
 import { xiaochenDay1Scenario } from "./scenarios/xiaochenDay1";
 import { xiaochenDay2Scenario } from "./scenarios/xiaochenDay2";
@@ -125,6 +127,8 @@ export default function UnifiedDemoStage({
   const [starCollected, setStarCollected] = useState(false);
   const isDay2WakeLookNode = phase === "day2" && day2Index === 0;
   const isDay2SelfRecordNode = phase === "day2" && day2Index === 1;
+  const isDay2OrganizeNode = phase === "day2" && day2Index === 2;
+  const isDay2PraiseNode = phase === "day2" && day2Index === 3;
   const reducedMotion = useReducedMotion();
 
   // 进入 / 返回 day2[0] 时重置星星状态
@@ -541,6 +545,18 @@ export default function UnifiedDemoStage({
                     <DemoPhoneFrame
                       demoState={step.demoState}
                       overlay={<DemoSleepRecordFlow />}
+                    />
+                  ) : isDay2OrganizeNode && mode === "guided" ? (
+                    /* 第二周 15:30：复诊沟通确认单 → 预览（内部两状态流程） */
+                    <DemoPhoneFrame
+                      demoState={step.demoState}
+                      overlay={<DemoOrganizeFlow />}
+                    />
+                  ) : isDay2PraiseNode && mode === "guided" ? (
+                    /* 第二周 16:30：夸夸卡创建 → 保存（内部两状态流程） */
+                    <DemoPhoneFrame
+                      demoState={step.demoState}
+                      overlay={<DemoPraiseFlow />}
                     />
                   ) : (
                     <DemoPhoneFrame
