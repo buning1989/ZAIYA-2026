@@ -180,8 +180,13 @@ const LazyVideo = forwardRef<LazyVideoHandle, Props>(function LazyVideo(
     v.load();
     if (!disableAutoplay) {
       const p = v.play();
-      if (p && typeof p.catch === "function") p.catch(() => {});
-      playedRef.current = true;
+      if (p && typeof p.catch === "function") {
+        p.then(() => {
+          playedRef.current = true;
+        }).catch(() => {});
+      } else {
+        playedRef.current = true;
+      }
     }
   }, [shouldLoad, disableAutoplay]);
 

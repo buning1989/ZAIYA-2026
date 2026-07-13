@@ -111,6 +111,7 @@ function WidgetCard() {
         poster="./assets/zaiya/wake-up-poster.png"
         eager
         layout="natural"
+        className="absolute inset-0 h-full w-full"
         mediaClassName="absolute left-[48%] top-[53%] h-[250%] w-auto max-w-none -translate-x-1/2 -translate-y-1/2 object-contain"
         mediaStyle={{ transformOrigin: "center center" }}
         alt="在在拉开窗帘"

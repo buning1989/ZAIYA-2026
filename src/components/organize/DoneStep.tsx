@@ -129,7 +129,7 @@ export default function DoneStep({
             <ChevronLeft className="h-6 w-6" />
           </button>
           <h1 className="text-[18px] font-medium leading-relaxed tracking-tight text-ink">
-            沟通确认单
+            和王医生的沟通
           </h1>
         </div>
         <button
@@ -144,43 +144,26 @@ export default function DoneStep({
       {/* 沟通确认单主体 */}
       <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-6">
         <div className="rounded-2xl border border-line bg-white px-5 py-5">
-          {/* 单据顶部：主标题 + 辅助状态 */}
+          {/* 单据顶部：主标题 */}
           <div>
-            <h2 className="text-[18px] font-semibold leading-relaxed tracking-tight text-ink">
+            <h2 className="text-center text-[18px] font-semibold leading-relaxed tracking-tight text-ink">
               沟通确认单
             </h2>
-            <div className="mt-1 text-[12px] text-ink-faint">
-              复诊沟通 · 已确认
-            </div>
           </div>
 
           {/* 分割线 */}
           <div className="my-4 h-px bg-line-soft" />
 
-          {/* 沟通对象：较重要的信息，字号字重高于普通字段值 */}
-          <div>
-            <div className="text-[12px] text-ink-faint">沟通对象</div>
-            <div className="mt-1 text-[15px] font-semibold leading-relaxed text-ink">
-              {name}（{session.contactSnapshot.roleLabel}）
-            </div>
-          </div>
-
-          {/* 分割线 */}
-          <div className="my-4 h-px bg-line-soft" />
-
-          {/* 沟通目标：固定文案，避免临床效果承诺 */}
-          <div>
-            <div className="text-[12px] text-ink-faint">沟通目标</div>
-            <p className="mt-1.5 text-[14px] leading-[1.65] text-ink">
-              帮助{name}快速了解近一个月的状态变化、用药体验，以及这些变化对上学和家庭生活的影响，减少复诊沟通中的遗漏。
-            </p>
-          </div>
-
-          {/* 分割线 */}
-          <div className="my-4 h-px bg-line-soft" />
-
-          {/* 记录信息：左右两列布局，字段值字号明显高于旧版 */}
+          {/* 沟通对象 + 记录信息：左右两列布局，统一行间距 */}
           <div className="flex flex-col gap-2.5">
+            <div className="flex items-baseline gap-4">
+              <span className="w-16 shrink-0 text-[12px] text-ink-faint">
+                沟通对象
+              </span>
+              <span className="text-[14px] leading-relaxed text-ink">
+                {name}（{session.contactSnapshot.roleLabel}）
+              </span>
+            </div>
             <div className="flex items-baseline gap-4">
               <span className="w-16 shrink-0 text-[12px] text-ink-faint">
                 记录日期
