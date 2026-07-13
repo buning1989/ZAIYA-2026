@@ -436,6 +436,14 @@ export interface OtherRecordSection {
 
 export const OTHER_RECORD_SECTIONS: OtherRecordSection[] = [
   {
+    id: "medication-execution",
+    title: "用药执行",
+    items: [
+      "舍曲林 50mg，每日一次，医嘱为早晨服用。为目前唯一用药记录，无既往其他药物记录。",
+      "24 个记录日中规律服用 20 天；漏服 4 次（6/19、6/28、7/3、7/11），均为整日漏服，无自行调整剂量的记录。",
+    ],
+  },
+  {
     id: "medication",
     title: "用药与身体感受",
     items: [
