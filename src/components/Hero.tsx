@@ -43,9 +43,10 @@ export default function Hero({ onOpenDemo }: Props) {
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.06, ease }}
-              className="mt-7 whitespace-nowrap font-brand text-[54px] font-semibold leading-none tracking-normal text-ink sm:text-[72px] md:text-[88px]"
+              className="hero-brand mt-7 text-[54px] tracking-normal text-ink sm:text-[72px] md:text-[88px]"
             >
-              在呀 <span className="text-ink-faint">ZÀIYA</span>
+              <span className="hero-brand-cn">在呀</span>
+              <span className="hero-brand-en text-ink-faint">ZÀIYA</span>
             </motion.h1>
           </motion.div>
 
