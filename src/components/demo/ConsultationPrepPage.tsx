@@ -44,7 +44,7 @@ export default function ConsultationPrepPage() {
           {consultationSteps.map((step, index) => (
             <div
               key={step.title}
-              className="rounded-2xl border border-line-soft bg-card-soft/60 px-6 py-5"
+              className="rounded-2xl border border-line-soft bg-surface-soft/60 px-6 py-5"
             >
               <div className="flex items-start gap-4">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-action-primary/10 text-[14px] font-semibold text-action-primary">
@@ -70,7 +70,7 @@ export default function ConsultationPrepPage() {
           {infoCards.map((card) => (
             <div
               key={card.dimension}
-              className="rounded-2xl border border-line-soft bg-card-soft/60 px-5 py-4"
+              className="rounded-2xl border border-line-soft bg-surface-soft/60 px-5 py-4"
             >
               <p className="text-[13px] font-medium tracking-[0.08em] text-ink-faint">
                 {card.dimension}
@@ -96,7 +96,7 @@ export default function ConsultationPrepPage() {
           {stakeholderValues.map((value) => (
             <div
               key={value.target}
-              className="rounded-2xl border border-line-soft bg-card-soft/60 px-6 py-5"
+              className="rounded-2xl border border-line-soft bg-surface-soft/60 px-6 py-5"
             >
               <p className="text-[14px] font-semibold tracking-[0.08em] text-ink">
                 {value.target}

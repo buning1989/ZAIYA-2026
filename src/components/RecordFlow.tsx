@@ -177,7 +177,10 @@ export default function RecordFlow({
   const [isRecordSaved, setIsRecordSaved] = useState(false);
   const [activeEnergyReward, setActiveEnergyReward] =
     useState<ActiveEnergyReward | null>(null);
+  const [energyPulse, setEnergyPulse] = useState(false);
   const energyRewardIdRef = useRef(0);
+  const energyButtonRef = useRef<HTMLButtonElement | null>(null);
+  const energyPulseTimer = useRef<number | null>(null);
   const recordSessionIdRef = useRef<string>("");
   // 上一次体重记录值（用于体重页默认填入 + 步进调节）
   // 从 recordHistory 中读取最近一条带 weight 值的体重记录；无历史时为 null（页面渲染手动输入框）
@@ -270,6 +273,7 @@ export default function RecordFlow({
         energyRewardIdRef.current += 1;
         setActiveEnergyReward({
           id: energyRewardIdRef.current,
+          occurredAt: Date.now(),
         });
       }
     }
@@ -360,6 +364,21 @@ export default function RecordFlow({
     setActiveEnergyReward(null);
   }, []);
 
+  const handleEnergyRewardArrive = useCallback(() => {
+    setEnergyPulse(true);
+    if (energyPulseTimer.current) window.clearTimeout(energyPulseTimer.current);
+    energyPulseTimer.current = window.setTimeout(() => {
+      setEnergyPulse(false);
+      energyPulseTimer.current = null;
+    }, 420);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (energyPulseTimer.current) window.clearTimeout(energyPulseTimer.current);
+    };
+  }, []);
+
   return (
     <div className="relative flex h-full flex-col bg-white">
       <PhoneStatusBar />
@@ -369,7 +388,7 @@ export default function RecordFlow({
         <button
           onClick={handleBack}
           aria-label="返回"
-          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface-soft"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
@@ -378,7 +397,11 @@ export default function RecordFlow({
         </h2>
         {layer === "wizard" && !isSafetyPhase && (isFullRecordReady || isRecordSaved) ? (
           /* 确认页 / 已保存：我的光入口（统一组件，点击提示 Demo 暂未开放） */
-          <EnergyBadge position="inline" />
+          <EnergyBadge
+            pulse={energyPulse}
+            buttonRef={energyButtonRef}
+            position="inline"
+          />
         ) : layer === "wizard" && !isSafetyPhase && canSavePartial ? (
           /* 第二项及以后、未到确认页：先记到这儿（部分保存） */
           <button
@@ -501,6 +524,8 @@ export default function RecordFlow({
 
       <EnergyRewardFeedback
         event={activeEnergyReward}
+        targetRef={energyButtonRef}
+        onArrive={handleEnergyRewardArrive}
         onDone={handleEnergyRewardDone}
       />
 
@@ -696,7 +721,7 @@ function RecentBubbles({ items }: { items: string[] }) {
           transition={{ duration: 0.3, ease }}
         >
           {/* 气泡主体：偏方正、轻圆角 */}
-          <div className="relative rounded-lg bg-line-soft px-4 py-2.5">
+          <div className="relative rounded-lg bg-surface-soft px-4 py-2.5">
             <p className="line-clamp-2 text-[12px] leading-relaxed text-ink-soft">
               {items[index]}
             </p>
@@ -707,7 +732,7 @@ function RecentBubbles({ items }: { items: string[] }) {
                 height="12"
                 viewBox="0 0 8 12"
                 fill="none"
-                className="text-line-soft"
+                className="text-surface-soft"
               >
                 <path d="M0 6L8 0v12L0 6z" fill="currentColor" />
               </svg>
@@ -1187,7 +1212,7 @@ function RecordWizard({
                         {/* 上按钮：+ 0.1 KG（轻量胶囊） */}
                         <button
                           onClick={() => stepWeight(WEIGHT_STEP)}
-                          className="flex h-8 min-w-[92px] items-center justify-center rounded-full border border-status-mood/45 bg-status-mood/10 px-[14px] text-[13px] font-medium text-ink/[0.72] transition-transform active:scale-[0.96] active:bg-status-mood/[0.18]"
+                          className="flex h-8 min-w-[92px] items-center justify-center rounded-full border border-action-primary/45 bg-action-soft px-[14px] text-[13px] font-medium text-ink/[0.72] transition-transform active:scale-[0.96] active:bg-action-primary/20"
                         >
                           + {WEIGHT_STEP.toFixed(1)} KG
                         </button>
@@ -1206,7 +1231,7 @@ function RecordWizard({
                         {/* 下按钮：- 0.1 KG（轻量胶囊） */}
                         <button
                           onClick={() => stepWeight(-WEIGHT_STEP)}
-                          className="flex h-8 min-w-[92px] items-center justify-center rounded-full border border-status-mood/45 bg-status-mood/10 px-[14px] text-[13px] font-medium text-ink/[0.72] transition-transform active:scale-[0.96] active:bg-status-mood/[0.18]"
+                          className="flex h-8 min-w-[92px] items-center justify-center rounded-full border border-action-primary/45 bg-action-soft px-[14px] text-[13px] font-medium text-ink/[0.72] transition-transform active:scale-[0.96] active:bg-action-primary/20"
                         >
                           - {WEIGHT_STEP.toFixed(1)} KG
                         </button>
@@ -1357,7 +1382,7 @@ function RecordWizard({
                         {!hasCustom && !showInputBox && (
                           <button
                             onClick={openCustom}
-                            className="mt-2 self-center rounded-full border border-line bg-line-soft px-4 py-1.5 text-[12px] text-ink-faint transition-colors hover:border-ink-faint hover:text-ink-soft"
+                            className="mt-2 self-center rounded-full border border-line bg-surface-soft px-4 py-1.5 text-[12px] text-ink-faint transition-colors hover:border-ink-faint hover:text-ink-soft"
                           >
                             没有合适的？自己写一句
                           </button>
@@ -1372,7 +1397,7 @@ function RecordWizard({
                         disabled={advancing || multiSelected.length === 0}
                         className={`mt-3 h-12 rounded-2xl px-4 text-[14px] font-medium transition-opacity ${
                           multiSelected.length === 0 || advancing
-                            ? "bg-line-soft text-ink-faint"
+                            ? "bg-surface-muted text-ink-faint"
                             : "bg-action-primary text-action-primary-text hover:opacity-90"
                         }`}
                       >
@@ -1395,7 +1420,7 @@ function RecordWizard({
                 className={`h-12 w-full max-w-[220px] rounded-xl px-4 text-[14px] font-medium transition-opacity ${
                   numberValue.trim()
                     ? "bg-action-primary text-action-primary-text hover:opacity-90"
-                    : "bg-line-soft text-ink-faint"
+                    : "bg-surface-muted text-ink-faint"
                 }`}
               >
                 保存
@@ -1475,7 +1500,7 @@ function CustomAnswerCard({
         <button
           onClick={onEdit}
           aria-label="修改"
-          className="grid h-14 w-[70px] place-items-center rounded-2xl bg-line-soft text-ink-soft transition-colors hover:text-ink"
+          className="grid h-14 w-[70px] place-items-center rounded-2xl bg-surface-soft text-ink-soft transition-colors hover:text-ink"
         >
           <Pencil className="h-4 w-4" strokeWidth={1.8} />
         </button>
@@ -1839,7 +1864,7 @@ function RecordConfirmPage({
                 <button
                   onClick={() => setMoreMenuOpen((v) => !v)}
                   aria-label="更多"
-                  className="grid h-7 w-7 place-items-center rounded-full text-ink-faint transition-colors hover:bg-line-soft hover:text-ink"
+                  className="grid h-7 w-7 place-items-center rounded-full text-ink-faint transition-colors hover:bg-surface-soft hover:text-ink"
                 >
                   <MoreHorizontal className="h-4 w-4" />
                 </button>
@@ -1863,14 +1888,14 @@ function RecordConfirmPage({
                             setMoreMenuOpen(false);
                             setEditing(true);
                           }}
-                          className="flex w-full items-center gap-2 px-2 py-3 text-left text-[13px] text-ink-soft transition-colors hover:bg-line-soft"
+                          className="flex w-full items-center gap-2 px-2 py-3 text-left text-[13px] text-ink-soft transition-colors hover:bg-surface-soft"
                         >
                           <Pencil className="h-3.5 w-3.5 shrink-0" strokeWidth={1.8} />
                           修改
                         </button>
                         <button
                           onClick={openDeleteConfirm}
-                          className="flex w-full items-center gap-2 px-2 py-3 text-left text-[13px] text-ink-soft transition-colors hover:bg-line-soft"
+                          className="flex w-full items-center gap-2 px-2 py-3 text-left text-[13px] text-ink-soft transition-colors hover:bg-surface-soft"
                         >
                           <Trash2 className="h-3.5 w-3.5 shrink-0" strokeWidth={1.8} />
                           删除
@@ -1891,7 +1916,7 @@ function RecordConfirmPage({
               <button
                 key={item.field}
                 onClick={() => setEditingField(item.field)}
-                className="flex w-full items-center gap-2 rounded-lg border border-line bg-line-soft/40 px-3 py-2 text-left transition-colors hover:border-ink-faint hover:bg-line-soft"
+                className="flex w-full items-center gap-2 rounded-lg border border-line bg-surface-soft/60 px-3 py-2 text-left transition-colors hover:border-ink-faint hover:bg-surface-soft"
               >
                 <span className="shrink-0 text-[13px] text-ink-faint">
                   {item.label}：
@@ -1947,7 +1972,7 @@ function RecordConfirmPage({
           - 已有补充说明且非编辑态：显示「补充说明已添加 + 修改补充」入口 */}
       <div className="mt-5">
         {savedNote && !editingSupplement ? (
-          <div className="flex items-center justify-between rounded-xl border border-line bg-line-soft/30 px-4 py-3">
+          <div className="flex items-center justify-between rounded-xl border border-line bg-surface-soft/50 px-4 py-3">
             <span className="text-[13px] text-ink-faint">补充说明已添加</span>
             <button
               onClick={handleEditSupplement}
@@ -2142,7 +2167,7 @@ function FieldEditSheet({
             disabled={multiSelected.length === 0}
             className={`mt-3 h-11 w-full rounded-xl px-4 text-[14px] font-medium transition-opacity ${
               multiSelected.length === 0
-                ? "bg-line-soft text-ink-faint"
+                ? "bg-surface-muted text-ink-faint"
                 : "bg-action-primary text-action-primary-text hover:opacity-90"
             }`}
           >

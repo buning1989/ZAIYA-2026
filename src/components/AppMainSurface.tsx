@@ -533,7 +533,7 @@ export default function AppMainSurface({
   const socialEnergyRewardIdRef = useRef(0);
   const socialSessionIdRef = useRef<string>("");
 
-  // 发呆结束 → 底层发放能量，前台只触发「收下一点光」
+  // 发呆结束 → 底层发放能量，前台只触发当下光反馈
   // 演示模式下不触发能量奖励与状态变更，避免评委误触长按结束导致脚本偏移
   const handleDazeFinish = () => {
     if (demoEnabled) return;
@@ -553,7 +553,7 @@ export default function AppMainSurface({
     setMode("socialSelect");
   };
 
-  // 一起吃饭结束 → 底层发放能量，前台只触发「收下一点光」
+  // 一起吃饭结束 → 底层发放能量，前台只触发当下光反馈
   // 演示模式下不触发能量奖励与状态变更
   const handleEatFinish = () => {
     if (demoEnabled) return;
@@ -1057,7 +1057,7 @@ export default function AppMainSurface({
 
       {/* 缓解模式背景降噪：浅柔灰覆盖，不使用强色。pointer-events-none 不阻断交互 */}
       <motion.div
-        className="pointer-events-none absolute inset-0 bg-line-soft"
+        className="pointer-events-none absolute inset-0 bg-surface-muted"
         initial={false}
         animate={{ opacity: inRelief ? 0.5 : 0 }}
         transition={{ duration: 0.4, ease }}
@@ -1609,7 +1609,7 @@ export default function AppMainSurface({
 
       {/* socialFlow 模式：选中场景后的流程页（一起发呆 / 一起吃饭）。
           全屏覆盖，在在退出；退出后回到轻社交场景选择页。
-          一起发呆：onExit=准备态返回（无奖励），onFinish=长按结束（收下一点光并回主页）
+          一起发呆：onExit=准备态返回（无奖励），onFinish=长按结束（触发当下光反馈并回主页）
           演示模式下 socialScene 由 demoState 注入；onExit/onFinish 在演示模式下不会触发状态变更。 */}
       <AnimatePresence>
         {effectiveMode === "socialFlow" && effectiveSocialScene && (
@@ -1845,7 +1845,7 @@ export default function AppMainSurface({
                 <button
                   onClick={cancelAppLockVerify}
                   aria-label="返回更多"
-                  className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+                  className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface-soft"
                 >
                   <ChevronLeft className="h-6 w-6" />
                 </button>

@@ -270,8 +270,8 @@ export default function MealRecordWizard({
   const chipClass = (selected: boolean) =>
     `inline-flex items-center justify-center rounded-full border px-4 py-2 text-[14px] font-medium whitespace-nowrap max-w-[240px] overflow-hidden text-ellipsis transition-all active:scale-[0.97] ${
       selected
-        ? "border-status-mood/90 bg-status-mood/[0.22] text-ink"
-        : "border-status-mood/45 bg-white text-ink hover:border-status-mood/70"
+        ? "border-action-primary bg-action-soft text-ink"
+        : "border-line bg-white text-ink hover:border-action-primary/60"
     }`;
 
   // —— 结算页行配置：全部只读展示，不可点击 ——
@@ -335,7 +335,7 @@ export default function MealRecordWizard({
           <div className="flex items-center gap-2.5">
             <div className="h-[2px] flex-1 rounded-full bg-line-soft">
               <div
-                className="h-full rounded-full bg-status-mood/70 transition-all duration-300"
+                className="h-full rounded-full bg-action-primary transition-all duration-300"
                 style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
               />
             </div>
@@ -376,11 +376,11 @@ export default function MealRecordWizard({
                         onClick={() => handleSelectMealType(m.value)}
                         className={`flex h-14 items-center gap-3 rounded-2xl border px-5 text-left transition-all active:scale-[0.99] ${
                           selected
-                            ? "border-status-mood/50 bg-status-mood/[0.08] text-ink"
+                            ? "border-action-primary/60 bg-action-soft text-ink"
                             : "border-line bg-white text-ink hover:border-ink-faint"
                         }`}
                       >
-                        <span className="h-2 w-2 shrink-0 rounded-full bg-status-mood/70" />
+                        <span className="h-2 w-2 shrink-0 rounded-full bg-ink-faint/60" />
                         <span className="flex-1 text-[15px] font-medium tracking-tight">
                           {m.label}
                         </span>
@@ -483,7 +483,7 @@ export default function MealRecordWizard({
             className={`w-full rounded-xl px-4 py-3 text-[14px] font-medium transition-opacity ${
               foodValid
                 ? "bg-action-primary text-action-primary-text hover:opacity-90"
-                : "bg-line-soft text-ink-faint"
+                : "bg-surface-muted text-ink-faint"
             }`}
           >
             {editMode ? "确认修改" : "下一步"}
@@ -505,7 +505,7 @@ export default function MealRecordWizard({
               className={`flex-1 rounded-xl px-4 py-3 text-[14px] font-medium transition-opacity ${
                 bodyValid
                   ? "bg-action-primary text-action-primary-text hover:opacity-90"
-                  : "bg-line-soft text-ink-faint"
+                  : "bg-surface-muted text-ink-faint"
               }`}
             >
               {editMode ? "确认修改" : "下一步"}

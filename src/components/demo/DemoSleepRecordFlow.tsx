@@ -62,7 +62,7 @@ export default function DemoSleepRecordFlow() {
       <div className="relative flex items-center gap-3 bg-white px-5 pt-14 pb-2">
         <button
           aria-label="返回"
-          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface-soft"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>

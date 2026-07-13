@@ -65,7 +65,7 @@ export default function DemoOrganizeFlow() {
               <button
                 type="button"
                 aria-label="返回"
-                className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+                className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface-soft"
               >
                 <ChevronLeft className="h-6 w-6" />
               </button>
@@ -76,7 +76,7 @@ export default function DemoOrganizeFlow() {
             <button
               type="button"
               aria-label="返回帮我整理首页"
-              className="grid h-8 w-8 place-items-center rounded-full text-ink transition-colors hover:bg-line-soft"
+              className="grid h-8 w-8 place-items-center rounded-full text-ink transition-colors hover:bg-surface-soft"
             >
               <FolderOpen className="h-[19px] w-[19px]" strokeWidth={1.8} />
             </button>
@@ -182,7 +182,7 @@ export default function DemoOrganizeFlow() {
                 type="button"
                 onClick={() => setState("confirm")}
                 aria-label="返回"
-                className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+                className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface-soft"
               >
                 <ChevronLeft className="h-6 w-6" />
               </button>
@@ -193,7 +193,7 @@ export default function DemoOrganizeFlow() {
             <button
               type="button"
               aria-label="返回帮我整理首页"
-              className="grid h-8 w-8 place-items-center rounded-full text-ink transition-colors hover:bg-line-soft"
+              className="grid h-8 w-8 place-items-center rounded-full text-ink transition-colors hover:bg-surface-soft"
             >
               <FolderOpen className="h-[19px] w-[19px]" strokeWidth={1.8} />
             </button>

@@ -86,7 +86,7 @@ export default function MaterialExportConfirmDialog({
       </p>
 
       {/* 材料内容提示：高风险记录数量 */}
-      <div className="mt-3 rounded-xl border border-line bg-card-soft/30 px-4 py-3">
+      <div className="mt-3 rounded-xl border border-line bg-surface-soft/30 px-4 py-3">
         <div className="flex items-center justify-between text-[12.5px]">
           <span className="text-ink-soft">材料包含的高风险记录</span>
           <span className="font-medium tabular-nums text-ink">
@@ -104,7 +104,7 @@ export default function MaterialExportConfirmDialog({
       <div className="mt-5 flex gap-2.5">
         <button
           onClick={onClose}
-          className="flex-1 rounded-xl border border-line bg-white px-4 py-3 text-[14px] font-medium text-ink transition-colors hover:bg-card-soft/30"
+          className="flex-1 rounded-xl border border-line bg-white px-4 py-3 text-[14px] font-medium text-ink transition-colors hover:bg-surface-soft/30"
         >
           取消
         </button>

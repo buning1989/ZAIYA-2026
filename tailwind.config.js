@@ -20,6 +20,9 @@ export default {
         "card-soft": "#F1F3E8",
         line: "#D8E0CA",
         "line-soft": "#EEF1E2",
+        /* Surface / 中性表面（替代 line-soft 作为卡片/气泡/禁用态背景） */
+        "surface-soft": "#F6F4ED", // 暖白中性，用于卡片/气泡/提示条
+        "surface-muted": "#ECECE7", // 中性浅灰米，用于禁用态/暂未开放
         /* Text / 文字 */
         ink: "#27331F",
         "ink-soft": "#68735C",
@@ -31,8 +34,14 @@ export default {
         "accent-disabled": "#D8DDD6",
         "action-primary": "#E6F46B",
         "action-primary-text": "#27331F",
+        "action-soft": "#FCFDED", // 主行动绿色 8-12% 浓度，用于选中态/轻量交互反馈
         "action-deep": "#27331F",
         "action-deep-text": "#F8FAEF",
+        /* Light / 光（能量/光奖励专用暖色，不使用状态绿） */
+        "light-warm": "#C9A85C", // 低饱和暖黄，用于光奖励图标/点缀
+        "light-soft": "#F5EFE0", // 浅暖黄背景，用于光奖励卡片背景
+        /* Risk / 风险语义浅背景 */
+        "risk-soft": "#F7E6DD",
         /* Status / 状态（记录分类色 —— 仅用于数据可视化） */
         "status-mood": "#A7B765",
         "status-sleep": "#88C6CD",
@@ -45,13 +54,13 @@ export default {
         "status-weight": "#CDBFEA",
         /* Praise / 夸夸卡片装饰色例外（仅用于夸夸卡片背景） */
         "praise-card-1": "#F1F3E8",
-        "praise-card-2": "#EEF1E2",
+        "praise-card-2": "#E6EDF3",
         "praise-card-3": "#E6F0F1",
         "praise-card-4": "#FBF6E9",
-        "praise-card-5": "#F4F8DD",
+        "praise-card-5": "#F5E8EE",
         "praise-card-6": "#F2EFF7",
         "praise-card-7": "#F6F8EF",
-        "praise-card-8": "#EDF4ED",
+        "praise-card-8": "#F5EAE0",
         /* Risk / 风险 */
         "risk-low": "#D7C8A3",
         "risk-medium": "#D99C6B",

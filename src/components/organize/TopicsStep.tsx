@@ -122,7 +122,7 @@ export default function TopicsStep({ session, onBack, onNext }: Props) {
         <button
           onClick={() => onBack(topics, rangeData)}
           aria-label="返回"
-          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface-soft"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
@@ -141,7 +141,7 @@ export default function TopicsStep({ session, onBack, onNext }: Props) {
         </h2>
 
         {/* 时间范围信息 */}
-        <div className="mt-3 rounded-xl bg-card-soft/40 px-4 py-3">
+        <div className="mt-3 rounded-xl bg-surface-soft/40 px-4 py-3">
           <div className="text-[13px] font-medium text-ink">
             {formatRangeChinese(rangeData.startDate)}—{formatRangeChinese(rangeData.endDate)}
           </div>
@@ -177,7 +177,7 @@ export default function TopicsStep({ session, onBack, onNext }: Props) {
         {/* 补充一条 */}
         <button
           onClick={() => setAddingTopic(true)}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-line bg-card-soft/20 px-4 py-3.5 text-[13px] font-medium text-ink-soft transition-colors hover:bg-card-soft/40"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-line bg-surface-soft/20 px-4 py-3.5 text-[13px] font-medium text-ink-soft transition-colors hover:bg-surface-soft/40"
         >
           <Plus className="h-4 w-4" strokeWidth={2.4} />
           补充一条
@@ -208,8 +208,8 @@ export default function TopicsStep({ session, onBack, onNext }: Props) {
                     onClick={() => handleRangeSelect(opt.value)}
                     className={`flex items-center justify-between rounded-xl border px-4 py-3.5 text-left transition-colors ${
                       rangeKey === opt.value
-                        ? "border-accent bg-accent-soft/50"
-                        : "border-line bg-white hover:bg-card-soft/30"
+                        ? "border-action-primary bg-action-soft"
+                        : "border-line bg-white hover:bg-surface-soft/30"
                     }`}
                   >
                     <div>
@@ -221,7 +221,7 @@ export default function TopicsStep({ session, onBack, onNext }: Props) {
                       </div>
                     </div>
                     {rangeKey === opt.value && (
-                      <Check className="h-4 w-4 text-accent" strokeWidth={2.4} />
+                      <Check className="h-4 w-4 text-action-primary" strokeWidth={2.4} />
                     )}
                   </button>
                 );
@@ -291,7 +291,7 @@ const TopicCard = forwardRef<HTMLDivElement, TopicCardProps>(function TopicCard(
       transition={{ duration: 0.25, ease }}
       className={`relative overflow-hidden rounded-2xl border bg-white transition-colors ${
         topic.selected
-          ? "border-accent"
+          ? "border-action-primary"
           : "border-line"
       }`}
     >
@@ -303,12 +303,12 @@ const TopicCard = forwardRef<HTMLDivElement, TopicCardProps>(function TopicCard(
         <span
           className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-[5px] border transition-colors ${
             topic.selected
-              ? "border-accent bg-accent"
+              ? "border-action-primary bg-action-primary"
               : "border-line bg-white"
           }`}
         >
           {topic.selected && (
-            <Check className="h-3 w-3 text-white" strokeWidth={2.4} />
+            <Check className="h-3 w-3 text-action-primary-text" strokeWidth={2.4} />
           )}
         </span>
 
@@ -332,13 +332,13 @@ const TopicCard = forwardRef<HTMLDivElement, TopicCardProps>(function TopicCard(
       <div className="mt-3 flex items-center justify-end gap-1 px-4 pb-1">
         <button
           onClick={onToggleEvidence}
-          className="rounded-lg px-2.5 py-1.5 text-[12px] text-ink-faint transition-colors hover:bg-line-soft"
+          className="rounded-lg px-2.5 py-1.5 text-[12px] text-ink-faint transition-colors hover:bg-surface-soft"
         >
           {expanded ? "收起依据" : "查看依据"}
         </button>
         <button
           onClick={onEdit}
-          className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12px] text-ink-faint transition-colors hover:bg-line-soft"
+          className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12px] text-ink-faint transition-colors hover:bg-surface-soft"
         >
           <Pencil className="h-3 w-3" strokeWidth={1.8} />
           修改
@@ -355,7 +355,7 @@ const TopicCard = forwardRef<HTMLDivElement, TopicCardProps>(function TopicCard(
             transition={{ duration: 0.25, ease }}
             className="overflow-hidden"
           >
-            <div className="mx-4 mb-4 rounded-xl bg-card-soft/50 px-3.5 py-3">
+            <div className="mx-4 mb-4 rounded-xl bg-surface-soft/50 px-3.5 py-3">
               <div className="text-[11px] font-medium text-ink-faint">
                 依据摘要
               </div>
@@ -401,7 +401,7 @@ function EditSheet({
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="mt-1.5 w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-[14px] text-ink outline-none focus:border-accent"
+          className="mt-1.5 w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-[14px] text-ink outline-none focus:border-action-primary"
           placeholder="简要标题"
         />
       </div>
@@ -411,7 +411,7 @@ function EditSheet({
           value={content}
           onChange={(e) => setContent(e.target.value)}
           rows={4}
-          className="mt-1.5 w-full resize-none rounded-xl border border-line bg-white px-3.5 py-2.5 text-[14px] leading-relaxed text-ink outline-none focus:border-accent"
+          className="mt-1.5 w-full resize-none rounded-xl border border-line bg-white px-3.5 py-2.5 text-[14px] leading-relaxed text-ink outline-none focus:border-action-primary"
           placeholder="具体说明"
         />
       </div>
@@ -455,7 +455,7 @@ function AddSheet({
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="mt-1.5 w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-[14px] text-ink outline-none focus:border-accent"
+          className="mt-1.5 w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-[14px] text-ink outline-none focus:border-action-primary"
           placeholder="简要标题"
           autoFocus
         />
@@ -466,7 +466,7 @@ function AddSheet({
           value={content}
           onChange={(e) => setContent(e.target.value)}
           rows={4}
-          className="mt-1.5 w-full resize-none rounded-xl border border-line bg-white px-3.5 py-2.5 text-[14px] leading-relaxed text-ink outline-none focus:border-accent"
+          className="mt-1.5 w-full resize-none rounded-xl border border-line bg-white px-3.5 py-2.5 text-[14px] leading-relaxed text-ink outline-none focus:border-action-primary"
           placeholder="具体说明"
         />
       </div>

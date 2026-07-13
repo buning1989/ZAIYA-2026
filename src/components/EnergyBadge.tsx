@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Sprout } from "lucide-react";
 
 /* —— 我的光入口（统一组件）——
  *
  * 所有模块右上角入口均使用此组件。它只表达“我的光 / 我的成长”的访问入口，
- * 不展示数值、不接收奖励入账动效，也不做持续吸引注意的动画。
+ * 不展示数值；光粒抵达时只做一次轻微 pulse。
  *
  * 定位模式：
  *   - "inline"：作为 flex 子项参与顶部标题栏布局（记一下 / 夸夸自己）
@@ -16,6 +16,10 @@ import { Sprout } from "lucide-react";
  *   与标题栏内容区同一高度逻辑，不贴近状态栏。
  */
 type EnergyBadgeProps = {
+  /** 是否触发 pulse 动画（光粒抵达时置 true） */
+  pulse?: boolean;
+  /** 按钮引用（EnergyRewardFeedback 飞行目标） */
+  buttonRef?: RefObject<HTMLButtonElement | null>;
   /** 定位模式 */
   position?: "inline" | "floating";
   /** 点击提示文案，默认 Demo 暂未开放 */
@@ -27,6 +31,8 @@ const ease = [0.22, 1, 0.36, 1] as const;
 const DEFAULT_HINT = "我的光还在慢慢长出来";
 
 export default function EnergyBadge({
+  pulse = false,
+  buttonRef,
   position = "inline",
   hintText = DEFAULT_HINT,
 }: EnergyBadgeProps) {
@@ -56,14 +62,20 @@ export default function EnergyBadge({
   return (
     <div className={wrapperClass}>
       <motion.button
+        ref={buttonRef}
         type="button"
         aria-label="我的光"
         onClick={handleClick}
+        animate={pulse ? { scale: [1, 1.08, 1] } : { scale: 1 }}
         whileTap={{ scale: 0.96 }}
-        transition={{ duration: 0.2, ease }}
-        className="grid h-8 min-w-8 place-items-center rounded-full border border-status-mood/20 bg-status-mood/[0.12] px-2 text-ink transition-colors hover:bg-status-mood/[0.18] focus:outline-none focus-visible:ring-2 focus-visible:ring-status-mood/45"
+        transition={{ duration: 0.36, ease }}
+        className={`grid h-8 min-w-8 place-items-center rounded-full border px-2 text-ink transition-colors hover:bg-light-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-light-warm/45 ${
+          pulse
+            ? "border-light-warm/40 bg-light-soft shadow-[0_6px_16px_rgba(201,168,92,0.18)]"
+            : "border-light-warm/25 bg-light-soft/60"
+        }`}
       >
-        <Sprout className="h-4 w-4" strokeWidth={1.8} />
+        <Sprout className="h-4 w-4 text-light-warm" strokeWidth={1.8} />
       </motion.button>
 
       {/* 点击提示：紧贴入口下方展开，1.8s 自动淡出；min-width 防止竖向压缩 */}
@@ -74,7 +86,7 @@ export default function EnergyBadge({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.2, ease }}
-            className="pointer-events-none absolute right-0 top-full z-40 mt-1 w-max min-w-[160px] max-w-[280px] whitespace-nowrap rounded-2xl bg-status-mood/90 px-3.5 py-2 text-center text-[12px] font-medium leading-relaxed text-white shadow-[0_6px_16px_rgba(44,59,39,0.18)]"
+            className="pointer-events-none absolute right-0 top-full z-40 mt-1 w-max min-w-[160px] max-w-[280px] whitespace-nowrap rounded-2xl bg-light-warm px-3.5 py-2 text-center text-[12px] font-medium leading-relaxed text-white shadow-[0_6px_16px_rgba(201,168,92,0.28)]"
           >
             {hint}
           </motion.div>

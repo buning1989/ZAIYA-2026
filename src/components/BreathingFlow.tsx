@@ -166,6 +166,9 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
   // energyGrantedRef 防止完成页重复渲染造成重复发放；grantEnergy 再做幂等兜底。
   const [breathEnergyReward, setBreathEnergyReward] =
     useState<EnergyRewardEvent | null>(null);
+  const [breathEnergyPulse, setBreathEnergyPulse] = useState(false);
+  const breathBadgeRef = useRef<HTMLButtonElement | null>(null);
+  const breathPulseTimer = useRef<number | null>(null);
   const breathRewardIdRef = useRef(0);
   const practiceIdRef = useRef<string>("");
   const energyGrantedRef = useRef(false);
@@ -283,6 +286,7 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
         breathRewardIdRef.current += 1;
         setBreathEnergyReward({
           id: breathRewardIdRef.current,
+          occurredAt: Date.now(),
         });
       }
     }, 600);
@@ -293,6 +297,23 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
   // toast 整段动画结束：清空 event
   const handleBreathEnergyDone = useCallback(() => {
     setBreathEnergyReward(null);
+  }, []);
+
+  const handleBreathEnergyArrive = useCallback(() => {
+    setBreathEnergyPulse(true);
+    if (breathPulseTimer.current)
+      window.clearTimeout(breathPulseTimer.current);
+    breathPulseTimer.current = window.setTimeout(() => {
+      setBreathEnergyPulse(false);
+      breathPulseTimer.current = null;
+    }, 420);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (breathPulseTimer.current)
+        window.clearTimeout(breathPulseTimer.current);
+    };
   }, []);
 
   const startPractice = (idx: number) => {
@@ -715,13 +736,19 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
         )}
       </AnimatePresence>
 
-      {/* 右上角我的光入口：仅呼吸法模块主页展示；练习 / 完成态保持专注。 */}
-      {subView === "select" && (
-        <EnergyBadge position="floating" />
+      {/* 右上角我的光入口：练习中隐藏，完成反馈时作为光粒目标。 */}
+      {subView !== "practice" && (
+        <EnergyBadge
+          pulse={breathEnergyPulse}
+          buttonRef={breathBadgeRef}
+          position="floating"
+        />
       )}
-      {/* 光反馈：完成有效行动后轻轻浮现，不飞向入口 */}
+      {/* 光反馈：完成有效行动后飞向右上角入口 */}
       <EnergyRewardFeedback
         event={breathEnergyReward}
+        targetRef={breathBadgeRef}
+        onArrive={handleBreathEnergyArrive}
         onDone={handleBreathEnergyDone}
       />
     </motion.div>

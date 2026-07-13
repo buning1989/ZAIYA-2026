@@ -124,7 +124,7 @@ export default function DoneStep({
           <button
             onClick={onBack}
             aria-label="返回"
-            className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+            className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface-soft"
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
@@ -135,7 +135,7 @@ export default function DoneStep({
         <button
           onClick={onHome}
           aria-label="返回帮我整理首页"
-          className="grid h-8 w-8 place-items-center rounded-full text-ink transition-colors hover:bg-line-soft"
+          className="grid h-8 w-8 place-items-center rounded-full text-ink transition-colors hover:bg-surface-soft"
         >
           <FolderOpen className="h-[19px] w-[19px]" strokeWidth={1.8} />
         </button>
@@ -240,14 +240,14 @@ export default function DoneStep({
         <div className="mt-3 flex gap-2.5">
           <button
             onClick={handleShare}
-            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-line bg-white px-4 py-3 text-[13px] font-medium text-ink transition-colors hover:bg-card-soft/30"
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-line bg-white px-4 py-3 text-[13px] font-medium text-ink transition-colors hover:bg-surface-soft/30"
           >
             <Share2 className="h-4 w-4" strokeWidth={1.8} />
             分享给{name}
           </button>
           <button
             onClick={handleSave}
-            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-line bg-white px-4 py-3 text-[13px] font-medium text-ink transition-colors hover:bg-card-soft/30"
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-line bg-white px-4 py-3 text-[13px] font-medium text-ink transition-colors hover:bg-surface-soft/30"
           >
             <Download className="h-4 w-4" strokeWidth={1.8} />
             保存材料

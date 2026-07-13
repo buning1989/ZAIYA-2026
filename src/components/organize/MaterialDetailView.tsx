@@ -35,7 +35,7 @@ export default function MaterialDetailView({
         <button
           onClick={onBack}
           aria-label="返回"
-          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface-soft"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
@@ -47,7 +47,7 @@ export default function MaterialDetailView({
       {/* 内容区 */}
       <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-8">
         {/* 顶部信息 */}
-        <div className="mt-2 rounded-2xl border border-line bg-card-soft/20 px-4 py-3.5">
+        <div className="mt-2 rounded-2xl border border-line bg-surface-soft/20 px-4 py-3.5">
           <div className="text-[14px] font-medium text-ink">
             给{name}的沟通材料
           </div>
@@ -91,7 +91,7 @@ function MaterialSectionBlock({ section }: { section: MaterialSection }) {
       {section.topics && section.topics.length > 0 && (
         <div className="mt-3 flex flex-col gap-3">
           {section.topics.map((topic, i) => (
-            <div key={i} className="rounded-xl bg-card-soft/30 px-3.5 py-3">
+            <div key={i} className="rounded-xl bg-surface-soft/30 px-3.5 py-3">
               <div className="flex items-center gap-2">
                 <span className="text-[13px] font-medium text-ink">
                   {i + 1}. {topic.title}
@@ -132,7 +132,7 @@ function MaterialSectionBlock({ section }: { section: MaterialSection }) {
       {section.disclosureRecords && section.disclosureRecords.length > 0 && (
         <div className="mt-3 flex flex-col gap-3">
           {section.disclosureRecords.map((r, i) => (
-            <div key={i} className="rounded-xl bg-card-soft/30 px-3.5 py-3">
+            <div key={i} className="rounded-xl bg-surface-soft/30 px-3.5 py-3">
               <div className="flex items-center justify-between text-[11.5px] text-ink-faint">
                 <span>来源：{r.sourceLabel}</span>
                 <span>{formatHighRiskRecordTime(r.recordedAt)}</span>

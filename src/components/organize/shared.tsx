@@ -12,7 +12,7 @@ export function StepProgress({ current, total }: { current: number; total: numbe
       <div className="flex items-center gap-2.5">
         <div className="h-[2px] flex-1 overflow-hidden rounded-full bg-line-soft">
           <motion.div
-            className="h-full rounded-full bg-status-mood/70"
+            className="h-full rounded-full bg-action-primary"
             initial={false}
             animate={{ width: `${pct}%` }}
             transition={{ duration: 0.3, ease }}
@@ -41,7 +41,7 @@ export function SelectMark({ checked }: { checked: boolean }) {
     <span
       className={`mt-0.5 grid shrink-0 place-items-center rounded-[5px] border transition-colors ${
         checked
-          ? "border-accent bg-accent text-white"
+          ? "border-action-primary bg-action-primary text-action-primary-text"
           : "border-line bg-white"
       }`}
       style={{ height: 18, width: 18 }}
@@ -59,7 +59,7 @@ export function SourceTag({
 }) {
   if (sourceType === "system_summary") return null;
   return (
-    <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-medium text-accent-pressed">
+    <span className="shrink-0 rounded-full bg-surface-soft px-2 py-0.5 text-[10px] font-medium text-ink-soft">
       本人补充
     </span>
   );

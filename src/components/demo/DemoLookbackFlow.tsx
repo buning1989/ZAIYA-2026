@@ -65,7 +65,7 @@ export default function DemoLookbackFlow() {
         <button
           onClick={() => {}}
           aria-label="返回"
-          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface-soft"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>

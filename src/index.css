@@ -32,8 +32,23 @@
   --z-action-pressed: #536652;
   --z-action-disabled: #D8DDD6;
   --z-action-subtle: #EEF3ED;
+  --z-action-soft: #FCFDED; /* 主行动绿色 ~12% 浓度，用于选中态/轻量交互反馈 */
   --z-action-deep: #27331F;
   --z-action-deep-text: #F8FAEF;
+
+  /* Surface / 中性表面（替代 line-soft 作为卡片/气泡/禁用态背景） */
+  --z-surface-soft: #F6F4ED; /* 暖白中性，用于卡片/气泡/提示条 */
+  --z-surface-muted: #ECECE7; /* 中性浅灰米，用于禁用态/暂未开放 */
+
+  /* Line / 分隔线、边框、进度条轨道（语义化变量，与 --z-space-bg-soft 同值） */
+  --z-line-soft: #EEF1E2;
+
+  /* Light / 光（能量/光奖励专用暖色，不使用状态绿） */
+  --z-light-warm: #C9A85C;
+  --z-light-soft: #F5EFE0;
+
+  /* Risk / 风险语义浅背景 */
+  --z-risk-soft: #F7E6DD;
 
   /* Status / 状态（记录分类色 —— 仅用于数据可视化，不得用于通用交互） */
   --z-status-mood: #A7B765;
@@ -59,14 +74,14 @@
   --z-status-weight-bg: #F2EFF7;
 
   /* Praise / 夸夸卡片装饰色例外（仅用于夸夸卡片背景，8 种固定色） */
-  --z-praise-card-1: #F1F3E8;
-  --z-praise-card-2: #EEF1E2;
-  --z-praise-card-3: #E6F0F1;
-  --z-praise-card-4: #FBF6E9;
-  --z-praise-card-5: #F4F8DD;
-  --z-praise-card-6: #F2EFF7;
-  --z-praise-card-7: #F6F8EF;
-  --z-praise-card-8: #EDF4ED;
+  --z-praise-card-1: #F1F3E8; /* 苔灰绿（保留浅绿 1/2） */
+  --z-praise-card-2: #E6EDF3; /* 浅蓝 */
+  --z-praise-card-3: #E6F0F1; /* 浅青 */
+  --z-praise-card-4: #FBF6E9; /* 暖米 */
+  --z-praise-card-5: #F5E8EE; /* 淡粉 */
+  --z-praise-card-6: #F2EFF7; /* 浅藤紫 */
+  --z-praise-card-7: #F6F8EF; /* 空间底（保留浅绿 2/2） */
+  --z-praise-card-8: #F5EAE0; /* 浅杏 */
 
   /* Risk / 风险 */
   --z-risk-low: #D7C8A3;

@@ -247,8 +247,8 @@ export default function MedicationRecordWizard({
   const chipClass = (selected: boolean) =>
     `inline-flex items-center justify-center rounded-full border px-4 py-2 text-[14px] font-medium whitespace-nowrap max-w-[240px] overflow-hidden text-ellipsis transition-all active:scale-[0.97] ${
       selected
-        ? "border-status-mood/90 bg-status-mood/[0.22] text-ink"
-        : "border-status-mood/45 bg-white text-ink hover:border-status-mood/70"
+        ? "border-action-primary bg-action-soft text-ink"
+        : "border-line bg-white text-ink hover:border-action-primary/60"
     }`;
 
   // ===================== 渲染：结算单（preview / saved） =====================
@@ -293,7 +293,7 @@ export default function MedicationRecordWizard({
         <div className="flex items-center gap-2.5">
           <div className="h-[2px] flex-1 rounded-full bg-line-soft">
             <div
-              className="h-full rounded-full bg-status-mood/70 transition-all duration-300"
+              className="h-full rounded-full bg-action-primary transition-all duration-300"
               style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
             />
           </div>
@@ -328,7 +328,7 @@ export default function MedicationRecordWizard({
                         onClick={() => handleSelectDoseSlot(d.value, d.time)}
                         className={`flex h-16 items-center gap-3 rounded-2xl border px-5 text-left transition-all active:scale-[0.99] ${
                           selected
-                            ? "border-status-mood/50 bg-status-mood/[0.08] text-ink"
+                            ? "border-action-primary/60 bg-action-soft text-ink"
                             : "border-line bg-white text-ink hover:border-ink-faint"
                         }`}
                       >
@@ -368,7 +368,7 @@ export default function MedicationRecordWizard({
                         onClick={() => handleSelectEffectTime(e.value)}
                         className={`flex h-14 items-center gap-3 rounded-2xl border px-5 text-left transition-all active:scale-[0.99] ${
                           selected
-                            ? "border-status-mood/50 bg-status-mood/[0.08] text-ink"
+                            ? "border-action-primary/60 bg-action-soft text-ink"
                             : "border-line bg-white text-ink hover:border-ink-faint"
                         }`}
                       >
@@ -431,7 +431,7 @@ export default function MedicationRecordWizard({
             className={`w-full rounded-xl px-4 py-3 text-[14px] font-medium transition-opacity ${
               canEnterPreview
                 ? "bg-action-primary text-action-primary-text hover:opacity-90"
-                : "bg-line-soft text-ink-faint"
+                : "bg-surface-muted text-ink-faint"
             }`}
           >
             确认这些感受

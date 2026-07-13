@@ -47,7 +47,7 @@ export default function CommunicationHistoryPage({
         <button
           onClick={onBack}
           aria-label="返回"
-          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface-soft"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
@@ -84,7 +84,7 @@ export default function CommunicationHistoryPage({
                         e.stopPropagation();
                         setMenuEntry(entry);
                       }}
-                      className="grid h-7 w-7 place-items-center rounded-full text-ink-faint transition-colors hover:bg-line-soft"
+                      className="grid h-7 w-7 place-items-center rounded-full text-ink-faint transition-colors hover:bg-surface-soft"
                     >
                       <MoreHorizontal className="h-4 w-4" />
                     </button>
@@ -125,7 +125,7 @@ export default function CommunicationHistoryPage({
               </button>
               <button
                 onClick={() => setMenuEntry(null)}
-                className="w-full rounded-xl bg-card-soft/40 py-3 text-[13px] text-ink-faint"
+                className="w-full rounded-xl bg-surface-soft/40 py-3 text-[13px] text-ink-faint"
               >
                 取消
               </button>

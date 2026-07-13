@@ -60,6 +60,9 @@ export default function PraisePage({ onBack }: Props) {
   // —— 光反馈：底层仍沿用能量奖励数据 ——
   const [praiseEnergyReward, setPraiseEnergyReward] =
     useState<EnergyRewardEvent | null>(null);
+  const [praiseEnergyPulse, setPraiseEnergyPulse] = useState(false);
+  const praiseBadgeRef = useRef<HTMLButtonElement | null>(null);
+  const praisePulseTimer = useRef<number | null>(null);
   const praiseRewardIdRef = useRef(0);
 
   // 初始加载 localStorage
@@ -95,13 +98,31 @@ export default function PraisePage({ onBack }: Props) {
       praiseRewardIdRef.current += 1;
       setPraiseEnergyReward({
         id: praiseRewardIdRef.current,
+        occurredAt: Date.now(),
       });
     }
   };
 
+  const handlePraiseEnergyArrive = useCallback(() => {
+    setPraiseEnergyPulse(true);
+    if (praisePulseTimer.current)
+      window.clearTimeout(praisePulseTimer.current);
+    praisePulseTimer.current = window.setTimeout(() => {
+      setPraiseEnergyPulse(false);
+      praisePulseTimer.current = null;
+    }, 420);
+  }, []);
+
   // toast 整段动画结束：清空 event
   const handlePraiseEnergyDone = useCallback(() => {
     setPraiseEnergyReward(null);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (praisePulseTimer.current)
+        window.clearTimeout(praisePulseTimer.current);
+    };
   }, []);
 
   // 进入详情页
@@ -151,11 +172,17 @@ export default function PraisePage({ onBack }: Props) {
 
       {/* 右上角我的光入口：仅模块主页展示；写入 / 详情态保持专注，不常驻入口。 */}
       {layer === "home" && (
-        <EnergyBadge position="floating" />
+        <EnergyBadge
+          pulse={praiseEnergyPulse}
+          buttonRef={praiseBadgeRef}
+          position="floating"
+        />
       )}
-      {/* 光反馈：保存有效卡片后轻轻浮现，不飞向入口 */}
+      {/* 光反馈：保存有效卡片后飞向右上角入口 */}
       <EnergyRewardFeedback
         event={praiseEnergyReward}
+        targetRef={praiseBadgeRef}
+        onArrive={handlePraiseEnergyArrive}
         onDone={handlePraiseEnergyDone}
       />
     </div>
@@ -186,7 +213,7 @@ function HomeView({
         <button
           onClick={onBack}
           aria-label="返回更多"
-          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface-soft"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
@@ -268,7 +295,7 @@ function ZaizaiBubble({ items }: { items: string[] }) {
           className="absolute inset-x-0 top-2"
         >
           {/* 气泡主体：偏方正、轻圆角 */}
-          <div className="relative min-h-[42px] rounded-lg bg-line-soft px-3 py-2">
+          <div className="relative min-h-[42px] rounded-lg bg-surface-soft px-3 py-2">
             <p className="line-clamp-2 text-[12px] leading-relaxed text-ink-soft">
               {items[index]}
             </p>
@@ -279,7 +306,7 @@ function ZaizaiBubble({ items }: { items: string[] }) {
                 height="12"
                 viewBox="0 0 8 12"
                 fill="none"
-                className="text-line-soft"
+                className="text-surface-soft"
               >
                 <path d="M0 6L8 0v12L0 6z" fill="currentColor" />
               </svg>
@@ -559,7 +586,7 @@ function DeleteConfirm({
           </button>
           <button
             onClick={onCancel}
-            className="w-full rounded-xl bg-line-soft py-3 text-[15px] text-ink-soft transition-colors hover:bg-line"
+            className="w-full rounded-xl bg-surface-soft py-3 text-[15px] text-ink-soft transition-colors hover:bg-line"
           >
             取消
           </button>
