@@ -10,65 +10,72 @@ type ChangePoint = {
 
 const changePoints: ChangePoint[] = [
   {
-    title: "入口前移",
-    detail: "醒来后，她会主动看一眼在在。",
-  },
-  {
     title: "求助提前",
-    detail: "还没完全崩溃时，她会先来求助。",
+    detail: "从崩溃后才开口，到刚开始卡住就来找在在。",
   },
   {
-    title: "事实留下",
-    detail: "吃了什么、出门做了什么，开始被轻轻记下来。",
+    title: "学会自我调节",
+    detail: "从被带着做呼吸，到主动打开练习稳定自己。",
   },
   {
-    title: "收尾出现",
-    detail: "睡前，她能说出今天发生过的一点点不同。",
+    title: "真实行动发生",
+    detail: "从卷子一打开就关上，到整理数学、去学校交作业。",
+  },
+  {
+    title: "进步没有被抹掉",
+    detail: "一次争吵，不再覆盖她这一天已经做到的事。",
   },
 ];
 
-/* —— 两周后过渡页 ——
- * 出现在第一天最后一步与第二天第一步之间。
+/* —— 第一天结束总结 + 两周后开场 ——
+ * 替代原 TwoWeekTransition。
  *
- * 版式与第一天背景介绍页（XiaochenCaseIntro）保持一致：
- *   A. 身份区：小标签 + 主标题 + 副标题 + 引语
- *   B. 2×2 卡片区：四个小变化
- *   C. 观看提示区：分割线 + 主按钮
+ * 结构：
+ *   A. 第一天结束总结
+ *   B. 两周后开场（身份区：小标签 + 主标题 + 副标题 + 引语）
+ *   C. 四张变化卡片
+ *   D. 底部说明
  *
- * 核心判断：第一页讲“她卡在哪里”，过渡页讲“卡住还在，但哪些地方开始松动”。
- * 不说「康复 / 治好 / 恢复正常」，明确仍然困难，但生活齿轮开始重新咬合。
+ * 所有文案严格来自 Word 文档原文。
  */
 export default function TwoWeekTransition({ onEnter, onBack }: Props) {
   return (
     <div className="mx-auto w-full max-w-[680px]">
-      {/* —— A. 身份区 —— */}
-      <section aria-label="两周后过渡">
-        {/* 小标签 */}
+      {/* —— A. 第一天结束总结 —— */}
+      <section aria-label="第一天结束总结" className="border-b border-line-soft pb-8">
         <p className="text-center text-[12px] tracking-[0.18em] text-ink-faint">
-          使用约 2 周后
+          第一天结束
         </p>
-
-        {/* 主标题 */}
-        <h1 className="mt-3 text-center text-[40px] font-bold leading-[1.2] text-ink">
-          两周后，小晨没有突然变好
-        </h1>
-
-        {/* 副标题 */}
-        <p className="mt-4 text-center text-[21px] font-medium leading-[1.5] text-ink">
-          她还是会起不来、会请假、会在学习前发紧，也还是会被家人误解。
-        </p>
-
-        {/* 引语 */}
-        <p className="mt-4 text-center text-[19px] leading-[1.6] text-ink-soft">
-          “今天好像没那么糟。”
+        <p className="mt-4 text-center text-[17px] leading-[1.7] text-ink">
+          在呀 ZÀIYA 持续识别用户卡住的具体环节，并调用对应的心理学方法，让情绪调节、饮食、学习和睡眠中的下一步重新发生。
         </p>
       </section>
 
-      {/* —— B. 小变化卡片区 —— */}
-      <section
-        aria-label="很小的变化"
-        className="mt-10"
-      >
+      {/* —— B. 两周后开场 —— */}
+      <section aria-label="两周后过渡" className="mt-8">
+        {/* 小标签 */}
+        <p className="text-center text-[12px] tracking-[0.18em] text-ink-faint">
+          两周后
+        </p>
+
+        {/* 主标题 */}
+        <h1 className="mt-3 text-center text-[36px] font-bold leading-[1.25] text-ink">
+          她还没有突然变好，但已经不再一路撑到崩溃
+        </h1>
+
+        {/* 副标题 */}
+        <p className="mt-4 text-center text-[19px] leading-[1.6] text-ink">
+          她还是会起不来、会请假、会被家人误解，但她开始更早求助，也开始真的做出一点改变。
+        </p>
+
+        {/* 引语 */}
+        <p className="mt-4 text-center text-[18px] leading-[1.6] text-ink-soft">
+          “今天……好像没那么糟。”
+        </p>
+      </section>
+
+      {/* —— C. 四张变化卡片区 —— */}
+      <section aria-label="很小的变化" className="mt-10">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
           {changePoints.map((point) => (
             <div
@@ -86,16 +93,16 @@ export default function TwoWeekTransition({ onEnter, onBack }: Props) {
         </div>
       </section>
 
-      {/* —— C. 观看提示区 —— */}
+      {/* —— D. 底部说明 —— */}
       <section
-        aria-label="评委观看提示"
+        aria-label="底部说明"
         className="mt-10 border-t border-line-soft pt-8"
       >
         <p className="text-center text-[16px] leading-[1.7] text-ink">
-          <span className="font-semibold">接下来看的不是一个“被治好”的小晨。</span>
+          在呀 ZÀIYA 没有让她立刻好起来。
         </p>
         <p className="mt-3 text-center text-[16px] leading-[1.7] text-ink-soft">
-          而是一个仍然困难、但生活齿轮开始重新咬合的两周后。
+          它让支持发生在失控之前，让每一次微小行动都能发生、被看见，并继续积累。
         </p>
 
         {/* 主按钮 */}

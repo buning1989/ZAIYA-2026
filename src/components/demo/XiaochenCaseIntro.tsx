@@ -12,19 +12,19 @@ type ImpairmentPoint = {
 const impairmentPoints: ImpairmentPoint[] = [
   {
     title: "起不来床",
-    detail: "早上起不来,频繁请假,无法正常上学。",
+    detail: "早上起不来床，频繁请假，无法正常上学。",
   },
   {
     title: "饮食失控",
-    detail: "三餐不定时,有时吃不下,有时暴饮暴食。",
+    detail: "三餐不定时，有时吃不下，有时暴饮暴食。",
   },
   {
     title: "学业受阻",
-    detail: "对成绩极度焦虑,学不进去,一开始学习就难受。",
+    detail: "对成绩极其焦虑，学不进去，一开始学习就难受。",
   },
   {
     title: "家庭冲突",
-    detail: "难以和父母正常交流,家人也越来越焦虑,经常争吵。",
+    detail: "难以和父母正常交流，家人也越来越焦虑，经常争吵。",
   },
 ];
 
@@ -44,7 +44,7 @@ const impairmentPoints: ImpairmentPoint[] = [
  * Rive 形象此前已移除，采用单列居中结构。
  */
 export default function XiaochenCaseIntro({ onStart }: Props) {
-  const { nickname, birthDate, grade } = MOCK_USER_PROFILE.basicInfo;
+  const { nickname, birthDate } = MOCK_USER_PROFILE.basicInfo;
   const age = calculateAge(birthDate);
   return (
     <div className="mx-auto w-full max-w-[680px]">
@@ -57,17 +57,17 @@ export default function XiaochenCaseIntro({ onStart }: Props) {
 
         {/* 主标题 */}
         <h1 className="mt-3 text-center text-[40px] font-bold leading-[1.2] text-ink">
-          {nickname},{age} 岁,重度抑郁、重度焦虑
+          {nickname}，{age} 岁，重度抑郁重度焦虑。
         </h1>
 
         {/* 副标题 */}
         <p className="mt-4 text-center text-[21px] font-medium leading-[1.5] text-ink">
-          她的一天,从起床就开始卡住。
+          她的一天，从起床就开始卡住。
         </p>
 
         {/* 内心句 */}
         <p className="mt-4 text-center text-[19px] leading-[1.6] text-ink-soft">
-          "我知道该做什么,但我真的做不到。"
+          “我知道该做什么，但我真的做不到。”
         </p>
       </section>
 
@@ -99,10 +99,10 @@ export default function XiaochenCaseIntro({ onStart }: Props) {
         className="mt-10 border-t border-line-soft pt-8"
       >
         <p className="text-[16px] leading-[1.7] text-ink">
-          <span className="font-semibold">在呀不替小晨治疗。</span>
+          <span className="font-semibold">这是无数饱受精神心理问题困扰的青少年的缩影。</span>
         </p>
         <p className="mt-3 text-[16px] leading-[1.7] text-ink-soft">
-          接下来,通过她刚开始使用的一天和两周后的一天,看支持如何从崩溃之后,慢慢前移到失控之前。
+          接下来，我们将通过小晨的故事，展示在呀 ZÀIYA 是如何帮助小晨开始好转。
         </p>
 
         {/* 主按钮 */}

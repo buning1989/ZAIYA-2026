@@ -757,6 +757,8 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
       {/* 能量获得 toast：复用「一起发呆」组件，飞向右上角能量入口 */}
       <EnergyRewardFeedback
         event={breathEnergyReward}
+        targetRef={breathBadgeRef}
+        onArrive={handleBreathEnergyArrive}
         onDone={handleBreathEnergyDone}
       />
     </motion.div>

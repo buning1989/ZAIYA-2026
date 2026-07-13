@@ -177,6 +177,7 @@ export default function RecordFlow({
     useState<ActiveEnergyReward | null>(null);
   const energyRewardIdRef = useRef(0);
   const energyButtonRef = useRef<HTMLButtonElement | null>(null);
+  const rewardedRecordIds = useRef<Set<string>>(new Set());
   // 上一次体重记录值（用于体重页默认填入 + 步进调节）
   // 从 recordHistory 中读取最近一条带 weight 值的体重记录；无历史时为 null（页面渲染手动输入框）
   const [lastWeight, setLastWeight] = useState<number | null>(
@@ -258,8 +259,8 @@ export default function RecordFlow({
     );
     if (hasValidInput && typeId) {
       const recordId = `${typeId}-${Date.now()}`;
-      if (!rewardedRecordIds.has(recordId)) {
-        rewardedRecordIds.add(recordId);
+      if (!rewardedRecordIds.current.has(recordId)) {
+        rewardedRecordIds.current.add(recordId);
         // 底层仍累加能量值（保持原有逻辑），但前台只展示「收下一点光」
         addEnergy(FULL_RECORD_ENERGY_REWARD);
         energyRewardIdRef.current += 1;
@@ -355,6 +356,10 @@ export default function RecordFlow({
 
   const handleEnergyRewardDone = useCallback(() => {
     setActiveEnergyReward(null);
+  }, []);
+
+  const handleEnergyRewardArrive = useCallback(() => {
+    // 粒子飞抵能量入口时的回调（目前无需额外处理）
   }, []);
 
   return (
@@ -502,6 +507,8 @@ export default function RecordFlow({
 
       <EnergyRewardFeedback
         event={activeEnergyReward}
+        targetRef={energyButtonRef}
+        onArrive={handleEnergyRewardArrive}
         onDone={handleEnergyRewardDone}
       />
 

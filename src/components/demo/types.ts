@@ -173,14 +173,12 @@ export type GuidedScenarioStep = {
   time: string;
   /** 步骤标题，例如 "起床失败" */
   title: string;
-  /** 小晨的状态描述（三层叙事·第一层） */
-  userState: string;
-  /** 在呀的回应/行动描述（三层叙事·第二层） */
-  zaiyaAction: string;
-  /** 结果标签："意义"（第一天）或 "变化"（两周后） */
-  resultLabel: "意义" | "变化";
-  /** 结果描述（三层叙事·第三层） */
-  result: string;
+  /** 严格来自 Word 文档的连续故事正文，按自然段落分段 */
+  narrative: string[];
+  /** Word 文档中"心理学技术应用"下的方法名称 */
+  principles: string;
+  /** 方法下方的作用说明 */
+  explanation: string;
   /** 当前步骤涉及的产品模块标签（用于故事面板硬功能标识） */
   moduleTags: ProductModuleTag[];
   /** 该步骤对应的产品演示状态 */
