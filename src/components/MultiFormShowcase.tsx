@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronRight } from "lucide-react";
 import AppMainSurface from "./AppMainSurface";
-import ZaiyaWakeAnimation from "./ZaiyaWakeAnimation";
+import LazyVideo from "./LazyVideo";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -24,7 +23,7 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
 /* —— App 形态：完整手机 App 主界面 —— */
 function AppSurface() {
   return (
-    <div className="mx-auto w-full max-w-[320px]">
+    <div className="mx-auto w-[min(380px,calc(100vw-64px))] -translate-y-10">
       <PhoneFrame>
         <AppMainSurface previewMode />
       </PhoneFrame>
@@ -56,11 +55,17 @@ function WidgetCard() {
         <div>小胜，</div>
         <div>积攒勇气</div>
       </div>
-      <div className="absolute bottom-3 left-3 z-20 grid h-7 w-7 place-items-center rounded-full bg-line-soft text-ink shadow-[0_3px_10px_-7px_rgba(39,51,31,0.38)]">
-        <ChevronRight className="h-4 w-4" strokeWidth={1.8} />
-      </div>
-      <div className="absolute bottom-1.5 right-1.5 z-10">
-        <ZaiyaWakeAnimation variant="desktop-widget" />
+      <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
+        <LazyVideo
+          src="./assets/zaiya/small-good-thing.webm"
+          eager
+          layout="natural"
+          className="h-full w-full"
+          mediaClassName="absolute left-[60%] top-[58%] h-[148%] w-auto max-w-none -translate-x-1/2 -translate-y-1/2 object-contain"
+          mediaStyle={{ transformOrigin: "center center" }}
+          alt="今天有什么小小的好事发生吗？"
+          fadeDuration={300}
+        />
       </div>
     </div>
   );
@@ -118,8 +123,20 @@ function WatchSurface() {
               20:48
             </div>
             {/* 在在按 GIF 主体视觉中心定位，不按透明画布居中 */}
-            <div className="absolute left-1/2 top-[66%] z-10 -translate-x-1/2 -translate-y-1/2">
-              <ZaiyaWakeAnimation variant="watch" />
+            <div className="absolute left-1/2 top-[66%] z-10 flex h-[120px] w-[150px] -translate-x-1/2 -translate-y-1/2 items-center justify-center overflow-visible">
+              <video
+                src="./assets/zaiya/zaizai-eating.webm"
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="auto"
+                className="block h-full w-auto max-w-none select-none object-contain"
+                style={{
+                  transform: "scale(1.72)",
+                  transformOrigin: "center center",
+                }}
+              />
             </div>
           </div>
         </div>
