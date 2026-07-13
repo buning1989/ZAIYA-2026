@@ -30,16 +30,19 @@ export default function DemoWatchFrame({ time = "12:00" }: Props) {
           <div className="absolute -right-[7px] top-[38%] h-9 w-[5px] rounded-r-full bg-ink/85 shadow-sm" />
 
           {/* 表盘屏幕 */}
-          <div className="relative flex h-full w-full flex-col items-center overflow-hidden rounded-[36px] bg-white">
+          <div
+            className="relative flex h-full w-full flex-col items-center overflow-hidden rounded-[36px] bg-white px-6 pb-8 pt-8"
+            style={{ transform: "translateY(-4px)" }}
+          >
             {/* 顶部大时间（主视觉） */}
-            <div className="mt-7 w-full text-center">
-              <p className="font-watch text-[72px] font-medium leading-none tracking-normal text-ink">
+            <div className="w-full text-center">
+              <p className="font-watch text-[64px] font-medium leading-[0.95] tracking-[-0.04em] tabular-nums text-[#243020]">
                 {time}
               </p>
             </div>
 
-            {/* 中部在在吃饭形象（居中放大） */}
-            <div className="relative -mt-1 flex h-[40%] w-full items-center justify-center">
+            {/* 中部在在吃饭形象 */}
+            <div className="mt-2.5 flex h-[92px] w-[92px] items-center justify-center">
               <video
                 src="./assets/zaiya/zaizai-eating.webm"
                 autoPlay
@@ -47,19 +50,16 @@ export default function DemoWatchFrame({ time = "12:00" }: Props) {
                 muted
                 playsInline
                 preload="auto"
-                className="block h-full w-auto max-w-none select-none object-contain"
-                style={{
-                  transform: "scale(1.42)",
-                  transformOrigin: "center center",
-                }}
+                className="block h-full w-full select-none object-contain"
               />
             </div>
 
-            {/* 底部短文案（轻提醒） */}
-            <div className="mt-auto mb-6 w-full px-5 text-center">
-              <p className="text-[14px] font-medium leading-[1.45] text-ink-soft">
-                到饭点啦，
-                <br />
+            {/* 文案区域（标题 + 辅助文案） */}
+            <div className="mt-2.5 w-full text-center">
+              <p className="text-[15px] font-semibold leading-[22px] text-[#34402F]">
+                到饭点啦
+              </p>
+              <p className="mt-px text-[13px] font-normal leading-[20px] text-[#737A70]">
                 今天吃点什么呀?
               </p>
             </div>
