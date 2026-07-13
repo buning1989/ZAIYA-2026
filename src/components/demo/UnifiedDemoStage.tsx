@@ -8,7 +8,8 @@ import GuidedDemoControls, { NavArrow } from "./GuidedDemoControls";
 import XiaochenCaseIntro from "./XiaochenCaseIntro";
 import DayOneSummaryPage from "./DayOneSummaryPage";
 import TwoWeekTransition from "./TwoWeekTransition";
-import ConclusionSummaryPage from "./ConclusionSummaryPage";
+import GuidedCaseResultPage from "./GuidedCaseResultPage";
+import GuidedProductValuePage from "./GuidedProductValuePage";
 import DemoPhoneFrame from "./DemoPhoneFrame";
 import DemoWatchFrame from "./DemoWatchFrame";
 import DemoSleepRecordFlow from "./DemoSleepRecordFlow";
@@ -34,17 +35,19 @@ type Props = {
 };
 
 /* —— 线性叙事相位 ——
- * intro         → 案例介绍（第 0 页）
- * day1          → 第一天 1/5 … 5/5
- * day1-summary  → 第一天结束总结页
- * week2-intro   → 两周后开场页
- * day2          → 小晨两周后 1/5 … 5/5
- * conclusion    → 结尾总结页（最后一页，只显示左箭头）
+ * intro              → 案例介绍（第 0 页）
+ * day1               → 第一天 1/5 … 5/5
+ * day1-summary       → 第一天结束总结页
+ * week2-intro        → 两周后开场页
+ * day2               → 小晨两周后 1/5 … 5/5
+ * guided-result      → 案例结果页（小晨这两周发生了什么）
+ * guided-product-value → 产品价值总结页（最后一页，只显示左箭头）
  *
- * 注：独立复诊整理页已移除，第二周第 5 节点直接进入最终总结。
+ * 注：独立复诊整理页已移除，第二周第 5 节点直接进入案例结果页。
+ * 原单页总结已拆分为两页：第一页只讲案例人物变化，第二页预留产品价值内容。
  *
  * 所有阶段统一使用左右箭头 / 键盘 ← → / 移动端左右滑动切换。
- * 不再设置任何用于推进流程的 CTA 按钮。
+ * 不再设置任何用于推进流程的 CTA 按钮（案例结果页主按钮除外，与右箭头等价）。
  */
 export type GuidedPhase =
   | "intro"
@@ -52,13 +55,15 @@ export type GuidedPhase =
   | "day1-summary"
   | "week2-intro"
   | "day2"
-  | "conclusion";
+  | "guided-result"
+  | "guided-product-value";
 
 /* 阶段页：无手机 Demo、无分页圆点，但保留左右箭头 */
 const PHASE_PAGES: GuidedPhase[] = [
   "day1-summary",
   "week2-intro",
-  "conclusion",
+  "guided-result",
+  "guided-product-value",
 ];
 
 function isPhasePage(phase: GuidedPhase): boolean {
@@ -161,10 +166,12 @@ export default function UnifiedDemoStage({
       setDay2Index(0);
       setPhase("day2");
     } else if (phase === "day2") {
-      if (atEnd) setPhase("conclusion");
+      if (atEnd) setPhase("guided-result");
       else setDay2Index((i) => Math.min(i + 1, xiaochenDay2Scenario.steps.length - 1));
+    } else if (phase === "guided-result") {
+      setPhase("guided-product-value");
     }
-    // conclusion：无下一页
+    // guided-product-value：无下一页（最后一页）
   }, [phase, atEnd]);
 
   const prev = useCallback(() => {
@@ -179,9 +186,11 @@ export default function UnifiedDemoStage({
     } else if (phase === "day2") {
       if (atStart) setPhase("week2-intro");
       else setDay2Index((i) => Math.max(i - 1, 0));
-    } else if (phase === "conclusion") {
+    } else if (phase === "guided-result") {
       setDay2Index(xiaochenDay2Scenario.steps.length - 1);
       setPhase("day2");
+    } else if (phase === "guided-product-value") {
+      setPhase("guided-result");
     }
     // intro：无上一页
   }, [phase, atStart]);
@@ -200,7 +209,8 @@ export default function UnifiedDemoStage({
   const showIntro = mode === "guided" && phase === "intro";
   const showDay1Summary = mode === "guided" && phase === "day1-summary";
   const showWeek2Intro = mode === "guided" && phase === "week2-intro";
-  const showConclusion = mode === "guided" && phase === "conclusion";
+  const showGuidedResult = mode === "guided" && phase === "guided-result";
+  const showGuidedProductValue = mode === "guided" && phase === "guided-product-value";
   const showGuidedNav = mode === "guided";
 
   // 阶段页（无手机 Demo、无圆点，但保留左右箭头）
@@ -319,7 +329,7 @@ export default function UnifiedDemoStage({
         e.preventDefault();
         prev();
       } else if (e.key === "ArrowRight") {
-        if (phase === "conclusion") return; // conclusion 无下一页
+        if (phase === "guided-product-value") return; // 最后一页无下一页
         e.preventDefault();
         next();
       }
@@ -360,7 +370,7 @@ export default function UnifiedDemoStage({
         if (phase !== "intro") prev();
       } else {
         // 向左滑 = 下一页
-        if (phase !== "conclusion") next();
+        if (phase !== "guided-product-value") next();
       }
     },
     [mode, phase, prev, next],
@@ -374,10 +384,12 @@ export default function UnifiedDemoStage({
           ? "day1-summary"
           : showWeek2Intro
             ? "week2-intro"
-            : showConclusion
-              ? "conclusion"
-              : "stage",
-    [showIntro, showDay1Summary, showWeek2Intro, showConclusion],
+            : showGuidedResult
+              ? "guided-result"
+              : showGuidedProductValue
+                ? "guided-product-value"
+                : "stage",
+    [showIntro, showDay1Summary, showWeek2Intro, showGuidedResult, showGuidedProductValue],
   );
 
   return (
@@ -419,7 +431,7 @@ export default function UnifiedDemoStage({
               <NavArrow direction="left" disabled={phase === "intro"} onClick={prev} />
             </div>
             <div className="pointer-events-auto">
-              <NavArrow direction="right" disabled={phase === "conclusion"} onClick={next} />
+              <NavArrow direction="right" disabled={phase === "guided-product-value"} onClick={next} />
             </div>
           </div>
         )}
@@ -461,16 +473,28 @@ export default function UnifiedDemoStage({
                 <TwoWeekTransition />
               </div>
             </motion.div>
-          ) : showConclusion ? (
+          ) : showGuidedResult ? (
             <motion.div
-              key="conclusion"
+              key="guided-result"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.28, ease: SOFT_EASE }}
             >
               <div className="lg:px-20">
-                <ConclusionSummaryPage />
+                <GuidedCaseResultPage onNext={next} />
+              </div>
+            </motion.div>
+          ) : showGuidedProductValue ? (
+            <motion.div
+              key="guided-product-value"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.28, ease: SOFT_EASE }}
+            >
+              <div className="lg:px-20">
+                <GuidedProductValuePage />
               </div>
             </motion.div>
           ) : mode === "free" ? (

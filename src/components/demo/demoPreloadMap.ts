@@ -115,7 +115,9 @@ const DAY2_4: NodeResources = {
   },
 };
 
-const CONCLUSION: NodeResources = {};
+const GUIDED_RESULT: NodeResources = {};
+
+const GUIDED_PRODUCT_VALUE: NodeResources = {};
 
 /* —— 节点 key 生成 —— */
 export function getNodeKey(
@@ -134,8 +136,10 @@ export function getNodeKey(
       return "week2-intro";
     case "day2":
       return `day2-${day2Index}`;
-    case "conclusion":
-      return "conclusion";
+    case "guided-result":
+      return "guided-result";
+    case "guided-product-value":
+      return "guided-product-value";
     default:
       return "intro";
   }
@@ -156,7 +160,8 @@ const NODE_RESOURCES: Record<string, NodeResources> = {
   "day2-2": DAY2_2,
   "day2-3": DAY2_3,
   "day2-4": DAY2_4,
-  conclusion: CONCLUSION,
+  "guided-result": GUIDED_RESULT,
+  "guided-product-value": GUIDED_PRODUCT_VALUE,
 };
 
 /* —— 计算下一个节点 key —— */
@@ -179,8 +184,10 @@ export function getNextNodeKey(
       return "day2-0";
     case "day2":
       if (day2Index < day2Length - 1) return `day2-${day2Index + 1}`;
-      return "conclusion";
-    case "conclusion":
+      return "guided-result";
+    case "guided-result":
+      return "guided-product-value";
+    case "guided-product-value":
       return null;
     default:
       return null;
