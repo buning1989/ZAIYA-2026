@@ -43,17 +43,17 @@ export default function GuidedCaseResultPage() {
   return (
     <div className="mx-auto w-full max-w-[920px]">
       {/* —— A. 弱化时间标签 —— */}
-      <p className="text-[13px] leading-[1.6] text-ink-faint">
+      <p className="text-center text-[13px] leading-[1.6] text-ink-faint">
         使用在呀 ZÀIYA 两周后
       </p>
 
       {/* —— B. 主标题 —— */}
-      <h1 className="mt-3 text-[26px] font-semibold leading-[1.5] text-ink">
+      <h1 className="mt-3 text-center text-[26px] font-semibold leading-[1.5] text-ink">
         小晨开始重新参与自己的生活。
       </h1>
 
       {/* —— C. 副标题 —— */}
-      <p className="mt-6 text-[17px] leading-[1.8] text-ink-soft">
+      <p className="mt-6 text-center text-[17px] leading-[1.8] text-ink-soft">
         她开始主动记录、整理、回看，
         <br />
         也逐渐看见自己的感受和努力。
@@ -64,12 +64,12 @@ export default function GuidedCaseResultPage() {
         {changeCards.map((card) => (
           <div
             key={card.title}
-            className="rounded-2xl border border-line-soft bg-card-soft/60 px-5 py-5"
+            className="rounded-2xl border border-line-soft bg-white px-5 py-5"
           >
-            <span className="inline-block rounded-full border border-line bg-white/60 px-2 py-0.5 text-[11px] tracking-[0.04em] text-ink-soft">
+            <span className="inline-block rounded-full border border-line bg-white px-2 py-0.5 text-[11px] tracking-[0.04em] text-ink-soft">
               {card.tag}
             </span>
-            <p className="mt-3 text-[16px] font-semibold leading-[1.4] text-ink">
+            <p className="mt-3 text-[16px] font-normal leading-[1.4] text-ink">
               {card.title}
             </p>
             <p className="mt-2 text-[14px] leading-[1.7] text-ink-soft">
