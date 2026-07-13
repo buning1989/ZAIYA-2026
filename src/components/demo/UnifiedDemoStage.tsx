@@ -206,19 +206,6 @@ export default function UnifiedDemoStage({
     [phase],
   );
 
-  /* —— 重新观看案例 ——
-   * 重置 Guided Demo 进度：phase 回到 intro，第一天 / 第二天索引归零，
-   * 清空对话与星星状态。不刷新整个官网，不进入自由体验。
-   */
-  const restartGuidedDemo = useCallback(() => {
-    setPhase("intro");
-    setDay1Index(0);
-    setDay2Index(0);
-    setDialogRevealCount(0);
-    setShowBreathing(false);
-    setStarCollected(false);
-  }, []);
-
   const showIntro = mode === "guided" && phase === "intro";
   const showDay1Summary = mode === "guided" && phase === "day1-summary";
   const showWeek2Intro = mode === "guided" && phase === "week2-intro";
@@ -498,7 +485,7 @@ export default function UnifiedDemoStage({
               transition={{ duration: 0.28, ease: SOFT_EASE }}
             >
               <div className="lg:px-20">
-                <GuidedCaseResultPage onNext={next} />
+                <GuidedCaseResultPage />
               </div>
             </motion.div>
           ) : showGuidedProductValue ? (
@@ -511,7 +498,6 @@ export default function UnifiedDemoStage({
             >
               <div className="lg:px-20">
                 <GuidedProductValuePage
-                  onRestart={restartGuidedDemo}
                   onEnterFreeExperience={onSwitchToFree}
                 />
               </div>
