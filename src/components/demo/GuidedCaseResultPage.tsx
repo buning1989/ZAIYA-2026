@@ -44,7 +44,7 @@ export default function GuidedCaseResultPage() {
     <div className="mx-auto w-full max-w-[920px]">
       {/* —— A. 弱化时间标签 —— */}
       <p className="text-[13px] leading-[1.6] text-ink-faint">
-        使用在呀两周后
+        使用在呀 ZÀIYA 两周后
       </p>
 
       {/* —— B. 主标题 —— */}

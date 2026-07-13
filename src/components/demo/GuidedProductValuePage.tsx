@@ -85,7 +85,7 @@ export default function GuidedProductValuePage({
 
       {/* —— D. 居中收束语 —— */}
       <p className="mt-12 text-center text-[17px] font-medium leading-[1.8] text-ink-soft">
-        在呀连接的，不只是信息，
+        在呀 ZÀIYA 连接的，不只是信息，
         <br />
         也是小晨重新回到家庭、学校和现实生活中的桥梁。
       </p>

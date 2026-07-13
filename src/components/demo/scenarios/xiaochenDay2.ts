@@ -21,7 +21,7 @@ export const xiaochenDay2Scenario: GuidedScenario = {
   id: "xiaochen-day2",
   name: "小晨两周后",
   description:
-    "使用产品两周后的一天。小晨从只能在崩溃时被动获得支持，转向主动使用在呀记录、整理、回看和理解自己的生活状态。",
+    "使用产品两周后的一天。小晨从只能在崩溃时被动获得支持，转向主动使用在呀 ZÀIYA 记录、整理、回看和理解自己的生活状态。",
   intro:
     "变化还没有稳定发生。但在呀 ZÀIYA 已经不再只在她崩溃时出现。",
   steps: [
@@ -32,7 +32,7 @@ export const xiaochenDay2Scenario: GuidedScenario = {
       title: "醒来，先看它一眼",
       narrative: [
         "周日不用上学，忘了关的闹钟还是响了。小晨关掉，没起，顺手点亮屏幕看了一眼在在——这个动作，两周前她不会有。",
-        "打开在呀，一句话从在在身边飘过。她盯着看了几秒，点了一下。",
+        "打开在呀 ZÀIYA，一句话从在在身边飘过。她盯着看了几秒，点了一下。",
       ],
       principles: "微习惯形成 × 叙事性范例投喂",
       explanation: "从被动看见，到主动接住。",

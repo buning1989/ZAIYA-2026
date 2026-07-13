@@ -18,7 +18,7 @@ export default function FreeExperiencePanel() {
 
       {/* 第 2 层：主标题 */}
       <h2 className="mt-4 text-[20px] font-semibold leading-[1.4] text-ink">
-        现在，自己试试在呀。
+        现在，自己试试在呀 ZÀIYA。
       </h2>
 
       {/* 第 3 层：说明文案 */}

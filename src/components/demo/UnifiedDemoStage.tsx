@@ -403,7 +403,7 @@ export default function UnifiedDemoStage({
         <button
           type="button"
           onClick={onReturnHome}
-          aria-label="返回在呀主页"
+          aria-label="返回在呀 ZÀIYA 主页"
           className="inline-flex h-9 items-center justify-self-start rounded-full px-1 text-[13px] text-ink-faint transition-colors hover:text-ink-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/25 focus-visible:ring-offset-4"
         >
           ← 返回主页

@@ -28,7 +28,7 @@ export default function DemoModeSelector({
     <div className="relative flex min-h-full flex-col items-center justify-center px-6 py-16">
       <header className="mb-10 text-center">
         <p className="text-[11px] uppercase tracking-[0.18em] text-ink-faint">
-          在呀 · Demo
+          在呀 ZÀIYA · Demo
         </p>
         <h1 className="mt-3 font-brand text-[28px] leading-tight text-ink">
           你想怎么体验「在呀 ZÀIYA」？
@@ -45,7 +45,7 @@ export default function DemoModeSelector({
             跟着一个案例看
           </h2>
           <p className="mt-2 flex-1 text-[13.5px] leading-relaxed text-ink-soft">
-            从一个具体用户的生活场景出发，看在呀如何陪用户完成记录、回看和整理。
+            从一个具体用户的生活场景出发，看在呀 ZÀIYA 如何陪用户完成记录、回看和整理。
           </p>
           <span className="mt-6 inline-flex items-center gap-1.5 self-start rounded-lg bg-action-primary px-4 py-2.5 text-[13px] font-medium text-action-primary-text transition-opacity group-hover:opacity-90">
             开始演示
