@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Zap } from "lucide-react";
 
 /* —— 全局能量入口（统一组件）——
  *
@@ -35,6 +34,48 @@ type EnergyBadgeProps = {
 const ease = [0.22, 1, 0.36, 1] as const;
 
 const DEFAULT_HINT = "小装扮兑换暂未开放";
+
+/* —— 种子发芽图标（扁平、圆润、轻治愈风格）—— */
+function SproutIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {/* 种子 */}
+      <ellipse
+        cx="12"
+        cy="18"
+        rx="3"
+        ry="2.5"
+        fill="currentColor"
+        opacity="0.6"
+      />
+      {/* 嫩芽茎 */}
+      <path
+        d="M12 15.5 Q12 12 12 10"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      {/* 左叶 */}
+      <path
+        d="M12 12 Q9 11 8 9 Q9 10 12 12"
+        fill="currentColor"
+        opacity="0.7"
+      />
+      {/* 右叶 */}
+      <path
+        d="M12 10 Q15 9 16 7 Q15 8 12 10"
+        fill="currentColor"
+        opacity="0.7"
+      />
+    </svg>
+  );
+}
 
 export default function EnergyBadge({
   value,
@@ -79,8 +120,7 @@ export default function EnergyBadge({
             : "bg-status-mood/15"
         }`}
       >
-        <Zap className="h-3 w-3" />
-        <span>{value}</span>
+        <SproutIcon className="h-3.5 w-3.5" />
       </motion.button>
 
       {/* 点击提示：紧贴入口下方展开，1.8s 自动淡出；min-width 防止竖向压缩 */}

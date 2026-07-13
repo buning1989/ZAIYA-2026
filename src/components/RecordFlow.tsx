@@ -171,14 +171,12 @@ export default function RecordFlow({
 
   // 是否已完成保存（success 态），用于返回按钮跳过放弃确认
   const [isRecordSaved, setIsRecordSaved] = useState(false);
-  // 当前能量值（useEnergy 订阅全局 pub/sub，跨模块同步；freeze/unfreeze 用于 toast 飞行期间冻结展示）
-  const { value: energyValue, freeze: freezeEnergy, unfreeze: unfreezeEnergy } = useEnergy();
+  // 当前能量值（useEnergy 订阅全局 pub/sub，跨模块同步）
+  const { value: energyValue } = useEnergy();
   const [activeEnergyReward, setActiveEnergyReward] =
     useState<ActiveEnergyReward | null>(null);
-  const [energyPulse, setEnergyPulse] = useState(false);
   const energyRewardIdRef = useRef(0);
   const energyButtonRef = useRef<HTMLButtonElement | null>(null);
-  const energyPulseTimer = useRef<number | null>(null);
   // 上一次体重记录值（用于体重页默认填入 + 步进调节）
   // 从 recordHistory 中读取最近一条带 weight 值的体重记录；无历史时为 null（页面渲染手动输入框）
   const [lastWeight, setLastWeight] = useState<number | null>(
@@ -200,13 +198,6 @@ export default function RecordFlow({
   const type = typeId
     ? recordTypes.find((t) => t.id === typeId) ?? null
     : null;
-
-  const clearEnergyPulseTimer = useCallback(() => {
-    if (energyPulseTimer.current !== null) {
-      window.clearTimeout(energyPulseTimer.current);
-      energyPulseTimer.current = null;
-    }
-  }, []);
 
   const goWizard = (id: RecordTypeId) => {
     setTypeId(id);
@@ -246,7 +237,7 @@ export default function RecordFlow({
     backToRecordHome();
   };
 
-  // 确认页「完成记录」：保存记录 + 发放完整记录能量奖励，但原地切换 success 态，不回首页
+  // 确认页「完成记录」：保存记录 + 触发光反馈，但原地切换 success 态，不回首页
   // 回首页由 success 态「回到记一下」按钮触发（onBackHome=backToRecordHome）
   const handleCompleteRecord = (answers: Answers) => {
     const complete = typeId ? isCompleteCoreRecord(typeId, answers) : false;
@@ -260,16 +251,26 @@ export default function RecordFlow({
       }
     }
     if (typeId) onRecordComplete?.({ typeId, isComplete: complete, weightValue });
-    if (complete) {
-      freezeEnergy();
-      const newEnergy = addEnergy(FULL_RECORD_ENERGY_REWARD);
-      energyRewardIdRef.current += 1;
-      setActiveEnergyReward({
-        id: energyRewardIdRef.current,
-        reward: FULL_RECORD_ENERGY_REWARD,
-        toEnergy: newEnergy,
-      });
+
+    // 触发光反馈：只要保存成功就触发，不要求完整记录
+    const hasValidInput = Object.values(answers).some(
+      (a) => a && (a.label?.trim() || a.value.trim()),
+    );
+    if (hasValidInput && typeId) {
+      const recordId = `${typeId}-${Date.now()}`;
+      if (!rewardedRecordIds.has(recordId)) {
+        rewardedRecordIds.add(recordId);
+        // 底层仍累加能量值（保持原有逻辑），但前台只展示「收下一点光」
+        addEnergy(FULL_RECORD_ENERGY_REWARD);
+        energyRewardIdRef.current += 1;
+        setActiveEnergyReward({
+          id: energyRewardIdRef.current,
+          reward: FULL_RECORD_ENERGY_REWARD,
+          toEnergy: 0, // 不再展示数值，此字段仅用于类型兼容
+        });
+      }
     }
+
     setIsRecordSaved(true);
     // 不 setSavedMessage：完成反馈由 success 态承担，不再走 Toast
     // 不 backToRecordHome：保持当前 wizard 层，RecordConfirmPage 内部切 phase=success
@@ -352,24 +353,6 @@ export default function RecordFlow({
     return () => window.clearTimeout(timer);
   }, [savedMessage]);
 
-  useEffect(
-    () => () => {
-      clearEnergyPulseTimer();
-    },
-    [clearEnergyPulseTimer],
-  );
-
-  const handleEnergyRewardArrive = useCallback(() => {
-    if (!activeEnergyReward) return;
-    unfreezeEnergy();
-    setEnergyPulse(true);
-    clearEnergyPulseTimer();
-    energyPulseTimer.current = window.setTimeout(() => {
-      setEnergyPulse(false);
-      energyPulseTimer.current = null;
-    }, 420);
-  }, [activeEnergyReward, clearEnergyPulseTimer, unfreezeEnergy]);
-
   const handleEnergyRewardDone = useCallback(() => {
     setActiveEnergyReward(null);
   }, []);
@@ -394,7 +377,6 @@ export default function RecordFlow({
           /* 确认页 / 已保存：能量入口（统一组件，点击提示 Demo 暂未开放） */
           <EnergyBadge
             value={energyValue}
-            pulse={energyPulse}
             buttonRef={energyButtonRef}
             position="inline"
           />
@@ -520,8 +502,6 @@ export default function RecordFlow({
 
       <RecordEnergyToast
         event={activeEnergyReward}
-        targetRef={energyButtonRef}
-        onArrive={handleEnergyRewardArrive}
         onDone={handleEnergyRewardDone}
       />
 

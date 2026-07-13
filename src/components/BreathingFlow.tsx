@@ -754,13 +754,10 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
           position="floating"
         />
       )}
-      {/* 能量获得 toast：复用「一起发呆」组件，飞向右上角能量入口 */}
+      {/* 能量获得 toast：统一「收下一点光」反馈 */}
       <RecordEnergyToast
         event={breathEnergyReward}
-        targetRef={breathBadgeRef}
-        onArrive={handleBreathEnergyArrive}
         onDone={handleBreathEnergyDone}
-        text={`获得 +${BREATHING_EXERCISE_ENERGY_REWARD} 能量`}
       />
     </motion.div>
   );
