@@ -1,13 +1,13 @@
-/* —— 完成页 ——
- * 顶栏：左上返回 + 右上角模块图标
- * 摘要压缩为三行
- * 一个主按钮 + 两个横向次级按钮 */
+/* —— 完成页：沟通确认单 ——
+ * 将原「任务完成页」重构为一张纵向展开的沟通确认单。
+ * 顶栏：左上返回 + 标题「沟通确认单」+ 右上角模块图标
+ * 主体：单据式卡片，含沟通对象 / 目标 / 记录信息 / 沟通重点 / 高风险记录
+ * 底部：查看完整材料（主） + 分享 / 保存（次级） */
 import { useState } from "react";
 import { ChevronLeft, Download, FolderOpen, Share2 } from "lucide-react";
 import {
   buildShareText,
   formatDateRangeChinese,
-  formatCreatedAt,
   getMaterialTopics,
   type CommunicationSession,
 } from "@/data/organize";
@@ -24,6 +24,13 @@ interface Props {
   onViewMaterial: () => void;
   /** 演示只读态：按钮保留视觉，但不触发分享/下载副作用 */
   readOnly?: boolean;
+}
+
+/** 创建日期中文格式化：时间戳 → 2026 年 7 月 13 日
+ *  仅用于本页单据展示，不影响 organize.ts 中 formatCreatedAt 的其他调用方 */
+function formatCreatedAtChinese(ts: number): string {
+  const d = new Date(ts);
+  return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日`;
 }
 
 export default function DoneStep({
@@ -111,8 +118,8 @@ export default function DoneStep({
 
   return (
     <div className="relative flex h-full flex-col bg-white">
-      {/* 顶部导航：左上返回，右上角使用「帮我整理」同款模块图标 */}
-      <div className="flex items-center justify-between px-5 pt-14 pb-2">
+      {/* 顶部导航：左上返回 + 标题「沟通确认单」+ 右上角模块图标 */}
+      <div className="flex items-center justify-between px-5 pt-14 pb-3">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -122,7 +129,7 @@ export default function DoneStep({
             <ChevronLeft className="h-6 w-6" />
           </button>
           <h1 className="text-[18px] font-medium leading-relaxed tracking-tight text-ink">
-            和{name}的沟通
+            沟通确认单
           </h1>
         </div>
         <button
@@ -134,48 +141,106 @@ export default function DoneStep({
         </button>
       </div>
 
-      {/* 内容区 */}
+      {/* 沟通确认单主体 */}
       <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-6">
-        <div className="mt-6">
-          <h2 className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
-            和{name}沟通的内容已整理好
-          </h2>
-        </div>
-
-        {/* 沟通信息卡片 */}
-        <div className="mt-6 rounded-2xl border border-line bg-card-soft/20 px-5 py-4">
-          <div className="text-[14px] font-semibold text-ink">
-            {name} · {session.contactSnapshot.roleLabel}
+        <div className="rounded-2xl border border-line bg-white px-5 py-5">
+          {/* 单据顶部：主标题 + 辅助状态 */}
+          <div>
+            <h2 className="text-[18px] font-semibold leading-relaxed tracking-tight text-ink">
+              沟通确认单
+            </h2>
+            <div className="mt-1 text-[12px] text-ink-faint">
+              复诊沟通 · 已确认
+            </div>
           </div>
-          <div className="mt-3 flex flex-col gap-1.5 text-[12.5px] text-ink-soft">
-            <div className="flex">
-              <span className="w-20 shrink-0 text-ink-faint">记录日期</span>
-              <span>{formatDateRangeChinese(session.startDate, session.endDate)}</span>
+
+          {/* 分割线 */}
+          <div className="my-4 h-px bg-line-soft" />
+
+          {/* 沟通对象：较重要的信息，字号字重高于普通字段值 */}
+          <div>
+            <div className="text-[12px] text-ink-faint">沟通对象</div>
+            <div className="mt-1 text-[15px] font-semibold leading-relaxed text-ink">
+              {name}（{session.contactSnapshot.roleLabel}）
             </div>
-            <div className="flex">
-              <span className="w-20 shrink-0 text-ink-faint">记录天数</span>
-              <span>{session.recordedDays}/{session.totalDays}</span>
+          </div>
+
+          {/* 分割线 */}
+          <div className="my-4 h-px bg-line-soft" />
+
+          {/* 沟通目标：固定文案，避免临床效果承诺 */}
+          <div>
+            <div className="text-[12px] text-ink-faint">沟通目标</div>
+            <p className="mt-1.5 text-[14px] leading-[1.65] text-ink">
+              帮助{name}快速了解近一个月的状态变化、用药体验，以及这些变化对上学和家庭生活的影响，减少复诊沟通中的遗漏。
+            </p>
+          </div>
+
+          {/* 分割线 */}
+          <div className="my-4 h-px bg-line-soft" />
+
+          {/* 记录信息：左右两列布局，字段值字号明显高于旧版 */}
+          <div className="flex flex-col gap-2.5">
+            <div className="flex items-baseline gap-4">
+              <span className="w-16 shrink-0 text-[12px] text-ink-faint">
+                记录日期
+              </span>
+              <span className="text-[14px] leading-relaxed text-ink">
+                {formatDateRangeChinese(session.startDate, session.endDate)}
+              </span>
             </div>
-            <div className="flex">
-              <span className="w-20 shrink-0 text-ink-faint">沟通重点</span>
-              <div className="flex flex-col">
-                {materialTopics.map((topic, i) => (
-                  <span key={topic.id}>
-                    {i + 1}. {topic.title}
+            <div className="flex items-baseline gap-4">
+              <span className="w-16 shrink-0 text-[12px] text-ink-faint">
+                记录天数
+              </span>
+              <span className="text-[14px] leading-relaxed text-ink">
+                {session.recordedDays}/{session.totalDays} 天
+              </span>
+            </div>
+            <div className="flex items-baseline gap-4">
+              <span className="w-16 shrink-0 text-[12px] text-ink-faint">
+                创建日期
+              </span>
+              <span className="text-[14px] leading-relaxed text-ink">
+                {formatCreatedAtChinese(session.createdAt)}
+              </span>
+            </div>
+          </div>
+
+          {/* 分割线 */}
+          <div className="my-4 h-px bg-line-soft" />
+
+          {/* 沟通重点：读取用户最终确认的 materialTopics，编号列表，行距放大 */}
+          <div>
+            <div className="text-[12px] text-ink-faint">沟通重点</div>
+            <ol className="mt-2 flex flex-col gap-2.5">
+              {materialTopics.map((topic, i) => (
+                <li
+                  key={topic.id}
+                  className="flex gap-2.5 text-[14px] leading-[1.6] text-ink"
+                >
+                  <span className="shrink-0 tabular-nums text-ink-faint">
+                    {i + 1}.
                   </span>
-                ))}
-              </div>
-            </div>
-            {disclosureIncluded && selectedRecordCount > 0 && (
-              <div className="flex">
-                <span className="w-20 shrink-0 text-ink-faint">高风险记录</span>
-                <span>已加入 {selectedRecordCount} 条</span>
-              </div>
-            )}
-            <div className="flex">
-              <span className="w-20 shrink-0 text-ink-faint">创建日期</span>
-              <span>{formatCreatedAt(session.createdAt)}</span>
-            </div>
+                  <span>{topic.title}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          {/* 分割线 */}
+          <div className="my-4 h-px bg-line-soft" />
+
+          {/* 高风险记录：根据用户授权结果动态显示数量，不展示原话，不使用警示色 */}
+          <div className="flex items-baseline gap-4">
+            <span className="w-16 shrink-0 text-[12px] text-ink-faint">
+              高风险记录
+            </span>
+            <span className="text-[14px] leading-relaxed text-ink">
+              {disclosureIncluded && selectedRecordCount > 0
+                ? `已加入 ${selectedRecordCount} 条`
+                : "本次未加入"}
+            </span>
           </div>
         </div>
       </div>
