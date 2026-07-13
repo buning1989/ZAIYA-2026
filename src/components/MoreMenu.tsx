@@ -80,7 +80,7 @@ export const moreMenuItems: {
   { id: "review", label: "回头看看", Icon: Clock },
   { id: "organize", label: "帮我整理", Icon: FolderOpen },
   { id: "praise", label: "夸夸自己", Icon: Sparkles },
-  { id: "energy", label: "我的光", Icon: Sprout },
+  { id: "energy", label: "看看收获", Icon: Sprout },
   { id: "privacy", label: "我的隐私", Icon: Shield },
 ];
 
