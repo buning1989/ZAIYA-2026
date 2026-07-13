@@ -223,26 +223,27 @@ body::-webkit-scrollbar-thumb:hover {
 }
 
 /* Hero 品牌标题：中英文拆分 span，按基线对齐，避免字体度量差异导致的上下错位。
-   外层容器只负责排版，字号由父级 Tailwind 响应式断点控制；中文作为字号基准，
-   英文采用 0.9em + translateY(0.04em) 微调，以英文字母帽高与中文主体高度为准。 */
+   中英文均使用衬线体；中文稳重，英文修长优雅，不追求机械等高。
+   以 ZAIYA 主体帽高与中文主体高度为对齐依据，À 重音可自然略高。 */
 .hero-brand {
-  display: flex;
+  display: inline-flex;
   align-items: baseline;
-  gap: 0.2em;
-  line-height: 0.95;
+  gap: 0.16em;
+  line-height: 0.9;
   white-space: nowrap;
 }
 .hero-brand-cn {
   font-family: "Songti SC", "STSong", "Noto Serif CJK SC", serif;
   font-size: 1em;
-  line-height: 0.95;
+  line-height: 0.9;
   font-weight: 600;
 }
 .hero-brand-en {
-  font-family: "Geist", ui-sans-serif, system-ui, sans-serif;
-  font-size: 0.9em;
-  line-height: 1;
+  font-family: "Cormorant Garamond", "Bodoni Moda", "Libre Baskerville", serif;
+  font-size: 0.96em;
+  line-height: 0.84;
   font-weight: 500;
-  transform: translateY(0.04em);
+  letter-spacing: 0.005em;
+  transform: translateY(0.035em);
   display: inline-block;
 }
