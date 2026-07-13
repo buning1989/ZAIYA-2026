@@ -171,34 +171,32 @@ export default function DemoOrganizeFlow() {
                 <button
                   type="button"
                   onClick={() => setSensitiveIncluded((v) => !v)}
-                  className="mt-3 w-full rounded-xl border border-line bg-white px-4 py-4 text-left"
+                  className="mt-3 flex items-start justify-between gap-3 text-left"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="whitespace-pre-wrap text-[14px] leading-relaxed text-ink">
-                        {SENSITIVE_RECORD_TEXT}
-                      </p>
-                      <p className="mt-2 text-[12px] leading-relaxed text-ink-faint">
-                        {sensitiveIncluded
-                          ? "已加入本次沟通材料 · 让医生知道吧。"
-                          : "默认不加入本次沟通材料 · 仅在你确认后加入"}
-                      </p>
-                    </div>
-                    <span
-                      className={`grid h-5 w-5 shrink-0 place-items-center rounded-[5px] border transition-colors ${
-                        sensitiveIncluded
-                          ? "border-accent bg-accent"
-                          : "border-line bg-white"
-                      }`}
-                    >
-                      {sensitiveIncluded && (
-                        <Check
-                          className="h-3 w-3 text-white"
-                          strokeWidth={2.4}
-                        />
-                      )}
-                    </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="whitespace-pre-wrap text-[14px] leading-relaxed text-ink">
+                      {SENSITIVE_RECORD_TEXT}
+                    </p>
+                    <p className="mt-2 text-[12px] leading-relaxed text-ink-faint">
+                      {sensitiveIncluded
+                        ? "已加入本次沟通材料 · 让医生知道吧。"
+                        : "默认不加入本次沟通材料 · 仅在你确认后加入"}
+                    </p>
                   </div>
+                  <span
+                    className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border transition-colors ${
+                      sensitiveIncluded
+                        ? "border-accent bg-accent"
+                        : "border-line bg-white"
+                    }`}
+                  >
+                    {sensitiveIncluded && (
+                      <Check
+                        className="h-3 w-3 text-white"
+                        strokeWidth={2.4}
+                      />
+                    )}
+                  </span>
                 </button>
               </div>
             </div>
