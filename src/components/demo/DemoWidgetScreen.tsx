@@ -10,16 +10,11 @@
  * - 不显示 App 的侧边菜单和底部导航
  * - 不使用循环 WebM 视频
  * - 无点击提示、无箭头、无手指素材
- * - 支持 pressing 动画：启动时小组件按压反馈
  */
-
-import { motion } from "framer-motion";
 
 type Props = {
   /** 系统时间显示 */
   time?: string;
-  /** 启动按压态：true 时小组件播放按压+轻微放大动画 */
-  pressing?: boolean;
 };
 
 const APP_PLACEHOLDER_COLOR = "#EEF1E7";
@@ -34,10 +29,7 @@ function AppPlaceholder() {
   );
 }
 
-export default function DemoWidgetScreen({
-  time = "06:40",
-  pressing = false,
-}: Props) {
+export default function DemoWidgetScreen({ time = "06:40" }: Props) {
   return (
     <div className="flex h-full w-full flex-col bg-white">
       {/* —— 系统状态栏 —— */}
@@ -71,21 +63,9 @@ export default function DemoWidgetScreen({
           <AppPlaceholder />
 
           {/* 2×2 在呀小组件 */}
-          <motion.div
-            className="col-span-2 row-span-2"
-            animate={
-              pressing
-                ? { scale: [1, 0.97, 1.12] }
-                : { scale: 1 }
-            }
-            transition={
-              pressing
-                ? { duration: 0.45, times: [0, 0.3, 1], ease: [0.22, 1, 0.36, 1] }
-                : { duration: 0.2 }
-            }
-          >
+          <div className="col-span-2 row-span-2">
             <WidgetCard />
-          </motion.div>
+          </div>
 
           {Array.from({ length: 14 }, (_, index) => (
             <AppPlaceholder key={index + 2} />
@@ -112,11 +92,18 @@ export default function DemoWidgetScreen({
 
 /* —— 2×2 方形在呀桌面小组件 ——
  * 浅色卡片 + 大圆角 + 在在静态关键帧 + 短文案
- * 不显示完整气泡文案，不显示点击提示
+ * 文案严格使用剧情文件原文：
+ *   我把窗帘拉开了一点，
+ *   光会自己进来
  */
 function WidgetCard() {
   return (
     <div className="relative h-full w-full overflow-hidden rounded-[24px] border border-white/75 bg-[#FBFCF5] shadow-[0_8px_24px_-12px_rgba(39,51,31,0.18)] backdrop-blur-md">
+      {/* 在在名称（左上） */}
+      <p className="relative z-10 px-3.5 pt-3 text-[13px] font-semibold leading-tight text-ink">
+        在在
+      </p>
+
       {/* 在在形象（晨起静态关键帧） */}
       <div className="absolute -right-1 bottom-0 h-[88%] w-[70%]">
         <img
@@ -128,13 +115,12 @@ function WidgetCard() {
         />
       </div>
 
-      {/* 短文案（左上） */}
-      <div className="relative z-10 px-3.5 pt-3">
-        <p className="text-[13px] font-semibold leading-tight text-ink">
-          你好，我是在在。
-        </p>
-        <p className="mt-1 text-[11px] leading-[1.45] text-ink-soft">
-          我只把窗帘拉开了一条小缝。
+      {/* 产品文案（左下） */}
+      <div className="absolute bottom-2.5 left-3.5 right-3.5 z-10">
+        <p className="text-[11px] leading-[1.45] text-ink-soft">
+          我把窗帘拉开了一点，
+          <br />
+          光会自己进来
         </p>
       </div>
     </div>
