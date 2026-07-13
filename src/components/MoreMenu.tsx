@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import {
   ChevronLeft,
@@ -16,14 +16,18 @@ import {
   type LucideProps,
 } from "lucide-react";
 import type { ForwardRefExoticComponent } from "react";
-import RecordFlow from "./RecordFlow";
-import LookbackPage from "./LookbackPage";
-import OrganizePage from "./OrganizePage";
-import PraisePage from "./PraisePage";
-import PrivacyPage from "./PrivacyPage";
 import VoiceInputBar from "./VoiceInputBar";
 import type { Answers, RecordTypeId } from "@/data/record";
 import type { OrganizeHistoryEntry } from "@/data/organize";
+
+/* 性能优化（2026-07-13）：MoreMenu 中各功能页按需懒加载，
+ * 首屏 / 主菜单态不加载 RecordFlow / LookbackPage / OrganizePage / PraisePage / PrivacyPage 代码。
+ * 各页仅在选择对应 itemId 后才加载对应 chunk。 */
+const RecordFlow = lazy(() => import("./RecordFlow"));
+const LookbackPage = lazy(() => import("./LookbackPage"));
+const OrganizePage = lazy(() => import("./OrganizePage"));
+const PraisePage = lazy(() => import("./PraisePage"));
+const PrivacyPage = lazy(() => import("./PrivacyPage"));
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -623,40 +627,56 @@ export function MoreDetailContent({
 }) {
   if (itemId === "note") {
     return (
-      <RecordFlow
-        onBack={onBack}
-        onRecordComplete={onRecordComplete}
-        onSaveFirst={onSaveFirst}
-        onOpenZaiyaDialog={onOpenZaiyaDialog}
-        showShortcutHint={showShortcutHint}
-        onAcceptShortcut={onAcceptShortcut}
-        onDismissShortcutHint={onDismissShortcutHint}
-        recordHistory={recordHistory}
-      />
+      <Suspense fallback={null}>
+        <RecordFlow
+          onBack={onBack}
+          onRecordComplete={onRecordComplete}
+          onSaveFirst={onSaveFirst}
+          onOpenZaiyaDialog={onOpenZaiyaDialog}
+          showShortcutHint={showShortcutHint}
+          onAcceptShortcut={onAcceptShortcut}
+          onDismissShortcutHint={onDismissShortcutHint}
+          recordHistory={recordHistory}
+        />
+      </Suspense>
     );
   }
 
   if (itemId === "review") {
-    return <LookbackPage onBack={onBack} />;
+    return (
+      <Suspense fallback={null}>
+        <LookbackPage onBack={onBack} />
+      </Suspense>
+    );
   }
 
   if (itemId === "organize") {
     return (
-      <OrganizePage
-        onBack={onBack}
-        organizeHistory={organizeHistory}
-        onSaveToHistory={onSaveOrganizeToHistory}
-        onDeleteHistory={onDeleteOrganizeHistory}
-      />
+      <Suspense fallback={null}>
+        <OrganizePage
+          onBack={onBack}
+          organizeHistory={organizeHistory}
+          onSaveToHistory={onSaveOrganizeToHistory}
+          onDeleteHistory={onDeleteOrganizeHistory}
+        />
+      </Suspense>
     );
   }
 
   if (itemId === "praise") {
-    return <PraisePage onBack={onBack} />;
+    return (
+      <Suspense fallback={null}>
+        <PraisePage onBack={onBack} />
+      </Suspense>
+    );
   }
 
   if (itemId === "privacy") {
-    return <PrivacyPage onBack={onBack} />;
+    return (
+      <Suspense fallback={null}>
+        <PrivacyPage onBack={onBack} />
+      </Suspense>
+    );
   }
 
   if (itemId === "settings") {

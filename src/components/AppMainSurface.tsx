@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, lazy, Suspense } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   ArrowUp,
@@ -15,12 +15,7 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import VoiceInputBar from "./VoiceInputBar";
-import {
-  SocialSceneSelectContent,
-  DazeFlow,
-  EatFlow,
-  type SceneId,
-} from "./PresenceRoom";
+import type { SceneId } from "./PresenceRoom";
 import FeaturePageTransition, { CollapseButton } from "./FeaturePageTransition";
 import {
   MoreContent,
@@ -34,7 +29,6 @@ import DialogueZaiyaAnimation, {
   type DialogueAnimState,
 } from "./DialogueZaiyaAnimation";
 import { getHomeTimePhase } from "@/lib/homeTimePhase";
-import BreathingFlow from "./BreathingFlow";
 import EnergyRewardFeedback, {
   type EnergyRewardEvent,
 } from "./EnergyRewardFeedback";
@@ -49,11 +43,29 @@ import type {
   DialogMessageItem,
   DialogTimeItem,
 } from "./demo/types";
-import DemoRecordPreview from "./demo/DemoRecordPreview";
-import DemoPraisePreview from "./demo/DemoPraisePreview";
-import LookbackPage from "./LookbackPage";
-import MaterialDetailView from "./organize/MaterialDetailView";
-import DoneStep from "./organize/DoneStep";
+
+/* 性能优化（2026-07-13）：按功能模块拆包，落地页 / 首页首屏不加载以下重型模块。
+ * - PresenceRoom（一起发呆 / 一起吃饭 / 轻社交场景选择）
+ * - BreathingFlow（呼吸法全流程）
+ * - DemoRecordPreview / DemoPraisePreview（演示态记录 / 夸夸预览）
+ * - LookbackPage（回头看看，含大量数据结构与表格组件）
+ * - MaterialDetailView / DoneStep（帮我整理：材料详情 / 完成页）
+ * 全部通过 React.lazy 拆为独立 chunk，仅 mode 切换到对应态时才加载。 */
+const SocialSceneSelectContent = lazy(() =>
+  import("./PresenceRoom").then((m) => ({ default: m.SocialSceneSelectContent })),
+);
+const DazeFlow = lazy(() =>
+  import("./PresenceRoom").then((m) => ({ default: m.DazeFlow })),
+);
+const EatFlow = lazy(() =>
+  import("./PresenceRoom").then((m) => ({ default: m.EatFlow })),
+);
+const BreathingFlow = lazy(() => import("./BreathingFlow"));
+const DemoRecordPreview = lazy(() => import("./demo/DemoRecordPreview"));
+const DemoPraisePreview = lazy(() => import("./demo/DemoPraisePreview"));
+const LookbackPage = lazy(() => import("./LookbackPage"));
+const MaterialDetailView = lazy(() => import("./organize/MaterialDetailView"));
+const DoneStep = lazy(() => import("./organize/DoneStep"));
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -306,7 +318,7 @@ export function PhoneStatusBar({
 
   return (
     <>
-      <div className="absolute left-0 right-0 top-0 z-20 flex items-center justify-between px-6 pt-3.5 pb-1 text-ink">
+      <div className="absolute left-0 right-0 top-0 z-[80] flex items-center justify-between px-6 pt-3.5 pb-1 text-ink">
         {/* 左：时间 */}
         <span className="text-[12px] font-semibold tracking-wide">
           {formatHHMM(displayNow)}
@@ -334,7 +346,7 @@ export function PhoneStatusBar({
         <button
           onClick={onClose}
           aria-label="关闭 Demo"
-          className="absolute right-5 top-12 z-20 grid h-7 w-7 place-items-center rounded-full bg-white/50 backdrop-blur-xl border border-white/30 shadow-sm text-ink-faint transition-colors hover:text-ink"
+          className="absolute right-5 top-12 z-[80] grid h-7 w-7 place-items-center rounded-full bg-white/50 backdrop-blur-xl border border-white/30 shadow-sm text-ink-faint transition-colors hover:text-ink"
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -972,8 +984,11 @@ export default function AppMainSurface({
 
   return (
     <div className="relative h-full w-full bg-white">
-      {/* iOS 风格状态栏 */}
-      <PhoneStatusBar now={effectiveNow} />
+      {/* iOS 风格状态栏
+          z-[80] 确保覆盖所有模块覆盖层（回头看看 / 夸夸自己 / 帮我整理 / 设置 / 隐私 等），
+          使各模块顶部一致显示时间 / 信号 / Wi-Fi / 电池。
+          socialFlow 为暗色沉浸场景（一起发呆 / 一起吃饭），隐藏状态栏。 */}
+      {effectiveMode !== "socialFlow" && <PhoneStatusBar now={effectiveNow} />}
 
       {/* 缓解模式背景降噪：浅柔灰覆盖，不使用强色。pointer-events-none 不阻断交互 */}
       <motion.div
@@ -1075,6 +1090,7 @@ export default function AppMainSurface({
                 loop
                 muted
                 playsInline
+                preload="none"
                 className="block h-[338px] w-[190px] max-w-none select-none object-contain"
                 style={{
                   transform: "translateY(10px) scale(1.12)",
@@ -1430,10 +1446,12 @@ export default function AppMainSurface({
       {/* breathing 模式：呼吸法选择 / 练习 / 完成全流程（独立全屏覆盖层） */}
       <AnimatePresence>
         {effectiveMode === "breathing" && (
-          <BreathingFlow
-            onBackToRelief={() => setMode("reliefSelect")}
-            onGoHome={() => setMode("home")}
-          />
+          <Suspense fallback={null}>
+            <BreathingFlow
+              onBackToRelief={() => setMode("reliefSelect")}
+              onGoHome={() => setMode("home")}
+            />
+          </Suspense>
         )}
       </AnimatePresence>
 
@@ -1441,13 +1459,15 @@ export default function AppMainSurface({
       <AnimatePresence>
         {effectiveMode === "socialSelect" && (
           <>
-            <SocialSceneSelectContent
-              onSelect={(s) => {
-                setSocialScene(s);
-                setMode("socialFlow");
-              }}
-              onClose={() => setMode("home")}
-            />
+            <Suspense fallback={null}>
+              <SocialSceneSelectContent
+                onSelect={(s) => {
+                  setSocialScene(s);
+                  setMode("socialFlow");
+                }}
+                onClose={() => setMode("home")}
+              />
+            </Suspense>
             {/* 右上角能量入口：统一组件（floating），top-14 与记一下 pt-14 一致 */}
             <EnergyBadge
               value={socialEnergy}
@@ -1479,16 +1499,20 @@ export default function AppMainSurface({
         {effectiveMode === "socialFlow" && effectiveSocialScene && (
           <>
             {effectiveSocialScene === "daze" && (
-              <DazeFlow
-                onExit={() => setMode("socialSelect")}
-                onFinish={handleDazeFinish}
-              />
+              <Suspense fallback={null}>
+                <DazeFlow
+                  onExit={() => setMode("socialSelect")}
+                  onFinish={handleDazeFinish}
+                />
+              </Suspense>
             )}
             {effectiveSocialScene === "eat" && (
-              <EatFlow
-                onExit={() => setMode("socialSelect")}
-                onFinish={handleEatFinish}
-              />
+              <Suspense fallback={null}>
+                <EatFlow
+                  onExit={() => setMode("socialSelect")}
+                  onFinish={handleEatFinish}
+                />
+              </Suspense>
             )}
           </>
         )}
@@ -1499,7 +1523,9 @@ export default function AppMainSurface({
           全屏白底覆盖，在在退出；复用 RecordSummaryCard 展示字段 + 已保存盖章。 */}
       <AnimatePresence>
         {effectiveMode === "record" && demoState?.recordPreset && (
-          <DemoRecordPreview preset={demoState.recordPreset} />
+          <Suspense fallback={null}>
+            <DemoRecordPreview preset={demoState.recordPreset} />
+          </Suspense>
         )}
       </AnimatePresence>
 
@@ -1507,7 +1533,9 @@ export default function AppMainSurface({
           仅 demoState.praiseDemo 驱动，不写入 localStorage、不触发能量奖励。 */}
       <AnimatePresence>
         {effectiveMode === "praise" && demoState?.praiseDemo && (
-          <DemoPraisePreview preset={demoState.praiseDemo} />
+          <Suspense fallback={null}>
+            <DemoPraisePreview preset={demoState.praiseDemo} />
+          </Suspense>
         )}
       </AnimatePresence>
 
@@ -1523,18 +1551,20 @@ export default function AppMainSurface({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.28, ease }}
           >
-            <LookbackPage
-              onBack={() => {
-                /* 演示预览：由外部 story panel 导航控制 */
-              }}
-              demoOptions={{
-                referenceDate: new Date(demoState.lookbackDemo.referenceDate),
-                initialTimeMode: demoState.lookbackDemo.initialTimeMode,
-                initialScene: demoState.lookbackDemo.initialScene,
-                dataOverrides: demoState.lookbackDemo.dataOverrides,
-                readOnly: demoState.lookbackDemo.readOnly,
-              }}
-            />
+            <Suspense fallback={null}>
+              <LookbackPage
+                onBack={() => {
+                  /* 演示预览：由外部 story panel 导航控制 */
+                }}
+                demoOptions={{
+                  referenceDate: new Date(demoState.lookbackDemo.referenceDate),
+                  initialTimeMode: demoState.lookbackDemo.initialTimeMode,
+                  initialScene: demoState.lookbackDemo.initialScene,
+                  dataOverrides: demoState.lookbackDemo.dataOverrides,
+                  readOnly: demoState.lookbackDemo.readOnly,
+                }}
+              />
+            </Suspense>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1552,27 +1582,31 @@ export default function AppMainSurface({
             transition={{ duration: 0.28, ease }}
           >
             {demoState.organizeDemo.view === "materialDetail" ? (
-              <MaterialDetailView
-                session={demoState.organizeDemo.historyEntry.session}
-                title="沟通材料详情"
-                onBack={() => {
-                  /* 演示预览：由外部 story panel 导航控制 */
-                }}
-              />
+              <Suspense fallback={null}>
+                <MaterialDetailView
+                  session={demoState.organizeDemo.historyEntry.session}
+                  title="沟通材料详情"
+                  onBack={() => {
+                    /* 演示预览：由外部 story panel 导航控制 */
+                  }}
+                />
+              </Suspense>
             ) : (
-              <DoneStep
-                session={demoState.organizeDemo.historyEntry.session}
-                onBack={() => {
-                  /* 演示预览：由外部 story panel 导航控制 */
-                }}
-                onHome={() => {
-                  /* 演示预览：由外部 story panel 导航控制 */
-                }}
-                onViewMaterial={() => {
-                  /* 演示预览：由外部 story panel 导航控制 */
-                }}
-                readOnly
-              />
+              <Suspense fallback={null}>
+                <DoneStep
+                  session={demoState.organizeDemo.historyEntry.session}
+                  onBack={() => {
+                    /* 演示预览：由外部 story panel 导航控制 */
+                  }}
+                  onHome={() => {
+                    /* 演示预览：由外部 story panel 导航控制 */
+                  }}
+                  onViewMaterial={() => {
+                    /* 演示预览：由外部 story panel 导航控制 */
+                  }}
+                  readOnly
+                />
+              </Suspense>
             )}
           </motion.div>
         )}

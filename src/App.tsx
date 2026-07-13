@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import Nav from "@/components/Nav";
 import Hero from "@/components/Hero";
 import ProblemSolution from "@/components/ProblemSolution";
@@ -8,7 +8,10 @@ import CharacterDesign from "@/components/CharacterDesign";
 import Team from "@/components/Team";
 import Vision from "@/components/Vision";
 import Footer from "@/components/Footer";
-import DemoExperience from "@/components/demo/DemoExperience";
+
+/* 性能优化（2026-07-13）：DemoExperience 及其全部子组件（UnifiedDemoStage、
+ * 10+ Demo 流程、场景数据等）拆分为独立 chunk，落地页首屏不加载 Demo 代码。 */
+const DemoExperience = lazy(() => import("@/components/demo/DemoExperience"));
 
 /** 初始 URL 是否带 ?mode=guided / ?mode=free（用于直接访问对应模式）。 */
 function urlHasDemoMode(): boolean {
@@ -54,7 +57,11 @@ export default function App() {
         <Footer />
       </div>
 
-      {demoOpen && <DemoExperience onClose={closeDemo} />}
+      {demoOpen && (
+        <Suspense fallback={null}>
+          <DemoExperience onClose={closeDemo} />
+        </Suspense>
+      )}
     </div>
   );
 }
