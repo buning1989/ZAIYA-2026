@@ -174,9 +174,9 @@ function ChoiceCarousel({
                 onClick={() => onCardClick(index)}
                 className={`absolute left-1/2 top-1/2 flex min-h-[118px] w-[72%] items-center justify-center rounded-2xl border px-5 py-6 text-center shadow-sm outline-none transition-[border-color,background-color,box-shadow] duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary/50 focus-visible:ring-offset-0 active:scale-[0.97] ${
                   selectedFeedback && active
-                    ? "border-accent bg-accent-soft shadow-[0_12px_26px_rgba(44,59,39,0.12)]"
+                    ? "border-transparent bg-accent-soft shadow-[0_12px_26px_rgba(44,59,39,0.12)]"
                     : selected
-                      ? "border-accent/80 bg-accent-soft shadow-[0_10px_22px_rgba(44,59,39,0.08)]"
+                      ? "border-transparent bg-accent-soft shadow-[0_10px_22px_rgba(44,59,39,0.08)]"
                       : active
                         ? "border-action-primary/40 bg-card shadow-[0_10px_22px_rgba(44,59,39,0.07)]"
                         : "border-line bg-card"
@@ -595,7 +595,7 @@ export default function MoodRecordWizard({
   const chipClass = (selected: boolean) =>
     `inline-flex items-center justify-center rounded-full border px-4 py-2 text-[14px] font-medium whitespace-nowrap transition-all active:scale-[0.97] ${
       selected
-        ? "border-accent bg-accent-soft text-ink"
+        ? "border-transparent bg-accent-soft text-ink"
         : "border-line bg-white text-ink hover:border-action-primary/60"
     }`;
 
@@ -816,7 +816,7 @@ export default function MoodRecordWizard({
           <div className="flex items-center gap-2.5">
             <div className="h-[2px] flex-1 rounded-full bg-line-soft">
               <div
-                className="h-full rounded-full bg-action-primary transition-all duration-300"
+                className="h-full rounded-full bg-accent-soft transition-all duration-300"
                 style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
               />
             </div>
@@ -858,7 +858,7 @@ export default function MoodRecordWizard({
                         onClick={() => handleSelectPrimary(mood)}
                         className={`flex h-14 items-center gap-3 rounded-2xl border px-5 text-left transition-all active:scale-[0.99] ${
                           selected
-                            ? "border-accent/60 bg-accent-soft text-ink"
+                            ? "border-transparent bg-accent-soft text-ink"
                             : "border-line bg-white text-ink hover:border-ink-faint"
                         }`}
                       >

@@ -201,7 +201,7 @@ function AddContactSheet({
               onClick={() => setSelectedTrustedId(candidate.id)}
               className={`flex items-center justify-between rounded-xl border px-4 py-3.5 text-left transition-colors ${
                 selectedTrustedId === candidate.id
-                  ? "border-accent bg-accent-soft"
+                  ? "border-transparent bg-accent-soft"
                   : "border-line bg-white hover:bg-surface-soft/30"
               }`}
             >
@@ -285,7 +285,7 @@ function NewContactForm({
               onClick={() => setRoleType(opt.value)}
               className={`rounded-full border px-3.5 py-1.5 text-[12.5px] transition-colors ${
                 roleType === opt.value
-                  ? "border-accent bg-accent-soft text-ink"
+                  ? "border-transparent bg-accent-soft text-ink"
                   : "border-line bg-white text-ink-soft"
               }`}
             >

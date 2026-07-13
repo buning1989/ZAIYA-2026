@@ -270,7 +270,7 @@ export default function MealRecordWizard({
   const chipClass = (selected: boolean) =>
     `inline-flex items-center justify-center rounded-full border px-4 py-2 text-[14px] font-medium whitespace-nowrap max-w-[240px] overflow-hidden text-ellipsis transition-all active:scale-[0.97] ${
       selected
-        ? "border-accent bg-accent-soft text-ink"
+        ? "border-transparent bg-accent-soft text-ink"
         : "border-line bg-white text-ink hover:border-action-primary/60"
     }`;
 
@@ -335,7 +335,7 @@ export default function MealRecordWizard({
           <div className="flex items-center gap-2.5">
             <div className="h-[2px] flex-1 rounded-full bg-line-soft">
               <div
-                className="h-full rounded-full bg-action-primary transition-all duration-300"
+                className="h-full rounded-full bg-accent-soft transition-all duration-300"
                 style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
               />
             </div>
@@ -376,7 +376,7 @@ export default function MealRecordWizard({
                         onClick={() => handleSelectMealType(m.value)}
                         className={`flex h-14 items-center gap-3 rounded-2xl border px-5 text-left transition-all active:scale-[0.99] ${
                           selected
-                            ? "border-accent/60 bg-accent-soft text-ink"
+                            ? "border-transparent bg-accent-soft text-ink"
                             : "border-line bg-white text-ink hover:border-ink-faint"
                         }`}
                       >

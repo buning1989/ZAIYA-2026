@@ -208,7 +208,7 @@ export default function TopicsStep({ session, onBack, onNext }: Props) {
                     onClick={() => handleRangeSelect(opt.value)}
                     className={`flex items-center justify-between rounded-xl border px-4 py-3.5 text-left transition-colors ${
                       rangeKey === opt.value
-                        ? "border-accent bg-accent-soft"
+                        ? "border-transparent bg-accent-soft"
                         : "border-line bg-white hover:bg-surface-soft/30"
                     }`}
                   >
