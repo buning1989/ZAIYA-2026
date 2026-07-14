@@ -12,7 +12,7 @@ import {
 const ease = [0.22, 1, 0.36, 1] as const;
 const PARTICLE_COUNT = 3;
 const PARTICLE_START_S = 1.78;
-const PARTICLE_FLIGHT_S = 1.22;
+const PARTICLE_FLIGHT_S = 1.34;
 const PARTICLE_DELAY_S = 0.045;
 const ARRIVE_MS = 3120;
 const DONE_MS = 3500;
@@ -209,21 +209,22 @@ export default function EnergyRewardFeedback({
                     key={`${event.id}-${index}`}
                     initial={{ x: 0, y: 0, opacity: 0, scale: 0.72 }}
                     animate={{
-                      x: [0, offset.x, dx * 0.94, dx],
-                      y: [0, offset.y, dy * 0.94, dy],
-                      opacity: [0, 1, 1, 0],
-                      scale: [0.72, 1.12, 0.94, 0.74],
+                      x: [0, offset.x, dx * 0.9, dx, dx],
+                      y: [0, offset.y, dy * 0.9, dy, dy],
+                      opacity: [0, 1, 1, 1, 0],
+                      scale: [0.72, 1.12, 0.98, 0.8, 0.36],
                       rotate: [
                         0,
                         offset.rotate,
                         offset.rotate * 0.55,
-                        offset.rotate * 0.25,
+                        0,
+                        0,
                       ],
                     }}
                     transition={{
                       delay: PARTICLE_START_S + index * PARTICLE_DELAY_S,
                       duration: PARTICLE_FLIGHT_S,
-                      times: [0, 0.1, 0.94, 1],
+                      times: [0, 0.1, 0.78, 0.9, 1],
                       ease,
                     }}
                     className={`absolute grid h-8 w-8 place-items-center ${visual.particleClass}`}

@@ -1,81 +1,161 @@
+import FeatureDisclosure from "./FeatureDisclosure";
 import Reveal from "./Reveal";
 import SectionHeading from "./SectionHeading";
 
-const frameworks = [
+const dimensions = [
   {
-    code: "IPSRT",
-    name: "人际与社会节律疗法",
-    value: "让生活重新有节奏",
-    note: "稳定出现的时间与生活节点，帮助睡眠、饮食和活动慢慢找回规律。",
+    title: "生物状态",
+    description: "睡眠、饮食、用药与活动。",
   },
   {
-    code: "GTF",
-    name: "团体治疗因子",
-    value: "让人看见“我也可以”",
-    note: "通过希望灌注、普遍性和行为示范，让用户从相似处境中看见可抵达的改变。",
+    title: "心理状态",
+    description: "情绪、认知、动机与压力。",
   },
   {
-    code: "CBT · DBT · MI",
-    name: "认知行为疗法 · 辩证行为疗法 · 动机性访谈",
-    value: "让开始变得更容易",
-    note: "不评判、不说教，把混乱的念头和难启动的行动拆成眼前的一小步。",
+    title: "社会功能",
+    description: "上学、社交、家庭互动与自我管理。",
+  },
+];
+
+const scenarios = [
+  {
+    index: "01",
+    title: "当用户不想行动，或很难开始",
+    method: "借鉴 MI",
+    methodText: "减少对抗，让改变从愿意做的一小步开始。",
+    product: [
+      "不使用命令、催促和失败惩罚",
+      "提供少量、可选择的下一步",
+      "将行动拆到足够小",
+    ],
+    situation: "起床、吃饭、出门、记录和复诊准备。",
   },
   {
-    code: "GPM · BPS",
-    name: "良好的精神健康管理 · 生物心理社会模型",
-    value: "不只看情绪，看见完整生活",
-    note: "把睡眠、饮食、用药、学习或工作、关系与情绪，放回同一张生活图里。",
+    index: "02",
+    title: "当情绪过载，暂时无法整理问题",
+    method: "借鉴 DBT",
+    methodText: "先承接和稳定，再进入理解与行动。",
+    product: [
+      "先回应感受，不急于分析",
+      "降低页面刺激与信息密度",
+      "提供呼吸、接地等稳定化练习",
+    ],
+    situation: "焦虑加剧、家庭冲突后，或情绪已经难以承受时。",
+  },
+  {
+    index: "03",
+    title: "当事件、想法和感受混在一起",
+    method: "借鉴 CBT",
+    methodText: "帮助用户逐步看见它们之间的关系。",
+    product: [
+      "将复杂表达拆成事实、感受与想法",
+      "每次只推进一个问题",
+      "不直接纠正，也不替用户下结论",
+    ],
+    situation: "“我什么都做不好。”\n“回学校一定会失败。”",
+  },
+  {
+    index: "04",
+    title: "当状态零散，长期变化难以判断",
+    method: "基于 BPS 与社会功能视角",
+    methodText: "把多维信息放回完整生活中理解。",
+    product: [
+      "共同观察情绪、睡眠、饮食、用药、活动和关系",
+      "关注是否重新吃饭、出门、上学和参与互动",
+      "整理事实、趋势与待讨论问题",
+    ],
+    situation: "日常回看、阶段总结、复诊和咨询前整理。",
   },
 ];
 
 export default function ClinicalFramework() {
   return (
-    <section id="clinical" className="border-t border-line">
-      <div className="container pt-10 pb-12 md:pt-11">
+    <section id="clinical" className="scroll-mt-20">
+      <div className="container pt-20 pb-20 md:pt-28 md:pb-24">
         <SectionHeading
-          eyebrow="技术与临床框架"
+          eyebrow="专业方法"
           title={
             <>
-              润物细无声的帮助背后，
+              先理解一个人的完整处境，
               <br />
-              是一套循证的心理学技术。
+              再决定此刻如何回应。
             </>
           }
         />
 
         <Reveal delay={0.1}>
-          <p className="mt-6 max-w-prose text-[15px] leading-relaxed text-ink-soft">
-            陪伴的分寸、对话的方式、记录的节奏、报告的结构——每一处，都在悄悄降低行动门槛、找回生活规律，让真实变化被看见。
-          </p>
-        </Reveal>
+          <article className="mt-8 rounded-lg border border-line bg-white px-6 py-7 md:mt-10 md:px-8 md:py-8">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="text-[12px] font-medium tracking-[0.16em] text-ink-faint">
+                底层认知框架
+              </div>
+              <div className="w-fit rounded-full border border-line bg-accent-soft px-3 py-1 text-[13px] font-semibold tracking-tight text-ink">
+                GPM × BPS
+              </div>
+            </div>
 
-        <div className="mt-10 grid grid-flow-col auto-cols-[78vw] gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar md:mt-11 md:grid-flow-row md:grid-cols-2 md:auto-cols-auto md:overflow-visible md:snap-none min-[1200px]:grid-cols-4">
-          {frameworks.map((f, i) => (
-            <Reveal key={f.code} delay={i * 0.08}>
-              <article className="flex h-full snap-start flex-col rounded-xl border border-line bg-white px-6 py-6 min-h-[218px] md:snap-none">
-                {/* 固定头部高度：容纳最长中文名称两行，保证四张卡片价值标题起始位置一致 */}
-                <div className="min-h-[3.85rem]">
-                  <h3 className="font-display text-[18px] font-semibold tracking-tight text-ink">
-                    {f.code}
-                  </h3>
-                  <p className="mt-1.5 text-[13px] font-medium leading-snug text-ink-soft">
-                    {f.name}
+            <h3 className="mt-5 max-w-2xl font-display text-[24px] font-semibold leading-tight tracking-tight text-ink md:text-[30px]">
+              不只看情绪，也看生活是否正在重新稳定。
+            </h3>
+
+            <div className="mt-6 grid border-t border-line md:grid-cols-3">
+              {dimensions.map((dimension, index) => (
+                <div
+                  key={dimension.title}
+                  className={`py-5 md:px-6 ${
+                    index === 0 ? "md:pl-0" : "border-t border-line md:border-l md:border-t-0"
+                  } ${index === dimensions.length - 1 ? "md:pr-0" : ""}`}
+                >
+                  <h4 className="font-display text-[18px] font-semibold leading-tight tracking-tight text-ink">
+                    {dimension.title}
+                  </h4>
+                  <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+                    {dimension.description}
                   </p>
                 </div>
-                <div className="mt-5 text-[20px] font-semibold leading-snug text-ink">
-                  {f.value}
-                </div>
-                <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">
-                  {f.note}
-                </p>
-              </article>
-            </Reveal>
-          ))}
-        </div>
+              ))}
+            </div>
+          </article>
+        </Reveal>
 
-        <Reveal delay={0.2}>
-          <p className="mt-8 text-[13px] text-ink-faint">
-            这些框架用于产品设计与健康生活管理，不代表在呀提供心理治疗、临床诊断或用药建议。
+        <div className="mt-10 md:mt-12">
+          <Reveal delay={0.22}>
+            <div className="text-[12px] font-medium tracking-[0.16em] text-ink-faint">
+              场景化技术应用
+            </div>
+          </Reveal>
+
+          <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
+            {scenarios.map((scenario, i) => (
+              <Reveal key={scenario.index} delay={0.26 + i * 0.06}>
+                <article className="flex h-full flex-col rounded-lg border border-line bg-white p-5 md:p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <h3 className="font-display text-[20px] font-semibold leading-tight tracking-tight text-ink md:text-[22px]">
+                      {scenario.title}
+                    </h3>
+                    <span className="shrink-0 text-[12px] font-medium tracking-[0.16em] text-ink-faint">
+                      {scenario.index}
+                    </span>
+                  </div>
+
+                  <p className="mt-3 text-[14px] leading-relaxed text-ink-soft md:text-[15px]">
+                    <span className="font-semibold text-ink">{scenario.method}</span>
+                    <span className="mx-1.5 text-ink-faint">·</span>
+                    {scenario.methodText}
+                  </p>
+
+                  <FeatureDisclosure
+                    label="查看产品表现与典型场景"
+                    items={[...scenario.product, `典型场景：${scenario.situation.replace(/\n/g, " ")}`]}
+                  />
+                </article>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+        <Reveal delay={0.56}>
+          <p className="mt-5 text-[12px] leading-relaxed text-ink-faint">
+            在呀 ZÀIYA 借鉴专业方法中的日常支持原则，不提供医学诊断、心理治疗或用药建议，也不替代专业人员的判断。
           </p>
         </Reveal>
       </div>

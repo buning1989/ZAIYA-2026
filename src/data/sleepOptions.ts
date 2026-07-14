@@ -6,12 +6,12 @@
  * 结构：
  *   1. 整体睡眠感受（sleepLevel: 3=好 / 2=一般 / 1=不好）
  *   2. 具体睡眠感受（sleepSubwords，按 sleepLevel 动态展示，多选，含「其他感受」自定义）
- *   3. 大概上床时间（bedTimeRange，5 段分段时间轴，单选）
- *   4. 入睡用时（fallAsleepDurationRange，5 段分段时间轴，单选，问题改为「躺下后多久睡着？」）
- *   5. 大概醒来或起床时间（wakeTimeRange，5 段分段时间轴，单选）
- *   6. 夜里醒着大概多久（awakeDurationRange，5 段分段时间轴，单选）
+ *   3. 大概上床时间（bedTimeRange，分组直选，单选）
+ *   4. 入睡用时（fallAsleepDurationRange，纵向选择卡，单选，问题改为「躺下后多久睡着？」）
+ *   5. 大概醒来或起床时间（wakeTimeRange，分组直选，单选）
+ *   6. 夜里醒着大概多久（awakeDurationRange，纵向选择卡，单选）
  *
- * 时间轴步骤 3-6 均使用 SegmentedTimeScale 组件渲染，下方提供「记不清，先跳过」弱化按钮。
+ * 时间选择步骤 3-6 下方均提供「记不清，先跳过」弱化按钮。
  * 跳过后字段保存为 null，不生成估算值，结算页不展示该行。
  * payload 同时保存口语化 label、标准 rangeText 和估算值 estimate。 */
 
@@ -90,7 +90,7 @@ export type AwakeDurationOption = {
   estimate?: number;
 };
 
-/* —— 大概上床时间（横滑时间轴，1 小时粒度） ——
+/* —— 大概上床时间（分组直选，1 小时粒度） ——
  * label 为口语化短文案，rangeText/estimate 保留标准范围与估算值。
  * 「记不清」不再作为选项，改为页面下方的「记不清，先跳过」弱化按钮，跳过后字段为 null。 */
 export const bedTimeRanges: TimeRangeOption[] = [
@@ -104,7 +104,7 @@ export const bedTimeRanges: TimeRangeOption[] = [
   { label: "3点后", value: "after_03", rangeText: "03:00 后", estimate: "03:00" },
 ];
 
-/* —— 入睡用时（分段时间轴，5 段） ——
+/* —— 入睡用时（纵向选择卡，5 项） ——
  * 原问题「大概几点睡着？」改为「躺下后多久睡着？」，语义从时间点改为时长。
  * estimate 为分钟数（数字），保存到 fallAsleepTime 字段时转为字符串。
  * 「几乎没睡着」label 命中 isUnknownLabel，结算页不展示该行。 */
@@ -116,7 +116,7 @@ export const fallAsleepDurationOptions: AwakeDurationOption[] = [
   { label: "几乎没睡着", value: "barely_slept" },
 ];
 
-/* —— 大概醒来或起床时间（横滑时间轴，1 小时粒度） ——
+/* —— 大概醒来或起床时间（分组直选，1 小时粒度） ——
  * 方向：清晨 → 中午。label 为口语化短文案。 */
 export const wakeTimeRanges: TimeRangeOption[] = [
   { label: "6点前", value: "before_06", rangeText: "06:00 前", estimate: "05:30" },
@@ -129,7 +129,7 @@ export const wakeTimeRanges: TimeRangeOption[] = [
   { label: "中午后", value: "after_12", rangeText: "12:00 后", estimate: "12:00" },
 ];
 
-/* —— 夜里醒着大概多久（分段时间轴，5 段，等宽） ——
+/* —— 夜里醒着大概多久（纵向选择卡，5 项） ——
  * 方向：很少 → 很久。estimate 为分钟数（数字）。 */
 export const awakeDurationOptions: AwakeDurationOption[] = [
   { label: "没怎么醒", value: "almost_none", rangeText: "基本没醒", estimate: 0 },
