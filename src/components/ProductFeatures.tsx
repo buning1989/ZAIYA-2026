@@ -472,7 +472,7 @@ function OutputCard({ output, index }: { output: OutputBlock; index: number }) {
   return (
     <Reveal delay={0.24 + index * 0.06}>
       <article className="flex h-full flex-col rounded-lg border border-line bg-white p-5 md:p-6">
-        <h4 className="font-display text-[19px] font-semibold leading-tight tracking-tight text-ink md:text-[21px]">
+        <h4 className="font-display text-[18px] font-semibold leading-tight tracking-tight text-ink">
           {output.title}
         </h4>
         <p className="mt-4 text-[14px] leading-relaxed text-ink-soft md:text-[15px]">

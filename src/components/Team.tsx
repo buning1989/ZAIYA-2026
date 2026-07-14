@@ -1,6 +1,19 @@
+import { useEffect, useState } from "react";
+import { ArrowUpRight, QrCode, X } from "lucide-react";
 import Reveal from "./Reveal";
 import SectionEyebrow from "./SectionEyebrow";
 import { team } from "@/data/content";
+
+type PracticeAction =
+  | {
+      kind: "link";
+      href: string;
+    }
+  | {
+      kind: "qr";
+      qrImage: string;
+      qrAlt: string;
+    };
 
 type Practice = {
   no: string;
@@ -8,6 +21,7 @@ type Practice = {
   description: string;
   image: string;
   imageAlt: string;
+  action?: PracticeAction;
 };
 
 const practices: Practice[] = [
@@ -17,6 +31,10 @@ const practices: Practice[] = [
     description: "把难以表达的情绪，先留下来。",
     image: "./assets/team/practice-notebook.png",
     imageAlt: "纸质情绪日记本实物图",
+    action: {
+      kind: "link",
+      href: "https://www.xiaohongshu.com/goods-detail/69858f75265eb90001b5b79f",
+    },
   },
   {
     no: "02",
@@ -24,6 +42,11 @@ const practices: Practice[] = [
     description: "降低记录和回看的成本。",
     image: "./assets/team/practice-miniapp.png",
     imageAlt: "情绪记录小程序界面截图",
+    action: {
+      kind: "qr",
+      qrImage: "./assets/team/miniapp-qrcode.png",
+      qrAlt: "情绪记录小程序二维码",
+    },
   },
   {
     no: "03",
@@ -34,7 +57,13 @@ const practices: Practice[] = [
   },
 ];
 
-function PracticeCard({ item }: { item: Practice }) {
+function PracticeCard({
+  item,
+  onOpenQr,
+}: {
+  item: Practice;
+  onOpenQr: (item: Practice) => void;
+}) {
   return (
     <article className="flex min-w-0 flex-1 flex-col rounded-lg border border-line bg-white p-3">
       <div className="overflow-hidden rounded-md bg-white">
@@ -52,12 +81,95 @@ function PracticeCard({ item }: { item: Practice }) {
           {item.title}
         </h4>
       </div>
-      <p className="mt-1 text-[13px] leading-relaxed text-ink-soft md:text-[14px]">{item.description}</p>
+      <div className="mt-1 flex items-baseline justify-between gap-3">
+        <p className="min-w-0 flex-1 text-[13px] leading-relaxed text-ink-soft md:text-[14px]">
+          {item.description}
+        </p>
+        {item.action ? (
+          item.action.kind === "link" ? (
+            <a
+              href={item.action.href}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex shrink-0 items-baseline gap-1 text-[12px] font-medium leading-relaxed text-ink-faint transition-colors hover:text-ink-soft focus:outline-none focus:ring-2 focus:ring-accent/25 md:text-[13px]"
+            >
+              去体验
+              <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
+            </a>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onOpenQr(item)}
+              className="inline-flex shrink-0 items-baseline gap-1 text-[12px] font-medium leading-relaxed text-ink-faint transition-colors hover:text-ink-soft focus:outline-none focus:ring-2 focus:ring-accent/25 md:text-[13px]"
+            >
+              去体验
+              <QrCode className="h-3 w-3" aria-hidden="true" />
+            </button>
+          )
+        ) : null}
+      </div>
     </article>
   );
 }
 
+function PracticeQrDialog({
+  item,
+  onClose,
+}: {
+  item: Practice | null;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    if (!item) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [item, onClose]);
+
+  if (!item || item.action?.kind !== "qr") return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] grid place-items-center bg-ink/35 p-5 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="practice-qr-title"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-[340px] rounded-2xl border border-line bg-white p-5 shadow-[0_24px_80px_rgba(39,51,31,0.18)]"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="关闭"
+          className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-canvas focus:outline-none focus:ring-2 focus:ring-accent/25"
+        >
+          <X className="h-4 w-4" aria-hidden="true" />
+        </button>
+        <h3 id="practice-qr-title" className="pr-8 text-[18px] font-semibold leading-tight tracking-tight text-ink">
+          {item.title}
+        </h3>
+        <div className="mt-5 grid place-items-center rounded-xl bg-canvas p-4">
+          <img
+            src={item.action.qrImage}
+            alt={item.action.qrAlt}
+            className="h-64 w-64 rounded-lg bg-white object-contain"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Team() {
+  const [qrPractice, setQrPractice] = useState<Practice | null>(null);
+
   return (
     <section id="team" className="scroll-mt-20">
       <div className="container pt-20 pb-20 md:pt-24 md:pb-24">
@@ -112,25 +224,26 @@ export default function Team() {
 
             <div className="mt-7 hidden w-full items-stretch gap-4 md:flex">
               {practices.map((item) => (
-                <PracticeCard key={item.no} item={item} />
+                <PracticeCard key={item.no} item={item} onOpenQr={setQrPractice} />
               ))}
             </div>
 
             <div className="mt-7 grid grid-cols-1 gap-4 md:hidden">
               {practices.map((item) => (
-                <PracticeCard key={item.no} item={item} />
+                <PracticeCard key={item.no} item={item} onOpenQr={setQrPractice} />
               ))}
             </div>
           </div>
         </Reveal>
 
         <Reveal delay={0.3}>
-          <p className="mx-auto mt-9 max-w-2xl text-center text-[16px] font-semibold leading-relaxed tracking-tight text-accent-deep md:mt-10 md:text-[18px]">
+          <p className="mx-auto mt-9 max-w-2xl text-center text-[22px] font-semibold leading-relaxed tracking-tight text-accent-deep md:mt-10">
             <span className="inline-block">一个人更接近问题本身，</span>
             <span className="inline-block">一个人负责把问题做成产品。</span>
           </p>
         </Reveal>
       </div>
+      <PracticeQrDialog item={qrPractice} onClose={() => setQrPractice(null)} />
     </section>
   );
 }
