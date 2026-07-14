@@ -83,8 +83,8 @@ function MobileArrow() {
 
 export default function Team() {
   return (
-    <section id="team" className="border-t border-line">
-      <div className="container py-12 md:py-16">
+    <section id="team" className="scroll-mt-20">
+      <div className="container py-20 md:py-24">
         <Reveal>
           <div className="text-[12px] font-medium tracking-[0.16em] text-ink-faint">
             为什么是我们

@@ -67,8 +67,8 @@ function StatCardView({ stat, delay }: { stat: StatCard; delay: number }) {
 
 export default function ProblemSolution() {
   return (
-    <section id="problem" className="border-t border-line">
-      <div className="container pt-12 pb-10 md:pt-16 md:pb-12">
+    <section id="problem" className="scroll-mt-20">
+      <div className="container pt-12 pb-20 md:pt-16 md:pb-[clamp(8rem,16vh,12rem)]">
         <Reveal>
           <div className="text-[12px] font-medium uppercase tracking-[0.16em] text-ink-faint">
             需求与缺口

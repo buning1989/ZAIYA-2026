@@ -70,8 +70,8 @@ const scenarios = [
 
 export default function ClinicalFramework() {
   return (
-    <section id="clinical" className="border-t border-line">
-      <div className="container pt-10 pb-12 md:pt-11">
+    <section id="clinical" className="scroll-mt-20">
+      <div className="container pt-20 pb-20 md:pt-28 md:pb-24">
         <SectionHeading
           eyebrow="专业方法"
           title={

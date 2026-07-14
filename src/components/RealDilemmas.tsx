@@ -30,8 +30,8 @@ const voiceCards: VoiceCard[] = [
 
 export default function RealDilemmas() {
   return (
-    <section id="dilemmas" className="border-t border-line">
-      <div className="container py-20 md:py-32">
+    <section id="dilemmas" className="scroll-mt-20">
+      <div className="container py-24 md:pt-16 md:pb-32">
         <SectionHeading
           eyebrow="真实困境"
           title="他们面对的，远不只是情绪不好。"

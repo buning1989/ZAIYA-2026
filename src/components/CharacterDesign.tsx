@@ -73,8 +73,8 @@ function CharacterNote({ title, desc, side, className }: CharacterNoteProps) {
 
 export default function CharacterDesign() {
   return (
-    <section id="character" className="scroll-mt-24 border-t border-line">
-      <div className="container pt-10 pb-10 md:pt-10 md:pb-10 min-[1200px]:pt-10 min-[1200px]:pb-10">
+    <section id="character" className="scroll-mt-24">
+      <div className="container pt-20 pb-20 md:pt-24 md:pb-24 min-[1200px]:pt-24 min-[1200px]:pb-24">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-[0.36fr_0.64fr] md:gap-8 min-[1200px]:grid-cols-[0.4fr_0.6fr] min-[1200px]:gap-8 min-[1200px]:items-stretch">
           {/* 左侧：在在角色视觉区 + 三个轻量虚线标注 */}
           <Reveal y={10} className="md:col-start-1 md:row-span-2">
@@ -114,9 +114,7 @@ export default function CharacterDesign() {
 
             <Reveal delay={0.04} y={10}>
               <h2 className="mt-4 text-[26px] font-semibold leading-[1.22] tracking-tight text-ink md:text-[32px] min-[1200px]:text-[36px]">
-                我们把在在设计成一粒种子，
-                <br />
-                因为真正的陪伴，不该把人留在屏幕里。
+                我们把在在设计成一粒种子，因为真正的陪伴，不该把人留在屏幕里。
               </h2>
             </Reveal>
 

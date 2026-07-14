@@ -31,7 +31,6 @@ const solutions: Solution[] = [
       "App 首页中的在在",
       "手机桌面小组件",
       "智能手表端",
-      "根据时间和生活场景变化的状态与轻量邀请",
     ],
     placeholder: [
       "产品图占位",
@@ -50,7 +49,6 @@ const solutions: Solution[] = [
       "一起吃饭、一起发呆等轻社交场景",
       "呼吸练习和情绪缓解工具",
       "在在起床、吃饭、看书、休息等生活演示",
-      "不惩罚、不强调连续打卡的能量反馈机制",
     ],
     placeholder: [
       "产品图占位",
@@ -66,7 +64,6 @@ const solutions: Solution[] = [
     summary:
       "相比填表和逐项录入，说话是更自然的表达。在呀 ZÀIYA 从文字和语音对话中理解事件、感受与生活状态，整理成可确认的结构化记录，并在长期互动中沉淀为连续的生活记忆。",
     features: [
-      "文字与语音对话",
       "从自然表达中识别情绪、睡眠、饮食、活动和用药等信息",
       "将对话转化为可查看、确认和管理的记录",
       "将单次表达连接为长期生活变化",
@@ -87,7 +84,7 @@ const outputs: OutputBlock[] = [
     title: "帮助用户理解自己",
     description:
       "看见最近怎样睡觉、吃饭和活动，哪些时刻更容易难受，以及生活参与感是否正在变化。",
-    features: ["回头看看", "帮我整理", "趋势回看", "阶段性总结"],
+    features: ["回头看看", "帮我整理", "夸夸自己"],
     placeholder: [
       "产品图占位",
       "用户端生活趋势 / 阶段回看 / 变化总结",
@@ -102,7 +99,6 @@ const outputs: OutputBlock[] = [
       "复诊前整理",
       "沟通确认单",
       "专业参考报告",
-      "高风险记录与待沟通问题",
     ],
     placeholder: [
       "产品图占位",
@@ -227,8 +223,8 @@ function OutputCard({ output, index }: { output: OutputBlock; index: number }) {
 
 export default function ProductFeatures() {
   return (
-    <section id="product" className="border-t border-line">
-      <div className="container pt-12 pb-14 md:pt-16 md:pb-16">
+    <section id="product">
+      <div className="container pt-16 pb-14 md:pt-24 md:pb-16">
         <SectionHeading
           eyebrow="我们怎么做"
           title="在呀 ZÀIYA，把支持带进每天的真实生活。"
