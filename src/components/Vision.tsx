@@ -164,12 +164,12 @@ export default function Vision() {
               <div className="hidden md:block">
                 <div className="grid grid-cols-[1fr_96px_1fr] items-stretch">
                   <CoreNode
-                    title="用户·真实生活与所有支持的中心"
+                    title="用户，真实生活与所有支持的中心"
                     description="用户拥有自己的生活信息，也决定哪些可以被整理、确认和分享。"
                   />
                   <HorizontalConnection />
                   <CoreNode
-                    title="在呀·持续陪伴、记录、整理的连接点"
+                    title="在呀，持续陪伴、记录、整理的连接点"
                     description="不替用户判断，而是把零散的生活状态，整理成自己和支持者都能看懂的信息。"
                   />
                 </div>
@@ -185,7 +185,7 @@ export default function Vision() {
 
               <div className="md:hidden">
                 <CoreNode
-                  title="用户·真实生活与所有支持的中心"
+                  title="用户，真实生活与所有支持的中心"
                   description="用户拥有自己的生活信息，也决定哪些可以被整理、确认和分享。"
                 />
 
@@ -197,7 +197,7 @@ export default function Vision() {
                 </div>
 
                 <CoreNode
-                  title="在呀·持续陪伴、记录、整理的连接点"
+                  title="在呀，持续陪伴、记录、整理的连接点"
                   description="不替用户判断，而是把零散的生活状态，整理成自己和支持者都能看懂的信息。"
                 />
 
