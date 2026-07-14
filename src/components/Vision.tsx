@@ -46,7 +46,7 @@ function CoreNode({
           : "border-line bg-white",
       ].join(" ")}
     >
-      <h3 className="text-[20px] font-semibold leading-tight tracking-tight text-ink md:text-[22px]">
+      <h3 className="text-[16px] font-semibold leading-snug tracking-tight text-ink">
         核心节点 · {title}
       </h3>
       <p className="mt-3 text-[14px] font-medium leading-relaxed text-ink md:text-[15px]">
