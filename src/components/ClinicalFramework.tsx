@@ -133,7 +133,7 @@ export default function ClinicalFramework() {
                     <h3 className="font-display text-[19px] font-semibold leading-tight tracking-tight text-ink md:text-[21px]">
                       {scenario.title}
                     </h3>
-                    <span className="shrink-0 text-[12px] font-medium tracking-[0.16em] text-ink-faint">
+                    <span className="inline-flex shrink-0 items-center rounded-full border border-line bg-accent-soft px-3 py-1 text-[13px] font-semibold tracking-tight text-ink">
                       {scenario.index}
                     </span>
                   </div>
