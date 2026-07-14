@@ -53,16 +53,19 @@ export default function ClinicalFramework() {
           {frameworks.map((f, i) => (
             <Reveal key={f.code} delay={i * 0.08}>
               <article className="flex h-full snap-start flex-col rounded-xl border border-line bg-white px-6 py-6 min-h-[218px] md:snap-none">
-                <h3 className="font-display text-[18px] font-semibold tracking-tight text-ink">
-                  {f.code}
-                </h3>
-                <p className="mt-1.5 text-[13px] leading-snug text-ink-soft">
-                  {f.name}
-                </p>
-                <div className="mt-5 text-[22px] font-semibold leading-snug text-ink">
+                {/* 固定头部高度：容纳最长中文名称两行，保证四张卡片价值标题起始位置一致 */}
+                <div className="min-h-[3.85rem]">
+                  <h3 className="font-display text-[18px] font-semibold tracking-tight text-ink">
+                    {f.code}
+                  </h3>
+                  <p className="mt-1.5 text-[13px] font-medium leading-snug text-ink-soft">
+                    {f.name}
+                  </p>
+                </div>
+                <div className="mt-5 text-[20px] font-semibold leading-snug text-ink">
                   {f.value}
                 </div>
-                <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
+                <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">
                   {f.note}
                 </p>
               </article>
