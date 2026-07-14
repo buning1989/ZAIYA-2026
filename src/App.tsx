@@ -2,6 +2,7 @@ import { useState, lazy, Suspense } from "react";
 import Nav from "@/components/Nav";
 import Hero from "@/components/Hero";
 import ProblemSolution from "@/components/ProblemSolution";
+import RealDilemmas from "@/components/RealDilemmas";
 import ProductFeatures from "@/components/ProductFeatures";
 import ClinicalFramework from "@/components/ClinicalFramework";
 import CharacterDesign from "@/components/CharacterDesign";
@@ -57,6 +58,7 @@ export default function App() {
         <main>
           <Hero onOpenDemo={() => setDemoOpen(true)} />
           <ProblemSolution />
+          <RealDilemmas />
           <ProductFeatures />
           <ClinicalFramework />
           <CharacterDesign />
