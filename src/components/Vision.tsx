@@ -26,14 +26,12 @@ const supports: Support[] = [
 
 type CoreNodeProps = {
   title: string;
-  summary: string;
   description: string;
   emphasized?: boolean;
 };
 
 function CoreNode({
   title,
-  summary,
   description,
   emphasized = false,
 }: CoreNodeProps) {
@@ -47,11 +45,8 @@ function CoreNode({
       ].join(" ")}
     >
       <h3 className="text-[16px] font-semibold leading-snug tracking-tight text-ink">
-        核心节点 · {title}
+        {title}
       </h3>
-      <p className="mt-3 text-[14px] font-medium leading-relaxed text-ink md:text-[15px]">
-        {summary}
-      </p>
       <p className="mt-3 text-[14px] leading-relaxed text-ink-soft md:text-[15px]">
         {description}
       </p>
@@ -169,14 +164,12 @@ export default function Vision() {
               <div className="hidden md:block">
                 <div className="grid grid-cols-[1fr_96px_1fr] items-stretch">
                   <CoreNode
-                    title="用户"
-                    summary="真实生活与所有支持的中心"
+                    title="用户·真实生活与所有支持的中心"
                     description="用户拥有自己的生活信息，也决定哪些可以被整理、确认和分享。"
                   />
                   <HorizontalConnection />
                   <CoreNode
-                    title="在呀 ZÀIYA"
-                    summary="持续陪伴 · 记录日常 · 整理变化 · 授权连接"
+                    title="在呀·持续陪伴、记录、整理的连接点"
                     description="不替用户判断，而是把零散的生活状态，整理成自己和支持者都能看懂的信息。"
                   />
                 </div>
@@ -192,8 +185,7 @@ export default function Vision() {
 
               <div className="md:hidden">
                 <CoreNode
-                  title="用户"
-                  summary="真实生活与所有支持的中心"
+                  title="用户·真实生活与所有支持的中心"
                   description="用户拥有自己的生活信息，也决定哪些可以被整理、确认和分享。"
                 />
 
@@ -205,8 +197,7 @@ export default function Vision() {
                 </div>
 
                 <CoreNode
-                  title="在呀 ZÀIYA"
-                  summary="持续陪伴 · 记录日常 · 整理变化 · 授权连接"
+                  title="在呀·持续陪伴、记录、整理的连接点"
                   description="不替用户判断，而是把零散的生活状态，整理成自己和支持者都能看懂的信息。"
                 />
 
