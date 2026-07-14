@@ -98,9 +98,6 @@ export default function GuidedProductValuePage({
             key={card.title}
             className="flex min-h-[238px] flex-col rounded-2xl border border-line-soft bg-white px-5 py-5"
           >
-            <span className="inline-block rounded-full border border-line bg-white px-2 py-0.5 text-[11px] tracking-[0.04em] text-ink-soft">
-              {card.tag}
-            </span>
             <p className="mt-3 text-[16px] font-normal leading-[1.4] text-ink">
               {card.title}
             </p>
@@ -110,22 +107,6 @@ export default function GuidedProductValuePage({
           </div>
         ))}
       </div>
-
-      {/* —— D. 居中收束语 —— */}
-      <p className="mt-12 text-center text-[17px] font-medium leading-[1.85] text-ink-soft">
-        在呀不替她说话。
-        <br />
-        它只是让她第一次有东西可以拿出来——
-        <br />
-        交给谁，什么时候交，交多少，都由她自己决定。
-      </p>
-
-      {/* —— E. CTA 前收束语 —— */}
-      <p className="mt-7 text-center text-[16px] font-medium leading-[1.8] text-ink-soft">
-        不是替她表达，
-        <br />
-        而是让她第一次有材料，能够把自己的生活状态带出去。
-      </p>
 
       {/* —— F. 底部主按钮（使用全局行动绿） —— */}
       <div className="mt-8 flex justify-center">
