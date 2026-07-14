@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import AppMainSurface from "./AppMainSurface";
 import LazyVideo from "./LazyVideo";
@@ -8,6 +8,38 @@ const ease = [0.22, 1, 0.36, 1] as const;
 type Surface = "app" | "widget" | "watch";
 const SURFACES: Surface[] = ["app", "widget", "watch"];
 const SURFACE_DURATION = 4200;
+
+/** 实时时间：HH:MM（24 小时制，分钟对齐更新） */
+function useCurrentTime() {
+  const [time, setTime] = useState(() => formatTime(new Date()));
+  const intervalRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const update = () => setTime(formatTime(new Date()));
+    // 对齐到下一个整分钟边界
+    const now = new Date();
+    const msUntilNextMinute =
+      (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+    const initialTimeout = window.setTimeout(() => {
+      update();
+      intervalRef.current = window.setInterval(update, 60_000);
+    }, msUntilNextMinute);
+    return () => {
+      window.clearTimeout(initialTimeout);
+      if (intervalRef.current !== null) {
+        window.clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
+
+  return time;
+}
+
+function formatTime(date: Date) {
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mm = String(date.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
 
 /* —— 统一手机外框（轻薄边框） —— */
 function PhoneFrame({ children }: { children: React.ReactNode }) {
@@ -72,15 +104,27 @@ function WidgetCard({ videoEager = true }: { videoEager?: boolean }) {
 }
 
 /* —— Widget 形态：手机桌面局部裁切，展示小组件在屏幕中的位置 —— */
-export function WidgetSurface({ videoEager = true }: { videoEager?: boolean }) {
+export function WidgetSurface({
+  videoEager = true,
+  frameShadow = true,
+}: {
+  videoEager?: boolean;
+  frameShadow?: boolean;
+}) {
+  const time = useCurrentTime();
   return (
     <div className="mx-auto w-full max-w-[441px]">
-      <div className="relative h-[462px] overflow-hidden rounded-t-[44px] bg-ink p-[7px] pb-0 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.14)]">
+      <div
+        className={[
+          "relative h-[462px] overflow-hidden rounded-t-[44px] bg-ink p-[7px] pb-0",
+          frameShadow ? "shadow-[0_8px_40px_-12px_rgba(0,0,0,0.14)]" : "",
+        ].join(" ")}
+      >
         <div className="relative h-full overflow-hidden rounded-t-[33px] bg-white">
           <div className="absolute inset-0 bg-white" />
 
           <div className="relative z-20 flex items-center justify-between px-6 pt-3 pb-1 text-[11px] font-semibold text-ink-faint">
-            <span>9:41</span>
+            <span>{time}</span>
             <div className="absolute left-1/2 top-2.5 h-[25px] w-[88px] -translate-x-1/2 rounded-full bg-ink" />
             <div className="flex items-center gap-1.5">
               <div className="flex items-end gap-[2px]">
@@ -111,6 +155,7 @@ export function WidgetSurface({ videoEager = true }: { videoEager?: boolean }) {
 
 /* —— Watch 形态：智能手表表盘（薄壳、大圆角、轻微竖向、单表冠） —— */
 function WatchSurface() {
+  const time = useCurrentTime();
   return (
     <div className="mx-auto w-full max-w-[310px]">
       <div className="relative">
@@ -120,7 +165,7 @@ function WatchSurface() {
           <div className="relative h-full overflow-hidden rounded-[36px] bg-white">
             {/* 时间作为表盘主信息，和在在形成轻微叠压关系 */}
             <div className="absolute left-0 right-0 top-7 z-20 text-center font-watch text-[78px] font-medium leading-none tracking-normal text-ink sm:text-[84px]">
-              20:48
+              {time}
             </div>
             {/* 在在按 GIF 主体视觉中心定位，不按透明画布居中 */}
             <div className="absolute left-1/2 top-[66%] z-10 flex h-[120px] w-[150px] -translate-x-1/2 -translate-y-1/2 items-center justify-center overflow-visible">
