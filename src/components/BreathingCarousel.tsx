@@ -116,8 +116,8 @@ export function BreathingCarousel({
     return () => ro.disconnect();
   }, []);
 
-  // 展开后轻量自动聚焦（preventScroll 避免页面跳动）；
-  // focus-visible 语义下程序聚焦不会显示突兀描边，按键时才显轻描边。
+  // 展开后轻量自动聚焦（preventScroll 避免页面跳动）。
+  // 容器 outline-none：不显示轮播区域矩形焦点框，键盘反馈沿用中央卡片现有边框。
   useEffect(() => {
     if (locked) return;
     const el = containerRef.current;
@@ -204,7 +204,7 @@ export function BreathingCarousel({
         aria-label="选择呼吸方式"
         aria-activedescendant={methods[activeIndex]?.id}
         onKeyDown={handleKeyDown}
-        className="relative w-full rounded-3xl outline-none focus-visible:ring-2 focus-visible:ring-ink/15"
+        className="relative w-full rounded-3xl outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none"
         style={{ height: cardH, touchAction: "pan-y" }}
       >
         <motion.div
