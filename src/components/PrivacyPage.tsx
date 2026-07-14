@@ -44,6 +44,42 @@ import {
   type Gender,
   type UserProfile,
 } from "@/data/userProfile";
+import { getStorageMode } from "@/shared/storage/namespacedStorage";
+import {
+  getXiaochenContacts,
+  getXiaochenMedSchedules,
+} from "@/apps/experience/selectors/selectPrivacySeed";
+
+/* —— 体验模式数据源切换（仅切换数据注入，不改变 UI/布局/交互）——
+ * 体验模式首次进入「我的隐私」时预填小晨统一联系人和服用安排；
+ * 演示模式保持原有空态加载行为。 */
+const IS_EXPERIENCE_MODE = getStorageMode() === "experience";
+
+/* —— 体验模式预填：首次加载（无存储）时种子化联系人 / 服用安排 ——
+ * 幂等保证：若存储中已存在 xc- 前缀 id 的种子数据则不再写入，
+ * 避免重复刷新导致重复种子化。 */
+function seedExperienceContactsIfEmpty(): Contact[] {
+  const stored = loadContacts();
+  if (!IS_EXPERIENCE_MODE) return stored;
+  const hasSeed = stored.some((c) => c.id.startsWith("xc-contact-"));
+  if (hasSeed) return stored;
+  const seeded = getXiaochenContacts();
+  // 合并用户已有自定义联系人（避免覆盖用户编辑）
+  const merged = [...seeded, ...stored];
+  saveContacts(merged);
+  return merged;
+}
+
+function seedExperienceMedSchedulesIfEmpty(): MedSchedule[] {
+  const stored = loadMedSchedules();
+  if (!IS_EXPERIENCE_MODE) return stored;
+  const hasSeed = stored.some((m) => m.id.startsWith("xc-med-"));
+  if (hasSeed) return stored;
+  const seeded = getXiaochenMedSchedules();
+  const merged = [...seeded, ...stored];
+  saveMedSchedules(merged);
+  return merged;
+}
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -92,10 +128,10 @@ export default function PrivacyPage({ onBack }: Props) {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [medSchedules, setMedSchedules] = useState<MedSchedule[]>([]);
 
-  // 初始加载
+  // 初始加载（体验模式：首次加载时种子化小晨统一联系人和服用安排）
   useEffect(() => {
-    setContacts(loadContacts());
-    setMedSchedules(loadMedSchedules());
+    setContacts(seedExperienceContactsIfEmpty());
+    setMedSchedules(seedExperienceMedSchedulesIfEmpty());
   }, []);
 
   // —— 编辑目标 id ——

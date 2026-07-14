@@ -15,6 +15,27 @@
  *   - organize.ts      帮我整理模块数据（5 条沟通重点 + 2 条高风险披露）
  *   - validators.ts    跨模块数据校验 */
 
+/* —— 内部导入：供下方统一数据结构与实例引用 ——
+ * re-export 不会将标识符引入当前作用域，因此此处需要单独 import。 */
+import { XIAOCHEN_PROFILE } from "./profile";
+import { XIAOCHEN_TIMELINE } from "./timeline";
+import { XIAOCHEN_RECORDED_DATE_KEYS } from "./constants";
+import { XIAOCHEN_DAILY_RECORDS } from "./records";
+import { XIAOCHEN_PRAISE_CARDS } from "./praiseCards";
+import {
+  XIAOCHEN_CONTACTS,
+  XIAOCHEN_MED_SCHEDULES,
+  XIAOCHEN_PRIVACY_STATE,
+} from "./contacts";
+import { EXPERIENCE_CONVERSATION } from "./conversations";
+import {
+  XIAOCHEN_ORGANIZE_CONTACT,
+  XIAOCHEN_ORGANIZE_TOPICS,
+  XIAOCHEN_ORGANIZE_DISCLOSURE,
+  XIAOCHEN_ORGANIZE_RANGE,
+  XIAOCHEN_ORGANIZE_RECORD_CATEGORIES,
+} from "./organize";
+
 /* —— 常量 —— */
 export {
   EXPERIENCE_MOCK_DATA_VERSION,

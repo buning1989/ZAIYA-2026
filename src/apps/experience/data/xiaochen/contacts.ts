@@ -9,10 +9,9 @@
  *   / MEDICATION_FREQUENCY = "每日一次" / MEDICATION_TIME = "早晨服用"。 */
 
 import type { Contact, MedSchedule } from "@/data/privacy";
-import { genId } from "@/data/privacy";
 
 /* —— 预置联系人（家长 + 老师）
- * genId 已导入但不在模块级调用，统一使用固定 id。 */
+ * 统一使用固定 id（xc- 前缀），不调用 genId，保证跨刷新一致。 */
 export const XIAOCHEN_CONTACTS: Contact[] = [
   {
     id: "xc-contact-mom",

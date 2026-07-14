@@ -13,12 +13,7 @@ import {
   XIAOCHEN_RECORDED_DATE_KEYS,
   MISSED_MED_DATES,
   NO_SCHOOL_DATES,
-  BEFORE_MIDNIGHT_SLEEP_DATES,
-  LATEST_SLEEP_DATE,
-  LATEST_SLEEP_TIME,
   WEIGHT_RECORDS,
-  BREATHING_EXERCISE_DATE,
-  NEGATIVE_THOUGHT_DATES,
 } from "./constants";
 
 /* —— 辅助函数 —— */
@@ -42,14 +37,6 @@ function isMissedMed(dateStr: string): boolean {
 
 function isNoSchool(dateStr: string): boolean {
   return (NO_SCHOOL_DATES as readonly string[]).includes(dateStr);
-}
-
-function isBeforeMidnight(dateStr: string): boolean {
-  return (BEFORE_MIDNIGHT_SLEEP_DATES as readonly string[]).includes(dateStr);
-}
-
-function isNegativeThought(dateStr: string): boolean {
-  return (NEGATIVE_THOUGHT_DATES as readonly string[]).includes(dateStr);
 }
 
 function getWeightForDate(dateStr: string): number | null {
@@ -610,7 +597,7 @@ export const XIAOCHEN_UNRECORDED_DAYS: DailyLookbackData[] = [];
 {
   const start = new Date(PERIOD_START + "T00:00:00+08:00");
   const end = new Date(PERIOD_END + "T00:00:00+08:00");
-  const recordedSet = new Set(XIAOCHEN_RECORDED_DATE_KEYS);
+  const recordedSet = new Set<string>(XIAOCHEN_RECORDED_DATE_KEYS);
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
     const dateStr = toDateStr(d);
     if (!recordedSet.has(dateStr)) {

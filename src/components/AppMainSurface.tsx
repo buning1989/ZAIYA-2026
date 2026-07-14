@@ -47,12 +47,23 @@ import EnergyBadge from "./EnergyBadge";
 import type { Answers, RecordEntry, RecordTypeId } from "@/data/record";
 import type { OrganizeHistoryEntry } from "@/data/organize";
 import { grantEnergy } from "@/data/userProfile";
+import { getStorageMode } from "@/shared/storage/namespacedStorage";
+import {
+  getXiaochenInitialDialog,
+  buildXiaochenReply,
+  shouldTriggerSafetyResponse,
+} from "@/apps/experience/selectors/selectConversationThreads";
 import type {
   AppMainSurfaceDemoState,
   DialogItem,
   DialogMessageItem,
   DialogTimeItem,
 } from "./demo/types";
+
+/* —— 体验模式数据源切换（仅切换数据注入，不改变 UI/布局/交互）——
+ * 体验模式 AI 对话使用小晨统一对话历史与确定性 Mock 回复，
+ * 演示模式保持原有 createMockDialogItems / buildDemoReply 行为。 */
+const IS_EXPERIENCE_MODE = getStorageMode() === "experience";
 
 /* 性能优化（2026-07-13）：按功能模块拆包，落地页 / 首页首屏不加载以下重型模块。
  * 预加载优化（2026-07-13）：所有 loader 复用集中式 moduleLoaders，
@@ -497,8 +508,10 @@ export default function AppMainSurface({
 
   // —— 首页内模式状态（仅 interactive/immersive 下由对应 icon 触发）——
   const [mode, setMode] = useState<SurfaceMode>("home");
+  // 体验模式：使用小晨统一对话历史（7/17 复诊前线程）作为初始对话
+  // 演示模式：使用通用 createMockDialogItems（昨日 + 今日 mock）
   const [messages, setMessages] = useState<DialogItem[]>(() =>
-    createMockDialogItems(now),
+    IS_EXPERIENCE_MODE ? getXiaochenInitialDialog() : createMockDialogItems(now),
   );
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -943,15 +956,26 @@ export default function AppMainSurface({
     });
     setInput("");
     setSending(true);
-    const delay = 300 + Math.random() * 300; // 300–600ms
+    // 体验模式：安全承接回复内容较长，给予更长延迟让用户充分阅读
+    // 普通回复保持 300–600ms；安全承接回复 800–1100ms
+    const isSafetyTrigger =
+      IS_EXPERIENCE_MODE && shouldTriggerSafetyResponse(text);
+    const delay = isSafetyTrigger
+      ? 800 + Math.random() * 300
+      : 300 + Math.random() * 300;
     setTimeout(() => {
       const replyAt = new Date();
+      // 体验模式：使用小晨统一确定性 Mock 回复（含安全承接逻辑）
+      // 演示模式：使用通用 buildDemoReply
+      const replyText = IS_EXPERIENCE_MODE
+        ? buildXiaochenReply(text)
+        : buildDemoReply(text);
       setMessages((m) => [
         ...m,
         dialogMessageItem(
           `zaizai-${replyAt.getTime()}`,
           "zaizai",
-          buildDemoReply(text),
+          replyText,
           replyAt,
         ),
       ]);

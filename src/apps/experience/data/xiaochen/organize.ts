@@ -25,7 +25,6 @@ import {
   TOTAL_DAYS,
   RECORDED_DAYS,
   STATS,
-  MISSED_MED_DATES,
   NO_SCHOOL_DATES,
   BEFORE_MIDNIGHT_SLEEP_DATES,
   LATEST_SLEEP_DATE,
@@ -70,9 +69,7 @@ function formatMedDates(dates: readonly string[]): string {
 /** 体验模式 5 条沟通重点（默认全部选中）。
  *  evidenceSummary 中的所有数字与日期均派生自 constants.ts，不重复硬编码。 */
 export function buildXiaochenOrganizeTopics(): CommunicationTopic[] {
-  const missedMedLabel = formatMedDates(MISSED_MED_DATES);
   const noSchoolLabel = formatMedDates(NO_SCHOOL_DATES);
-  const beforeMidnightLabel = formatMedDates(BEFORE_MIDNIGHT_SLEEP_DATES);
   const weightTrend = `${WEIGHT_RECORDS[0].weightKg}kg（${formatMedDates([
     WEIGHT_RECORDS[0].date,
   ])}) → ${WEIGHT_RECORDS[1].weightKg}kg（${formatMedDates([

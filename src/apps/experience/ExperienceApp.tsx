@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { setStorageMode } from "@/shared/storage/namespacedStorage";
+import { migrateExperienceData } from "@/apps/experience/data/migrateExperienceData";
 import ExperienceStage from "@/components/demo/ExperienceStage";
 
 /* —— 体验模式 App Shell（free）——
@@ -7,13 +8,16 @@ import ExperienceStage from "@/components/demo/ExperienceStage";
  * 职责：
  *   1. 在挂载子组件前同步设置存储命名空间为 "experience"，确保所有
  *      数据层读写落到 zaiya-experience-* 键，与演示模式完全隔离。
- *   2. 以 data-app-mode="experience" 命名空间包裹根节点，为后续 CSS
+ *   2. 在挂载子组件前同步执行体验模式 Mock 数据迁移：版本不一致时
+ *      清除旧业务 key 并写入新版本号，由各模块 seedXxxIfEmpty 在首次
+ *      访问时恢复统一小晨种子数据（幂等）。
+ *   3. 以 data-app-mode="experience" 命名空间包裹根节点，为后续 CSS
  *      作用域收紧预留钩子。
- *   3. 渲染体验模式专用舞台 ExperienceStage（自由体验布局）。
+ *   4. 渲染体验模式专用舞台 ExperienceStage（自由体验布局）。
  *
- * 注意：setStorageMode 必须在子组件挂载前同步完成，因此使用 useState
- *   初始化器（render phase 同步执行），而非 useEffect（异步，子组件
- *   已挂载后才执行）。 */
+ * 注意：setStorageMode 和 migrateExperienceData 必须在子组件挂载前同步
+ *   完成，因此使用 useState 初始化器（render phase 同步执行），而非
+ *   useEffect（异步，子组件已挂载后才执行）。 */
 type Props = {
   onReturnHome: () => void;
   onSwitchToGuided: () => void;
@@ -25,6 +29,7 @@ export default function ExperienceApp({
 }: Props) {
   const [ready] = useState(() => {
     setStorageMode("experience");
+    migrateExperienceData();
     return true;
   });
 

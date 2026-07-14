@@ -66,6 +66,17 @@ export function getXiaochenOrganizeRecordCategories(): string[] {
  * 使用小晨统一数据，不调用 Math.random() 生成 id，保证幂等。 */
 export function buildXiaochenInitialSession(): CommunicationSession {
   const contact = getXiaochenOrganizeContact();
+  return buildXiaochenInitialSessionForContact(contact);
+}
+
+/* —— 为指定沟通对象构建小晨统一 session ——
+ * 适用于体验模式下用户从 ContactStep 选中任意沟通对象（默认王医生 / 用户
+ * 自行添加的医生联系人）的场景。contactSnapshot 来自传入 contact，但
+ * communicationTopics / specialDisclosure / 时间段等核心数据始终来自
+ * 小晨统一数据源，避免重新走 createMockTopics / createMockDisclosure。 */
+export function buildXiaochenInitialSessionForContact(
+  contact: CommunicationContact,
+): CommunicationSession {
   const range = getXiaochenOrganizeRange();
   return {
     id: "xc-organize-session-default",

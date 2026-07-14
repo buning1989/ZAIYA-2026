@@ -17,6 +17,17 @@ import {
   type MealState,
 } from "@/data/lookback";
 import { calculateBMI, getBMIRemark, getUserProfile } from "@/data/userProfile";
+import { getStorageMode } from "@/shared/storage/namespacedStorage";
+import {
+  getXiaochenReferenceDate,
+  getXiaochenWeekRange,
+  getXiaochenMonthRange,
+} from "@/apps/experience/selectors/selectLookbackData";
+
+/* —— 体验模式数据源切换（仅调整数据注入，不改变 UI/布局/交互）——
+ * 体验模式使用小晨统一数据源（固定 33 天 / 24 记录日），
+ * 演示模式保持原有 buildWeekRange / buildMonthRange 行为。 */
+const IS_EXPERIENCE_MODE = getStorageMode() === "experience";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -228,7 +239,9 @@ export default function LookbackPage({
   onBack: () => void;
   demoOptions?: LookbackDemoOptions;
 }) {
-  const [fallbackReferenceDate] = useState(() => new Date());
+  const [fallbackReferenceDate] = useState(() =>
+    IS_EXPERIENCE_MODE ? getXiaochenReferenceDate() : new Date(),
+  );
   const referenceDate = demoOptions?.referenceDate ?? fallbackReferenceDate;
   // 时间模式：默认「按周查看」
   const [timeMode, setTimeMode] = useState<TimeMode>(
@@ -276,10 +289,17 @@ export default function LookbackPage({
   );
 
   // 按时间模式派生数据：按周用 buildWeekRange；按月用 buildMonthRange
+  // 体验模式从小晨统一数据源（XIAOCHEN_DAILY_RECORDS）读取，不再走 dayHash 随机生成
   const baseData = useMemo(() => {
     if (timeMode === "month") {
       const { year, month } = parseMonthKey(currentMonth);
+      if (IS_EXPERIENCE_MODE) {
+        return getXiaochenMonthRange(year, month);
+      }
       return buildMonthRange(year, month, referenceDate);
+    }
+    if (IS_EXPERIENCE_MODE) {
+      return getXiaochenWeekRange(parseDateKey(currentWeekStart));
     }
     return buildWeekRange(parseDateKey(currentWeekStart), referenceDate);
   }, [timeMode, currentWeekStart, currentMonth, referenceDate]);
