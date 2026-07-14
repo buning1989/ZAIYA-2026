@@ -332,7 +332,7 @@ export default function SleepRecordWizard({
     }
   };
 
-  // Steps 3-6：分段时间轴单选 → 选中后保留 550ms 再进入下一题
+  // Steps 3-6：时间选项单选 → 选中后保留 550ms 再进入下一题
   // 等待期间锁定点击，避免连续快速点击跳过多个问题
   const handleSelectTimeRange = (
     value: string,

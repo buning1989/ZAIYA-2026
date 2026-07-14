@@ -104,7 +104,7 @@ export const bedTimeRanges: TimeRangeOption[] = [
   { label: "3点后", value: "after_03", rangeText: "03:00 后", estimate: "03:00" },
 ];
 
-/* —— 入睡用时（分段时间轴，5 段） ——
+/* —— 入睡用时（纵向选择卡，5 项） ——
  * 原问题「大概几点睡着？」改为「躺下后多久睡着？」，语义从时间点改为时长。
  * estimate 为分钟数（数字），保存到 fallAsleepTime 字段时转为字符串。
  * 「几乎没睡着」label 命中 isUnknownLabel，结算页不展示该行。 */
@@ -129,7 +129,7 @@ export const wakeTimeRanges: TimeRangeOption[] = [
   { label: "中午后", value: "after_12", rangeText: "12:00 后", estimate: "12:00" },
 ];
 
-/* —— 夜里醒着大概多久（分段时间轴，5 段，等宽） ——
+/* —— 夜里醒着大概多久（纵向选择卡，5 项） ——
  * 方向：很少 → 很久。estimate 为分钟数（数字）。 */
 export const awakeDurationOptions: AwakeDurationOption[] = [
   { label: "没怎么醒", value: "almost_none", rangeText: "基本没醒", estimate: 0 },
