@@ -72,7 +72,7 @@ export const day2PraiseDemo: PraiseDemoConfig = {
 };
 
 /** Step 8｜22:30 回头看看：用真实回头看看结构展示两周后当天的记录 */
-export const day2LookbackDemo: LookbackDemoConfig = {
+const day2LookbackDemo: LookbackDemoConfig = {
   referenceDate: "2026-07-26T22:30:00+08:00",
   initialTimeMode: "week",
   initialScene: "activity",
@@ -210,7 +210,7 @@ const day2OrganizeSession: CommunicationSession = {
 };
 
 /** Step 9｜帮我整理：用真实整理材料详情展示用户确认后的沟通材料 */
-export const day2OrganizeDemo: OrganizeDemoConfig = {
+const day2OrganizeDemo: OrganizeDemoConfig = {
   view: "done",
   historyEntry: completeSession(day2OrganizeSession),
 };

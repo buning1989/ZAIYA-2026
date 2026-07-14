@@ -24,7 +24,7 @@ export type PraiseCard = {
 };
 
 /* —— 新建卡片页的轻量示例句（不做分类，仅作启动参考）—— */
-export const PRAISE_EXAMPLES: string[] = [
+const PRAISE_EXAMPLES: string[] = [
   "今天吃了一口饭",
   "今天没有继续和家里人吵下去",
   "今天指甲盖还挺好看",

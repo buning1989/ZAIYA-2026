@@ -137,7 +137,7 @@ export type AppMainSurfaceDemoState = {
 };
 
 /** 案例时间线标识：第一天 / 第二天（使用产品 2 周后的一天） */
-export type ScenarioId = "day1" | "day2";
+type ScenarioId = "day1" | "day2";
 
 /** 产品模块标签：用于在故事面板中标识当前步骤涉及的硬功能 */
 export type ProductModuleTag =

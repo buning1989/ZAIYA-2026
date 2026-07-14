@@ -177,7 +177,7 @@ export function getUserProfile(): UserProfileFlat {
 }
 
 /** 保存用户资料（整体覆盖） */
-export function saveUserProfile(p: UserProfile): void {
+function saveUserProfile(p: UserProfile): void {
   persistProfile(p);
 }
 
@@ -230,7 +230,7 @@ export function getBMIRemark(bmi: number): string {
 }
 
 /* —— 性别标签 —— */
-export function genderLabel(g?: Gender): string {
+function genderLabel(g?: Gender): string {
   if (g === "male") return "男";
   if (g === "female") return "女";
   if (g === "other") return "其他";

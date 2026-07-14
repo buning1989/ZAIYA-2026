@@ -499,7 +499,7 @@ export const OTHER_RECORD_SECTIONS: OtherRecordSection[] = [
 ];
 
 /** 完整材料中的相关记录范围（确认页用） */
-export const RECORD_SCOPE_LABELS = [
+const RECORD_SCOPE_LABELS = [
   "用药与身体感受",
   "睡眠",
   "情绪与行为",
@@ -508,11 +508,11 @@ export const RECORD_SCOPE_LABELS = [
 ];
 
 /** 材料说明文案 */
-export const MATERIAL_DESCRIPTION =
+const MATERIAL_DESCRIPTION =
   "本材料整理自 2026 年 6 月 15 日至 7 月 17 日共 33 天的应用内自我记录，其中 24 天存在记录。";
 
 /** 按当前会话生成材料说明，避免 demo/历史材料与固定 mock 日期不一致 */
-export function buildMaterialDescription(session: CommunicationSession): string {
+function buildMaterialDescription(session: CommunicationSession): string {
   return `本材料整理自 ${formatDateRangeChinese(session.startDate, session.endDate)} 共 ${session.totalDays} 天的应用内自我记录，其中 ${session.recordedDays} 天存在记录。`;
 }
 
@@ -1114,7 +1114,7 @@ export function saveHistory(history: OrganizeHistoryEntry[]): void {
 }
 
 /** 追加一条历史 */
-export function appendHistory(
+function appendHistory(
   history: OrganizeHistoryEntry[],
   entry: OrganizeHistoryEntry,
 ): OrganizeHistoryEntry[] {

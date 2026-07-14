@@ -224,6 +224,6 @@ export function preloadAll(resources: {
 }
 
 /* —— 查询资源加载状态（调试用）—— */
-export function getPreloadStatus(url: string): LoadStatus | undefined {
+function getPreloadStatus(url: string): LoadStatus | undefined {
   return statusCache.get(url);
 }

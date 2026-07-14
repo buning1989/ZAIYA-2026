@@ -118,7 +118,7 @@ const GUIDED_RESULT: NodeResources = {};
 const GUIDED_PRODUCT_VALUE: NodeResources = {};
 
 /* —— 节点 key 生成 —— */
-export function getNodeKey(
+function getNodeKey(
   phase: GuidedPhase,
   day1Index: number,
   day2Index: number,
@@ -221,7 +221,7 @@ export function preloadNodeResources(nodeKey: string): void {
  * 用户开始输入时预加载 thinking；
  * thinking 显示时预加载 responding；
  * 不一次加载四个状态。 */
-export function preloadDialogueState(
+function preloadDialogueState(
   currentState: "idle" | "listening" | "thinking" | "responding",
 ): void {
   const nextMap: Record<string, string> = {

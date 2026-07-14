@@ -294,7 +294,7 @@ export default function UnifiedDemoStage({
     const longDelay = isInsomniaNode ? 1100 : 750;
 
     let elapsed = 0;
-    messageItems.forEach((item, idx) => {
+    messageItems.forEach((_item, idx) => {
       if (idx === 0) {
         elapsed = 200;
       } else {

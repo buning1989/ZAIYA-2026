@@ -74,7 +74,7 @@ export const scenes: SceneConfig[] = [
   },
 ];
 
-const COMPANION_GIF = "./assets/social/social-home-companion.gif";
+const COMPANION_GIF = "./assets/social/social-home-companion.webm";
 const COMPANION_COPY = "今天想和大家一起待一会儿吗？";
 
 /**
@@ -111,9 +111,14 @@ export function SocialSceneSelectContent({
         style={{ marginTop: 100, marginBottom: 34 }}
       >
         <div className="flex h-[104px] w-[100px] flex-shrink-0 items-center justify-center overflow-visible max-[360px]:h-[94px] max-[360px]:w-[90px]">
-          <img
+          <video
             src={COMPANION_GIF}
-            alt="在在"
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            aria-hidden="true"
             className="block h-[100px] w-[100px] flex-shrink-0 select-none object-contain object-center max-[360px]:h-[90px] max-[360px]:w-[90px]"
             style={{ transform: "scale(1.2)", transformOrigin: "center center" }}
           />

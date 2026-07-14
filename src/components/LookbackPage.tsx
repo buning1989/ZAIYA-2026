@@ -1976,7 +1976,7 @@ type EditFormState = {
   weight: string;
 };
 
-function initForm(sceneKey: SceneKey, day: DailyLookbackData): EditFormState {
+function initForm(_sceneKey: SceneKey, day: DailyLookbackData): EditFormState {
   return {
     mood: day.mood,
     moodWords: day.moodWords?.join("、") ?? "",
@@ -2655,6 +2655,6 @@ function sleepToRatio(t: string): number {
  * 不改变正式页面行为，仅暴露内部组件供 Demo 引用
  * ======================================================= */
 export { TimeModeTabs, TimeRangeSwitcher, SceneTabs, TrendArea };
-export { themes, scenes, reviewTypography as tx, RECORD_CATEGORY_COLOR, PAGE_BG, ease };
+export { themes, scenes, reviewTypography as tx, PAGE_BG, ease };
 export type { Theme, SceneKey, TimeMode };
 export { SleepRow };
