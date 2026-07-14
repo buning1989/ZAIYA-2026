@@ -461,7 +461,7 @@ export default function DemoStage({ onReturnHome, onSwitchToFree }: Props) {
               exit={{ opacity: 0, x: -24 }}
               transition={{ duration: 0.32, ease: SOFT_EASE }}
             >
-              <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-[390px_560px] lg:justify-center lg:gap-x-[60px] lg:gap-y-0 lg:px-10">
+              <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-[390px_560px] lg:justify-center lg:gap-x-[90px] lg:gap-y-0 lg:px-10">
                 {/* 设备 Demo：06:40 桌面小组件 / 12:00 手表 / 其他 手机 App */}
                 <div className="relative justify-self-center lg:col-start-1">
                   {phase === "day1" && day1Index === 0 ? (
