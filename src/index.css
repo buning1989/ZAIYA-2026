@@ -126,6 +126,12 @@
   --tw-ring-color: var(--z-action-primary);
 }
 
+#vision > .container > div:nth-child(2) {
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
+}
+
 /* 陪伴文案：首页在在气泡短句，区别于功能字体（时间/日期/导航/按钮/标签）。
  * 中文字体栈 + 柔和深灰绿 + 宽松行高，营造轻声陪伴感而非系统提示感。 */
 .bubble-copy {

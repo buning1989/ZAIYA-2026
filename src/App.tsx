@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import Nav from "@/components/Nav";
 import Hero from "@/components/Hero";
 import ProblemSolution from "@/components/ProblemSolution";
@@ -17,6 +17,7 @@ const ClinicalFramework = lazy(() => import("@/components/ClinicalFramework"));
 const CharacterDesign = lazy(() => import("@/components/CharacterDesign"));
 const Team = lazy(() => import("@/components/Team"));
 const Vision = lazy(() => import("@/components/Vision"));
+const HEADER_OFFSET = 88;
 
 /** 初始 URL 是否带 ?mode=guided / ?mode=free（用于直接访问对应模式）。 */
 function urlHasDemoMode(): boolean {
@@ -38,6 +39,20 @@ function clearDemoModeParam() {
   );
 }
 
+function scrollToHashTarget(hash: string, behavior: ScrollBehavior) {
+  if (typeof window === "undefined") return false;
+
+  const id = decodeURIComponent(hash.replace(/^#/, ""));
+  if (!id) return false;
+
+  const target = document.getElementById(id);
+  if (!target) return false;
+
+  const top = target.getBoundingClientRect().top + window.scrollY - HEADER_OFFSET;
+  window.scrollTo({ top, behavior });
+  return true;
+}
+
 export default function App() {
   const [demoOpen, setDemoOpen] = useState(() => {
     const open = urlHasDemoMode();
@@ -51,6 +66,31 @@ export default function App() {
     clearDemoModeParam();
     setStorageMode("landing");
   };
+
+  useEffect(() => {
+    const scrollToCurrentHash = (behavior: ScrollBehavior) => {
+      const { hash } = window.location;
+      if (!hash) return;
+
+      let attempts = 0;
+      const tryScroll = () => {
+        attempts += 1;
+        if (scrollToHashTarget(hash, behavior) || attempts >= 12) return;
+        window.setTimeout(tryScroll, 100);
+      };
+
+      window.requestAnimationFrame(tryScroll);
+    };
+
+    scrollToCurrentHash("auto");
+
+    const handleHashChange = () => scrollToCurrentHash("smooth");
+    window.addEventListener("hashchange", handleHashChange);
+
+    return () => {
+      window.removeEventListener("hashchange", handleHashChange);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-white font-body text-ink antialiased">
