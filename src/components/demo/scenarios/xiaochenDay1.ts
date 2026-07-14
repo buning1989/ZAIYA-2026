@@ -180,20 +180,19 @@ export const xiaochenDay1Scenario: GuidedScenario = {
       id: "rumination-insomnia",
       order: 5,
       time: "01:30",
-      title: "反刍失眠",
+      title: "还没睡",
       narrative: [
         "夜已经很深，身体累到瘫软，脑子却仍在反复播放白天的哭泣、争吵和没写完的作业。",
         "小晨点开在呀 ZÀIYA，把已经睡着的在在叫醒。",
         "在在没有让她“别想了”，而是把念头比作一台关不掉的电视，引导她暂时不去看，",
-        "再把注意力慢慢带回被子、呼吸和身体。对话结束，在在重新躺下，小晨也逐渐回到休息。",
+        "屏幕在 01:52 暗下去。她没有说晚安。",
       ],
       narrativeLeads: [
         "夜已经很深",
         "小晨点开在呀 ZÀIYA",
         "在在没有让她",
-        "再把注意力",
       ],
-      principles: "ACT 接纳与认知去融合 × CBT-I 担忧推迟 × 刺激控制 × 正念锚定",
+      principles: "ACT 接纳与认知去融合 × CBT-I 担忧推迟 × 正念锚定",
       plainExplanation:
         "不是要求小晨立刻停止思考，而是先允许念头存在，再把注意力从反刍带回身体和当下。",
       explanation: "减少睡前反刍，重新建立“床用于休息”的联结。",
