@@ -170,7 +170,7 @@ export default function RecordFlow({
   const [typeId, setTypeId] = useState<RecordTypeId | null>(null);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
 
-  // wizard 的 answers 上提：用于顶部入口显示判断与「先记到这儿」部分保存
+  // wizard 的 answers 上提：用于顶部入口显示判断与部分保存
   const [wizardAnswers, setWizardAnswers] = useState<Answers>({});
 
   // 是否已完成保存（success 态），用于返回按钮跳过放弃确认
@@ -189,9 +189,7 @@ export default function RecordFlow({
   );
 
   // 由 RecordWizard 上报的进度状态：用于顶部入口与返回确认分支
-  // hasCompletedFirstStep：已进入第二项及以后（第一项已完成）
   // isFullRecordReady：已进入「这条记录已经完整了」确认页
-  const [hasCompletedFirstStep, setHasCompletedFirstStep] = useState(false);
   const [isFullRecordReady, setIsFullRecordReady] = useState(false);
   // 安全承接页激活态：拦截普通返回逻辑，弹出安全引导确认
   const [isSafetyPhase, setIsSafetyPhase] = useState(false);
@@ -210,7 +208,6 @@ export default function RecordFlow({
     setWizardAnswers({});
     setSavedMessage(null);
     setIsRecordSaved(false);
-    setHasCompletedFirstStep(false);
     setIsFullRecordReady(false);
     setIsSafetyPhase(false);
     setDialogMode(null);
@@ -221,9 +218,6 @@ export default function RecordFlow({
   const hasAnyAnswer = Object.values(wizardAnswers).some(
     (a) => a && (a.label?.trim() || a.value.trim()),
   );
-  // 可部分保存：已完成第一项、未到确认页、未保存
-  const canSavePartial =
-    hasCompletedFirstStep && !isFullRecordReady && !isRecordSaved;
 
   // wizard 完成时调用：保存后直接回到记一下首页，并给出轻提示
   const handleSave = (answers: Answers) => {
@@ -283,7 +277,7 @@ export default function RecordFlow({
     // 不 backToRecordHome：保持当前 wizard 层，RecordConfirmPage 内部切 phase=success
   };
 
-  // 「先记到这儿」：保存当前已完成内容为部分记录（不完整、不发完整能量、不进确认页），
+  // 部分保存：保存当前已完成内容为部分记录（不完整、不发完整能量、不进确认页），
   // 交给父组件 onSaveFirst 处理（status: basic、退出到应用首页并展示轻反馈）
   const handleSavePartial = () => {
     setDialogMode(null);
@@ -327,7 +321,6 @@ export default function RecordFlow({
     setTypeId(null);
     setWizardAnswers({});
     setIsRecordSaved(false);
-    setHasCompletedFirstStep(false);
     setIsFullRecordReady(false);
     setIsSafetyPhase(false);
     setDialogMode(null);
@@ -340,7 +333,6 @@ export default function RecordFlow({
       isFullRecordReady: boolean;
       isSafetyPhase: boolean;
     }) => {
-      setHasCompletedFirstStep(progress.hasCompletedFirstStep);
       setIsFullRecordReady(progress.isFullRecordReady);
       setIsSafetyPhase(progress.isSafetyPhase);
     },
@@ -383,7 +375,7 @@ export default function RecordFlow({
     <div className="relative flex h-full flex-col bg-white">
       <PhoneStatusBar />
 
-      {/* 顶部返回 + 标题 + 右上角入口（能量 / 先记到这儿 / 空置） */}
+      {/* 顶部返回 + 标题 + 右上角入口（能量 / 空置） */}
       <div className="relative flex items-center gap-3 bg-white px-5 pt-14 pb-2">
         <button
           onClick={handleBack}
@@ -396,20 +388,12 @@ export default function RecordFlow({
           {title}
         </h2>
         {layer === "wizard" && !isSafetyPhase && (isFullRecordReady || isRecordSaved) ? (
-          /* 确认页 / 已保存：我的光入口（统一组件，点击提示 Demo 暂未开放） */
+          /* 确认页 / 已保存：我的光入口（统一组件，点击提示成长中） */
           <EnergyBadge
             pulse={energyPulse}
             buttonRef={energyButtonRef}
             position="inline"
           />
-        ) : layer === "wizard" && !isSafetyPhase && canSavePartial ? (
-          /* 第二项及以后、未到确认页：先记到这儿（部分保存） */
-          <button
-            onClick={handleSavePartial}
-            className="text-[13px] font-medium text-ink-soft transition-colors hover:text-ink"
-          >
-            先记到这儿
-          </button>
         ) : null}
       </div>
 
@@ -781,7 +765,7 @@ function buildRecentBubbles(history: RecordEntry[]): string[] {
  * 自动推进：单选项点击后停留 400ms 再进入下一项；自由输入发送后同样停留 400ms。
  * 不设置"下一步"按钮。返回上一项通过右滑完成，已选状态/内容卡保留。
  *
- * answers 由父组件 RecordFlow 持有（上提），用于顶部「先记到这儿」入口判断。
+ * answers 由父组件 RecordFlow 持有（上提），用于顶部入口显示判断与部分保存。
  *
  * 答案状态结构：answers[field] = { type: "option" | "custom"; value; label? }
  *   - option: 选择预设选项 → 对应选项卡高亮（持久，回看仍高亮）
@@ -1051,7 +1035,7 @@ function RecordWizard({
   // 上报进度给父组件 RecordFlow：
   //   hasCompletedFirstStep = stepStack.length > 1（已进入第二项及以后）
   //   isFullRecordReady = showConfirmPage（已进入完整记录确认页）
-  // 父组件据此决定顶部右上角入口（能量 / 先记到这儿 / 空置）与返回确认浮层模式（二选一 / 三选一）
+  // 父组件据此决定顶部右上角入口（能量 / 空置）与返回确认浮层模式（二选一 / 三选一）
   useEffect(() => {
     onProgressChange?.({
       hasCompletedFirstStep: stepStack.length > 1,
@@ -1157,7 +1141,7 @@ function RecordWizard({
       <div className="bg-white px-5 pb-3">
           <div className="h-[3px] w-full overflow-hidden rounded-full bg-line-soft">
             <motion.div
-              className="h-full rounded-full bg-ink"
+              className="h-full rounded-full bg-accent"
               initial={false}
               animate={{
                 width: `${((stepIndex + 1) / totalSteps) * 100}%`,

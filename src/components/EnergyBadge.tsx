@@ -22,13 +22,13 @@ type EnergyBadgeProps = {
   buttonRef?: RefObject<HTMLButtonElement | null>;
   /** 定位模式 */
   position?: "inline" | "floating";
-  /** 点击提示文案，默认 Demo 暂未开放 */
+  /** 点击提示文案，默认提示成长中 */
   hintText?: string;
 };
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-const DEFAULT_HINT = "「我的能量」在 Demo 阶段暂未开放";
+const DEFAULT_HINT = "我的枝芽还在慢慢长出来";
 const HINT_DURATION = 2500;
 
 export default function EnergyBadge({
@@ -65,7 +65,7 @@ export default function EnergyBadge({
       <motion.button
         ref={buttonRef}
         type="button"
-        aria-label="我的能量，暂未开放"
+        aria-label="我的能量"
         onClick={handleClick}
         animate={pulse ? { scale: [1, 1.08, 1] } : { scale: 1 }}
         whileTap={{ scale: 0.96 }}

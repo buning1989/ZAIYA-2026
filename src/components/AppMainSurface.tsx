@@ -825,7 +825,7 @@ export default function AppMainSurface({
     }
   };
 
-  // 先记到这儿：低能量退出，保存为 basic 记录
+  // 部分保存：低能量退出，保存为 basic 记录
   // 不进入完成页、不展示能量、不触发快捷入口提示；直接回首页 + 轻反馈
   const handleSaveFirst = (e: {
     typeId: RecordTypeId;
