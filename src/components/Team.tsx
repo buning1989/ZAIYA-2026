@@ -63,7 +63,7 @@ export default function Team() {
       <div className="container pt-20 pb-20 md:pt-24 md:pb-24">
         <div className="h-px w-full bg-line" aria-hidden="true" />
         <Reveal className="mt-7 md:mt-8">
-          <SectionEyebrow index={6} name="为什么是我们" />
+          <SectionEyebrow index={4} name="为什么是我们" />
           <h2 className="mt-4 max-w-3xl text-[26px] font-semibold leading-tight tracking-tight text-ink md:mt-5 md:text-[32px]">
             <span className="inline-block">二十年亲历，</span>
             <span className="inline-block">三次实践。</span>

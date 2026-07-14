@@ -1,5 +1,5 @@
 import Reveal from "./Reveal";
-import SectionEyebrow from "./SectionEyebrow";
+import SubsectionEyebrow from "./SubsectionEyebrow";
 import ZaizaiVideo from "./ZaizaiVideo";
 
 /** 右侧四项设计理由：标题 + 一句解释。 */
@@ -74,9 +74,10 @@ function CharacterNote({ title, desc, side, className }: CharacterNoteProps) {
 
 export default function CharacterDesign() {
   return (
-    <section id="character" className="scroll-mt-24">
-      <div className="container pt-20 pb-20 md:pt-24 md:pb-24 min-[1200px]:pt-24 min-[1200px]:pb-24">
-        <div className="h-px w-full bg-line" aria-hidden="true" />
+    <section id="solution-character" className="relative scroll-mt-24">
+      <span id="character" className="pointer-events-none absolute -top-20 h-px w-px" aria-hidden="true" />
+      <div className="container pt-12 pb-20 md:pt-12 md:pb-24 min-[1200px]:pt-12 min-[1200px]:pb-24">
+        <div className="h-px w-full bg-line-soft" aria-hidden="true" />
         <div className="mt-7 grid grid-cols-1 gap-10 md:mt-8 md:grid-cols-[0.36fr_0.64fr] md:gap-8 min-[1200px]:grid-cols-[0.4fr_0.6fr] min-[1200px]:gap-8 min-[1200px]:items-stretch">
           {/* 左侧：在在角色视觉区 + 三个轻量虚线标注 */}
           <Reveal y={10} className="md:col-start-1 md:row-span-2">
@@ -109,7 +110,7 @@ export default function CharacterDesign() {
           {/* 右侧：标题区 */}
           <div className="flex flex-col md:col-start-2">
             <Reveal y={10}>
-              <SectionEyebrow index={5} name="角色设计" />
+              <SubsectionEyebrow index="03.3" name="角色设计" />
             </Reveal>
 
             <Reveal delay={0.04} y={10}>

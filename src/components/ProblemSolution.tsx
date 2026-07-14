@@ -68,7 +68,8 @@ function StatCardView({ stat, delay }: { stat: StatCard; delay: number }) {
 
 export default function ProblemSolution() {
   return (
-    <section id="problem" className="scroll-mt-20">
+    <section id="needs" className="relative scroll-mt-20">
+      <span id="problem" className="pointer-events-none absolute -top-20 h-px w-px" aria-hidden="true" />
       <div className="container pt-14 pb-20 md:pt-20 md:pb-24">
         <Reveal>
           <SectionEyebrow index={1} name="需求与缺口" />

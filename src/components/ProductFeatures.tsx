@@ -10,8 +10,9 @@ import DialogueZaiyaAnimation from "./DialogueZaiyaAnimation";
 import FeatureDisclosure from "./FeatureDisclosure";
 import { WidgetSurface } from "./MultiFormShowcase";
 import Reveal from "./Reveal";
-import SectionHeading from "./SectionHeading";
+import SectionEyebrow from "./SectionEyebrow";
 import ZaizaiVideo, { ZAIZAI_RELIEF_VIDEO_SRC } from "./ZaizaiVideo";
+import SubsectionEyebrow from "./SubsectionEyebrow";
 
 type Solution = {
   step: string;
@@ -498,13 +499,18 @@ function OutputCard({ output, index }: { output: OutputBlock; index: number }) {
 
 export default function ProductFeatures() {
   return (
-    <section id="product" className="scroll-mt-20">
-      <div className="container pt-16 pb-14 md:pt-24 md:pb-16">
-        <SectionHeading
-          index={3}
-          name="我们怎么做"
-          title="在呀 ZÀIYA，把支持带进每天的真实生活。"
-        />
+    <section id="solution-product" className="relative scroll-mt-20">
+      <span id="solution" className="pointer-events-none absolute -top-20 h-px w-px" aria-hidden="true" />
+      <span id="product" className="pointer-events-none absolute -top-20 h-px w-px" aria-hidden="true" />
+      <div className="container pt-20 pb-8 md:pt-24 md:pb-8">
+        <div className="h-px w-full bg-line" aria-hidden="true" />
+        <Reveal className="mt-7 md:mt-8">
+          <SectionEyebrow index={3} name="解决方案" />
+          <SubsectionEyebrow index="03.1" name="我们怎么做" className="mt-5" />
+          <h2 className="mt-4 text-[26px] leading-tight tracking-tight text-ink md:mt-5 md:text-[32px]">
+            在呀 ZÀIYA，把支持带进每天的真实生活。
+          </h2>
+        </Reveal>
 
         <div className="mt-10 space-y-10 md:mt-12 md:space-y-12">
           {solutions.map((solution, index) => (

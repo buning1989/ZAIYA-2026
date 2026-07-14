@@ -1,7 +1,7 @@
 type Props = {
   /** 章节序号，1 起始 */
   index: number;
-  /** 总章节数，默认 7 */
+  /** 总章节数，默认 5 */
   total?: number;
   /** 模块名称，例如 "需求与缺口" */
   name: string;
@@ -9,7 +9,7 @@ type Props = {
 };
 
 /**
- * 七个模块统一的章节眉标。
+ * 一级章节统一的章节眉标。
  *
  * 结构：章节编号 ── 短横线 ── 模块名称
  *
@@ -22,7 +22,7 @@ type Props = {
  */
 export default function SectionEyebrow({
   index,
-  total = 7,
+  total = 5,
   name,
   className = "",
 }: Props) {

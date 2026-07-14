@@ -18,15 +18,15 @@ const columns = [
     title: "产品",
     links: [
       { label: "体验 Demo", href: "#demo" },
-      { label: "需求与方案", href: "#problem" },
-      { label: "产品功能", href: "#product" },
-      { label: "技术实践", href: "#clinical" },
+      { label: "需求与方案", href: "#needs" },
+      { label: "产品功能", href: "#solution-product" },
+      { label: "技术实践", href: "#solution-method" },
     ],
   },
   {
     title: "关于",
     links: [
-      { label: "角色设计", href: "#character" },
+      { label: "角色设计", href: "#solution-character" },
       { label: "团队介绍", href: "#team" },
       { label: "产品愿景", href: "#vision" },
     ],

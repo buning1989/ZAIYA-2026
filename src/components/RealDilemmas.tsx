@@ -30,7 +30,8 @@ const voiceCards: VoiceCard[] = [
 
 export default function RealDilemmas() {
   return (
-    <section id="dilemmas" className="scroll-mt-20">
+    <section id="pain" className="relative scroll-mt-20">
+      <span id="dilemmas" className="pointer-events-none absolute -top-20 h-px w-px" aria-hidden="true" />
       <div className="container pt-20 pb-20 md:pt-24 md:pb-24">
         <div className="h-px w-full bg-line" aria-hidden="true" />
         <SectionHeading

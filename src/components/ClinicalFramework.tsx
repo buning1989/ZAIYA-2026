@@ -1,6 +1,6 @@
 import FeatureDisclosure from "./FeatureDisclosure";
 import Reveal from "./Reveal";
-import SectionHeading from "./SectionHeading";
+import SubsectionEyebrow from "./SubsectionEyebrow";
 
 const dimensions = [
   {
@@ -70,21 +70,18 @@ const scenarios = [
 
 export default function ClinicalFramework() {
   return (
-    <section id="clinical" className="scroll-mt-20">
-      <div className="container pt-20 pb-20 md:pt-24 md:pb-24">
-        <div className="h-px w-full bg-line" aria-hidden="true" />
-        <SectionHeading
-          index={4}
-          name="专业方法"
-          title={
-            <>
-              先理解一个人的完整处境，
-              <br />
-              再决定此刻如何回应。
-            </>
-          }
-          className="mt-7 md:mt-8"
-        />
+    <section id="solution-method" className="relative scroll-mt-20">
+      <span id="clinical" className="pointer-events-none absolute -top-20 h-px w-px" aria-hidden="true" />
+      <div className="container pt-12 pb-8 md:pt-12 md:pb-8">
+        <div className="h-px w-full bg-line-soft" aria-hidden="true" />
+        <Reveal className="mt-7 md:mt-8">
+          <SubsectionEyebrow index="03.2" name="专业方法" />
+          <h2 className="mt-4 text-[26px] leading-tight tracking-tight text-ink md:mt-5 md:text-[32px]">
+            先理解一个人的完整处境，
+            <br />
+            再决定此刻如何回应。
+          </h2>
+        </Reveal>
 
         <Reveal delay={0.1}>
           <article className="mt-8 rounded-lg border border-line bg-white px-6 py-7 md:mt-10 md:px-8 md:py-8">
