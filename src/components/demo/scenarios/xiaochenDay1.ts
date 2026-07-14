@@ -49,7 +49,7 @@ const step2Dialog: DialogItem[] = [
   msg("s2-3", "zaizai", "一早上被问了好多“怎么办”呀。", step2Base),
   msg("s2-4", "zaizai", "这么大的事，哪能马上知道。你现在还好吗？", step2Base),
   msg("s2-5", "user", "很烦，刚哭了一场，感觉喘不上气。", step2Base),
-  msg("s2-6", "zaizai", "要不要跟我一起缓一缓。", step2Base),
+  msg("s2-6", "zaizai", "喘不上气的时候，我会把气吐得长一点，要不要一起。", step2Base),
   msg("s2-7", "user", "……怎么弄。", step2Base),
   msg("s2-8", "zaizai", "跟我来。吸————呼————呼的时候长一点，像给气球慢慢放气。", step2Base),
 ];
