@@ -1,6 +1,9 @@
+import { ChevronLeft, ChevronUp, Sprout, Waves, Wifi } from "lucide-react";
 import FeatureDisclosure from "./FeatureDisclosure";
+import { WidgetSurface } from "./MultiFormShowcase";
 import Reveal from "./Reveal";
 import SectionHeading from "./SectionHeading";
+import ZaizaiVideo, { ZAIZAI_RELIEF_VIDEO_SRC } from "./ZaizaiVideo";
 
 type Solution = {
   step: string;
@@ -8,6 +11,7 @@ type Solution = {
   summary: string;
   features: string[];
   placeholder: string[];
+  mediaComponent?: "widget" | "relief";
   ratio: string;
   mediaLayout: "devices" | "scene" | "dialog";
   mediaSide: "right" | "left";
@@ -36,6 +40,7 @@ const solutions: Solution[] = [
       "产品图占位",
       "App 首页 / 手机桌面小组件 / 智能手表",
     ],
+    mediaComponent: "widget",
     ratio: "aspect-[16/9]",
     mediaLayout: "devices",
     mediaSide: "right",
@@ -54,6 +59,7 @@ const solutions: Solution[] = [
       "产品图占位",
       "一起吃饭 / 一起发呆 / 呼吸练习 / 生活演示",
     ],
+    mediaComponent: "relief",
     ratio: "aspect-[4/3]",
     mediaLayout: "scene",
     mediaSide: "left",
@@ -163,6 +169,72 @@ function PlaceholderFrame({
   );
 }
 
+function ReliefEntryPreview() {
+  return (
+    <div className="mx-auto w-full max-w-[390px]">
+      <div className="relative h-[430px] overflow-hidden rounded-t-[42px] border-[7px] border-b-0 border-ink bg-ink shadow-[0_8px_40px_-12px_rgba(0,0,0,0.18)]">
+        <div className="relative h-full overflow-hidden rounded-t-[34px] bg-white px-7 pt-4">
+          <div className="flex items-center justify-between text-[12px] font-semibold text-ink">
+            <span>22:01</span>
+            <div className="flex items-center gap-1.5">
+              <div className="flex items-end gap-[2px]">
+                <span className="h-1.5 w-1 rounded-[1px] bg-ink" />
+                <span className="h-2 w-1 rounded-[1px] bg-ink" />
+                <span className="h-2.5 w-1 rounded-[1px] bg-ink" />
+                <span className="h-3 w-1 rounded-[1px] bg-ink" />
+              </div>
+              <Wifi className="h-3.5 w-3.5" strokeWidth={1.8} />
+              <div className="relative ml-0.5 h-3 w-6 rounded-[3px] border border-ink/55 p-[1.5px]">
+                <span className="absolute -right-[3px] top-1/2 h-1.5 w-[2px] -translate-y-1/2 rounded-r bg-ink/55" />
+                <span className="block h-full w-3/4 rounded-[1px] bg-ink" />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-7 flex items-center justify-between">
+            <ChevronLeft className="h-6 w-6 text-ink-soft" strokeWidth={1.8} />
+            <div className="grid h-9 w-9 place-items-center rounded-full border border-[#E8D9B8] bg-[#FFF8EB] text-[#C69838]">
+              <Sprout className="h-4 w-4" strokeWidth={1.8} />
+            </div>
+          </div>
+
+          <div className="mt-3 flex flex-col items-center">
+            <ZaizaiVideo
+              src={ZAIZAI_RELIEF_VIDEO_SRC}
+              className="h-[112px] w-[112px]"
+              shadow={false}
+            />
+            <p className="mt-[5%] text-[13px] leading-relaxed text-ink-soft/80">
+              不着急，先让自己慢下来。
+            </p>
+          </div>
+
+          <div className="mt-7">
+            <div className="mb-[10px] text-[13px] font-medium leading-5 text-[#7B8376]">
+              当前可用
+            </div>
+            <div
+              className="flex min-h-[88px] w-full items-center gap-[14px] rounded-2xl bg-white p-[16px_18px] text-left"
+              style={{ border: "1px solid #D8DDD3" }}
+            >
+              <Waves className="h-7 w-7 text-ink-soft" strokeWidth={1.8} />
+              <div className="min-w-0 flex-1">
+                <div className="text-[16px] font-semibold leading-6 text-[#2F392B]">
+                  呼吸法
+                </div>
+                <div className="mt-[3px] text-[13px] font-normal leading-5 text-[#737A70]">
+                  选择一种适合现在的节奏
+                </div>
+              </div>
+              <ChevronUp className="h-5 w-5 text-ink-faint" strokeWidth={1.8} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SolutionSection({ solution, index }: { solution: Solution; index: number }) {
   const mediaFirst = solution.mediaSide === "left";
 
@@ -184,11 +256,33 @@ function SolutionSection({ solution, index }: { solution: Solution; index: numbe
           </div>
 
           <div className={mediaFirst ? "md:order-1" : undefined}>
-            <PlaceholderFrame
-              lines={solution.placeholder}
-              ratio={solution.ratio}
-              layout={solution.mediaLayout}
-            />
+            {solution.mediaComponent === "widget" ? (
+              <div
+                className="flex min-h-[330px] items-center justify-center overflow-hidden bg-white md:min-h-[370px]"
+                role="img"
+                aria-label="在呀 ZÀIYA 手机桌面小组件产品展示"
+              >
+                <div className="w-full scale-[0.7]">
+                  <WidgetSurface />
+                </div>
+              </div>
+            ) : solution.mediaComponent === "relief" ? (
+              <div
+                className="relative flex min-h-[330px] items-center justify-center overflow-hidden bg-white md:min-h-[370px]"
+                role="img"
+                aria-label="在呀 ZÀIYA 缓解入口半屏产品展示"
+              >
+                <div className="w-full -translate-y-5 scale-[0.82] md:scale-[0.85]">
+                  <ReliefEntryPreview />
+                </div>
+              </div>
+            ) : (
+              <PlaceholderFrame
+                lines={solution.placeholder}
+                ratio={solution.ratio}
+                layout={solution.mediaLayout}
+              />
+            )}
           </div>
         </div>
       </article>
