@@ -16,7 +16,6 @@ import DemoSleepRecordFlow from "./DemoSleepRecordFlow";
 import DemoOrganizeFlow from "./DemoOrganizeFlow";
 import DemoPraisePreview from "./DemoPraisePreview";
 import DemoLookbackFlow from "./DemoLookbackFlow";
-import FreeExperiencePanel from "./FreeExperiencePanel";
 import { xiaochenDay1Scenario } from "./scenarios/xiaochenDay1";
 import { xiaochenDay2Scenario } from "./scenarios/xiaochenDay2";
 import { day2PraiseDemo } from "./scenarios/xiaochenTwoWeekSummary";
@@ -25,40 +24,15 @@ import { SOFT_EASE } from "@/lib/motionVariants";
 import {
   getNextNodeKey,
   preloadNodeResources,
+  type GuidedPhase,
 } from "./demoPreloadMap";
 
 type Props = {
-  mode: "guided" | "free";
   onReturnHome: () => void;
-  onSwitchToGuided: () => void;
   onSwitchToFree: () => void;
 };
 
-/* —— 线性叙事相位 ——
- * intro              → 案例介绍（第 0 页）
- * day1               → 第一天 1/5 … 5/5
- * day1-summary       → 第一天结束总结页
- * week2-intro        → 两周后开场页
- * day2               → 小晨两周后 1/5 … 5/5
- * guided-result      → 案例结果页（小晨这两周发生了什么）
- * guided-product-value → 产品价值总结页（最后一页，只显示左箭头）
- *
- * 注：独立复诊整理页已移除，第二周第 5 节点直接进入案例结果页。
- * 原单页总结已拆分为两页：第一页只讲案例人物变化，第二页预留产品价值内容。
- *
- * 所有阶段统一使用左右箭头 / 键盘 ← → / 移动端左右滑动切换。
- * 不再设置任何用于推进流程的 CTA 按钮（案例结果页主按钮除外，与右箭头等价）。
- */
-export type GuidedPhase =
-  | "intro"
-  | "day1"
-  | "day1-summary"
-  | "week2-intro"
-  | "day2"
-  | "guided-result"
-  | "guided-product-value";
-
-/* 阶段页：无手机 Demo、无分页圆点，但保留左右箭头 */
+/* —— 阶段页：无手机 Demo、无分页圆点，但保留左右箭头 */
 const PHASE_PAGES: GuidedPhase[] = [
   "day1-summary",
   "week2-intro",
@@ -93,12 +67,16 @@ function revealDialogItems(
 /* 移动端滑动水平阈值（px） */
 const SWIPE_THRESHOLD = 50;
 
-export default function UnifiedDemoStage({
-  mode,
-  onReturnHome,
-  onSwitchToGuided,
-  onSwitchToFree,
-}: Props) {
+/* —— 演示模式专用舞台（guided）——
+ *
+ * 从 UnifiedDemoStage 拆分而来，移除所有 mode=== 条件判断。
+ * 仅承载案例演示（guided）的线性叙事流程：
+ *   intro → day1 → day1-summary → week2-intro → day2 → guided-result → guided-product-value
+ *
+ * 导航：左右箭头 / 键盘 ← → / 移动端左右滑动
+ * 无 CTA 按钮推进流程（案例结果页主按钮除外，与右箭头等价）。
+ */
+export default function DemoStage({ onReturnHome, onSwitchToFree }: Props) {
   const [phase, setPhase] = useState<GuidedPhase>("intro");
   const [day1Index, setDay1Index] = useState(0);
   const [day2Index, setDay2Index] = useState(0);
@@ -128,13 +106,7 @@ export default function UnifiedDemoStage({
   const total = scenario.steps.length;
   const step = scenario.steps[stepIndex] ?? scenario.steps[0];
 
-  /* —— 第二周 06:40 节点：气泡点击 → 角落星星反馈 ——
-   * starCollected：评委是否已点击气泡（星星是否已出现）
-   * - 仅在 day2[0] 生效；进入 / 返回该节点时重置为 false
-   * - 点击后星星从气泡附近移动到屏幕角落，停留至离开节点
-   * - 重复点击不生成多颗星星、不累计、不重播动画
-   * - Guided Demo 状态完全隔离，不影响自由体验模式
-   */
+  /* —— 第二周 06:40 节点：气泡点击 → 角落星星反馈 —— */
   const [starCollected, setStarCollected] = useState(false);
   const isDay2WakeLookNode = phase === "day2" && day2Index === 0;
   const isDay2SelfRecordNode = phase === "day2" && day2Index === 1;
@@ -206,18 +178,17 @@ export default function UnifiedDemoStage({
     [phase],
   );
 
-  const showIntro = mode === "guided" && phase === "intro";
-  const showDay1Summary = mode === "guided" && phase === "day1-summary";
-  const showWeek2Intro = mode === "guided" && phase === "week2-intro";
-  const showGuidedResult = mode === "guided" && phase === "guided-result";
-  const showGuidedProductValue = mode === "guided" && phase === "guided-product-value";
-  const showGuidedNav = mode === "guided";
+  const showIntro = phase === "intro";
+  const showDay1Summary = phase === "day1-summary";
+  const showWeek2Intro = phase === "week2-intro";
+  const showGuidedResult = phase === "guided-result";
+  const showGuidedProductValue = phase === "guided-product-value";
 
   // 阶段页（无手机 Demo、无圆点，但保留左右箭头）
-  const showPhasePage = mode === "guided" && isPhasePage(phase);
+  const showPhasePage = isPhasePage(phase);
 
-  const showDay1Progress = mode === "guided" && (phase === "intro" || phase === "day1");
-  const showGuidedControls = showDay1Progress || (mode === "guided" && phase === "day2");
+  const showDay1Progress = phase === "intro" || phase === "day1";
+  const showGuidedControls = showDay1Progress || phase === "day2";
   const guidedControlsTotal = showDay1Progress
     ? xiaochenDay1Scenario.steps.length + 1
     : total;
@@ -242,12 +213,8 @@ export default function UnifiedDemoStage({
     [phase, goTo],
   );
 
-  /* —— 预加载下一节点资源 ——
-   * 当前节点稳定显示后（延迟 600ms，避免与当前节点渲染争抢带宽），
-   * 后台只预加载下一个节点的：动态 JS chunk + 首个 WebM + poster + 音频。
-   * 不预加载下下个节点。已加载缓存保留，返回不重复下载。 */
+  /* —— 预加载下一节点资源 —— */
   useEffect(() => {
-    if (mode !== "guided") return;
     const nextKey = getNextNodeKey(
       phase,
       day1Index,
@@ -260,15 +227,9 @@ export default function UnifiedDemoStage({
       preloadNodeResources(nextKey);
     }, 600);
     return () => window.clearTimeout(timer);
-  }, [phase, day1Index, day2Index, mode]);
+  }, [phase, day1Index, day2Index]);
 
-  /* —— 对话自动逐条出现 ——
-   * 07:35（day1[1]）：短消息 400ms，长消息 750ms，对话全部出现后停留
-   * 01:30（day1[4]）：短消息 600ms，长消息 1100ms（深夜更慢）
-   * 减少动态模式：直接显示全部对话
-   *
-   * 注意：07:35 不再自动进入呼吸练习，改为评委主动点击呼吸入口。
-   */
+  /* —— 对话自动逐条出现 —— */
   const prefersReducedDialogMotion = useRef(
     typeof window !== "undefined" &&
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches,
@@ -320,7 +281,6 @@ export default function UnifiedDemoStage({
 
   // 统一键盘事件：覆盖所有 guided 阶段
   useEffect(() => {
-    if (mode !== "guided") return;
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement | null)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
@@ -336,25 +296,20 @@ export default function UnifiedDemoStage({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [mode, phase, prev, next]);
+  }, [phase, prev, next]);
 
   // 移动端左右滑动
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
 
-  const onTouchStart = useCallback(
-    (e: ReactTouchEvent<HTMLDivElement>) => {
-      if (mode !== "guided") return;
-      const touch = e.touches[0];
-      touchStartX.current = touch.clientX;
-      touchStartY.current = touch.clientY;
-    },
-    [mode],
-  );
+  const onTouchStart = useCallback((e: ReactTouchEvent<HTMLDivElement>) => {
+    const touch = e.touches[0];
+    touchStartX.current = touch.clientX;
+    touchStartY.current = touch.clientY;
+  }, []);
 
   const onTouchEnd = useCallback(
     (e: ReactTouchEvent<HTMLDivElement>) => {
-      if (mode !== "guided") return;
       if (touchStartX.current === null || touchStartY.current === null) return;
       const touch = e.changedTouches[0];
       const dx = touch.clientX - touchStartX.current;
@@ -373,7 +328,7 @@ export default function UnifiedDemoStage({
         if (phase !== "guided-product-value") next();
       }
     },
-    [mode, phase, prev, next],
+    [phase, prev, next],
   );
 
   const stageKey = useMemo(
@@ -411,8 +366,8 @@ export default function UnifiedDemoStage({
 
         <div className="justify-self-center sm:col-start-2 sm:row-start-1">
           <GuidedModeSwitch
-            currentMode={mode}
-            onSwitchToGuided={onSwitchToGuided}
+            currentMode="guided"
+            onSwitchToGuided={() => {}}
             onSwitchToFree={onSwitchToFree}
           />
         </div>
@@ -425,19 +380,17 @@ export default function UnifiedDemoStage({
 
       {/* 主内容区 */}
       <div className="relative mt-6 flex flex-1 flex-col justify-center">
-        {showGuidedNav && (
-          <div className="pointer-events-none absolute inset-y-0 z-20 hidden items-center justify-between lg:-left-10 lg:-right-10 lg:flex xl:-left-20 xl:-right-20 2xl:-left-28 2xl:-right-28">
-            {/* 最后一页（guided-product-value）隐藏右箭头，只保留左箭头返回 */}
-            <div className="pointer-events-auto">
-              <NavArrow direction="left" disabled={phase === "intro"} onClick={prev} />
-            </div>
-            {phase !== "guided-product-value" && (
-              <div className="pointer-events-auto">
-                <NavArrow direction="right" disabled={false} onClick={next} />
-              </div>
-            )}
+        <div className="pointer-events-none absolute inset-y-0 z-20 hidden items-center justify-between lg:-left-10 lg:-right-10 lg:flex xl:-left-20 xl:-right-20 2xl:-left-28 2xl:-right-28">
+          {/* 最后一页（guided-product-value）隐藏右箭头，只保留左箭头返回 */}
+          <div className="pointer-events-auto">
+            <NavArrow direction="left" disabled={phase === "intro"} onClick={prev} />
           </div>
-        )}
+          {phase !== "guided-product-value" && (
+            <div className="pointer-events-auto">
+              <NavArrow direction="right" disabled={false} onClick={next} />
+            </div>
+          )}
+        </div>
 
         <AnimatePresence mode="wait">
           {showIntro ? (
@@ -497,46 +450,16 @@ export default function UnifiedDemoStage({
               transition={{ duration: 0.28, ease: SOFT_EASE }}
             >
               <div className="lg:px-20">
-                <GuidedProductValuePage
-                  onEnterFreeExperience={onSwitchToFree}
-                />
-              </div>
-            </motion.div>
-          ) : mode === "free" ? (
-            <motion.div
-              key="free"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.28, ease: SOFT_EASE }}
-            >
-              <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-[auto_400px] lg:justify-center lg:gap-x-20 lg:gap-y-0">
-                <div className="order-2 justify-self-center lg:order-1">
-                  <DemoPhoneFrame />
-                </div>
-
-                <div className="order-1 w-full lg:order-2">
-                  <AnimatePresence mode="wait" initial={false}>
-                    <motion.div
-                      key="free-panel"
-                      initial={{ opacity: 0, x: 24 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 24 }}
-                      transition={{ duration: 0.32, ease: SOFT_EASE }}
-                    >
-                      <FreeExperiencePanel />
-                    </motion.div>
-                  </AnimatePresence>
-                </div>
+                <GuidedProductValuePage onEnterFreeExperience={onSwitchToFree} />
               </div>
             </motion.div>
           ) : (
             <motion.div
               key={stageKey}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.28, ease: SOFT_EASE }}
+              initial={{ opacity: 0, x: -24 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -24 }}
+              transition={{ duration: 0.32, ease: SOFT_EASE }}
             >
               <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-[390px_560px] lg:justify-center lg:gap-x-10 lg:gap-y-0 lg:px-10">
                 {/* 设备 Demo：06:40 桌面小组件 / 12:00 手表 / 其他 手机 App */}
@@ -550,9 +473,9 @@ export default function UnifiedDemoStage({
                     <DemoWatchFrame time={step.time} />
                   ) : phase === "day1" && day1Index === 1 && showBreathing ? (
                     <DemoPhoneFrame
-                      demoState={mode === "guided" ? step.secondaryDemoState : undefined}
+                      demoState={step.secondaryDemoState}
                     />
-                  ) : isDialogRevealNode && mode === "guided" && step.demoState ? (
+                  ) : isDialogRevealNode && step.demoState ? (
                     <DemoPhoneFrame
                       demoState={{
                         ...step.demoState,
@@ -569,7 +492,7 @@ export default function UnifiedDemoStage({
                           : undefined
                       }
                     />
-                  ) : isDay2WakeLookNode && mode === "guided" ? (
+                  ) : isDay2WakeLookNode ? (
                     /* 第二周 06:40：首页气泡可点击 → 角落星星反馈 */
                     <DemoPhoneFrame
                       demoState={step.demoState}
@@ -595,25 +518,25 @@ export default function UnifiedDemoStage({
                         ) : null
                       }
                     />
-                  ) : isDay2SelfRecordNode && mode === "guided" ? (
+                  ) : isDay2SelfRecordNode ? (
                     /* 第二周 10:00：睡眠记录确认 → 结果态（内部两状态流程） */
                     <DemoPhoneFrame
                       demoState={step.demoState}
                       overlay={<DemoSleepRecordFlow />}
                     />
-                  ) : isDay2OrganizeNode && mode === "guided" ? (
+                  ) : isDay2OrganizeNode ? (
                     /* 第二周 15:30：复诊沟通确认单 → 预览（内部两状态流程） */
                     <DemoPhoneFrame
                       demoState={step.demoState}
                       overlay={<DemoOrganizeFlow />}
                     />
-                  ) : isDay2PraiseNode && mode === "guided" ? (
+                  ) : isDay2PraiseNode ? (
                     /* 第二周 16:30：夸夸自己首页 feed（对齐体验模式） */
                     <DemoPhoneFrame
                       demoState={step.demoState}
                       overlay={<DemoPraisePreview preset={day2PraiseDemo} />}
                     />
-                  ) : isDay2LookbackNode && mode === "guided" ? (
+                  ) : isDay2LookbackNode ? (
                     /* 第二周 21:00：回头看看 近两周睡眠趋势 + 饮食摘要 */
                     <DemoPhoneFrame
                       demoState={step.demoState}
@@ -621,7 +544,7 @@ export default function UnifiedDemoStage({
                     />
                   ) : (
                     <DemoPhoneFrame
-                      demoState={mode === "guided" ? step.demoState : undefined}
+                      demoState={step.demoState}
                     />
                   )}
                 </div>
@@ -630,22 +553,18 @@ export default function UnifiedDemoStage({
                 <div className="w-full lg:col-start-2 lg:h-full">
                   <AnimatePresence mode="wait" initial={false}>
                     <motion.div
-                      key={mode}
-                      initial={{ opacity: 0, x: mode === "guided" ? -24 : 24 }}
+                      key="guided"
+                      initial={{ opacity: 0, x: -24 }}
                       animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: mode === "guided" ? -24 : 24 }}
+                      exit={{ opacity: 0, x: -24 }}
                       transition={{ duration: 0.32, ease: SOFT_EASE }}
                       className="h-full"
                     >
-                      {mode === "guided" ? (
-                        <GuidedStoryPanel
-                          step={step}
-                          scenarioName={scenario.name}
-                          total={total}
-                        />
-                      ) : (
-                        <FreeExperiencePanel />
-                      )}
+                      <GuidedStoryPanel
+                        step={step}
+                        scenarioName={scenario.name}
+                        total={total}
+                      />
                     </motion.div>
                   </AnimatePresence>
                 </div>

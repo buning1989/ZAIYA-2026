@@ -11,7 +11,6 @@
  * 节点 ID 命名规则：phase + index，如 "day1-0"、"day1-summary"、"week2-intro"、"day2-0"。
  */
 
-import type { GuidedPhase } from "./UnifiedDemoStage";
 import {
   loadBreathingFlow,
   loadPresenceRoom,
@@ -21,6 +20,18 @@ import {
   loadOrganizePage,
 } from "@/lib/moduleLoaders";
 import { preloadVideo, preloadImage, preloadAudio } from "@/lib/mediaPreloader";
+
+/* —— 线性叙事相位（Guided Demo 专用）——
+ * 定义在此处以便 demoPreloadMap 与 DemoStage 共享，
+ * 避免循环依赖。 */
+export type GuidedPhase =
+  | "intro"
+  | "day1"
+  | "day1-summary"
+  | "week2-intro"
+  | "day2"
+  | "guided-result"
+  | "guided-product-value";
 
 /* —— 对话四状态视频 —— */
 const DIALOGUE_VIDEOS = {

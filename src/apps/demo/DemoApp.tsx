@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { setStorageMode } from "@/shared/storage/namespacedStorage";
-import UnifiedDemoStage from "@/components/demo/UnifiedDemoStage";
+import DemoStage from "@/components/demo/DemoStage";
 
 /* —— 演示模式 App Shell（guided）——
  *
@@ -9,8 +9,7 @@ import UnifiedDemoStage from "@/components/demo/UnifiedDemoStage";
  *      读写落到 zaiya-demo-* 键，与体验模式完全隔离。
  *   2. 以 data-app-mode="demo" 命名空间包裹根节点，为后续 CSS 作用域
  *      收紧预留钩子。
- *   3. 渲染演示模式专用舞台（当前委托 UnifiedDemoStage mode="guided"，
- *      Phase 3 将拆分为独立 DemoStage，移除 mode=== 条件判断）。
+ *   3. 渲染演示模式专用舞台 DemoStage（线性叙事流程）。
  *
  * 注意：setStorageMode 必须在子组件挂载前同步完成，因此使用 useState
  *   初始化器（render phase 同步执行），而非 useEffect（异步，子组件
@@ -30,12 +29,7 @@ export default function DemoApp({ onReturnHome, onSwitchToFree }: Props) {
 
   return (
     <div data-app-mode="demo" className="contents">
-      <UnifiedDemoStage
-        mode="guided"
-        onReturnHome={onReturnHome}
-        onSwitchToGuided={() => {}}
-        onSwitchToFree={onSwitchToFree}
-      />
+      <DemoStage onReturnHome={onReturnHome} onSwitchToFree={onSwitchToFree} />
     </div>
   );
 }
