@@ -245,6 +245,12 @@ const dazePostures: DazePosture[] = [
     src: "./assets/social/daze/action-prone-nap.webm",
     poster: "./assets/social/daze/action-prone-nap-poster.png",
   },
+  {
+    id: "still-prone",
+    label: "静静趴着",
+    src: "./assets/social/daze/action-still-prone.webm",
+    poster: "./assets/social/daze/action-still-prone-poster.png",
+  },
 ];
 
 const SCENE_VIDEO = "./assets/social/daze/scene-together-15s.webm";
