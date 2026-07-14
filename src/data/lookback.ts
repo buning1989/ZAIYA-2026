@@ -520,7 +520,7 @@ export function buildMonthRange(
 /* —— 判断某月是否有记录（至少一条 DailyLookbackData 有任意记录字段）——
  * 用于「按月回看」空状态判断。Demo 阶段只要该月有生成日期即视为有记录，
  * 因为 buildDayByDate 会按概率产生未记录项，但仍属于「有记录的日期」。 */
-export function monthHasRecords(year: number, month: number): boolean {
+function monthHasRecords(year: number, month: number): boolean {
   const data = buildMonthRange(year, month);
   return data.length > 0;
 }
@@ -562,7 +562,7 @@ export const lookbackData: Record<LookbackRange, DailyLookbackData[]> = {
 };
 
 /* —— 文案映射：用于底部浮层展示当天事实值 —— */
-export const moodLabel: Record<Mood, string> = {
+const moodLabel: Record<Mood, string> = {
   1: "1/5",
   2: "2/5",
   3: "3/5",
@@ -576,7 +576,7 @@ export const mealLabel: Record<MealState, string> = {
   unknown: "未记录",
 };
 
-export const medLabel: Record<MedState, string> = {
+const medLabel: Record<MedState, string> = {
   taken: "已服用",
   missed: "漏服",
   changed: "改动",

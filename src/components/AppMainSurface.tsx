@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import VoiceInputBar from "./VoiceInputBar";
 import type { SceneId } from "./PresenceRoom";
-import FeaturePageTransition, { CollapseButton } from "./FeaturePageTransition";
+import FeaturePageTransition from "./FeaturePageTransition";
 import {
   BreathingCarousel,
   BREATHING_METHODS,
@@ -37,9 +37,9 @@ import DialogueZaiyaAnimation, {
 import {
   getHomeTimePhase,
   getNextHomePhase,
-  HOME_PHASE_BUBBLE_TEXT,
   type HomeTimePhase,
 } from "@/lib/homeTimePhase";
+import { getHomePhaseBubbleText } from "@/shared/config/homeAnimationRegistry";
 import EnergyRewardFeedback, {
   type EnergyRewardEvent,
 } from "./EnergyRewardFeedback";
@@ -47,12 +47,23 @@ import EnergyBadge from "./EnergyBadge";
 import type { Answers, RecordEntry, RecordTypeId } from "@/data/record";
 import type { OrganizeHistoryEntry } from "@/data/organize";
 import { grantEnergy } from "@/data/userProfile";
+import { getStorageMode } from "@/shared/storage/namespacedStorage";
+import {
+  getXiaochenInitialDialog,
+  buildXiaochenReply,
+  shouldTriggerSafetyResponse,
+} from "@/apps/experience/selectors/selectConversationThreads";
 import type {
   AppMainSurfaceDemoState,
   DialogItem,
   DialogMessageItem,
   DialogTimeItem,
 } from "./demo/types";
+
+/* —— 体验模式数据源切换（仅切换数据注入，不改变 UI/布局/交互）——
+ * 体验模式 AI 对话使用小晨统一对话历史与确定性 Mock 回复，
+ * 演示模式保持原有 createMockDialogItems / buildDemoReply 行为。 */
+const IS_EXPERIENCE_MODE = getStorageMode() === "experience";
 
 /* 性能优化（2026-07-13）：按功能模块拆包，落地页 / 首页首屏不加载以下重型模块。
  * 预加载优化（2026-07-13）：所有 loader 复用集中式 moduleLoaders，
@@ -70,6 +81,7 @@ import {
 } from "@/lib/moduleLoaders";
 import { preloadVideo } from "@/lib/mediaPreloader";
 import { usePrefetch } from "@/lib/usePrefetch";
+import { storageGet, storageSet } from "@/shared/storage/namespacedStorage";
 
 const SocialSceneSelectContent = lazy(() =>
   presenceRoomLoader().then((m) => ({ default: m.SocialSceneSelectContent })),
@@ -484,7 +496,7 @@ export default function AppMainSurface({
     if (!isFreeImmersive) return;
     // 单段时长 = 当前文案打字机时长 + 停留时间
     // 打字机每字 80ms（与 HomeBubbleCopy 一致），最少 1s；停留 7s 让动画与文案被充分感知。
-    const text = HOME_PHASE_BUBBLE_TEXT[carouselPhase];
+    const text = getHomePhaseBubbleText()[carouselPhase];
     const typingMs = Math.max(Array.from(text).length * 80, 1000);
     const holdMs = 7000;
     const timer = window.setTimeout(() => {
@@ -496,8 +508,10 @@ export default function AppMainSurface({
 
   // —— 首页内模式状态（仅 interactive/immersive 下由对应 icon 触发）——
   const [mode, setMode] = useState<SurfaceMode>("home");
+  // 体验模式：使用小晨统一对话历史（7/17 复诊前线程）作为初始对话
+  // 演示模式：使用通用 createMockDialogItems（昨日 + 今日 mock）
   const [messages, setMessages] = useState<DialogItem[]>(() =>
-    createMockDialogItems(now),
+    IS_EXPERIENCE_MODE ? getXiaochenInitialDialog() : createMockDialogItems(now),
   );
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -506,11 +520,13 @@ export default function AppMainSurface({
   const [replyJustAppeared, setReplyJustAppeared] = useState(false);
   const prevSendingRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  // AI 回复 setTimeout 的句柄：返回对话时清理，避免迟到回复残留到下次进入
+  const dialogReplyTimerRef = useRef<number | null>(null);
 
   // —— 缓解模式状态 ——
   // 未开放能力项已在卡片上标识「暂未开放」标签，不再使用 Toast 提醒。
   // 呼吸法 inline 选择状态机：collapsed → expanded → countingDown → navigating
-  // collapsed：呼吸法卡片收起，底部显示 CollapseButton
+  // collapsed：呼吸法卡片收起，底部空白（页面返回由左上角 ← 负责）
   // expanded：原地展开 BreathingCarousel，底部切换为"开始"按钮
   // countingDown：倒计时期间锁定 carousel 与收起，按钮原位显示 3/2/1
   // navigating：倒计时结束，进入 breathing 模式（由 BreathingFlow 接管）
@@ -640,29 +656,18 @@ export default function AppMainSurface({
   const [homeShortcut, setHomeShortcut] = useState(false);
 
   // —— 应用锁 ——
-  // appLock：是否开启应用锁，localStorage 持久化（zaiya_app_lock）
+  // appLock：是否开启应用锁，命名空间 localStorage 持久化（zaiya-<mode>-app_lock）
   // sessionVerified：本会话内是否已通过验证；不持久化，刷新页面后重置为 false
   // pendingProtectedItem：受保护入口被拦截时暂存目标 id，验证通过后进入该页
   // 受保护入口：回头看看 / 帮我整理 / 我的隐私 / 夸夸自己
   // 不保护：首页 / 记一下的新建入口 / 帮助与反馈 / 设置首页 / 隐私条款 / 用户协议
-  const [appLock, setAppLockState] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      return window.localStorage.getItem("zaiya_app_lock") === "true";
-    } catch {
-      return false;
-    }
-  });
+  const [appLock, setAppLockState] = useState<boolean>(() => storageGet("app_lock") === "true");
   const [sessionVerified, setSessionVerified] = useState(false);
   const [pendingProtectedItem, setPendingProtectedItem] =
     useState<MoreItemId | null>(null);
   const setAppLock = (v: boolean) => {
     setAppLockState(v);
-    try {
-      window.localStorage.setItem("zaiya_app_lock", v ? "true" : "false");
-    } catch {
-      // 忽略写入失败（隐私模式 / 配额满）
-    }
+    storageSet("app_lock", v ? "true" : "false");
   };
 
   // —— 记录历史 + 快捷入口提示（本地 mock） ——
@@ -822,7 +827,7 @@ export default function AppMainSurface({
     }
   };
 
-  // 先记到这儿：低能量退出，保存为 basic 记录
+  // 部分保存：低能量退出，保存为 basic 记录
   // 不进入完成页、不展示能量、不触发快捷入口提示；直接回首页 + 轻反馈
   const handleSaveFirst = (e: {
     typeId: RecordTypeId;
@@ -953,15 +958,28 @@ export default function AppMainSurface({
     });
     setInput("");
     setSending(true);
-    const delay = 300 + Math.random() * 300; // 300–600ms
-    setTimeout(() => {
+    // 体验模式：安全承接回复内容较长，给予更长延迟让用户充分阅读
+    // 普通回复保持 300–600ms；安全承接回复 800–1100ms
+    const isSafetyTrigger =
+      IS_EXPERIENCE_MODE && shouldTriggerSafetyResponse(text);
+    const delay = isSafetyTrigger
+      ? 800 + Math.random() * 300
+      : 300 + Math.random() * 300;
+    // 保存 timer 句柄：返回对话时由 closeDialog 清理，避免迟到回复写入历史
+    dialogReplyTimerRef.current = window.setTimeout(() => {
+      dialogReplyTimerRef.current = null;
       const replyAt = new Date();
+      // 体验模式：使用小晨统一确定性 Mock 回复（含安全承接逻辑）
+      // 演示模式：使用通用 buildDemoReply
+      const replyText = IS_EXPERIENCE_MODE
+        ? buildXiaochenReply(text)
+        : buildDemoReply(text);
       setMessages((m) => [
         ...m,
         dialogMessageItem(
           `zaizai-${replyAt.getTime()}`,
           "zaizai",
-          buildDemoReply(text),
+          replyText,
           replyAt,
         ),
       ]);
@@ -969,7 +987,19 @@ export default function AppMainSurface({
     }, delay);
   };
 
-  const closeDialog = () => setMode("home");
+  // 关闭对话：返回 App 主页。
+  // - 不使用 history.back()，直接 setMode("home")，避免返回到旧页面或错误页面。
+  // - 保留 messages（对话历史）与 input（未发送草稿），不弹额外确认提示。
+  // - 清理 pending 的 AI 回复 timer + 重置 sending，避免返回后计时器在后台继续运行、
+  //   下次进入对话时出现迟到的回复或卡在 thinking 状态。
+  const closeDialog = () => {
+    if (dialogReplyTimerRef.current !== null) {
+      window.clearTimeout(dialogReplyTimerRef.current);
+      dialogReplyTimerRef.current = null;
+    }
+    setSending(false);
+    setMode("home");
+  };
 
   // —— 对话顶部在在动画状态机 ——
   // 检测 sending 由 true→false（回复到达），触发 responding 短窗口
@@ -1045,6 +1075,32 @@ export default function AppMainSurface({
       window.clearInterval(breathingCountdownTimerRef.current);
       breathingCountdownTimerRef.current = null;
     }
+  };
+
+  // 缓解主页左上角返回：始终可用，不依赖浏览器历史，倒计时期间也保证退出路径。
+  // 必须先停掉倒计时 timer + 重置 inline 状态，再切回 home，避免后台继续倒计时自动跳呼吸页。
+  // 再次进入「缓解」时恢复默认收起状态（resetBreathingEntry 已置 collapsed），不恢复上次展开态。
+  const handleReliefBackToHome = () => {
+    if (breathingCountdownTimerRef.current) {
+      window.clearInterval(breathingCountdownTimerRef.current);
+      breathingCountdownTimerRef.current = null;
+    }
+    resetBreathingEntry();
+    setMode("home");
+  };
+
+  // 练习中长按结束 / 停止确认退出：回到缓解主页，呼吸法保持展开并保留所选方法。
+  // 不收起、不回到旧选择页；状态式切换天然「replace」，浏览器返回不会重回练习页。
+  const returnToReliefExpanded = (methodIdx: number) => {
+    setBreathingEntryInline(false);
+    setBreathingActiveCard(methodIdx);
+    setBreathingEntryState("expanded");
+    setBreathingCountdown(null);
+    if (breathingCountdownTimerRef.current) {
+      window.clearInterval(breathingCountdownTimerRef.current);
+      breathingCountdownTimerRef.current = null;
+    }
+    setMode("reliefSelect");
   };
 
   // 组件卸载时清理倒计时 timer
@@ -1357,6 +1413,20 @@ export default function AppMainSurface({
             onExit={closeDialog}
             enableDragExit={!demoEnabled}
           >
+            {/* 左上角统一返回入口：与「缓解」模块同款（left-5 top-12，h-11 w-11 热区），
+                直接回产品主页。z-40 高于内部内容，保证退出路径不被拦截。
+                - 不使用 history.back()，直接 closeDialog → setMode("home")。
+                - 保留 messages 与 input 草稿，不弹确认提示。
+                - closeDialog 内部已清理 pending AI 回复 timer + 重置 sending。 */}
+            <button
+              type="button"
+              onClick={closeDialog}
+              aria-label="返回主页"
+              className="absolute left-5 top-12 z-40 grid h-11 w-11 place-items-center rounded-full text-ink-soft outline-none transition-colors hover:bg-line-soft hover:text-ink focus-visible:outline-none"
+            >
+              <ChevronLeft className="h-6 w-6" strokeWidth={1.8} />
+            </button>
+
             {/* 消息区顶部渐变蒙层：只覆盖消息列表顶端，让上滑内容自然淡出。 */}
             <div
               className="pointer-events-none absolute inset-x-0 z-[25] h-16 bg-gradient-to-b from-white/95 via-white/70 to-white/0"
@@ -1459,10 +1529,10 @@ export default function AppMainSurface({
               )}
             </motion.div>
 
-            {/* 输入区：文字输入 + 语音 + 关闭/发送状态切换
-                - 未输入态（input.trim() 为空）：右侧显示关闭按钮（深色圆形 + 白×），点击退出对话
+            {/* 输入区：文字输入 + 语音 + 发送按钮
+                - 未输入态（input.trim() 为空）：右侧仅保留语音入口（mic 按钮），无关闭按钮
                 - 输入态（input.trim() 非空）：右侧显示发送按钮（accent 圆形 + 白↑），点击发送
-                - 两种状态互斥，不会同时出现；发送后清空输入自动回到关闭态
+                - 页面返回统一由左上角返回箭头承担，输入框右侧不再承担退出职责
                 - 演示模式注入对话脚本时整个输入区隐藏，避免评委误触发送导致脚本偏移 */}
             {!hideInputDialog && (
               <motion.div
@@ -1489,7 +1559,8 @@ export default function AppMainSurface({
                     rows={1}
                     className="min-w-0 flex-1 resize-none bg-transparent p-0 text-[14px] leading-[20px] text-ink placeholder:text-ink-faint focus:outline-none"
                   />
-                  {/* 语音入口：compact 轻量 mic 按钮，转录完成后填入输入框 */}
+                  {/* 语音入口：compact 轻量 mic 按钮，转录完成后填入输入框。
+                      未输入内容时，右侧仅保留此语音入口（不再有黑色 × 关闭按钮）。 */}
                   <div className="shrink-0">
                     <VoiceInputBar
                       value={input}
@@ -1500,8 +1571,12 @@ export default function AppMainSurface({
                       size="sm"
                     />
                   </div>
-                  {/* 右侧状态按钮：关闭 / 发送互斥，依据 input.trim() 切换，二者不会同时出现 */}
-                  {input.trim().length > 0 ? (
+                  {/* 右侧发送按钮：仅在有输入时显示。
+                      - 未输入内容：由左侧 VoiceInputBar 提供语音入口，不再显示黑色 × 关闭按钮
+                      - 已输入内容：显示发送按钮
+                      - AI 生成中（sending）：发送按钮置灰禁用
+                      页面返回统一由左上角返回箭头承担，不再由输入框右侧按钮退出。 */}
+                  {input.trim().length > 0 && (
                     <button
                       onClick={send}
                       aria-label="发送"
@@ -1509,14 +1584,6 @@ export default function AppMainSurface({
                       className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-white transition-transform active:scale-95 disabled:opacity-50"
                     >
                       <ArrowUp className="h-4 w-4" strokeWidth={1.8} />
-                    </button>
-                  ) : (
-                    <button
-                      onClick={closeDialog}
-                      aria-label="关闭对话"
-                      className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-action-deep text-white transition-transform active:scale-95"
-                    >
-                      <X className="h-4 w-4" strokeWidth={1.8} />
                     </button>
                   )}
                 </div>
@@ -1540,6 +1607,17 @@ export default function AppMainSurface({
           >
             {/* 右上角我的光入口：统一组件（floating），与记一下 / 轻社交同一位置规则 */}
             <EnergyBadge position="floating" />
+            {/* 左上角固定返回入口：与二级页返回按钮同款（left-5 top-12），
+                收起 / 展开 / 倒计时各状态下始终显示且可点击，直接回产品主页。
+                z-50 高于 FeaturePageTransition 拖拽手柄(z-30)，保证退出路径不被拦截。 */}
+            <button
+              type="button"
+              onClick={handleReliefBackToHome}
+              aria-label="返回主页"
+              className="absolute left-5 top-12 z-50 grid h-11 w-11 place-items-center rounded-full text-ink-soft outline-none transition-colors hover:bg-line-soft hover:text-ink focus-visible:outline-none"
+            >
+              <ChevronLeft className="h-6 w-6" strokeWidth={1.8} />
+            </button>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1627,6 +1705,7 @@ export default function AppMainSurface({
                       <BreathingCarousel
                         methods={BREATHING_METHODS}
                         activeIndex={breathingActiveCard}
+                        locked={breathingEntryState !== "expanded"}
                         onActiveChange={(i) => {
                           // countingDown/navigating 状态下锁定 carousel
                           if (breathingEntryState === "expanded") {
@@ -1683,10 +1762,10 @@ export default function AppMainSurface({
               </AnimatePresence>
             </motion.div>
 
-            {/* 底部按钮：collapsed 显示收起按钮；expanded/countingDown 显示开始按钮（原位倒计时） */}
-            {breathingEntryState === "collapsed" ? (
-              <CollapseButton onClick={() => setMode("home")} ariaLabel="返回首页" />
-            ) : (
+            {/* 底部按钮：仅承担本页主操作。
+                呼吸法收起时底部空白（页面返回已由左上角 ← 负责）；
+                展开 / 倒计时时显示「开始」按钮（原位倒计时）。 */}
+            {breathingEntryState !== "collapsed" && (
               <div className="absolute inset-x-0 bottom-6 z-40 mx-auto flex justify-center px-6">
                 <button
                   onClick={startBreathingCountdown}
@@ -1727,6 +1806,7 @@ export default function AppMainSurface({
                 resetBreathingEntry();
                 setMode("home");
               }}
+              onExitToRelief={returnToReliefExpanded}
               initialMethodIndex={
                 breathingEntryInline ? pendingBreathingMethod : 0
               }

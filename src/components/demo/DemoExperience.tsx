@@ -1,7 +1,9 @@
 import { useEffect, useRef } from "react";
 import { useDemoMode, readModeFromUrl } from "./useDemoMode";
 import DemoModeSelector from "./DemoModeSelector";
-import UnifiedDemoStage from "./UnifiedDemoStage";
+import DemoApp from "@/apps/demo/DemoApp";
+import ExperienceApp from "@/apps/experience/ExperienceApp";
+import { setStorageMode } from "@/shared/storage/namespacedStorage";
 
 type Props = { onClose: () => void };
 
@@ -84,6 +86,13 @@ export default function DemoExperience({ onClose }: Props) {
     };
   }, [mode, exitToModeSelect]);
 
+  // 模式选择页无 Shell 挂载，重置存储命名空间为 landing，
+  // 避免从 guided/free 返回 select 时残留旧命名空间。
+  // guided/free 模式由各自 Shell 在挂载时设置正确的命名空间。
+  useEffect(() => {
+    if (mode === "select") setStorageMode("landing");
+  }, [mode]);
+
   return (
     <div
       role="dialog"
@@ -98,12 +107,16 @@ export default function DemoExperience({ onClose }: Props) {
           onClose={onClose}
         />
       )}
-      {(mode === "guided" || mode === "free") && (
-        <UnifiedDemoStage
-          mode={mode}
+      {mode === "guided" && (
+        <DemoApp
+          onReturnHome={onClose}
+          onSwitchToFree={enterFreeMode}
+        />
+      )}
+      {mode === "free" && (
+        <ExperienceApp
           onReturnHome={onClose}
           onSwitchToGuided={enterGuidedMode}
-          onSwitchToFree={enterFreeMode}
         />
       )}
     </div>

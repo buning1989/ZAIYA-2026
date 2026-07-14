@@ -4,22 +4,24 @@ import { Check } from "lucide-react";
 import RecordInlineInput from "./RecordInlineInput";
 import RecordNoteSection from "./RecordNoteSection";
 import RecordSummaryCard, { type SummaryRow } from "./RecordSummaryCard";
+import HorizontalTimeScale from "./HorizontalTimeScale";
+import SegmentedTimeScale from "./SegmentedTimeScale";
 import {
   sleepLevels,
   sleepLevelLabel,
   sleepSubwordsByLevel,
   bedTimeRanges,
-  fallAsleepTimeRanges,
+  fallAsleepDurationOptions,
   wakeTimeRanges,
   awakeDurationOptions,
-  getFilteredFallAsleepOptions,
   type SleepLevel,
 } from "@/data/sleepOptions";
 import type { Answers, RecordType } from "@/data/record";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 const TOTAL_STEPS = 6;
-const AUTO_ADVANCE_MS = 250;
+// 选中后保留 550ms 再进入下一题，让用户清楚看到选中反馈
+const AUTO_ADVANCE_MS = 550;
 
 type Step = 1 | 2 | 3 | 4 | 5 | 6;
 // 三段状态机：editing（填写）→ preview（结算单预览，未保存）→ saved（保存成功）
@@ -71,6 +73,10 @@ export default function SleepRecordWizard({
   // 补充说明（结算页可点击行触发抽屉输入，非必填）
   const [note, setNote] = useState("");
 
+  // 点击锁定：选中后等待自动跳转期间，禁止重复触发（避免连续快速点击跳过多个问题）
+  const [isLocked, setIsLocked] = useState(false);
+  const isLockedRef = useRef(false);
+
   // 自动跳转计时器
   const autoAdvanceTimer = useRef<number | null>(null);
 
@@ -79,6 +85,11 @@ export default function SleepRecordWizard({
       window.clearTimeout(autoAdvanceTimer.current);
       autoAdvanceTimer.current = null;
     }
+  };
+
+  const setTimeSelectionLocked = (locked: boolean) => {
+    isLockedRef.current = locked;
+    setIsLocked(locked);
   };
 
   useEffect(
@@ -105,7 +116,9 @@ export default function SleepRecordWizard({
     [bedTimeRange],
   );
   const fallAsleepOption = useMemo(
-    () => fallAsleepTimeRanges.find((o) => o.value === fallAsleepTimeRange) ?? null,
+    () =>
+      fallAsleepDurationOptions.find((o) => o.value === fallAsleepTimeRange) ??
+      null,
     [fallAsleepTimeRange],
   );
   const wakeTimeOption = useMemo(
@@ -115,12 +128,6 @@ export default function SleepRecordWizard({
   const awakeOption = useMemo(
     () => awakeDurationOptions.find((o) => o.value === awakeDurationRange) ?? null,
     [awakeDurationRange],
-  );
-
-  // 入睡时间选项：根据上床时间动态过滤
-  const filteredFallAsleepOptions = useMemo(
-    () => getFilteredFallAsleepOptions(bedTimeRange),
-    [bedTimeRange],
   );
 
   // —— 进度上报 ——
@@ -172,7 +179,7 @@ export default function SleepRecordWizard({
         newAnswers.bedTime = { type: "custom", value: bedTimeOption.estimate };
       }
     }
-    // 入睡时间
+    // 入睡用时（duration，estimate 为分钟数）
     if (fallAsleepOption) {
       newAnswers.fallAsleepTimeLabel = {
         type: "custom",
@@ -184,10 +191,10 @@ export default function SleepRecordWizard({
           value: fallAsleepOption.rangeText,
         };
       }
-      if (fallAsleepOption.estimate) {
+      if (typeof fallAsleepOption.estimate === "number") {
         newAnswers.fallAsleepTime = {
           type: "custom",
-          value: fallAsleepOption.estimate,
+          value: String(fallAsleepOption.estimate),
         };
       }
     }
@@ -219,9 +226,7 @@ export default function SleepRecordWizard({
           value: awakeOption.rangeText,
         };
       }
-      if (awakeOption.allNight) {
-        newAnswers.awakeAllNight = { type: "custom", value: "true" };
-      } else if (typeof awakeOption.estimate === "number") {
+      if (typeof awakeOption.estimate === "number") {
         newAnswers.awakeDuration = {
           type: "custom",
           value: String(awakeOption.estimate),
@@ -307,22 +312,19 @@ export default function SleepRecordWizard({
     }
   };
 
-  // Steps 3-6：时间范围单选 → 自动进入
+  // Steps 3-6：分段时间轴单选 → 选中后保留 550ms 再进入下一题
+  // 等待期间锁定点击，避免连续快速点击跳过多个问题
   const handleSelectTimeRange = (
     value: string,
     stepNum: Step,
   ) => {
+    if (isLockedRef.current) return;
+    setTimeSelectionLocked(true);
     clearAutoAdvance();
     switch (stepNum) {
-      case 3: {
+      case 3:
         setBedTimeRange(value);
-        // 上床时间变更 → 检查已选入睡时间是否仍在新过滤范围内，不在则清空
-        const newFiltered = getFilteredFallAsleepOptions(value);
-        setFallAsleepTimeRange((prev) =>
-          prev && newFiltered.some((o) => o.value === prev) ? prev : null,
-        );
         break;
-      }
       case 4:
         setFallAsleepTimeRange(value);
         break;
@@ -341,7 +343,36 @@ export default function SleepRecordWizard({
       } else {
         setPhase("preview");
       }
+      setTimeSelectionLocked(false);
     }, AUTO_ADVANCE_MS);
+  };
+
+  // 「记不清，先跳过」：当前字段保存为 null，直接进入下一题
+  // 跳过不写入 label / rangeText / estimate，结算页不展示该行
+  const handleSkipTimeRange = (stepNum: Step) => {
+    if (isLockedRef.current) return;
+    clearAutoAdvance();
+    switch (stepNum) {
+      case 3:
+        setBedTimeRange(null);
+        break;
+      case 4:
+        setFallAsleepTimeRange(null);
+        break;
+      case 5:
+        setWakeTimeRange(null);
+        break;
+      case 6:
+        setAwakeDurationRange(null);
+        break;
+    }
+    if (editMode) {
+      exitEditMode();
+    } else if (stepNum < 6) {
+      setStep((stepNum + 1) as Step);
+    } else {
+      setPhase("preview");
+    }
   };
 
   // 输入抽屉保存：写入对应字段
@@ -374,21 +405,14 @@ export default function SleepRecordWizard({
         : "border-line bg-white text-ink hover:border-action-primary/60"
     }`;
 
-  // 时间范围胶囊（两列网格用）
-  const timeChipClass = (selected: boolean) =>
-    `flex items-center justify-center rounded-xl border px-3 py-3 text-[14px] font-medium transition-all active:scale-[0.97] ${
-      selected
-        ? "border-transparent bg-accent-soft text-ink"
-        : "border-line bg-white text-ink hover:border-action-primary/60"
-    }`;
-
-  // 判断选项是否为「记不清 / 几乎没睡着」→ 结算页不展示该行
+  // 判断选项是否为「几乎没睡着」→ 结算页不展示该行
+  // 「记不清，先跳过」已通过字段为 null 自然跳过，不在此判断
   const isUnknownLabel = (label: string | undefined): boolean =>
-    !label || label === "记不清" || label === "几乎没睡着";
+    !label || label === "几乎没睡着";
 
   // ===================== 渲染：结算单（preview / saved） =====================
   if (phase === "preview" || phase === "saved") {
-    // 构造结算单字段行：仅展示有值的字段，「记不清 / 几乎没睡着」不展示
+    // 构造结算单字段行：仅展示有值的字段，「几乎没睡着」不展示
     const rows: SummaryRow[] = [];
     if (levelLabel) {
       rows.push({ label: "睡眠", value: levelLabel });
@@ -405,7 +429,7 @@ export default function SleepRecordWizard({
     if (wakeTimeOption && !isUnknownLabel(wakeTimeOption.label)) {
       rows.push({ label: "起床", value: wakeTimeOption.label });
     }
-    if (awakeOption && awakeOption.label !== "记不清") {
+    if (awakeOption && !isUnknownLabel(awakeOption.label)) {
       rows.push({ label: "夜醒", value: awakeOption.label });
     }
     rows.push({ label: "时间", value: timeStr });
@@ -440,7 +464,7 @@ export default function SleepRecordWizard({
           <div className="flex items-center gap-2.5">
             <div className="h-[2px] flex-1 rounded-full bg-line-soft">
               <div
-                className="h-full rounded-full bg-accent-soft transition-all duration-300"
+                className="h-full rounded-full bg-accent transition-all duration-300"
                 style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
               />
             </div>
@@ -531,82 +555,80 @@ export default function SleepRecordWizard({
               </div>
             )}
 
-            {/* —— Step 3：大概上床时间（单选，自动进入） —— */}
+            {/* —— Step 3：大概上床时间（横滑时间点刻度，自动进入） —— */}
             {step === 3 && (
-              <div className="pt-6">
+              <div className="pt-10">
                 <p className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
                   大概几点上床？
                 </p>
-                <div className="mt-7 grid grid-cols-2 gap-2.5">
-                  {bedTimeRanges.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => handleSelectTimeRange(opt.value, 3)}
-                      className={timeChipClass(bedTimeRange === opt.value)}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
+                <div className="mt-8">
+                  <HorizontalTimeScale
+                    options={bedTimeRanges}
+                    value={bedTimeRange}
+                    onChange={(v) => handleSelectTimeRange(v, 3)}
+                    ariaLabel="上床时间"
+                    startLabel="晚上"
+                    endLabel="凌晨"
+                    disabled={isLocked}
+                  />
                 </div>
               </div>
             )}
 
-            {/* —— Step 4：大概入睡时间（根据上床时间动态过滤，单选，自动进入） —— */}
+            {/* —— Step 4：入睡用时（大尺寸分段时间轴，单选，自动进入） —— */}
             {step === 4 && (
-              <div className="pt-6">
+              <div className="pt-10">
                 <p className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
-                  大概几点睡着？
+                  躺下后多久睡着？
                 </p>
-                <div className="mt-7 grid grid-cols-2 gap-2.5">
-                  {filteredFallAsleepOptions.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => handleSelectTimeRange(opt.value, 4)}
-                      className={timeChipClass(fallAsleepTimeRange === opt.value)}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
+                <div className="mt-8">
+                  <SegmentedTimeScale
+                    options={fallAsleepDurationOptions}
+                    value={fallAsleepTimeRange}
+                    onChange={(v) => handleSelectTimeRange(v, 4)}
+                    ariaLabel="入睡用时"
+                    startLabel="很快"
+                    endLabel="很久"
+                  />
                 </div>
               </div>
             )}
 
-            {/* —— Step 5：大概醒来或起床时间（单选，自动进入） —— */}
+            {/* —— Step 5：大概醒来或起床时间（横滑时间点刻度，自动进入） —— */}
             {step === 5 && (
-              <div className="pt-6">
+              <div className="pt-10">
                 <p className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
                   大概几点醒来或起床？
                 </p>
-                <div className="mt-7 grid grid-cols-2 gap-2.5">
-                  {wakeTimeRanges.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => handleSelectTimeRange(opt.value, 5)}
-                      className={timeChipClass(wakeTimeRange === opt.value)}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
+                <div className="mt-8">
+                  <HorizontalTimeScale
+                    options={wakeTimeRanges}
+                    value={wakeTimeRange}
+                    onChange={(v) => handleSelectTimeRange(v, 5)}
+                    ariaLabel="醒来时间"
+                    startLabel="清晨"
+                    endLabel="中午"
+                    disabled={isLocked}
+                  />
                 </div>
               </div>
             )}
 
-            {/* —— Step 6：夜里醒着大概多久（单选，自动进入） —— */}
+            {/* —— Step 6：夜里醒着大概多久（大尺寸分段时间轴，单选，自动进入） —— */}
             {step === 6 && (
-              <div className="pt-6">
+              <div className="pt-10">
                 <p className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
-                  夜里醒着大概多久？
+                  夜里一共醒着多久？
                 </p>
-                <div className="mt-7 grid grid-cols-2 gap-2.5">
-                  {awakeDurationOptions.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => handleSelectTimeRange(opt.value, 6)}
-                      className={timeChipClass(awakeDurationRange === opt.value)}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
+                <div className="mt-8">
+                  <SegmentedTimeScale
+                    options={awakeDurationOptions}
+                    value={awakeDurationRange}
+                    onChange={(v) => handleSelectTimeRange(v, 6)}
+                    ariaLabel="夜间清醒时长"
+                    startLabel="很少"
+                    endLabel="很久"
+                  />
                 </div>
               </div>
             )}
@@ -648,6 +670,18 @@ export default function SleepRecordWizard({
         onSave={handleInputSave}
         onClose={() => setInputPanel(null)}
       />
+
+      {/* —— 底部跳过入口：Step 3-6 时间尺页面统一固定在底部安全区上方 —— */}
+      {step >= 3 && step <= 6 && (
+        <div className="bg-white px-5 pb-7 pt-2">
+          <button
+            onClick={() => handleSkipTimeRange(step)}
+            className="mx-auto flex min-h-[44px] w-full max-w-[260px] items-center justify-center text-[13px] text-ink-faint transition-colors hover:text-ink-soft"
+          >
+            记不清，先跳过
+          </button>
+        </div>
+      )}
     </div>
   );
 }

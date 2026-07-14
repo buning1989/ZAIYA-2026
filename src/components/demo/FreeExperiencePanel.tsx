@@ -32,6 +32,11 @@ export default function FreeExperiencePanel() {
       <p className="mt-6 text-[12px] text-ink-faint">
         可直接点击手机内的任一入口
       </p>
+
+      {/* 第 5 层：数据声明 */}
+      <p className="mt-3 text-[11px] leading-[1.6] text-ink-faint/70">
+        当前页面中的数据均为 Mock 数据，对话尚未接入 LLM，仅用于产品演示。
+      </p>
     </div>
   );
 }

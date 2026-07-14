@@ -6,16 +6,14 @@
  * 结构：
  *   1. 整体睡眠感受（sleepLevel: 3=好 / 2=一般 / 1=不好）
  *   2. 具体睡眠感受（sleepSubwords，按 sleepLevel 动态展示，多选，含「其他感受」自定义）
- *   3. 大概上床时间（bedTimeRange，口语化范围选项）
- *   4. 大概入睡时间（fallAsleepTimeRange，根据上床时间动态过滤）
- *   5. 大概醒来或起床时间（wakeTimeRange，范围选项）
- *   6. 夜里醒着大概多久（awakeDurationRange，范围选项）
+ *   3. 大概上床时间（bedTimeRange，5 段分段时间轴，单选）
+ *   4. 入睡用时（fallAsleepDurationRange，5 段分段时间轴，单选，问题改为「躺下后多久睡着？」）
+ *   5. 大概醒来或起床时间（wakeTimeRange，5 段分段时间轴，单选）
+ *   6. 夜里醒着大概多久（awakeDurationRange，5 段分段时间轴，单选）
  *
- * 所有时间均使用口语化范围选项，不使用滚轮 / 分钟输入。
- * 「记不清」选项不生成旧字段估算值，不阻止保存。
- * payload 同时保存口语化 label、标准 rangeText 和估算值 estimate。
- *
- * 组件只读取本文件配置并渲染，不在此处写死 UI 逻辑。 */
+ * 时间轴步骤 3-6 均使用 SegmentedTimeScale 组件渲染，下方提供「记不清，先跳过」弱化按钮。
+ * 跳过后字段保存为 null，不生成估算值，结算页不展示该行。
+ * payload 同时保存口语化 label、标准 rangeText 和估算值 estimate。 */
 
 export type SleepLevel = 1 | 2 | 3;
 
@@ -71,99 +69,72 @@ export const sleepSubwordsByLevel: Record<SleepLevel, string[]> = {
   ],
 };
 
-/* —— 时间范围选项 ——
+/* —— 时间范围选项类型（上床 / 醒来时间） ——
  * label:      口语化展示文案（用户看到）
  * value:      唯一标识
- * rangeText:  标准范围文案（payload 中保存），undefined 表示「记不清」等无标准范围
- * estimate:   旧字段兼容估算值（"HH:MM"），undefined 表示不生成估算值
- * hour:       用于入睡时间动态过滤（24h 制，次日 hours+24），undefined 表示「记不清」等不过滤 */
+ * rangeText:  标准范围文案（payload 中保存）
+ * estimate:   旧字段兼容估算值（"HH:MM"） */
 export type TimeRangeOption = {
   label: string;
   value: string;
   rangeText?: string;
   estimate?: string;
-  hour?: number;
 };
 
-/* —— 大概上床时间 ——
- * label 使用口语化时间段表达（晚上 / 凌晨），value/rangeText/estimate 保持原值不动 */
-export const bedTimeRanges: TimeRangeOption[] = [
-  { label: "晚上8点前", value: "before_20", rangeText: "20:00 前", estimate: "20:00", hour: 19 },
-  { label: "晚上8点多", value: "20_21", rangeText: "20:00–21:00", estimate: "20:30", hour: 20 },
-  { label: "晚上9点多", value: "21_22", rangeText: "21:00–22:00", estimate: "21:30", hour: 21 },
-  { label: "晚上10点多", value: "22_23", rangeText: "22:00–23:00", estimate: "22:30", hour: 22 },
-  { label: "晚上11点多", value: "23_00", rangeText: "23:00–00:00", estimate: "23:30", hour: 23 },
-  { label: "凌晨0点多", value: "00_01", rangeText: "00:00–01:00", estimate: "00:30", hour: 24 },
-  { label: "凌晨1点多", value: "01_02", rangeText: "01:00–02:00", estimate: "01:30", hour: 25 },
-  { label: "凌晨2点以后", value: "after_02", rangeText: "02:00 以后", estimate: "02:00", hour: 26 },
-  { label: "记不清", value: "unknown" },
-];
-
-/* —— 大概入睡时间（完整通用选项，组件会根据上床时间动态过滤） ——
- * 比 bedTimeRanges 多了「凌晨2点多」「凌晨3点以后」，少了「凌晨2点以后」。
- * label 与上床时间口语化保持一致。 */
-export const fallAsleepTimeRanges: TimeRangeOption[] = [
-  { label: "晚上8点前", value: "before_20", rangeText: "20:00 前", estimate: "20:00", hour: 19 },
-  { label: "晚上8点多", value: "20_21", rangeText: "20:00–21:00", estimate: "20:30", hour: 20 },
-  { label: "晚上9点多", value: "21_22", rangeText: "21:00–22:00", estimate: "21:30", hour: 21 },
-  { label: "晚上10点多", value: "22_23", rangeText: "22:00–23:00", estimate: "22:30", hour: 22 },
-  { label: "晚上11点多", value: "23_00", rangeText: "23:00–00:00", estimate: "23:30", hour: 23 },
-  { label: "凌晨0点多", value: "00_01", rangeText: "00:00–01:00", estimate: "00:30", hour: 24 },
-  { label: "凌晨1点多", value: "01_02", rangeText: "01:00–02:00", estimate: "01:30", hour: 25 },
-  { label: "凌晨2点多", value: "02_03", rangeText: "02:00–03:00", estimate: "02:30", hour: 26 },
-  { label: "凌晨3点以后", value: "after_03", rangeText: "03:00 以后", estimate: "03:00", hour: 27 },
-  { label: "几乎没睡着", value: "barely" },
-  { label: "记不清", value: "unknown" },
-];
-
-/* —— 根据上床时间过滤入睡时间选项 ——
- * 规则：只展示「上床时间及之后」的选项 + 「几乎没睡着」+「记不清」。
- * 上床时间 = 「记不清」时，展示全部通用选项。 */
-export function getFilteredFallAsleepOptions(
-  bedTimeValue: string | null,
-): TimeRangeOption[] {
-  const bedOption = bedTimeRanges.find((o) => o.value === bedTimeValue);
-  const bedHour = bedOption?.hour;
-  if (bedHour === undefined) {
-    return fallAsleepTimeRanges;
-  }
-  return fallAsleepTimeRanges.filter((opt) => {
-    if (opt.hour === undefined) return true;
-    return opt.hour >= bedHour;
-  });
-}
-
-/* —— 大概醒来或起床时间 ——
- * label 使用口语化时间段表达（早上 / 上午） */
-export const wakeTimeRanges: TimeRangeOption[] = [
-  { label: "早上6点前", value: "before_06", rangeText: "06:00 前", estimate: "06:00", hour: 6 },
-  { label: "早上6点多", value: "06_07", rangeText: "06:00–07:00", estimate: "06:30", hour: 6 },
-  { label: "早上7点多", value: "07_08", rangeText: "07:00–08:00", estimate: "07:30", hour: 7 },
-  { label: "早上8点多", value: "08_09", rangeText: "08:00–09:00", estimate: "08:30", hour: 8 },
-  { label: "早上9点多", value: "09_10", rangeText: "09:00–10:00", estimate: "09:30", hour: 9 },
-  { label: "上午10点多", value: "10_11", rangeText: "10:00–11:00", estimate: "10:30", hour: 10 },
-  { label: "上午11点以后", value: "after_11", rangeText: "11:00 以后", estimate: "11:00", hour: 11 },
-  { label: "记不清", value: "unknown" },
-];
-
-/* —— 夜里醒着大概多久 ——
- * estimate: 旧字段兼容估算值（分钟数），undefined 表示不生成估算值。
- * allNight: 「整晚没睡」→ awakeAllNight = true，不生成分钟估算值。 */
+/* —— 时长范围选项类型（入睡用时 / 夜间清醒时长） ——
+ * estimate: 旧字段兼容估算值（分钟数） */
 export type AwakeDurationOption = {
   label: string;
   value: string;
   rangeText?: string;
   estimate?: number;
-  allNight?: boolean;
 };
 
+/* —— 大概上床时间（横滑时间轴，1 小时粒度） ——
+ * label 为口语化短文案，rangeText/estimate 保留标准范围与估算值。
+ * 「记不清」不再作为选项，改为页面下方的「记不清，先跳过」弱化按钮，跳过后字段为 null。 */
+export const bedTimeRanges: TimeRangeOption[] = [
+  { label: "9点前", value: "before_21", rangeText: "21:00 前", estimate: "20:30" },
+  { label: "9点", value: "21_22", rangeText: "21:00–22:00", estimate: "21:30" },
+  { label: "10点", value: "22_23", rangeText: "22:00–23:00", estimate: "22:30" },
+  { label: "11点", value: "23_00", rangeText: "23:00–00:00", estimate: "23:30" },
+  { label: "0点", value: "00_01", rangeText: "00:00–01:00", estimate: "00:30" },
+  { label: "1点", value: "01_02", rangeText: "01:00–02:00", estimate: "01:30" },
+  { label: "2点", value: "02_03", rangeText: "02:00–03:00", estimate: "02:30" },
+  { label: "3点后", value: "after_03", rangeText: "03:00 后", estimate: "03:00" },
+];
+
+/* —— 入睡用时（分段时间轴，5 段） ——
+ * 原问题「大概几点睡着？」改为「躺下后多久睡着？」，语义从时间点改为时长。
+ * estimate 为分钟数（数字），保存到 fallAsleepTime 字段时转为字符串。
+ * 「几乎没睡着」label 命中 isUnknownLabel，结算页不展示该行。 */
+export const fallAsleepDurationOptions: AwakeDurationOption[] = [
+  { label: "15分内", value: "within_15m", rangeText: "0–15 分钟", estimate: 10 },
+  { label: "15–30分", value: "15_30m", rangeText: "15–30 分钟", estimate: 22 },
+  { label: "30–60分", value: "30_60m", rangeText: "30–60 分钟", estimate: 45 },
+  { label: "1小时+", value: "over_60m", rangeText: "60 分钟以上", estimate: 70 },
+  { label: "几乎没睡着", value: "barely_slept" },
+];
+
+/* —— 大概醒来或起床时间（横滑时间轴，1 小时粒度） ——
+ * 方向：清晨 → 中午。label 为口语化短文案。 */
+export const wakeTimeRanges: TimeRangeOption[] = [
+  { label: "6点前", value: "before_06", rangeText: "06:00 前", estimate: "05:30" },
+  { label: "6点", value: "06_07", rangeText: "06:00–07:00", estimate: "06:30" },
+  { label: "7点", value: "07_08", rangeText: "07:00–08:00", estimate: "07:30" },
+  { label: "8点", value: "08_09", rangeText: "08:00–09:00", estimate: "08:30" },
+  { label: "9点", value: "09_10", rangeText: "09:00–10:00", estimate: "09:30" },
+  { label: "10点", value: "10_11", rangeText: "10:00–11:00", estimate: "10:30" },
+  { label: "11点", value: "11_12", rangeText: "11:00–12:00", estimate: "11:30" },
+  { label: "中午后", value: "after_12", rangeText: "12:00 后", estimate: "12:00" },
+];
+
+/* —— 夜里醒着大概多久（分段时间轴，5 段，等宽） ——
+ * 方向：很少 → 很久。estimate 为分钟数（数字）。 */
 export const awakeDurationOptions: AwakeDurationOption[] = [
-  { label: "基本没醒", value: "none", rangeText: "基本没醒", estimate: 0 },
-  { label: "醒过一下", value: "brief", rangeText: "醒过一下", estimate: 10 },
-  { label: "半小时以内", value: "within_30", rangeText: "0–30 分钟", estimate: 15 },
-  { label: "半小时到一小时", value: "30_60", rangeText: "30–60 分钟", estimate: 45 },
-  { label: "一两个小时", value: "1_2h", rangeText: "1–2 小时", estimate: 90 },
-  { label: "很久", value: "long_time", rangeText: "2 小时以上", estimate: 150 },
-  { label: "整晚没睡", value: "all_night", allNight: true },
-  { label: "记不清", value: "unknown" },
+  { label: "没怎么醒", value: "almost_none", rangeText: "基本没醒", estimate: 0 },
+  { label: "15分内", value: "within_15m", rangeText: "0–15 分钟", estimate: 10 },
+  { label: "15–30分", value: "15_30m", rangeText: "15–30 分钟", estimate: 22 },
+  { label: "30–60分", value: "30_60m", rangeText: "30–60 分钟", estimate: 45 },
+  { label: "1小时+", value: "over_60m", rangeText: "60 分钟以上", estimate: 70 },
 ];

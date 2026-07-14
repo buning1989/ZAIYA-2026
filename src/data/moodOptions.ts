@@ -19,7 +19,7 @@
 export type PrimaryMoodScore = 1 | 2 | 3 | 4 | 5;
 export type MoodPolarity = "negative" | "neutral" | "positive";
 /** @deprecated 旧别名，等价于 MoodPolarity，保留以兼容旧引用。 */
-export type PrimaryMoodPolarity = MoodPolarity;
+type PrimaryMoodPolarity = MoodPolarity;
 
 export type PrimaryMood = {
   label: string;
@@ -348,7 +348,7 @@ export function findGroupByWord(word: string): SecondaryMoodGroup | null {
 }
 
 /** 将某 polarity 下所有分组的二级词按分组顺序合并（用于 Step 2 展示）。 */
-export function getSecondaryWordsForPolarity(
+function getSecondaryWordsForPolarity(
   polarity: MoodPolarity,
 ): string[] {
   return getSecondaryGroupsForPolarity(polarity).flatMap((g) => g.words);

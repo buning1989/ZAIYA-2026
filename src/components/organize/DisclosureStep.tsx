@@ -81,12 +81,12 @@ export default function DisclosureStep({ session, onBack, onComplete }: Props) {
                   <span
                     className={`grid h-5 w-5 shrink-0 place-items-center rounded-[5px] border transition-colors ${
                       checked
-                        ? "border-accent bg-accent"
+                        ? "border-accent/50 bg-accent-soft text-accent"
                         : "border-line bg-white"
                     }`}
                   >
                     {checked && (
-                      <Check className="h-3 w-3 text-white" strokeWidth={2.4} />
+                      <Check className="h-3 w-3" strokeWidth={2.4} />
                     )}
                   </span>
                 </div>

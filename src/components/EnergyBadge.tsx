@@ -22,13 +22,14 @@ type EnergyBadgeProps = {
   buttonRef?: RefObject<HTMLButtonElement | null>;
   /** 定位模式 */
   position?: "inline" | "floating";
-  /** 点击提示文案，默认 Demo 暂未开放 */
+  /** 点击提示文案，默认提示成长中 */
   hintText?: string;
 };
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-const DEFAULT_HINT = "我的光还在慢慢长出来";
+const DEFAULT_HINT = "我的枝芽还在慢慢长出来";
+const HINT_DURATION = 2500;
 
 export default function EnergyBadge({
   pulse = false,
@@ -45,7 +46,7 @@ export default function EnergyBadge({
     hintTimer.current = window.setTimeout(() => {
       setHint(null);
       hintTimer.current = null;
-    }, 1800);
+    }, HINT_DURATION);
   };
 
   useEffect(() => {
@@ -56,8 +57,8 @@ export default function EnergyBadge({
 
   const wrapperClass =
     position === "floating"
-      ? "absolute right-5 top-14 z-40"
-      : "relative";
+      ? "absolute right-5 top-14 z-50"
+      : "relative z-50";
 
   return (
     <div className={wrapperClass}>
@@ -78,15 +79,19 @@ export default function EnergyBadge({
         <Sprout className="h-4 w-4 text-light-warm" strokeWidth={1.8} />
       </motion.button>
 
-      {/* 点击提示：紧贴入口下方展开，1.8s 自动淡出；min-width 防止竖向压缩 */}
+      {/* 点击提示：紧贴入口下方展开，2.5s 自动淡出。
+          宽度随文案自适应（不设 min-width），浅色背景 + 深色正文保证对比度；
+          z-50 高于缓解/社交覆盖层，避免被 bg-white 层遮挡。 */}
       <AnimatePresence>
         {hint && (
           <motion.div
+            role="status"
+            aria-live="polite"
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.2, ease }}
-            className="pointer-events-none absolute right-0 top-full z-40 mt-1 w-max min-w-[160px] max-w-[280px] whitespace-nowrap rounded-2xl bg-light-warm px-3.5 py-2 text-center text-[12px] font-medium leading-relaxed text-white shadow-[0_6px_16px_rgba(201,168,92,0.28)]"
+            className="pointer-events-none absolute right-0 top-full z-50 mt-1 w-max max-w-[280px] whitespace-nowrap rounded-2xl border border-line/70 bg-surface-soft px-3.5 py-2 text-center text-[13px] font-medium leading-relaxed text-ink shadow-[0_6px_16px_rgba(39,51,31,0.10)]"
           >
             {hint}
           </motion.div>

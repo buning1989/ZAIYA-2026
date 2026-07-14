@@ -15,6 +15,8 @@ import {
   type CommunicationContact,
   type CommunicationRoleType,
 } from "@/data/organize";
+import { getStorageMode } from "@/shared/storage/namespacedStorage";
+import { getXiaochenOrganizeContact } from "@/apps/experience/selectors/selectOrganizeSummary";
 import { BottomSheet, Toast } from "./shared";
 
 interface Props {
@@ -22,8 +24,29 @@ interface Props {
   onSelectContact: (contact: CommunicationContact) => void;
 }
 
+/* —— 体验模式默认沟通对象 id（xc- 前缀，与统一数据源一致）—— */
+const IS_EXPERIENCE_MODE = getStorageMode() === "experience";
+const EXPERIENCE_DEFAULT_CONTACT_ID = "xc-org-wang-doctor";
+
+/* —— 体验模式：载入联系人时确保预填小晨统一数据源的王医生 ——
+ * - 首次载入（无存储）：直接用 xc-org-wang-doctor 替换默认 contact-wang-doctor
+ * - 已有存储但缺 xc-org-wang-doctor：合并预填
+ * - 已有 xc-org-wang-doctor：原样返回，幂等不重写 */
+function loadContactsWithExperienceSeed(): CommunicationContact[] {
+  const stored = loadContacts();
+  if (!IS_EXPERIENCE_MODE) return stored;
+  const xiaochenContact = getXiaochenOrganizeContact();
+  const hasXiaochen = stored.some((c) => c.id === EXPERIENCE_DEFAULT_CONTACT_ID);
+  if (hasXiaochen) return stored;
+  // 移除可能存在的旧 demo 默认 contact-wang-doctor，避免出现两个王医生
+  const filtered = stored.filter((c) => c.id !== "contact-wang-doctor");
+  const merged = [xiaochenContact, ...filtered];
+  saveContacts(merged);
+  return merged;
+}
+
 export default function ContactStep({ onBack, onSelectContact }: Props) {
-  const [contacts, setContacts] = useState<CommunicationContact[]>(loadContacts());
+  const [contacts, setContacts] = useState<CommunicationContact[]>(loadContactsWithExperienceSeed());
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -216,7 +239,7 @@ function AddContactSheet({
               <span
                 className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border transition-colors ${
                   selectedTrustedId === candidate.id
-                    ? "border-accent bg-accent text-white"
+                    ? "border-accent/50 bg-accent-soft text-accent"
                     : "border-line bg-white"
                 }`}
               >
@@ -332,7 +355,11 @@ function SwipeableContactCard({
 }) {
   const [open, setOpen] = useState(false);
   const didDrag = useRef(false);
-  const isDefault = contact.id === "contact-wang-doctor";
+  // 默认沟通对象（王医生）不可删除：兼容 demo 模式（contact-wang-doctor）
+  // 与体验模式（xc-org-wang-doctor）两种 id
+  const isDefault =
+    contact.id === "contact-wang-doctor" ||
+    contact.id === EXPERIENCE_DEFAULT_CONTACT_ID;
 
   return (
     <div className={`relative overflow-hidden rounded-2xl ${isDefault ? "" : "bg-[#E85C4A]"}`}>

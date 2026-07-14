@@ -24,7 +24,7 @@ export type PraiseCard = {
 };
 
 /* —— 新建卡片页的轻量示例句（不做分类，仅作启动参考）—— */
-export const PRAISE_EXAMPLES: string[] = [
+const PRAISE_EXAMPLES: string[] = [
   "今天吃了一口饭",
   "今天没有继续和家里人吵下去",
   "今天指甲盖还挺好看",
@@ -115,29 +115,20 @@ export function buildTimeLabel(d: Date = new Date()): string {
   return `${d.getMonth() + 1}月${d.getDate()}日`;
 }
 
-/* —— localStorage 持久化 —— */
-const STORAGE_KEY = "zaiya_praise_cards";
+/* —— 命名空间 localStorage 持久化 ——
+ * key = zaiya-<mode>-praise_cards，演示模式与体验模式各自独立。 */
+import { storageGetJSON, storageSetJSON } from "@/shared/storage/namespacedStorage";
+
+const STORAGE_NAME = "praise_cards";
 
 export function loadCards(): PraiseCard[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as PraiseCard[];
-    if (!Array.isArray(parsed)) return [];
-    return parsed;
-  } catch {
-    return [];
-  }
+  const parsed = storageGetJSON<PraiseCard[] | null>(STORAGE_NAME, null);
+  if (!Array.isArray(parsed)) return [];
+  return parsed;
 }
 
 export function saveCards(cards: PraiseCard[]): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
-  } catch {
-    // 忽略写入失败（隐私模式 / 配额满）
-  }
+  storageSetJSON(STORAGE_NAME, cards);
 }
 
 /* —— 创建一张夸夸卡片 ——

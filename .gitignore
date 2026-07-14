@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Archived media originals & build review snapshots
+archive/
+transparent-output/
+dist-review/

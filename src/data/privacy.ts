@@ -68,50 +68,31 @@ export type MedSchedule = {
   note?: string;
 };
 
-/* —— localStorage keys —— */
-const KEYS = {
-  contacts: "zaiya_privacy_contacts",
-  meds: "zaiya_privacy_med_schedules",
+/* —— 命名空间 localStorage keys ——
+ * 演示模式与体验模式各自独立：zaiya-<mode>-privacy_contacts / privacy_med_schedules。 */
+import { storageGetJSON, storageSetJSON } from "@/shared/storage/namespacedStorage";
+
+const NAMES = {
+  contacts: "privacy_contacts",
+  meds: "privacy_med_schedules",
 } as const;
-
-/* —— 通用读取 / 写入（容错，与 praise.ts 一致） —— */
-function loadJSON<T>(key: string, fallback: T): T {
-  if (typeof window === "undefined") return fallback;
-  try {
-    const raw = window.localStorage.getItem(key);
-    if (!raw) return fallback;
-    const parsed = JSON.parse(raw) as T;
-    return parsed ?? fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function saveJSON<T>(key: string, value: T): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    // 忽略写入失败（隐私模式 / 配额满）
-  }
-}
 
 /* —— 联系人（家长 + 老师统一存储）—— */
 export function loadContacts(): Contact[] {
-  const arr = loadJSON<Contact[]>(KEYS.contacts, []);
+  const arr = storageGetJSON<Contact[] | null>(NAMES.contacts, null);
   return Array.isArray(arr) ? arr : [];
 }
 export function saveContacts(list: Contact[]): void {
-  saveJSON(KEYS.contacts, list);
+  storageSetJSON(NAMES.contacts, list);
 }
 
 /* —— 服用安排 —— */
 export function loadMedSchedules(): MedSchedule[] {
-  const arr = loadJSON<MedSchedule[]>(KEYS.meds, []);
+  const arr = storageGetJSON<MedSchedule[] | null>(NAMES.meds, null);
   return Array.isArray(arr) ? arr : [];
 }
 export function saveMedSchedules(list: MedSchedule[]): void {
-  saveJSON(KEYS.meds, list);
+  storageSetJSON(NAMES.meds, list);
 }
 
 /* —— 紧急联系人全局上限（家长 + 老师合并计算）—— */

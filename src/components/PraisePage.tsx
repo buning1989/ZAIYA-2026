@@ -14,12 +14,36 @@ import {
   type PraiseCard,
 } from "@/data/praise";
 import { grantEnergy } from "@/data/userProfile";
+import { getStorageMode } from "@/shared/storage/namespacedStorage";
+import { getXiaochenPraiseCards } from "@/apps/experience/selectors/selectPraiseCards";
 import ZaizaiVideo from "./ZaizaiVideo";
 import VoiceInputBar from "./VoiceInputBar";
 import EnergyBadge from "./EnergyBadge";
 import EnergyRewardFeedback, {
   type EnergyRewardEvent,
 } from "./EnergyRewardFeedback";
+
+/* —— 体验模式数据源切换（仅切换数据注入，不改变 UI/布局/交互）——
+ * 体验模式首次进入「夸夸自己」时预填小晨统一夸夸卡（6 张，可追溯时间线事件）；
+ * 演示模式保持原有空态加载行为。 */
+const IS_EXPERIENCE_MODE = getStorageMode() === "experience";
+
+/* —— 体验模式预填：首次加载（无 xc-praise- 种子卡）时种子化 6 张夸夸卡 ——
+ * 幂等保证：若存储中已存在 xc-praise- 前缀 id 则不再写入，避免重复种子化。
+ * 不覆盖用户后续新增 / 编辑 / 删除的卡片。
+ * 顺序：PraisePage 不变量为「按 createdAt 倒序」——最新在最上方。
+ *   种子卡原始数组为升序，需先反转再合并；用户已有自定义卡片保留在更上方。 */
+function seedExperiencePraiseCardsIfEmpty(): PraiseCard[] {
+  const stored = loadCards();
+  if (!IS_EXPERIENCE_MODE) return stored;
+  const hasSeed = stored.some((c) => c.id.startsWith("xc-praise-"));
+  if (hasSeed) return stored;
+  const seeded = getXiaochenPraiseCards().reverse();
+  // 用户已有自定义卡片放前面（保持其在最上方），种子卡按倒序追加
+  const merged = [...stored, ...seeded];
+  saveCards(merged);
+  return merged;
+}
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -65,9 +89,9 @@ export default function PraisePage({ onBack }: Props) {
   const praisePulseTimer = useRef<number | null>(null);
   const praiseRewardIdRef = useRef(0);
 
-  // 初始加载 localStorage
+  // 初始加载 localStorage（体验模式：首次加载时种子化小晨统一夸夸卡）
   useEffect(() => {
-    setCards(loadCards());
+    setCards(seedExperiencePraiseCardsIfEmpty());
   }, []);
 
   // 写入 localStorage

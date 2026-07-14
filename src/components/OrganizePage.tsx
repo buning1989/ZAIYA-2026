@@ -25,12 +25,19 @@ import {
   type RangeKey,
   type OrganizeHistoryEntry,
 } from "@/data/organize";
+import { getStorageMode } from "@/shared/storage/namespacedStorage";
+import { buildXiaochenInitialSessionForContact } from "@/apps/experience/selectors/selectOrganizeSummary";
 import ContactStep from "./organize/ContactStep";
 import TopicsStep from "./organize/TopicsStep";
 import DisclosureStep from "./organize/DisclosureStep";
 import DoneStep from "./organize/DoneStep";
 import MaterialDetailView from "./organize/MaterialDetailView";
 import CommunicationHistoryPage from "./organize/CommunicationHistoryPage";
+
+/* —— 体验模式数据源切换（仅切换数据注入，不改变 UI/布局/交互）——
+ * 体验模式使用小晨统一数据源（固定 5 条沟通重点 + 2 条真实高风险披露），
+ * 演示模式保持原有 createInitialSession 行为。 */
+const IS_EXPERIENCE_MODE = getStorageMode() === "experience";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -95,7 +102,12 @@ export default function OrganizePage({
       setStep("topics");
       return;
     }
-    const newSession = createInitialSession(contact);
+    /* 体验模式：始终从小晨统一数据源派生 topics / disclosure / 时间段，
+     * 不走 createMockTopics / createMockDisclosure。contactSnapshot 来自
+     * 传入 contact（默认王医生 / 用户自行添加的医生联系人）。 */
+    const newSession = IS_EXPERIENCE_MODE
+      ? buildXiaochenInitialSessionForContact(contact)
+      : createInitialSession(contact);
     setSession(newSession);
     setStep("topics");
   };

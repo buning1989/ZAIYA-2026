@@ -9,6 +9,7 @@ import Team from "@/components/Team";
 import Vision from "@/components/Vision";
 import Footer from "@/components/Footer";
 import { demoExperienceLoader } from "@/lib/moduleLoaders";
+import { setStorageMode } from "@/shared/storage/namespacedStorage";
 
 /* 性能优化（2026-07-13）：DemoExperience 及其全部子组件（UnifiedDemoStage、
  * 10+ Demo 流程、场景数据等）拆分为独立 chunk，落地页首屏不加载 Demo 代码。
@@ -36,11 +37,17 @@ function clearDemoModeParam() {
 }
 
 export default function App() {
-  const [demoOpen, setDemoOpen] = useState(() => urlHasDemoMode());
+  const [demoOpen, setDemoOpen] = useState(() => {
+    const open = urlHasDemoMode();
+    // 落地页模式下使用 landing 命名空间；Demo 模式由各自 Shell 设置
+    if (!open) setStorageMode("landing");
+    return open;
+  });
 
   const closeDemo = () => {
     setDemoOpen(false);
     clearDemoModeParam();
+    setStorageMode("landing");
   };
 
   return (

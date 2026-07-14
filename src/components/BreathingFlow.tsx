@@ -69,6 +69,9 @@ type Props = {
   initialMethodIndex?: number;
   /** 初始子视图（默认 select；从缓解首页 inline 进入时传 practice 跳过选择页） */
   initialSubView?: SubView;
+  /** 练习中长按结束 / 停止确认退出 → 回到缓解主页并保持呼吸法展开 + 保留所选方法。
+   *  未提供时回退到旧 select 子视图（仅非 inline 入口兜底，不再被实际入口触发）。 */
+  onExitToRelief?: (methodIndex: number) => void;
 };
 
 export default function BreathingFlow({
@@ -76,6 +79,7 @@ export default function BreathingFlow({
   onGoHome,
   initialMethodIndex,
   initialSubView,
+  onExitToRelief,
 }: Props) {
   const prefersReducedMotion = usePrefersReducedMotion();
   // 派生初始值（prop 缺省时回退到旧默认：select + 第 0 个呼吸法）
@@ -384,9 +388,20 @@ export default function BreathingFlow({
       setStatus("playing");
     }
   };
+  // 统一退出入口：长按结束 / 停止确认「结束」/ 练习页顶部返回确认后均走此方法。
+  // 不再回到旧 select 选择页；显式回到缓解主页并保持呼吸法展开 + 保留所选方法。
+  // 跳转前的 timer / 长按进度 / 暂停态清理由组件卸载时的 cleanup effect 兜底
+  // （onExitToRelief 触发 setMode('reliefSelect') → 本组件卸载 → 清理 timerRef /
+  // progressTimer / prepTimerRef 并暂停背景音乐）。
   const stopPractice = () => {
     setStopSheet(false);
-    setSubView("select");
+    // 中断退出不发放完成奖励：energyGrantedRef 保持 false，complete 分支不会触发
+    if (onExitToRelief) {
+      onExitToRelief(methodIndex);
+    } else {
+      // 兜底：非 inline 入口（未提供 onExitToRelief）维持旧行为，避免破坏演示模式
+      setSubView("select");
+    }
   };
 
   // —— 当前 ring 缩放：按阶段进度插值 ——
@@ -431,9 +446,9 @@ export default function BreathingFlow({
             <button
               onClick={onBackToRelief}
               aria-label="返回"
-              className="absolute left-5 top-12 z-10 grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+              className="absolute left-5 top-12 z-10 grid h-11 w-11 place-items-center rounded-full text-ink-soft outline-none transition-colors hover:bg-line-soft hover:text-ink focus-visible:outline-none"
             >
-              <ChevronLeft className="h-6 w-6" />
+              <ChevronLeft className="h-6 w-6" strokeWidth={1.8} />
             </button>
 
             {/* 在在与场景引导：左侧主视觉，右侧轻气泡。整体略下移，形成均衡三段结构上部 */}
@@ -514,9 +529,9 @@ export default function BreathingFlow({
                 setStopSheet(true);
               }}
               aria-label="返回"
-              className="absolute left-5 top-12 z-10 grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+              className="absolute left-5 top-12 z-10 grid h-11 w-11 place-items-center rounded-full text-ink-soft outline-none transition-colors hover:bg-line-soft hover:text-ink focus-visible:outline-none"
             >
-              <ChevronLeft className="h-6 w-6" />
+              <ChevronLeft className="h-6 w-6" strokeWidth={1.8} />
             </button>
 
             {/* 顶部陪伴层：在在上移，把中心位置留给呼吸圆环。 */}

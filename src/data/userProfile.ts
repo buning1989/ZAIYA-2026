@@ -103,56 +103,38 @@ export type UserProfileFlat = UserProfile & {
 };
 
 /* =========================================================
- * Mock 默认资料（已填写）
+ * 默认资料解析（演示 / 体验各自独立实例，引用隔离）
+ * =======================================================
  * 小晨：15 岁（2026-07 时由 birthDate 2010-09-12 推导得 15 周岁），高一
- * ======================================================= */
-export const MOCK_USER_PROFILE: UserProfile = {
-  id: "mock_user_001",
-  profileCompleted: true,
-  basicInfo: {
-    nickname: "小晨",
-    birthDate: "2010-09-12",
-    gender: "female",
-    grade: "高一",
-    city: "北京",
-    avatar: undefined,
-  },
-  bodyInfo: {
-    heightCm: 165,
-    weightKg: 51.4,
-    heightUpdatedAt: "2026-07-01",
-    weightUpdatedAt: "2026-07-08",
-  },
-  energy: 0,
-};
+ * 演示模式与体验模式各自拥有独立的默认用户资料实例，
+ * 由 App 调度器在挂载 Shell 前同步设置当前存储模式。
+ * landing 模式不读取业务数据，回退到体验模式默认资料仅作兜底。
+ * 后续「小晨 Mock 数据统一重构」在 apps/demo/data 与 apps/experience/data 各自演进。 */
+import { getStorageMode, storageGetJSON, storageSetJSON } from "@/shared/storage/namespacedStorage";
+import { DEMO_USER_PROFILE } from "@/apps/demo/data/demoUser";
+import { EXPERIENCE_USER_PROFILE } from "@/apps/experience/data/experienceUser";
 
-/* —— localStorage key —— */
-const STORAGE_KEY = "zaiya_user_profile";
+const PROFILE_STORAGE_NAME = "user_profile";
 
-/* —— 通用读取 / 写入（容错） —— */
+/** 当前模式对应的默认用户资料（引用隔离的独立实例）。 */
+function defaultProfileForMode(): UserProfile {
+  return getStorageMode() === "demo" ? DEMO_USER_PROFILE : EXPERIENCE_USER_PROFILE;
+}
+
+/* —— 通用读取 / 写入（容错，使用模式命名空间） —— */
 function loadProfile(): UserProfile {
-  if (typeof window === "undefined") return MOCK_USER_PROFILE;
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return MOCK_USER_PROFILE;
-    const parsed = JSON.parse(raw) as UserProfile;
-    // 基本校验：必须有 id 与 basicInfo / bodyInfo
-    if (!parsed?.id || !parsed?.basicInfo || !parsed?.bodyInfo) {
-      return MOCK_USER_PROFILE;
-    }
-    return parsed;
-  } catch {
-    return MOCK_USER_PROFILE;
+  if (typeof window === "undefined") return defaultProfileForMode();
+  const parsed = storageGetJSON<UserProfile | null>(PROFILE_STORAGE_NAME, null);
+  if (!parsed) return defaultProfileForMode();
+  // 基本校验：必须有 id 与 basicInfo / bodyInfo
+  if (!parsed?.id || !parsed?.basicInfo || !parsed?.bodyInfo) {
+    return defaultProfileForMode();
   }
+  return parsed;
 }
 
 function persistProfile(p: UserProfile): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
-  } catch {
-    // 忽略写入失败（隐私模式 / 配额满）
-  }
+  storageSetJSON(PROFILE_STORAGE_NAME, p);
 }
 
 /* =========================================================
@@ -177,7 +159,7 @@ export function getUserProfile(): UserProfileFlat {
 }
 
 /** 保存用户资料（整体覆盖） */
-export function saveUserProfile(p: UserProfile): void {
+function saveUserProfile(p: UserProfile): void {
   persistProfile(p);
 }
 
@@ -230,7 +212,7 @@ export function getBMIRemark(bmi: number): string {
 }
 
 /* —— 性别标签 —— */
-export function genderLabel(g?: Gender): string {
+function genderLabel(g?: Gender): string {
   if (g === "male") return "男";
   if (g === "female") return "女";
   if (g === "other") return "其他";
@@ -313,28 +295,18 @@ export function getEnergyReward(source: EnergySource): number {
   }
 }
 
-/* —— 幂等发放记录（localStorage）——
+/* —— 幂等发放记录（命名空间 localStorage）——
  * 记录已发放过的 `${source}:${sourceId}`，防止页面刷新、重复点击
  * 或组件重新挂载导致同一记录 / 同一次练习多次发放能量。 */
-const ENERGY_GRANTS_KEY = "zaiya_energy_grants";
+const ENERGY_GRANTS_NAME = "energy_grants";
 
 function loadEnergyGrants(): string[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(ENERGY_GRANTS_KEY);
-    return raw ? (JSON.parse(raw) as string[]) : [];
-  } catch {
-    return [];
-  }
+  const arr = storageGetJSON<string[] | null>(ENERGY_GRANTS_NAME, null);
+  return Array.isArray(arr) ? arr : [];
 }
 
 function saveEnergyGrants(grants: string[]): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(ENERGY_GRANTS_KEY, JSON.stringify(grants));
-  } catch {
-    // 忽略写入失败（隐私模式 / 配额满）
-  }
+  storageSetJSON(ENERGY_GRANTS_NAME, grants);
 }
 
 export interface GrantEnergyResult {

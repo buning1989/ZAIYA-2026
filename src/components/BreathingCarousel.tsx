@@ -1,4 +1,4 @@
-import { useRef, useState, useLayoutEffect, useMemo, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useEffect, useRef, useState, useLayoutEffect, useMemo, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { motion, type PanInfo } from "framer-motion";
 
 /* —— 呼吸法节奏配置 ——
@@ -81,19 +81,30 @@ export const BREATHING_METHODS: BreathingMethod[] = [
  * 全部 4 张卡片始终挂载，按相对当前卡的环形位移定位到 3 个可见槽位
  * （左 peek / 居中 / 右 peek）+ 1 个隐藏槽位。环形索引天然支持无限循环，
  * 没有首末终点。卡片主标题为「用户意图」，副标题为「呼吸法名 · 时长」，
- * 不展示完整呼吸步骤。支持左右滑动切换、点击分页点切换；首次进入有一次
- * 轻微横向位移暗示可滑动，不循环播放。 */
+ * 不展示完整呼吸步骤。
+ *
+ * 三种切换方式共用同一个 activeIndex：
+ *   1) 触摸 / 鼠标横向拖动（framer-motion onPanEnd，跟手阈值 36px）
+ *   2) 键盘 ← / →（容器 tabIndex=0，展开后轻量自动聚焦）
+ *   3) 点击两侧露出的 peek 卡片（左 peek → 上一张，右 peek → 下一张）
+ * 倒计时期间传入 locked=true，三种方式一律锁定，分页点也禁用。 */
 export function BreathingCarousel({
   methods,
   activeIndex,
   onActiveChange,
+  locked = false,
 }: {
   methods: BreathingMethod[];
   activeIndex: number;
   onActiveChange: (i: number) => void;
+  /** 倒计时 / 导航期间锁定，禁止切换 */
+  locked?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerW, setContainerW] = useState(0);
+
+  // 区分「拖动」与「点击」：拖动超过阈值时置 true，松手后的 click 被吞掉
+  const draggedRef = useRef(false);
 
   useLayoutEffect(() => {
     const el = containerRef.current;
@@ -105,6 +116,16 @@ export function BreathingCarousel({
     return () => ro.disconnect();
   }, []);
 
+  // 展开后轻量自动聚焦（preventScroll 避免页面跳动）。
+  // 容器 outline-none：不显示轮播区域矩形焦点框，键盘反馈沿用中央卡片现有边框。
+  useEffect(() => {
+    if (locked) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const t = window.setTimeout(() => el.focus({ preventScroll: true }), 320);
+    return () => window.clearTimeout(t);
+  }, [locked]);
+
   const cardW = containerW * 0.68;
   const slotOffset = containerW * 0.72; // 相邻卡片中心间距，保证左右露边
   const cardLeft = (containerW - cardW) / 2;
@@ -113,24 +134,37 @@ export function BreathingCarousel({
   // 首次进入轻微横向位移暗示（keyframes，仅 mount 时执行一次）
   const nudgeX = useMemo(() => [0, 8, -6, 0], []);
 
-  const paginate = (dir: number) => {
-    onActiveChange((activeIndex + dir + methods.length) % methods.length);
+  // —— 统一切换入口：边界沿用原环形设计（不新增/取消循环）——
+  const goTo = (index: number) => {
+    if (locked) return;
+    const n = methods.length;
+    if (n === 0) return;
+    onActiveChange(((index % n) + n) % n);
   };
+  const goToPrevious = () => goTo(activeIndex - 1);
+  const goToNext = () => goTo(activeIndex + 1);
 
+  const SWIPE_THRESHOLD = 36;
   const handlePanEnd = (_: unknown, info: PanInfo) => {
-    const threshold = 50;
-    if (info.offset.x < -threshold || info.velocity.x < -300) paginate(1);
-    else if (info.offset.x > threshold || info.velocity.x > 300) paginate(-1);
+    if (locked) return;
+    const { offset, velocity } = info;
+    if (Math.abs(offset.x) > SWIPE_THRESHOLD || Math.abs(velocity.x) > 300) {
+      // 视为拖动：标记以吞掉随后误触的 click
+      draggedRef.current = true;
+      if (offset.x < 0) goToNext();
+      else goToPrevious();
+    }
   };
 
   // 键盘方向键左右切换（循环）：← 上一张，→ 下一张
-  const handleKeyDown = (e: ReactKeyboardEvent) => {
+  const handleKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (locked) return;
     if (e.key === "ArrowLeft") {
       e.preventDefault();
-      paginate(-1);
+      goToPrevious();
     } else if (e.key === "ArrowRight") {
       e.preventDefault();
-      paginate(1);
+      goToNext();
     }
   };
 
@@ -138,14 +172,27 @@ export function BreathingCarousel({
   const slotFor = (i: number) => {
     const n = methods.length;
     const d = ((i - activeIndex + n) % n);
-    if (d === 0) return { x: 0, opacity: 1, z: 30 };
-    if (d === 1) return { x: slotOffset, opacity: 0.5, z: 20 };
-    if (d === n - 1) return { x: -slotOffset, opacity: 0.5, z: 20 };
+    if (d === 0) return { x: 0, opacity: 1, z: 30, peek: "center" as const };
+    if (d === 1) return { x: slotOffset, opacity: 0.5, z: 20, peek: "right" as const };
+    if (d === n - 1) return { x: -slotOffset, opacity: 0.5, z: 20, peek: "left" as const };
     return {
       x: d <= n / 2 ? 2 * slotOffset : -2 * slotOffset,
       opacity: 0,
       z: 10,
+      peek: "hidden" as const,
     };
+  };
+
+  const handleCardClick = (peek: "left" | "right" | "center" | "hidden") => {
+    // 拖动后的误触 click 吞掉
+    if (draggedRef.current) {
+      draggedRef.current = false;
+      return;
+    }
+    if (locked) return;
+    if (peek === "left") goToPrevious();
+    else if (peek === "right") goToNext();
+    // center / hidden：不重复切换
   };
 
   return (
@@ -153,15 +200,15 @@ export function BreathingCarousel({
       <div
         ref={containerRef}
         tabIndex={0}
-        onKeyDown={handleKeyDown}
-        role="listbox"
-        aria-label="呼吸法选择"
+        role="group"
+        aria-label="选择呼吸方式"
         aria-activedescendant={methods[activeIndex]?.id}
-        className="relative w-full outline-none"
+        onKeyDown={handleKeyDown}
+        className="relative w-full rounded-3xl outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none"
         style={{ height: cardH, touchAction: "pan-y" }}
       >
         <motion.div
-          className="absolute inset-0"
+          className="absolute inset-0 cursor-grab select-none active:cursor-grabbing"
           initial={{ x: 0 }}
           animate={{ x: nudgeX }}
           transition={{
@@ -170,17 +217,26 @@ export function BreathingCarousel({
             times: [0, 0.35, 0.7, 1],
           }}
           onPanEnd={handlePanEnd}
+          onPointerDown={() => {
+            // 每次按下重置拖动标记，避免上一次未消费的标记误吞下一次点击
+            draggedRef.current = false;
+          }}
         >
           {containerW > 0 &&
             methods.map((m, i) => {
               const slot = slotFor(i);
+              const clickable = slot.peek === "left" || slot.peek === "right";
               return (
                 <motion.div
                   key={m.id}
                   id={m.id}
                   role="option"
                   aria-selected={i === activeIndex}
-                  className="flex flex-col items-center justify-center rounded-3xl border border-line bg-card px-6 text-center"
+                  aria-label={`${m.purpose}：${m.name}，${m.rhythm}`}
+                  onClick={() => handleCardClick(slot.peek)}
+                  className={`flex flex-col items-center justify-center rounded-3xl border border-line bg-card px-6 text-center ${
+                    clickable ? "cursor-pointer" : ""
+                  }`}
                   animate={{ x: slot.x, opacity: slot.opacity }}
                   transition={{ type: "spring", stiffness: 300, damping: 32 }}
                   style={{
@@ -204,14 +260,16 @@ export function BreathingCarousel({
         </motion.div>
       </div>
 
-      {/* 分页点：始终 4 个，反映真实 methodId */}
+      {/* 分页点：始终 4 个，由 activeIndex 派生，不单独保存状态 */}
       <div className="mt-6 flex items-center justify-center gap-2">
         {methods.map((m, i) => (
           <button
             key={m.id}
-            onClick={() => onActiveChange(i)}
+            type="button"
+            onClick={() => goTo(i)}
+            disabled={locked}
             aria-label={`第 ${i + 1} 个呼吸法`}
-            className={`h-1.5 rounded-full transition-all ${
+            className={`h-1.5 rounded-full transition-all disabled:cursor-default ${
               i === activeIndex ? "w-4 bg-ink" : "w-1.5 bg-line"
             }`}
           />

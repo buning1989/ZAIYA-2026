@@ -48,7 +48,7 @@ export const SLEEP_TREND_14_DAYS: SleepDataPoint[] = [
 ];
 
 /** 饮食记录天数对比 */
-export const MEAL_RECORD_DAYS = {
+const MEAL_RECORD_DAYS = {
   firstWeek: 3,
   secondWeek: 5,
 } as const;
@@ -57,7 +57,7 @@ export const MEAL_RECORD_DAYS = {
 export const DATE_RANGE_LABEL = "6月30日—7月13日";
 
 /** 周平均值（午夜后分钟数） */
-export const WEEK_AVERAGES = {
+const WEEK_AVERAGES = {
   firstWeek: 92, // ~01:32
   secondWeek: 47, // ~00:47
 } as const;
@@ -72,7 +72,7 @@ export function formatSleepTime(minutes: number): string {
 }
 
 /** 计算指定天数范围的平均入睡时间（分钟数） */
-export function averageSleepMinutes(
+function averageSleepMinutes(
   data: SleepDataPoint[],
   startIdx: number,
   endIdx: number,

@@ -70,6 +70,13 @@ export default function DemoModeSelector({
           </span>
         </button>
       </div>
+
+      <button
+        onClick={onClose}
+        className="mt-10 text-[13px] text-ink-soft transition-colors hover:text-ink"
+      >
+        ←返回主页
+      </button>
     </div>
   );
 }

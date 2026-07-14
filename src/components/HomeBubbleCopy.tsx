@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { softRevealItemVariants } from "@/lib/motionVariants";
-import { HOME_PHASE_BUBBLE_TEXT, type HomeTimePhase } from "@/lib/homeTimePhase";
+import { type HomeTimePhase } from "@/lib/homeTimePhase";
+import { getHomePhaseBubbleText } from "@/shared/config/homeAnimationRegistry";
 
 /* —— 首页轻状态文案：属于在在动画模块，不作为独立气泡覆盖动画 ——
  * 每个时间段显示对应的一句文案，与动画绑定。
@@ -39,7 +40,7 @@ export default function HomeBubbleCopy({
     setVisibleCount(0);
   }, [phase, overrideCopy]);
 
-  const text = overrideCopy ?? HOME_PHASE_BUBBLE_TEXT[phase];
+  const text = overrideCopy ?? getHomePhaseBubbleText()[phase];
   const textChars = Array.from(text);
   const visibleText = prefersReducedMotion
     ? text
