@@ -37,13 +37,7 @@ const relationCards: RelationCard[] = [
     title: "王医生会第一次看到这两周",
     body: (
       <>
-        <p>不是“她说她最近很累”，</p>
-        <p>是十天的入睡时间、三餐记录、几次哭泣发生在什么时候。</p>
-        <p className="mt-3">
-          没有结论，没有解释——
-          <br />
-          判断仍然是医生的事。
-        </p>
+        <p>不是“她说她最近很累”，是十天的入睡时间、三餐记录、几次哭泣发生在什么时候。</p>
       </>
     ),
   },
@@ -64,11 +58,6 @@ const relationCards: RelationCard[] = [
       <>
         <p>不是成绩，也不是请假天数——</p>
         <p>是她哪几天连起床都没做到。</p>
-        <p className="mt-3">
-          前提同样是：
-          <br />
-          <strong className="font-medium text-ink">她愿意，而且她按了确认。</strong>
-        </p>
       </>
     ),
   },
