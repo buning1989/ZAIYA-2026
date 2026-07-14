@@ -21,69 +21,86 @@ const reasons = [
   },
 ];
 
+type CharacterNoteProps = {
+  title: string;
+  desc: string;
+  side: "left" | "right";
+  className: string;
+};
+
+function CharacterNote({ title, desc, side, className }: CharacterNoteProps) {
+  const copy = (
+    <div className="w-[118px] min-[1200px]:w-[136px]">
+      <div className="text-[13px] font-semibold leading-none text-accent">
+        {title}
+      </div>
+      <p className="mt-2 hidden text-[12px] leading-snug text-ink-soft min-[1200px]:block">
+        {desc}
+      </p>
+    </div>
+  );
+  const leftConnector = (
+    <div className="mt-[6px] flex w-10 items-center min-[1200px]:w-12">
+      <div className="h-px flex-1 border-t border-dashed border-accent/55" />
+      <span className="ml-px h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+    </div>
+  );
+  const rightConnector = (
+    <div className="mt-[6px] flex w-12 items-center min-[1200px]:w-14">
+      <span className="mr-px h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+      <div className="h-px flex-1 border-t border-dashed border-accent/55" />
+    </div>
+  );
+
+  return (
+    <div className={`absolute hidden md:block ${className}`}>
+      <div className="flex items-start gap-2.5">
+        {side === "left" ? (
+          <>
+            {copy}
+            {leftConnector}
+          </>
+        ) : (
+          <>
+            {rightConnector}
+            {copy}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function CharacterDesign() {
   return (
-    <section id="character" className="border-t border-line">
+    <section id="character" className="scroll-mt-24 border-t border-line">
       <div className="container pt-10 pb-10 md:pt-10 md:pb-10 min-[1200px]:pt-10 min-[1200px]:pb-10">
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-[0.34fr_0.66fr] md:gap-8 min-[1200px]:grid-cols-[0.38fr_0.62fr] min-[1200px]:gap-8 min-[1200px]:items-stretch">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-[0.36fr_0.64fr] md:gap-8 min-[1200px]:grid-cols-[0.4fr_0.6fr] min-[1200px]:gap-8 min-[1200px]:items-stretch">
           {/* 左侧：在在角色视觉区 + 三个轻量虚线标注 */}
           <Reveal y={10} className="md:col-start-1 md:row-span-2">
-            <div className="relative mx-auto flex min-h-[300px] w-full max-w-[420px] items-center justify-center pb-5 md:h-full md:min-h-[440px] md:max-w-none md:pb-6">
-              <ZaizaiVideo className="h-52 w-52 md:h-64 md:w-64 min-[1200px]:h-72 min-[1200px]:w-72" />
+            <div className="relative mx-auto flex min-h-[320px] w-full max-w-[420px] items-center justify-center pb-4 md:h-full md:min-h-[428px] md:max-w-[456px] md:translate-y-8 md:pb-3 min-[1200px]:translate-y-12">
+              <ZaizaiVideo className="h-64 w-64 md:h-[19rem] md:w-[19rem] min-[1200px]:h-[20.5rem] min-[1200px]:w-[20.5rem]" />
 
-              {/* 标注一：种子形态 —— 左上，虚线指向角色顶部 */}
-              <div className="absolute left-0 top-1 hidden w-[44%] md:block min-[1200px]:w-[46%]">
-                <div className="flex items-start gap-2">
-                  <div className="text-right">
-                    <div className="text-[13px] font-semibold text-accent">
-                      种子形态
-                    </div>
-                    <p className="mt-1 hidden text-[12px] leading-snug text-ink-soft min-[1200px]:block min-[1200px]:translate-y-3">
-                      承载，而不是治愈承诺
-                    </p>
-                  </div>
-                  <div className="mt-[7px] flex flex-1 items-center">
-                    <div className="h-px flex-1 border-t border-dashed border-accent/55" />
-                    <span className="ml-px h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-                  </div>
-                </div>
-              </div>
+              <CharacterNote
+                title="种子形态"
+                desc="承载，而不是治愈承诺"
+                side="left"
+                className="left-[4%] top-[13%] min-[1200px]:left-[8%] min-[1200px]:top-[12%]"
+              />
 
-              {/* 标注二：低位目光 —— 右侧，虚线指向角色面部方向 */}
-              <div className="absolute right-0 top-[40%] hidden w-[44%] md:block min-[1200px]:w-[46%]">
-                <div className="flex items-start gap-2">
-                  <div className="mt-[7px] flex flex-1 items-center">
-                    <span className="mr-px h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-                    <div className="h-px flex-1 border-t border-dashed border-accent/55" />
-                  </div>
-                  <div>
-                    <div className="text-[13px] font-semibold text-accent">
-                      低位目光
-                    </div>
-                    <p className="mt-1 hidden text-[12px] leading-snug text-ink-soft min-[1200px]:block min-[1200px]:translate-x-3">
-                      不凝视，也不审视
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <CharacterNote
+                title="低位目光"
+                desc="不凝视，也不审视"
+                side="right"
+                className="right-[-8%] top-[38%] min-[1200px]:right-[-7%] min-[1200px]:top-[39%]"
+              />
 
-              {/* 标注三：低重心 —— 左下，虚线指向角色基座 */}
-              <div className="absolute bottom-2 left-0 hidden w-[44%] md:block min-[1200px]:w-[46%]">
-                <div className="flex items-start gap-2">
-                  <div className="text-right">
-                    <div className="text-[13px] font-semibold text-accent">
-                      低重心
-                    </div>
-                    <p className="mt-1 hidden text-[12px] leading-snug text-ink-soft min-[1200px]:block min-[1200px]:-translate-x-3">
-                      动作缓慢，传递安定
-                    </p>
-                  </div>
-                  <div className="mt-[7px] flex flex-1 items-center">
-                    <div className="h-px flex-1 border-t border-dashed border-accent/55" />
-                    <span className="ml-px h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-                  </div>
-                </div>
-              </div>
+              <CharacterNote
+                title="低重心"
+                desc="动作缓慢，传递安定"
+                side="left"
+                className="left-[4%] top-[66%] min-[1200px]:left-[8%] min-[1200px]:top-[65%]"
+              />
             </div>
           </Reveal>
 

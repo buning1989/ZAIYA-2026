@@ -27,7 +27,7 @@ const stats: StatCard[] = [
     label: "更多时间发生在日常",
     value: "8700",
     suffix: "小时",
-    dimension: "年度自主时长",
+    dimension: "非专业支持时长",
     meaning:
       "即使每周有 1 小时专业支持，一年里绝大多数时间，仍要自己度过。",
   },

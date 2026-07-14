@@ -155,7 +155,7 @@ export default function ClinicalFramework() {
         </div>
         <Reveal delay={0.56}>
           <p className="mt-5 text-[12px] leading-relaxed text-ink-faint">
-            在呀借鉴专业方法中的日常支持原则，不提供医学诊断、心理治疗或用药建议，也不替代专业人员的判断。
+            在呀 ZÀIYA 借鉴专业方法中的日常支持原则，不提供医学诊断、心理治疗或用药建议，也不替代专业人员的判断。
           </p>
         </Reveal>
       </div>

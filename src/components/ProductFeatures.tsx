@@ -26,7 +26,7 @@ const solutions: Solution[] = [
     step: "01｜多端持续在场",
     title: "在需要的时刻，随时可以看见",
     summary:
-      "在呀通过 App、手机桌面小组件和智能手表等轻入口，出现在起床、吃饭、睡前和情绪波动等生活节点——不需要用户先想起打开一款工具，支持就已经在场。",
+      "在呀 ZÀIYA 通过 App、手机桌面小组件和智能手表等轻入口，出现在起床、吃饭、睡前和情绪波动等生活节点——不需要用户先想起打开一款工具，支持就已经在场。",
     features: [
       "App 首页中的在在",
       "手机桌面小组件",
@@ -45,7 +45,7 @@ const solutions: Solution[] = [
     step: "02｜陪伴行动",
     title: "不催促，先陪着做一点",
     summary:
-      "当起床、吃饭这样的小事都变得困难，催促往往只会增加压力。在呀用角色的生活演示、轻量邀请和共同参与，陪用户从一件做得到的小事开始。",
+      "当起床、吃饭这样的小事都变得困难，催促往往只会增加压力。在呀 ZÀIYA 用角色的生活演示、轻量邀请和共同参与，陪用户从一件做得到的小事开始。",
     features: [
       "一起吃饭、一起发呆等轻社交场景",
       "呼吸练习和情绪缓解工具",
@@ -64,7 +64,7 @@ const solutions: Solution[] = [
     step: "03｜AI 对话自然记录",
     title: "表达本身，就是记录的开始",
     summary:
-      "相比填表和逐项录入，说话是更自然的表达。在呀从文字和语音对话中理解事件、感受与生活状态，整理成可确认的结构化记录，并在长期互动中沉淀为连续的生活记忆。",
+      "相比填表和逐项录入，说话是更自然的表达。在呀 ZÀIYA 从文字和语音对话中理解事件、感受与生活状态，整理成可确认的结构化记录，并在长期互动中沉淀为连续的生活记忆。",
     features: [
       "文字与语音对话",
       "从自然表达中识别情绪、睡眠、饮食、活动和用药等信息",
@@ -204,10 +204,7 @@ function OutputCard({ output, index }: { output: OutputBlock; index: number }) {
   return (
     <Reveal delay={0.24 + index * 0.06}>
       <article className="flex h-full flex-col rounded-lg border border-line bg-white p-5 md:p-6">
-        <div className="text-[12px] font-medium tracking-[0.16em] text-ink-faint">
-          {output.label}
-        </div>
-        <h4 className="mt-3 font-display text-[20px] font-semibold leading-tight tracking-tight text-ink md:text-[24px]">
+        <h4 className="font-display text-[20px] font-semibold leading-tight tracking-tight text-ink md:text-[24px]">
           {output.title}
         </h4>
         <p className="mt-4 text-[14px] leading-relaxed text-ink-soft md:text-[15px]">
@@ -234,7 +231,7 @@ export default function ProductFeatures() {
       <div className="container pt-12 pb-14 md:pt-16 md:pb-16">
         <SectionHeading
           eyebrow="我们怎么做"
-          title="在呀，把支持带进每天的真实生活。"
+          title="在呀 ZÀIYA，把支持带进每天的真实生活。"
         />
 
         <div className="mt-10 space-y-10 md:mt-12 md:space-y-12">

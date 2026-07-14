@@ -2,41 +2,28 @@ import Reveal from "./Reveal";
 import SectionHeading from "./SectionHeading";
 
 type VoiceCard = {
-  voice: string[];
-  name: string;
-  explanation: string;
+  voice: string;
+  tag: string;
   illustration: string;
 };
 
 const voiceCards: VoiceCard[] = [
   {
-    voice: [
-      "“我知道应该起床、吃饭、洗澡，",
-      "可每一件小事都像要用完全部力气。”",
-    ],
-    name: "生活很难启动",
-    explanation:
-      "他们不是不知道应该做什么，而是连最普通的日常行动，也可能变得异常困难。",
+    voice:
+      "“我知道应该起床、吃饭、洗澡，可每件小事都要用尽力气。”",
+    tag: "生活很难启动",
     illustration: "/assets/dilemmas/openpeeps80.svg",
   },
   {
-    voice: [
-      "“一想到要回学校，身体就先开始难受。",
-      "放假时，我又好像恢复了一点。”",
-    ],
-    name: "学习逐渐受阻",
-    explanation:
-      "返校、考试和人际互动，可能引发明显的恐惧、躯体不适与回避，让原本正常的学习和社交难以继续。",
+    voice:
+      "“一想到要回学校，身体就开始难受。放假时，又好像恢复了一点。”",
+    tag: "学习逐渐受阻",
     illustration: "/assets/dilemmas/openpeeps93.svg",
   },
   {
-    voice: [
-      "“我不是故意不配合，",
-      "可家里看到的，常常只是懒、叛逆和不努力。”",
-    ],
-    name: "痛苦不被理解",
-    explanation:
-      "自己很难说清发生了什么，家长看到的却往往只是行为结果，误解和家庭冲突也因此不断加深。",
+    voice:
+      "“我不是故意不配合，可家里看到的，常常只是懒、叛逆和不努力。”",
+    tag: "痛苦不被理解",
     illustration: "/assets/dilemmas/openpeeps54.svg",
   },
 ];
@@ -58,28 +45,25 @@ export default function RealDilemmas() {
 
         <div className="mt-14 grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-5">
           {voiceCards.map((card, i) => (
-            <Reveal key={card.name} delay={0.12 + i * 0.06}>
-              <article className="relative flex h-full min-h-[230px] flex-col justify-center rounded-lg border border-line bg-white px-5 pb-7 pt-9 md:min-h-[250px] md:px-6 md:pb-8 md:pt-10">
-                <h3 className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap bg-white px-4 font-display text-[16px] font-semibold leading-none tracking-tight text-ink md:text-[17px]">
-                  {card.name}
+            <Reveal key={card.tag} delay={0.12 + i * 0.06}>
+              <article className="flex h-full min-h-[230px] flex-col rounded-lg border border-line bg-white p-6 md:min-h-[250px] md:p-7">
+                <h3 className="font-display text-[18px] font-semibold leading-snug tracking-tight text-ink md:text-[19px]">
+                  <span className="mr-2 font-body text-[12px] font-semibold tracking-[0.14em] text-ink-faint">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  {card.tag}
                 </h3>
 
-                <div className="grid grid-cols-[76px_minmax(0,1fr)] items-center gap-4 md:grid-cols-[84px_minmax(0,1fr)] md:gap-5">
-                  <div className="grid aspect-square place-items-center rounded-full border border-line bg-card-soft">
-                    <img
-                      src={card.illustration}
-                      alt=""
-                      aria-hidden="true"
-                      className="h-[84%] w-[84%] object-contain opacity-70"
-                    />
-                  </div>
+                <div className="mt-6 flex flex-1 items-center gap-4 md:mt-7 md:gap-5">
+                  <img
+                    src={card.illustration}
+                    alt=""
+                    aria-hidden="true"
+                    className="h-[72px] w-[62px] shrink-0 object-contain opacity-80 md:h-[86px] md:w-[74px]"
+                  />
 
-                  <blockquote className="text-[15px] font-semibold leading-snug tracking-tight text-ink md:text-[16px]">
-                    {card.voice.map((line) => (
-                      <span key={line} className="block">
-                        {line}
-                      </span>
-                    ))}
+                  <blockquote className="bubble-copy min-w-0 flex-1 !max-w-none !text-left md:!text-[18px]">
+                    {card.voice}
                   </blockquote>
                 </div>
               </article>

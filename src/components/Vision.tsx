@@ -59,27 +59,14 @@ export default function Vision() {
             ))}
           </div>
 
-          <div className="mx-auto mt-5 hidden max-w-[620px] items-center justify-center gap-3 text-ink-faint md:flex">
-            <span className="h-px flex-1 bg-line" />
-            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-            <span className="h-6 w-px bg-line" />
-            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-            <span className="h-px flex-1 bg-line" />
-          </div>
-
           <Reveal delay={0.3} y={8}>
-            <div className="mt-8 rounded-2xl bg-accent-soft px-6 py-7 md:mt-7 md:px-10 md:py-9">
-              <p className="max-w-3xl text-[16px] leading-relaxed text-ink-soft md:text-[18px]">
-                在呀希望成为三者之间的桥梁，让专业支持真正延伸到每天的生活中。
-              </p>
-              <p className="mt-4 max-w-3xl text-[24px] font-semibold leading-snug tracking-tight text-ink md:text-[30px]">
-                连接成一套持续、完整的精神健康管理模式。
-              </p>
-            </div>
+            <p className="mt-9 max-w-3xl border-t border-line pt-7 text-[23px] font-semibold leading-snug tracking-tight text-accent-deep md:mt-10 md:pt-8 md:text-[30px]">
+              连接成一套持续、完整的精神健康管理模式。
+            </p>
           </Reveal>
 
           <Reveal delay={0.38} y={8}>
-            <p className="mt-7 max-w-3xl text-[17px] leading-relaxed text-ink md:text-[20px]">
+            <p className="mt-6 max-w-3xl text-[17px] leading-relaxed text-ink md:mt-7 md:text-[20px]">
               让因精神心理困扰而导致社会功能受损的人，重新参与生活，走向健康、有序、可持续的人生。
             </p>
           </Reveal>

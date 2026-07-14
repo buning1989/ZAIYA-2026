@@ -1,5 +1,18 @@
 import Logo from "./Logo";
 
+const socialLinks = [
+  {
+    label: "小红书",
+    href: "https://www.xiaohongshu.com/user/profile/55765ff55894465da0db0db1?xsec_token=AB8_2-W3ZabhI9lpfBoMp56l0I-xCmPydikiwt7mlxbJE=&xsec_source=pc_search",
+    icon: "/assets/social/xiaohongshu-logo.png",
+  },
+  {
+    label: "GitHub",
+    href: "https://github.com/buning1989/ZAIYA-2026",
+    icon: "/assets/social/github-logo.png",
+  },
+];
+
 const columns = [
   {
     title: "产品",
@@ -31,6 +44,30 @@ export default function Footer() {
           <p className="mt-4 max-w-xs text-[13px] leading-relaxed text-ink-soft">
             面向精神心理困扰人群的 AI 健康生活伙伴。
           </p>
+          <div className="mt-4 flex flex-wrap items-center gap-3.5">
+            {socialLinks.map((link) => (
+              <a
+                key={link.label}
+                href={link.href}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={link.label}
+                className="group inline-flex items-center justify-center"
+              >
+                <img
+                  src={link.icon}
+                  alt=""
+                  aria-hidden="true"
+                  className={[
+                    "h-[26px] w-[26px] object-contain transition-opacity",
+                    link.label === "GitHub"
+                      ? "rounded-full opacity-[0.72] group-hover:opacity-100"
+                      : "rounded-[5px] opacity-[0.82] group-hover:opacity-100",
+                  ].join(" ")}
+                />
+              </a>
+            ))}
+          </div>
         </div>
 
         {columns.map((col) => (
