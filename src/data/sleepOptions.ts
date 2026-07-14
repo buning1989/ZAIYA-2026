@@ -90,14 +90,17 @@ export type AwakeDurationOption = {
   estimate?: number;
 };
 
-/* —— 大概上床时间（分段时间轴，5 段，等宽） ——
- * label 为口语化短文案，适配窄屏时间轴；rangeText/estimate 保留标准范围与估算值。
+/* —— 大概上床时间（横滑时间轴，1 小时粒度） ——
+ * label 为口语化短文案，rangeText/estimate 保留标准范围与估算值。
  * 「记不清」不再作为选项，改为页面下方的「记不清，先跳过」弱化按钮，跳过后字段为 null。 */
 export const bedTimeRanges: TimeRangeOption[] = [
-  { label: "9点前", value: "before_21", rangeText: "21:00 前", estimate: "21:00" },
-  { label: "9–11点", value: "21_23", rangeText: "21:00–23:00", estimate: "22:00" },
-  { label: "11–1点", value: "23_01", rangeText: "23:00–01:00", estimate: "00:00" },
-  { label: "1–3点", value: "01_03", rangeText: "01:00–03:00", estimate: "02:00" },
+  { label: "9点前", value: "before_21", rangeText: "21:00 前", estimate: "20:30" },
+  { label: "9点", value: "21_22", rangeText: "21:00–22:00", estimate: "21:30" },
+  { label: "10点", value: "22_23", rangeText: "22:00–23:00", estimate: "22:30" },
+  { label: "11点", value: "23_00", rangeText: "23:00–00:00", estimate: "23:30" },
+  { label: "0点", value: "00_01", rangeText: "00:00–01:00", estimate: "00:30" },
+  { label: "1点", value: "01_02", rangeText: "01:00–02:00", estimate: "01:30" },
+  { label: "2点", value: "02_03", rangeText: "02:00–03:00", estimate: "02:30" },
   { label: "3点后", value: "after_03", rangeText: "03:00 后", estimate: "03:00" },
 ];
 
@@ -113,13 +116,16 @@ export const fallAsleepDurationOptions: AwakeDurationOption[] = [
   { label: "几乎没睡着", value: "barely_slept" },
 ];
 
-/* —— 大概醒来或起床时间（分段时间轴，5 段，等宽） ——
+/* —— 大概醒来或起床时间（横滑时间轴，1 小时粒度） ——
  * 方向：清晨 → 中午。label 为口语化短文案。 */
 export const wakeTimeRanges: TimeRangeOption[] = [
-  { label: "6点前", value: "before_06", rangeText: "06:00 前", estimate: "06:00" },
-  { label: "6–8点", value: "06_08", rangeText: "06:00–08:00", estimate: "07:00" },
-  { label: "8–10点", value: "08_10", rangeText: "08:00–10:00", estimate: "09:00" },
-  { label: "10–12点", value: "10_12", rangeText: "10:00–12:00", estimate: "11:00" },
+  { label: "6点前", value: "before_06", rangeText: "06:00 前", estimate: "05:30" },
+  { label: "6点", value: "06_07", rangeText: "06:00–07:00", estimate: "06:30" },
+  { label: "7点", value: "07_08", rangeText: "07:00–08:00", estimate: "07:30" },
+  { label: "8点", value: "08_09", rangeText: "08:00–09:00", estimate: "08:30" },
+  { label: "9点", value: "09_10", rangeText: "09:00–10:00", estimate: "09:30" },
+  { label: "10点", value: "10_11", rangeText: "10:00–11:00", estimate: "10:30" },
+  { label: "11点", value: "11_12", rangeText: "11:00–12:00", estimate: "11:30" },
   { label: "中午后", value: "after_12", rangeText: "12:00 后", estimate: "12:00" },
 ];
 

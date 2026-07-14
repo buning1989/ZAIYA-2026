@@ -4,6 +4,7 @@ import { Check } from "lucide-react";
 import RecordInlineInput from "./RecordInlineInput";
 import RecordNoteSection from "./RecordNoteSection";
 import RecordSummaryCard, { type SummaryRow } from "./RecordSummaryCard";
+import HorizontalTimeScale from "./HorizontalTimeScale";
 import SegmentedTimeScale from "./SegmentedTimeScale";
 import {
   sleepLevels,
@@ -74,6 +75,7 @@ export default function SleepRecordWizard({
 
   // 点击锁定：选中后等待自动跳转期间，禁止重复触发（避免连续快速点击跳过多个问题）
   const [isLocked, setIsLocked] = useState(false);
+  const isLockedRef = useRef(false);
 
   // 自动跳转计时器
   const autoAdvanceTimer = useRef<number | null>(null);
@@ -83,6 +85,11 @@ export default function SleepRecordWizard({
       window.clearTimeout(autoAdvanceTimer.current);
       autoAdvanceTimer.current = null;
     }
+  };
+
+  const setTimeSelectionLocked = (locked: boolean) => {
+    isLockedRef.current = locked;
+    setIsLocked(locked);
   };
 
   useEffect(
@@ -311,8 +318,8 @@ export default function SleepRecordWizard({
     value: string,
     stepNum: Step,
   ) => {
-    if (isLocked) return;
-    setIsLocked(true);
+    if (isLockedRef.current) return;
+    setTimeSelectionLocked(true);
     clearAutoAdvance();
     switch (stepNum) {
       case 3:
@@ -336,14 +343,14 @@ export default function SleepRecordWizard({
       } else {
         setPhase("preview");
       }
-      setIsLocked(false);
+      setTimeSelectionLocked(false);
     }, AUTO_ADVANCE_MS);
   };
 
   // 「记不清，先跳过」：当前字段保存为 null，直接进入下一题
   // 跳过不写入 label / rangeText / estimate，结算页不展示该行
   const handleSkipTimeRange = (stepNum: Step) => {
-    if (isLocked) return;
+    if (isLockedRef.current) return;
     clearAutoAdvance();
     switch (stepNum) {
       case 3:
@@ -548,20 +555,21 @@ export default function SleepRecordWizard({
               </div>
             )}
 
-            {/* —— Step 3：大概上床时间（大尺寸分段时间轴，单选，自动进入） —— */}
+            {/* —— Step 3：大概上床时间（横滑时间点刻度，自动进入） —— */}
             {step === 3 && (
               <div className="pt-10">
                 <p className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
                   大概几点上床？
                 </p>
                 <div className="mt-8">
-                  <SegmentedTimeScale
+                  <HorizontalTimeScale
                     options={bedTimeRanges}
                     value={bedTimeRange}
                     onChange={(v) => handleSelectTimeRange(v, 3)}
                     ariaLabel="上床时间"
                     startLabel="晚上"
                     endLabel="凌晨"
+                    disabled={isLocked}
                   />
                 </div>
               </div>
@@ -586,20 +594,21 @@ export default function SleepRecordWizard({
               </div>
             )}
 
-            {/* —— Step 5：大概醒来或起床时间（大尺寸分段时间轴，单选，自动进入） —— */}
+            {/* —— Step 5：大概醒来或起床时间（横滑时间点刻度，自动进入） —— */}
             {step === 5 && (
               <div className="pt-10">
                 <p className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
                   大概几点醒来或起床？
                 </p>
                 <div className="mt-8">
-                  <SegmentedTimeScale
+                  <HorizontalTimeScale
                     options={wakeTimeRanges}
                     value={wakeTimeRange}
                     onChange={(v) => handleSelectTimeRange(v, 5)}
                     ariaLabel="醒来时间"
                     startLabel="清晨"
                     endLabel="中午"
+                    disabled={isLocked}
                   />
                 </div>
               </div>
