@@ -120,6 +120,55 @@ export default function SleepRecordWizard({
     [awakeDurationRange],
   );
 
+  // —— 选择摘要文案（时间尺下方展示，未选择时为 undefined） ——
+  const bedTimeSummary = useMemo(() => {
+    if (!bedTimeOption) return undefined;
+    const map: Record<string, string> = {
+      before_21: "大概晚上 9 点前上床",
+      "21_23": "大概晚上 9 到 11 点上床",
+      "23_01": "大概晚上 11 点到凌晨 1 点上床",
+      "01_03": "大概凌晨 1 到 3 点上床",
+      after_03: "大概凌晨 3 点后上床",
+    };
+    return map[bedTimeOption.value];
+  }, [bedTimeOption]);
+
+  const fallAsleepSummary = useMemo(() => {
+    if (!fallAsleepOption) return undefined;
+    if (fallAsleepOption.label === "几乎没睡着") return "几乎没睡着";
+    const map: Record<string, string> = {
+      within_15m: "躺下后大约 15 分钟内睡着",
+      "15_30m": "躺下后大约 15 到 30 分钟睡着",
+      "30_60m": "躺下后大约 30 到 60 分钟睡着",
+      over_60m: "躺下后超过 1 小时才睡着",
+    };
+    return map[fallAsleepOption.value];
+  }, [fallAsleepOption]);
+
+  const wakeTimeSummary = useMemo(() => {
+    if (!wakeTimeOption) return undefined;
+    const map: Record<string, string> = {
+      before_06: "大概早上 6 点前醒来",
+      "06_08": "大概早上 6 到 8 点醒来",
+      "08_10": "大概早上 8 到 10 点醒来",
+      "10_12": "大概早上 10 到 12 点醒来",
+      after_12: "大概中午以后醒来",
+    };
+    return map[wakeTimeOption.value];
+  }, [wakeTimeOption]);
+
+  const awakeDurationSummary = useMemo(() => {
+    if (!awakeOption) return undefined;
+    if (awakeOption.label === "没怎么醒") return "夜里基本没怎么醒";
+    const map: Record<string, string> = {
+      within_15m: "夜里大约醒着 15 分钟内",
+      "15_30m": "夜里大约醒着 15 到 30 分钟",
+      "30_60m": "夜里大约醒着 30 到 60 分钟",
+      over_60m: "夜里大约醒着 1 小时以上",
+    };
+    return map[awakeOption.value];
+  }, [awakeOption]);
+
   // —— 进度上报 ——
   useEffect(() => {
     onProgressChange({
@@ -540,13 +589,16 @@ export default function SleepRecordWizard({
               </div>
             )}
 
-            {/* —— Step 3：大概上床时间（分段时间轴，单选，自动进入） —— */}
+            {/* —— Step 3：大概上床时间（大尺寸分段时间尺，单选，自动进入） —— */}
             {step === 3 && (
               <div className="pt-6">
                 <p className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
                   大概几点上床？
                 </p>
-                <div className="mt-8">
+                <p className="mt-2 text-center text-[12px] text-ink-faint">
+                  点击或左右滑动选择
+                </p>
+                <div className="mt-7">
                   <SegmentedTimeScale
                     options={bedTimeRanges}
                     value={bedTimeRange}
@@ -554,24 +606,22 @@ export default function SleepRecordWizard({
                     ariaLabel="上床时间"
                     startLabel="晚上"
                     endLabel="凌晨"
+                    summary={bedTimeSummary}
                   />
                 </div>
-                <button
-                  onClick={() => handleSkipTimeRange(3)}
-                  className="mx-auto mt-7 flex min-h-[44px] items-center text-[13px] text-ink-faint transition-colors hover:text-ink-soft"
-                >
-                  记不清，先跳过
-                </button>
               </div>
             )}
 
-            {/* —— Step 4：入睡用时（分段时间轴，单选，自动进入） —— */}
+            {/* —— Step 4：入睡用时（大尺寸分段时间尺，单选，自动进入） —— */}
             {step === 4 && (
               <div className="pt-6">
                 <p className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
                   躺下后多久睡着？
                 </p>
-                <div className="mt-8">
+                <p className="mt-2 text-center text-[12px] text-ink-faint">
+                  点击或左右滑动选择
+                </p>
+                <div className="mt-7">
                   <SegmentedTimeScale
                     options={fallAsleepDurationOptions}
                     value={fallAsleepTimeRange}
@@ -579,24 +629,22 @@ export default function SleepRecordWizard({
                     ariaLabel="入睡用时"
                     startLabel="很快"
                     endLabel="很久"
+                    summary={fallAsleepSummary}
                   />
                 </div>
-                <button
-                  onClick={() => handleSkipTimeRange(4)}
-                  className="mx-auto mt-7 flex min-h-[44px] items-center text-[13px] text-ink-faint transition-colors hover:text-ink-soft"
-                >
-                  记不清，先跳过
-                </button>
               </div>
             )}
 
-            {/* —— Step 5：大概醒来或起床时间（分段时间轴，单选，自动进入） —— */}
+            {/* —— Step 5：大概醒来或起床时间（大尺寸分段时间尺，单选，自动进入） —— */}
             {step === 5 && (
               <div className="pt-6">
                 <p className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
                   大概几点醒来或起床？
                 </p>
-                <div className="mt-8">
+                <p className="mt-2 text-center text-[12px] text-ink-faint">
+                  点击或左右滑动选择
+                </p>
+                <div className="mt-7">
                   <SegmentedTimeScale
                     options={wakeTimeRanges}
                     value={wakeTimeRange}
@@ -604,24 +652,22 @@ export default function SleepRecordWizard({
                     ariaLabel="醒来时间"
                     startLabel="清晨"
                     endLabel="中午"
+                    summary={wakeTimeSummary}
                   />
                 </div>
-                <button
-                  onClick={() => handleSkipTimeRange(5)}
-                  className="mx-auto mt-7 flex min-h-[44px] items-center text-[13px] text-ink-faint transition-colors hover:text-ink-soft"
-                >
-                  记不清，先跳过
-                </button>
               </div>
             )}
 
-            {/* —— Step 6：夜里醒着大概多久（分段时间轴，单选，自动进入） —— */}
+            {/* —— Step 6：夜里醒着大概多久（大尺寸分段时间尺，单选，自动进入） —— */}
             {step === 6 && (
               <div className="pt-6">
                 <p className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
                   夜里一共醒着多久？
                 </p>
-                <div className="mt-8">
+                <p className="mt-2 text-center text-[12px] text-ink-faint">
+                  点击或左右滑动选择
+                </p>
+                <div className="mt-7">
                   <SegmentedTimeScale
                     options={awakeDurationOptions}
                     value={awakeDurationRange}
@@ -629,14 +675,9 @@ export default function SleepRecordWizard({
                     ariaLabel="夜间清醒时长"
                     startLabel="很少"
                     endLabel="很久"
+                    summary={awakeDurationSummary}
                   />
                 </div>
-                <button
-                  onClick={() => handleSkipTimeRange(6)}
-                  className="mx-auto mt-7 flex min-h-[44px] items-center text-[13px] text-ink-faint transition-colors hover:text-ink-soft"
-                >
-                  记不清，先跳过
-                </button>
               </div>
             )}
           </motion.div>
@@ -677,6 +718,18 @@ export default function SleepRecordWizard({
         onSave={handleInputSave}
         onClose={() => setInputPanel(null)}
       />
+
+      {/* —— 底部跳过入口：Step 3-6 时间尺页面统一固定在底部安全区上方 —— */}
+      {step >= 3 && step <= 6 && (
+        <div className="bg-white px-5 pb-7 pt-2">
+          <button
+            onClick={() => handleSkipTimeRange(step)}
+            className="mx-auto flex min-h-[44px] w-full max-w-[260px] items-center justify-center text-[13px] text-ink-faint transition-colors hover:text-ink-soft"
+          >
+            记不清，先跳过
+          </button>
+        </div>
+      )}
     </div>
   );
 }
