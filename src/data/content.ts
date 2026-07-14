@@ -7,10 +7,11 @@ export type Member = {
 };
 
 export const navLinks = [
-  { label: "需求", href: "#needs" },
-  { label: "解决方案", href: "#solution" },
-  { label: "团队", href: "#team" },
-  { label: "愿景", href: "#vision" },
+  { label: "现实缺口", href: "#needs" },
+  { label: "用户困境", href: "#pain" },
+  { label: "在呀方案", href: "#solution" },
+  { label: "关于团队", href: "#team" },
+  { label: "未来愿景", href: "#vision" },
 ];
 
 export const team: Member[] = [
