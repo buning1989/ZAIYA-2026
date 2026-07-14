@@ -73,9 +73,9 @@ export default function ClinicalFramework() {
     <section id="solution-method" className="relative scroll-mt-20">
       <span id="clinical" className="pointer-events-none absolute -top-20 h-px w-px" aria-hidden="true" />
       <div className="container pt-12 pb-8 md:pt-12 md:pb-8">
-        <div className="h-px w-full bg-line-soft" aria-hidden="true" />
+        <div className="h-px w-16 bg-line-soft md:w-20" aria-hidden="true" />
         <Reveal className="mt-7 md:mt-8">
-          <SubsectionEyebrow index="03.2" name="心理技术" />
+          <SubsectionEyebrow index="03.B" name="心理技术" />
           <h2 className="mt-5 text-[26px] leading-tight tracking-tight text-ink md:mt-6 md:text-[32px]">
             先理解一个人的完整处境，
             <br />
@@ -119,7 +119,7 @@ export default function ClinicalFramework() {
         </Reveal>
 
         <div className="mt-10 md:mt-12">
-          <Reveal delay={0.22}>
+          <Reveal delay={0.22} className="pl-6 md:pl-8">
             <div className="text-[12px] font-medium tracking-[0.16em] text-ink-faint">
               场景化技术应用
             </div>
