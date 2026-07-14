@@ -70,7 +70,7 @@ export default function DemoOrganizeFlow() {
                 <ChevronLeft className="h-6 w-6" />
               </button>
               <h1 className="text-[18px] font-medium leading-relaxed tracking-tight text-ink">
-                复诊沟通确认单
+                和王医生的沟通
               </h1>
             </div>
             <button
