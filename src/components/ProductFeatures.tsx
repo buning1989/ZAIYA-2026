@@ -410,10 +410,6 @@ function SolutionSection({ solution, index }: { solution: Solution; index: numbe
   return (
     <Reveal delay={0.08 + index * 0.06}>
       <article>
-        <div
-          className="mx-auto mb-10 h-px w-[70%] bg-line md:mb-12"
-          aria-hidden="true"
-        />
         <div className="grid gap-7 md:grid-cols-2 md:items-center md:gap-12">
           <div className={mediaFirst ? "md:order-2" : undefined}>
             <div className="text-[12px] font-medium tracking-[0.16em] text-ink-faint">
@@ -527,10 +523,6 @@ export default function ProductFeatures() {
 
           <Reveal delay={0.22}>
             <article>
-              <div
-                className="mx-auto mb-10 h-px w-[70%] bg-line md:mb-12"
-                aria-hidden="true"
-              />
               <div className="max-w-3xl">
                 <div className="text-[12px] font-medium tracking-[0.16em] text-ink-faint">
                   04｜双层信息输出
