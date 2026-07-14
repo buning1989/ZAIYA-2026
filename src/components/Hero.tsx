@@ -33,7 +33,7 @@ export default function Hero({ onOpenDemo }: Props) {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease }}
-              className="inline-flex items-center gap-2 rounded-full border border-line bg-white px-3 py-1 text-[12px] text-ink-soft"
+              className="inline-flex items-center gap-2 rounded-full border border-line bg-white px-3 py-1 text-[15px] text-ink-soft"
             >
               <span className="h-1.5 w-1.5 rounded-full bg-accent" />
               面向精神心理困扰人群的 AI 健康生活伙伴
