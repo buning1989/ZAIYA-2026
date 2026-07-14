@@ -152,7 +152,7 @@ export default function DialogueZaiyaAnimation({
             )}
             style={{
               opacity: active ? 1 : 0,
-              transform: "scale(2)",
+              transform: "scale(1.4)",
               transformOrigin: "center center",
               transitionDuration: `${CROSSFADE_MS}ms`,
               transitionTimingFunction: ease,
