@@ -77,7 +77,9 @@ export default function ProblemSolution() {
 
         <Reveal delay={0.04}>
           <h2 className="mt-5 max-w-2xl text-[26px] leading-tight tracking-tight text-ink md:mt-6 md:text-[32px]">
-            对受精神心理困扰的社会功能损伤人群而言，真正的难题在诊室之外
+            对受精神心理困扰的社会功能损伤人群而言，
+            <br />
+            真正的难题在诊室之外。
           </h2>
         </Reveal>
 
