@@ -79,7 +79,7 @@ export default function Hero({ onOpenDemo }: Props) {
               className="group inline-flex items-center gap-2 rounded-md border border-line bg-white px-5 py-3 text-sm font-medium text-ink transition-colors hover:bg-line-soft"
             >
               <BookOpen className="h-4 w-4 text-ink-faint" />
-              查看产品逻辑
+              查看产品介绍
             </a>
           </motion.div>
         </div>
