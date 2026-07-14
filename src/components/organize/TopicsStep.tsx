@@ -291,7 +291,7 @@ const TopicCard = forwardRef<HTMLDivElement, TopicCardProps>(function TopicCard(
       transition={{ duration: 0.25, ease }}
       className={`relative overflow-hidden rounded-2xl border bg-white transition-colors ${
         topic.selected
-          ? "border-accent"
+          ? "border-accent/50"
           : "border-line"
       }`}
     >
@@ -303,12 +303,12 @@ const TopicCard = forwardRef<HTMLDivElement, TopicCardProps>(function TopicCard(
         <span
           className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-[5px] border transition-colors ${
             topic.selected
-              ? "border-accent bg-accent"
+              ? "border-accent/50 bg-accent-soft text-accent"
               : "border-line bg-white"
           }`}
         >
           {topic.selected && (
-            <Check className="h-3 w-3 text-accent-text" strokeWidth={2.4} />
+            <Check className="h-3 w-3" strokeWidth={2.4} />
           )}
         </span>
 

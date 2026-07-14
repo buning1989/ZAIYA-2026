@@ -239,7 +239,7 @@ function AddContactSheet({
               <span
                 className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border transition-colors ${
                   selectedTrustedId === candidate.id
-                    ? "border-accent bg-accent text-white"
+                    ? "border-accent/50 bg-accent-soft text-accent"
                     : "border-line bg-white"
                 }`}
               >
