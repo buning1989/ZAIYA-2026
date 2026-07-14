@@ -43,7 +43,7 @@ export default function ZaizaiHomeScene({
   return (
     <div className="pointer-events-none relative h-[304px] w-[220px] overflow-visible">
       {guide && (
-        <div className="absolute left-1/2 top-0 z-10 w-[240px] -translate-x-1/2 text-center">
+        <div className="absolute left-1/2 top-0 z-10 -translate-x-1/2 text-center">
           {guide}
         </div>
       )}
