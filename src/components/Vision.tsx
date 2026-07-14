@@ -222,6 +222,12 @@ export default function Vision() {
           </Reveal>
 
           <Reveal delay={0.28} y={8}>
+            <p className="mx-auto mt-12 max-w-[760px] text-center text-[20px] font-semibold leading-relaxed tracking-tight text-ink-soft md:mt-14 md:text-[22px]">
+              真正的改变，发生在被认真对待的每一天里。
+            </p>
+          </Reveal>
+
+          <Reveal delay={0.34} y={8}>
             <p className="mt-4 max-w-[860px] text-[12px] leading-relaxed text-ink-faint md:mt-5 md:text-[13px]">
               在呀 ZÀIYA 不替代医疗、学校或家庭中的任何角色，也不绕过用户直接共享信息。所有连接都以用户知情、确认与授权为前提。
             </p>
