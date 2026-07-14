@@ -1,19 +1,21 @@
 import type { ReactNode } from "react";
 import Reveal from "./Reveal";
+import SectionEyebrow from "./SectionEyebrow";
 
 type Props = {
-  eyebrow: string;
+  /** 章节序号，1 起始 */
+  index: number;
+  /** 模块名称，例如 "需求与缺口" */
+  name: string;
   title: ReactNode;
   className?: string;
 };
 
-export default function SectionHeading({ eyebrow, title, className }: Props) {
+export default function SectionHeading({ index, name, title, className }: Props) {
   return (
     <Reveal className={className}>
-      <div className="text-[12px] font-medium uppercase tracking-[0.16em] text-ink-faint">
-        {eyebrow}
-      </div>
-      <h2 className="mt-4 text-[26px] leading-tight tracking-tight text-ink md:text-[32px]">
+      <SectionEyebrow index={index} name={name} />
+      <h2 className="mt-4 text-[26px] leading-tight tracking-tight text-ink md:mt-5 md:text-[32px]">
         {title}
       </h2>
     </Reveal>

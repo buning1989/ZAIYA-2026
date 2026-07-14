@@ -498,10 +498,11 @@ function OutputCard({ output, index }: { output: OutputBlock; index: number }) {
 
 export default function ProductFeatures() {
   return (
-    <section id="product">
+    <section id="product" className="scroll-mt-20">
       <div className="container pt-16 pb-14 md:pt-24 md:pb-16">
         <SectionHeading
-          eyebrow="我们怎么做"
+          index={3}
+          name="我们怎么做"
           title="在呀 ZÀIYA，把支持带进每天的真实生活。"
         />
 

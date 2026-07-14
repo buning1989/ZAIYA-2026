@@ -1,4 +1,5 @@
 import Reveal from "./Reveal";
+import SectionEyebrow from "./SectionEyebrow";
 import { team } from "@/data/content";
 
 type Practice = {
@@ -59,12 +60,11 @@ function PracticeCard({ item }: { item: Practice }) {
 export default function Team() {
   return (
     <section id="team" className="scroll-mt-20">
-      <div className="container py-20 md:py-24">
-        <Reveal>
-          <div className="text-[12px] font-medium tracking-[0.16em] text-ink-faint">
-            为什么是我们
-          </div>
-          <h2 className="mt-4 max-w-3xl text-[26px] font-semibold leading-tight tracking-tight text-ink md:text-[32px]">
+      <div className="container pt-20 pb-20 md:pt-24 md:pb-24">
+        <div className="h-px w-full bg-line" aria-hidden="true" />
+        <Reveal className="mt-7 md:mt-8">
+          <SectionEyebrow index={6} name="为什么是我们" />
+          <h2 className="mt-4 max-w-3xl text-[26px] font-semibold leading-tight tracking-tight text-ink md:mt-5 md:text-[32px]">
             <span className="inline-block">二十年亲历，</span>
             <span className="inline-block">三次实践。</span>
           </h2>

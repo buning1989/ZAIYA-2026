@@ -1,4 +1,5 @@
 import Reveal from "./Reveal";
+import SectionEyebrow from "./SectionEyebrow";
 import ZaizaiVideo from "./ZaizaiVideo";
 
 /** 右侧四项设计理由：标题 + 一句解释。 */
@@ -75,7 +76,8 @@ export default function CharacterDesign() {
   return (
     <section id="character" className="scroll-mt-24">
       <div className="container pt-20 pb-20 md:pt-24 md:pb-24 min-[1200px]:pt-24 min-[1200px]:pb-24">
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-[0.36fr_0.64fr] md:gap-8 min-[1200px]:grid-cols-[0.4fr_0.6fr] min-[1200px]:gap-8 min-[1200px]:items-stretch">
+        <div className="h-px w-full bg-line" aria-hidden="true" />
+        <div className="mt-7 grid grid-cols-1 gap-10 md:mt-8 md:grid-cols-[0.36fr_0.64fr] md:gap-8 min-[1200px]:grid-cols-[0.4fr_0.6fr] min-[1200px]:gap-8 min-[1200px]:items-stretch">
           {/* 左侧：在在角色视觉区 + 三个轻量虚线标注 */}
           <Reveal y={10} className="md:col-start-1 md:row-span-2">
             <div className="relative mx-auto flex min-h-[320px] w-full max-w-[420px] items-center justify-center pb-4 md:h-full md:min-h-[428px] md:max-w-[456px] md:translate-y-8 md:pb-3 min-[1200px]:translate-y-12">
@@ -107,13 +109,11 @@ export default function CharacterDesign() {
           {/* 右侧：标题区 */}
           <div className="flex flex-col md:col-start-2">
             <Reveal y={10}>
-              <div className="text-[12px] font-medium uppercase tracking-[0.16em] text-ink-faint">
-                角色设计
-              </div>
+              <SectionEyebrow index={5} name="角色设计" />
             </Reveal>
 
             <Reveal delay={0.04} y={10}>
-              <h2 className="mt-4 text-[26px] font-semibold leading-[1.22] tracking-tight text-ink md:text-[32px]">
+              <h2 className="mt-4 text-[26px] font-semibold leading-[1.22] tracking-tight text-ink md:mt-5 md:text-[32px]">
                 我们把在在设计成一粒种子：陪你长大，也把你带回屏幕外。
               </h2>
             </Reveal>

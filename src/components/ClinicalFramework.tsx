@@ -71,9 +71,11 @@ const scenarios = [
 export default function ClinicalFramework() {
   return (
     <section id="clinical" className="scroll-mt-20">
-      <div className="container pt-20 pb-20 md:pt-28 md:pb-24">
+      <div className="container pt-20 pb-20 md:pt-24 md:pb-24">
+        <div className="h-px w-full bg-line" aria-hidden="true" />
         <SectionHeading
-          eyebrow="专业方法"
+          index={4}
+          name="专业方法"
           title={
             <>
               先理解一个人的完整处境，
@@ -81,6 +83,7 @@ export default function ClinicalFramework() {
               再决定此刻如何回应。
             </>
           }
+          className="mt-7 md:mt-8"
         />
 
         <Reveal delay={0.1}>

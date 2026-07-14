@@ -31,10 +31,13 @@ const voiceCards: VoiceCard[] = [
 export default function RealDilemmas() {
   return (
     <section id="dilemmas" className="scroll-mt-20">
-      <div className="container py-24 md:pt-16 md:pb-32">
+      <div className="container pt-20 pb-20 md:pt-24 md:pb-24">
+        <div className="h-px w-full bg-line" aria-hidden="true" />
         <SectionHeading
-          eyebrow="真实困境"
+          index={2}
+          name="真实困境"
           title="他们面对的，远不只是情绪不好。"
+          className="mt-7 md:mt-8"
         />
 
         <Reveal delay={0.1}>
@@ -43,7 +46,7 @@ export default function RealDilemmas() {
           </p>
         </Reveal>
 
-        <div className="mt-14 grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-5">
+        <div className="mt-12 grid grid-cols-1 gap-4 md:mt-14 md:grid-cols-3 md:gap-5">
           {voiceCards.map((card, i) => (
             <Reveal key={card.tag} delay={0.12 + i * 0.06}>
               <article className="flex h-full min-h-[230px] flex-col rounded-lg border border-line bg-white p-6 md:min-h-[250px] md:p-7">

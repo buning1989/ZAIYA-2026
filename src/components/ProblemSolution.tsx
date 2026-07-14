@@ -1,4 +1,5 @@
 import Reveal from "./Reveal";
+import SectionEyebrow from "./SectionEyebrow";
 
 type StatCard = {
   label: string;
@@ -68,21 +69,19 @@ function StatCardView({ stat, delay }: { stat: StatCard; delay: number }) {
 export default function ProblemSolution() {
   return (
     <section id="problem" className="scroll-mt-20">
-      <div className="container pt-12 pb-20 md:pt-16 md:pb-[clamp(8rem,16vh,12rem)]">
+      <div className="container pt-14 pb-20 md:pt-20 md:pb-24">
         <Reveal>
-          <div className="text-[12px] font-medium uppercase tracking-[0.16em] text-ink-faint">
-            需求与缺口
-          </div>
+          <SectionEyebrow index={1} name="需求与缺口" />
         </Reveal>
 
         <Reveal delay={0.04}>
-          <h2 className="mt-4 max-w-2xl text-[26px] leading-tight tracking-tight text-ink md:text-[32px]">
+          <h2 className="mt-4 max-w-2xl text-[26px] leading-tight tracking-tight text-ink md:mt-5 md:text-[32px]">
             对受精神心理困扰的社会功能损伤人群而言，真正的难题在诊室之外
           </h2>
         </Reveal>
 
         <Reveal delay={0.08}>
-          <p className="mt-3 text-[15px] leading-relaxed text-ink-soft md:text-[16px]">
+          <p className="mt-4 text-[15px] leading-relaxed text-ink-soft md:mt-5 md:text-[16px]">
             精神心理困扰影响的不只是情绪——睡眠、饮食、上学、社交、家庭，都会慢慢失序。
           </p>
         </Reveal>
