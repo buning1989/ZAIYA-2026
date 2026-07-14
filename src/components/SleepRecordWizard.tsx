@@ -575,7 +575,7 @@ export default function SleepRecordWizard({
               </div>
             )}
 
-            {/* —— Step 3：大概上床时间（折叠分组，选择具体小时后自动进入） —— */}
+            {/* —— Step 3：大概上床时间（分组直选，选择后自动进入） —— */}
             {step === 3 && (
               <div className="pt-10">
                 <p className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
@@ -613,7 +613,7 @@ export default function SleepRecordWizard({
               </div>
             )}
 
-            {/* —— Step 5：大概醒来或起床时间（折叠分组，选择具体小时后自动进入） —— */}
+            {/* —— Step 5：大概醒来或起床时间（分组直选，选择后自动进入） —— */}
             {step === 5 && (
               <div className="pt-10">
                 <p className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
