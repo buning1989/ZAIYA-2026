@@ -12,7 +12,7 @@ export function StepProgress({ current, total }: { current: number; total: numbe
       <div className="flex items-center gap-2.5">
         <div className="h-[2px] flex-1 overflow-hidden rounded-full bg-line-soft">
           <motion.div
-            className="h-full rounded-full bg-accent-soft"
+            className="h-full rounded-full bg-accent"
             initial={false}
             animate={{ width: `${pct}%` }}
             transition={{ duration: 0.3, ease }}
@@ -41,7 +41,7 @@ export function SelectMark({ checked }: { checked: boolean }) {
     <span
       className={`mt-0.5 grid shrink-0 place-items-center rounded-[5px] border transition-colors ${
         checked
-          ? "border-accent bg-accent text-white"
+          ? "border-accent/50 bg-accent-soft text-accent"
           : "border-line bg-white"
       }`}
       style={{ height: 18, width: 18 }}
