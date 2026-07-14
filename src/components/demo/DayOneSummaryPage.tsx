@@ -16,10 +16,9 @@ export default function DayOneSummaryPage() {
     <div className="mx-auto flex min-h-[50vh] w-full max-w-[680px] flex-col items-center justify-center text-center">
       {/* 核心总结 */}
       <div className="text-[20px] leading-[1.8] text-ink">
-        <p>第一天结束</p>
+        <p className="text-[15px]">第一天结束</p>
         <p className="mt-6">这一天，小晨没能去上学，没有好好吃饭，凌晨一点半还醒着。</p>
-        <p className="mt-2">在呀没有改变其中任何一件。</p>
-        <p className="mt-2">它只做了两件事：她来的时候，它在。她不来的时候，它不去找她。</p>
+        <p className="mt-2">在呀只做了两件事：她来的时候，它在。她不来的时候，它不去找她。</p>
         <p className="mt-2">剩下的是记录。</p>
       </div>
     </div>

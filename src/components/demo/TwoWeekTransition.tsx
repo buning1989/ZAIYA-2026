@@ -14,7 +14,7 @@ export default function TwoWeekTransition() {
   return (
     <div className="mx-auto w-full max-w-[680px]">
       {/* —— A. 小标签 —— */}
-      <p className="text-center text-[12px] tracking-[0.18em] text-ink-faint">
+      <p className="text-center text-[15px] tracking-[0.18em] text-ink-faint">
         第三周第一天
       </p>
 
@@ -25,9 +25,7 @@ export default function TwoWeekTransition() {
         小晨开始主动使用这些能力
       </h1>
 
-      <p className="mt-6 text-center text-[18px] leading-[1.7] text-ink-soft">
-        变化还没有稳定发生。
-      </p>
+      <p className="mt-6 text-center text-[18px] leading-[1.7] text-ink-soft">变化还没有稳定发生。</p>
       <p className="mt-3 text-center text-[18px] leading-[1.7] text-ink-soft">
         但在呀 ZÀIYA 已经不再只在小晨崩溃时出现。
       </p>
