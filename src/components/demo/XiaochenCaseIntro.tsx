@@ -1,6 +1,3 @@
-import { calculateAge } from "@/data/userProfile";
-import { DEMO_USER_PROFILE } from "@/apps/demo/data/demoUser";
-
 type ImpairmentPoint = {
   title: string;
   detail: string;
@@ -9,19 +6,19 @@ type ImpairmentPoint = {
 const impairmentPoints: ImpairmentPoint[] = [
   {
     title: "起不来床",
-    detail: "早上起不来床，频繁请假，无法正常上学。",
+    detail: "频繁请假，缺勤已经影响学籍。",
   },
   {
     title: "饮食失控",
-    detail: "三餐不定时，有时吃不下，有时暴饮暴食。",
+    detail: "三餐不定时，要么吃不下，要么停不下来。",
   },
   {
     title: "学业受阻",
-    detail: "对成绩极其焦虑，学不进去，一开始学习就难受。",
+    detail: "一打开书就难受，成绩焦虑压过一切。",
   },
   {
     title: "家庭冲突",
-    detail: "难以和父母正常交流，家人也越来越焦虑，经常争吵。",
+    detail: "和父母说不上三句话就吵起来。",
   },
 ];
 
@@ -35,8 +32,6 @@ const impairmentPoints: ImpairmentPoint[] = [
  *   C. 观看提示区：案例说明
  */
 export default function XiaochenCaseIntro() {
-  const { nickname, birthDate } = DEMO_USER_PROFILE.basicInfo;
-  const age = calculateAge(birthDate);
   return (
     <div className="mx-auto w-[min(680px,calc(100vw-48px))] max-w-[680px]">
       {/* —— A. 身份区 —— */}
@@ -48,12 +43,12 @@ export default function XiaochenCaseIntro() {
 
         {/* 主标题 */}
         <h1 className="mt-3 text-center text-[30px] font-[650] leading-[1.3] text-[var(--text-primary)]">
-          {nickname}，{age} 岁，重度抑郁重度焦虑。
+          小晨，16 岁，已经三个月没能正常上学。
         </h1>
 
         {/* 副标题 */}
         <p className="mt-3 text-center text-[17px] font-medium leading-[1.6] text-[var(--text-primary)]">
-          她的一天，从起床就开始卡住。
+          中度抑郁、重度焦虑。她的一天，从起床就卡住。
         </p>
 
         {/* 内心句 */}
@@ -90,10 +85,10 @@ export default function XiaochenCaseIntro() {
         className="mt-7 border-t border-line-soft pt-6"
       >
         <p className="text-[16px] font-semibold leading-[1.6] text-[var(--text-primary)]">
-          这是无数饱受精神心理问题困扰的青少年的缩影。
+          这不是极端个例。
         </p>
         <p className="mt-3 text-[15px] font-normal leading-[1.7] text-[var(--text-secondary)]">
-          接下来，我们将通过小晨的故事，展示在呀 ZÀIYA 是如何帮助小晨开始好转。
+          接下来两天，是小晨和「在在」一起度过的。
         </p>
       </section>
     </div>
