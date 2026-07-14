@@ -93,6 +93,12 @@ const particleOffsets = [
   { x: -4, y: 18, rotate: -4 },
 ];
 
+const particleLandingOffsets = [
+  { x: -4, y: -3 },
+  { x: 4, y: -2 },
+  { x: 0, y: 4 },
+];
+
 export default function EnergyRewardFeedback({
   event,
   targetRef,
@@ -201,29 +207,33 @@ export default function EnergyRewardFeedback({
             {!prefersReducedMotion &&
               Array.from({ length: PARTICLE_COUNT }).map((_, index) => {
                 const offset = particleOffsets[index];
+                const landingOffset = particleLandingOffsets[index];
                 const dx = geometry.target.x - geometry.origin.x;
                 const dy = geometry.target.y - geometry.origin.y;
+                const finalDx = dx + landingOffset.x;
+                const finalDy = dy + landingOffset.y;
 
                 return (
                   <motion.div
                     key={`${event.id}-${index}`}
                     initial={{ x: 0, y: 0, opacity: 0, scale: 0.72 }}
                     animate={{
-                      x: [0, offset.x, dx * 0.94, dx],
-                      y: [0, offset.y, dy * 0.94, dy],
-                      opacity: [0, 1, 1, 0],
-                      scale: [0.72, 1.12, 0.94, 0.74],
+                      x: [0, offset.x, dx * 0.88, finalDx, finalDx],
+                      y: [0, offset.y, dy * 0.88, finalDy, finalDy],
+                      opacity: [0, 1, 1, 1, 0],
+                      scale: [0.72, 1.12, 0.96, 0.86, 0.62],
                       rotate: [
                         0,
                         offset.rotate,
                         offset.rotate * 0.55,
+                        offset.rotate * 0.25,
                         offset.rotate * 0.25,
                       ],
                     }}
                     transition={{
                       delay: PARTICLE_START_S + index * PARTICLE_DELAY_S,
                       duration: PARTICLE_FLIGHT_S,
-                      times: [0, 0.1, 0.94, 1],
+                      times: [0, 0.1, 0.86, 0.96, 1],
                       ease,
                     }}
                     className={`absolute grid h-8 w-8 place-items-center ${visual.particleClass}`}
