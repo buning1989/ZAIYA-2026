@@ -12,7 +12,7 @@ export function StepProgress({ current, total }: { current: number; total: numbe
       <div className="flex items-center gap-2.5">
         <div className="h-[2px] flex-1 overflow-hidden rounded-full bg-line-soft">
           <motion.div
-            className="h-full rounded-full bg-accent"
+            className="h-full rounded-full bg-accent-soft"
             initial={false}
             animate={{ width: `${pct}%` }}
             transition={{ duration: 0.3, ease }}
