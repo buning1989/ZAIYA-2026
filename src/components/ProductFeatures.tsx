@@ -491,7 +491,7 @@ export default function ProductFeatures() {
       <div className="container pt-20 pb-8 md:pt-24 md:pb-8">
         <div className="h-px w-full bg-line" aria-hidden="true" />
         <Reveal className="mt-7 md:mt-8">
-          <SectionEyebrow index={3} name="在呀 ZÀIYA" />
+          <SectionEyebrow index={3} name="在呀 ZÀIYA 方案" />
           <SubsectionEyebrow index="03.A" name="产品机制" className="mt-5" />
           <h2 className="mt-5 text-[26px] leading-tight tracking-tight text-ink md:mt-6 md:text-[32px]">
             在呀 ZÀIYA，把支持带进每天的真实生活。
