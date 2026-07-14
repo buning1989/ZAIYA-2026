@@ -58,10 +58,7 @@ export default function DemoWatchFrame({ time = "12:00" }: Props) {
             {/* 文案区域（标题 + 辅助文案） */}
             <div className="mt-auto w-full pb-[20px] text-center">
               <p className="text-[15px] font-semibold leading-[21px] text-[#34402F]">
-                到饭点啦
-              </p>
-              <p className="mt-px text-[13px] font-normal leading-[19px] text-[#737A70]">
-                今天吃点什么呀?
+                我的饭点到了，先吃了呀
               </p>
             </div>
           </div>
