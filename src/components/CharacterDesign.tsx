@@ -81,40 +81,40 @@ export default function CharacterDesign() {
         <div className="mt-7 grid grid-cols-1 gap-10 md:mt-8 md:grid-cols-[0.36fr_0.64fr] md:gap-8 min-[1200px]:grid-cols-[0.4fr_0.6fr] min-[1200px]:gap-8 min-[1200px]:items-stretch">
           {/* 左侧：在在角色视觉区 + 三个轻量虚线标注 */}
           <Reveal y={10} className="order-2 md:order-none md:col-start-1 md:row-span-2">
-            <div className="relative mx-auto flex min-h-[320px] w-full max-w-[420px] items-center justify-center pb-4 md:h-full md:min-h-[428px] md:max-w-[456px] md:translate-y-8 md:pb-3 min-[1200px]:translate-y-12">
-              <ZaizaiVideo className="h-64 w-64 md:h-[19rem] md:w-[19rem] min-[1200px]:h-[20.5rem] min-[1200px]:w-[20.5rem]" />
+            <div className="mx-auto flex min-h-[320px] w-full max-w-[420px] flex-col pb-4 md:h-full md:min-h-[428px] md:max-w-[456px] md:pb-3">
+              <SubsectionEyebrow index="03.C" name="陪伴角色" />
 
-              <CharacterNote
-                title="种子形态"
-                desc="承载，而不是治愈承诺"
-                side="left"
-                className="left-[4%] top-[13%] min-[1200px]:left-[8%] min-[1200px]:top-[12%]"
-              />
+              <div className="relative flex flex-1 items-center justify-center md:translate-y-8 min-[1200px]:translate-y-12">
+                <ZaizaiVideo className="h-64 w-64 md:h-[19rem] md:w-[19rem] min-[1200px]:h-[20.5rem] min-[1200px]:w-[20.5rem]" />
 
-              <CharacterNote
-                title="低位目光"
-                desc="不凝视，也不审视"
-                side="right"
-                className="right-[-8%] top-[38%] min-[1200px]:right-[-7%] min-[1200px]:top-[39%]"
-              />
+                <CharacterNote
+                  title="种子形态"
+                  desc="承载，而不是治愈承诺"
+                  side="left"
+                  className="left-[4%] top-[13%] min-[1200px]:left-[8%] min-[1200px]:top-[12%]"
+                />
 
-              <CharacterNote
-                title="低重心"
-                desc="动作缓慢，传递安定"
-                side="left"
-                className="left-[4%] top-[66%] min-[1200px]:left-[8%] min-[1200px]:top-[65%]"
-              />
+                <CharacterNote
+                  title="低位目光"
+                  desc="不凝视，也不审视"
+                  side="right"
+                  className="right-[-8%] top-[38%] min-[1200px]:right-[-7%] min-[1200px]:top-[39%]"
+                />
+
+                <CharacterNote
+                  title="低重心"
+                  desc="动作缓慢，传递安定"
+                  side="left"
+                  className="left-[4%] top-[66%] min-[1200px]:left-[8%] min-[1200px]:top-[65%]"
+                />
+              </div>
             </div>
           </Reveal>
 
           {/* 右侧：标题区 */}
           <div className="order-1 flex flex-col md:order-none md:col-start-2">
             <Reveal y={10}>
-              <SubsectionEyebrow index="03.C" name="陪伴角色" />
-            </Reveal>
-
-            <Reveal delay={0.04} y={10}>
-              <h2 className="mt-5 text-[26px] font-semibold leading-[1.22] tracking-tight text-ink md:mt-6 md:text-[32px]">
+              <h2 className="text-[26px] font-semibold leading-[1.22] tracking-tight text-ink md:text-[32px]">
                 我们把在在设计成一粒种子：陪你长大，也把你带回屏幕外。
               </h2>
             </Reveal>
@@ -126,7 +126,7 @@ export default function CharacterDesign() {
             {reasons.map((r, i) => (
               <Reveal key={r.title} delay={0.12 + i * 0.05} y={10}>
                 <article className="flex h-full min-h-[118px] flex-col gap-2 rounded-xl border border-line bg-white p-3 shadow-[0_1px_2px_rgba(39,51,31,0.04)] md:min-h-[133px] md:p-4 min-[1200px]:min-h-[130px] min-[1200px]:p-4">
-                  <h3 className="text-[16px] font-semibold leading-snug tracking-tight text-ink md:text-[17px]">
+                  <h3 className="text-[18px] font-semibold leading-snug tracking-tight text-ink">
                     {r.title}
                   </h3>
                   <p className="text-[13px] leading-relaxed text-ink-soft md:text-[14px]">

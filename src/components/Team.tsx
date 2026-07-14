@@ -48,7 +48,7 @@ function PracticeCard({ item }: { item: Practice }) {
       </div>
       <div className="mt-3 flex items-baseline gap-2">
         <span className="text-[12px] font-medium leading-none text-ink-soft">{item.no}</span>
-        <h4 className="min-w-0 text-[14px] font-semibold leading-snug tracking-tight text-ink md:text-[15px]">
+        <h4 className="min-w-0 text-[18px] font-semibold leading-snug tracking-tight text-ink">
           {item.title}
         </h4>
       </div>

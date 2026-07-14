@@ -134,7 +134,7 @@ export default function ClinicalFramework() {
               <Reveal key={scenario.index} delay={0.26 + i * 0.06}>
                 <article className="flex h-full flex-col rounded-lg border border-line bg-white p-5 md:p-6">
                   <div className="flex items-start justify-between gap-4">
-                    <h3 className="font-display text-[19px] font-semibold leading-tight tracking-tight text-ink md:text-[21px]">
+                    <h3 className="font-display text-[18px] font-semibold leading-tight tracking-tight text-ink">
                       {scenario.title}
                     </h3>
                     <span className="inline-flex shrink-0 items-center rounded-full border border-line bg-accent-soft px-3 py-1 text-[13px] font-semibold tracking-tight text-ink">

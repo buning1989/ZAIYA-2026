@@ -44,7 +44,7 @@ function CoreNode({
           : "border-line bg-white",
       ].join(" ")}
     >
-      <h3 className="text-[16px] font-semibold leading-snug tracking-tight text-ink">
+      <h3 className="text-[18px] font-semibold leading-snug tracking-tight text-ink">
         {title}
       </h3>
       <p className="mt-3 text-[14px] leading-relaxed text-ink-soft md:text-[15px]">
@@ -57,7 +57,7 @@ function CoreNode({
 function SupportNode({ title, description }: Support) {
   return (
     <article className="h-full rounded-2xl border border-line bg-white px-5 py-5 lg:px-6 lg:py-6">
-      <h3 className="text-[16px] font-semibold leading-snug tracking-tight text-ink">
+      <h3 className="text-[18px] font-semibold leading-snug tracking-tight text-ink">
         {title}
       </h3>
       <p className="mt-3 text-[14px] leading-relaxed text-ink-soft">
