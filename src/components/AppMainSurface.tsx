@@ -1037,6 +1037,20 @@ export default function AppMainSurface({
     }
   };
 
+  // 练习中长按结束 / 停止确认退出：回到缓解主页，呼吸法保持展开并保留所选方法。
+  // 不收起、不回到旧选择页；状态式切换天然「replace」，浏览器返回不会重回练习页。
+  const returnToReliefExpanded = (methodIdx: number) => {
+    setBreathingEntryInline(false);
+    setBreathingActiveCard(methodIdx);
+    setBreathingEntryState("expanded");
+    setBreathingCountdown(null);
+    if (breathingCountdownTimerRef.current) {
+      window.clearInterval(breathingCountdownTimerRef.current);
+      breathingCountdownTimerRef.current = null;
+    }
+    setMode("reliefSelect");
+  };
+
   // 组件卸载时清理倒计时 timer
   useEffect(() => {
     return () => {
@@ -1617,6 +1631,7 @@ export default function AppMainSurface({
                       <BreathingCarousel
                         methods={BREATHING_METHODS}
                         activeIndex={breathingActiveCard}
+                        locked={breathingEntryState !== "expanded"}
                         onActiveChange={(i) => {
                           // countingDown/navigating 状态下锁定 carousel
                           if (breathingEntryState === "expanded") {
@@ -1717,6 +1732,7 @@ export default function AppMainSurface({
                 resetBreathingEntry();
                 setMode("home");
               }}
+              onExitToRelief={returnToReliefExpanded}
               initialMethodIndex={
                 breathingEntryInline ? pendingBreathingMethod : 0
               }
