@@ -28,7 +28,7 @@ export default function CharacterDesign() {
         <div className="grid grid-cols-1 gap-10 md:grid-cols-[0.34fr_0.66fr] md:gap-8 min-[1200px]:grid-cols-[0.38fr_0.62fr] min-[1200px]:gap-8 min-[1200px]:items-stretch">
           {/* 左侧：在在角色视觉区 + 三个轻量虚线标注 */}
           <Reveal y={10} className="md:col-start-1 md:row-span-2">
-            <div className="relative mx-auto flex min-h-[300px] w-full max-w-[420px] items-end justify-center pb-5 md:h-full md:min-h-[440px] md:max-w-none md:pb-6">
+            <div className="relative mx-auto flex min-h-[300px] w-full max-w-[420px] items-center justify-center pb-5 md:h-full md:min-h-[440px] md:max-w-none md:pb-6">
               <ZaizaiVideo className="h-52 w-52 md:h-64 md:w-64 min-[1200px]:h-72 min-[1200px]:w-72" />
 
               {/* 标注一：种子形态 —— 左上，虚线指向角色顶部 */}
@@ -38,10 +38,8 @@ export default function CharacterDesign() {
                     <div className="text-[13px] font-semibold text-accent">
                       种子形态
                     </div>
-                    <p className="mt-1 hidden text-[12px] leading-snug text-ink-soft min-[1200px]:block">
-                      成长，而不是治愈承诺。
-                      <br />
-                      带着此刻的状态，也可以慢慢向前生长。
+                    <p className="mt-1 hidden text-[12px] leading-snug text-ink-soft min-[1200px]:block min-[1200px]:translate-y-3">
+                      承载，而不是治愈承诺
                     </p>
                   </div>
                   <div className="mt-[7px] flex flex-1 items-center">
@@ -62,10 +60,8 @@ export default function CharacterDesign() {
                     <div className="text-[13px] font-semibold text-accent">
                       低位目光
                     </div>
-                    <p className="mt-1 hidden text-[12px] leading-snug text-ink-soft min-[1200px]:block">
-                      不凝视，也不审视。
-                      <br />
-                      减少被观察和被评判的压力。
+                    <p className="mt-1 hidden text-[12px] leading-snug text-ink-soft min-[1200px]:block min-[1200px]:translate-x-3">
+                      不凝视，也不审视
                     </p>
                   </div>
                 </div>
@@ -78,10 +74,8 @@ export default function CharacterDesign() {
                     <div className="text-[13px] font-semibold text-accent">
                       低重心
                     </div>
-                    <p className="mt-1 hidden text-[12px] leading-snug text-ink-soft min-[1200px]:block">
-                      稳定，不轻易被带乱。
-                      <br />
-                      动作缓慢，传递安定而非兴奋的反馈。
+                    <p className="mt-1 hidden text-[12px] leading-snug text-ink-soft min-[1200px]:block min-[1200px]:-translate-x-3">
+                      动作缓慢，传递安定
                     </p>
                   </div>
                   <div className="mt-[7px] flex flex-1 items-center">
