@@ -20,6 +20,7 @@ const dimensions = [
 const scenarios = [
   {
     index: "01",
+    short: "MI",
     title: "当用户不想行动，或很难开始",
     method: "借鉴 MI",
     methodText: "减少对抗，让改变从愿意做的一小步开始。",
@@ -32,6 +33,7 @@ const scenarios = [
   },
   {
     index: "02",
+    short: "DBT",
     title: "当情绪过载，暂时无法整理问题",
     method: "借鉴 DBT",
     methodText: "先接住情绪、稳下来，再进入理解和行动。",
@@ -44,6 +46,7 @@ const scenarios = [
   },
   {
     index: "03",
+    short: "CBT",
     title: "当事件、想法和感受混在一起",
     method: "借鉴 CBT",
     methodText: "帮用户一点点看清它们之间的关系。",
@@ -56,6 +59,7 @@ const scenarios = [
   },
   {
     index: "04",
+    short: "BPS",
     title: "当状态零散，长期变化难以判断",
     method: "借鉴 BPS 与社会功能视角",
     methodText: "把多维信息放回完整生活中理解。",
@@ -134,14 +138,11 @@ export default function ClinicalFramework() {
                       {scenario.title}
                     </h3>
                     <span className="inline-flex shrink-0 items-center rounded-full border border-line bg-accent-soft px-3 py-1 text-[13px] font-semibold tracking-tight text-ink">
-                      {scenario.index}
+                      {scenario.short}
                     </span>
                   </div>
 
                   <p className="mt-3 text-[14px] leading-relaxed text-ink-soft md:text-[15px]">
-                    <span className="mr-2 inline-flex items-center rounded-full border border-line bg-accent-soft px-3 py-1 text-[13px] font-semibold tracking-tight text-ink">
-                      {scenario.method}
-                    </span>
                     {scenario.methodText}
                   </p>
 
