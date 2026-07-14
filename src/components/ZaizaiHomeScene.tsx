@@ -3,9 +3,9 @@ import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import {
   HOME_PHASE_ORDER,
-  HOME_PHASE_SCENE,
   type HomeTimePhase,
 } from "@/lib/homeTimePhase";
+import { getHomePhaseScene } from "@/shared/config/homeAnimationRegistry";
 
 /* —— 首页在在动画场景：7 个时间段的 webm 视频叠放，通过 opacity 切换 ——
  * - preloadAll=true（体验模式轮播）：7 个 video 同时挂载并 preload="auto"，
@@ -38,6 +38,7 @@ export default function ZaizaiHomeScene({
   preloadAll?: boolean;
 }) {
   const phases = preloadAll ? HOME_PHASE_ORDER : [phase];
+  const sceneRegistry = getHomePhaseScene();
 
   return (
     <div className="pointer-events-none relative h-[304px] w-[220px] overflow-visible">
@@ -51,7 +52,7 @@ export default function ZaizaiHomeScene({
           {phases.map((p) => (
             <PhaseVideo
               key={p}
-              src={HOME_PHASE_SCENE[p]}
+              src={sceneRegistry[p]}
               alt={SCENE_RENDER[p].alt}
               isActive={p === phase}
             />

@@ -145,24 +145,8 @@ export function getNextHomePhase(phase: HomeTimePhase): HomeTimePhase {
   return HOME_PHASE_ORDER[(idx + 1) % HOME_PHASE_ORDER.length];
 }
 
-/* —— 各时间段对应的在在首页动画素材（向后兼容） —— */
-export const HOME_PHASE_SCENE: Record<HomeTimePhase, string> = {
-  morning: "/assets/homepage-animations/打开窗帘，阳光自己就挤进来了.webm",
-  forenoon: "/assets/homepage-animations/根往下扎的时候看不见，等看见时，小苗已经长高了。.webm",
-  noon: "/assets/homepage-animations/累了就歇一会儿,草地不会催种子发芽。.webm",
-  afternoon: "/assets/homepage-animations/今天有什么小小的好事发生吗？.webm",
-  dusk: "/assets/homepage-animations/我喜欢把小事记下来，不然它们会像风一样跑掉。.webm",
-  evening: "/assets/homepage-animations/走的时候只顾着累，回头才发现，已经走出好远了。.webm",
-  night: "/assets/homepage-animations/把心里的事一件件摆出来，它们就没那么挤了。.webm",
-};
-
-/* —— 各时间段对应的气泡文案 —— */
-export const HOME_PHASE_BUBBLE_TEXT: Record<HomeTimePhase, string> = {
-  morning: "打开窗帘，阳光自己就挤进来了",
-  forenoon: "根往下扎的时候看不见，等看见时，小苗已经长高了。",
-  noon: "累了就歇一会儿，草地不会催种子发芽。",
-  afternoon: "今天有什么小小的好事发生吗？",
-  dusk: "我喜欢把小事记下来，不然它们会像风一样跑掉。",
-  evening: "走的时候只顾着累，回头才发现，已经走出好远了。",
-  night: "把心里的事一件件摆出来，它们就没那么挤了。",
-};
+/* —— 各时间段对应的在在首页动画素材与气泡文案 ——
+ * 已拆分到 apps/demo/config/homeAnimation.ts 和
+ * apps/experience/config/homeAnimation.ts，通过
+ * shared/config/homeAnimationRegistry.ts 的选择器按模式分发。
+ * homeTimePhase.ts 仅保留时间段类型与纯时间逻辑。 */

@@ -37,9 +37,9 @@ import DialogueZaiyaAnimation, {
 import {
   getHomeTimePhase,
   getNextHomePhase,
-  HOME_PHASE_BUBBLE_TEXT,
   type HomeTimePhase,
 } from "@/lib/homeTimePhase";
+import { getHomePhaseBubbleText } from "@/shared/config/homeAnimationRegistry";
 import EnergyRewardFeedback, {
   type EnergyRewardEvent,
 } from "./EnergyRewardFeedback";
@@ -485,7 +485,7 @@ export default function AppMainSurface({
     if (!isFreeImmersive) return;
     // 单段时长 = 当前文案打字机时长 + 停留时间
     // 打字机每字 80ms（与 HomeBubbleCopy 一致），最少 1s；停留 7s 让动画与文案被充分感知。
-    const text = HOME_PHASE_BUBBLE_TEXT[carouselPhase];
+    const text = getHomePhaseBubbleText()[carouselPhase];
     const typingMs = Math.max(Array.from(text).length * 80, 1000);
     const holdMs = 7000;
     const timer = window.setTimeout(() => {
