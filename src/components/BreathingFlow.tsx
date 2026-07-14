@@ -446,9 +446,9 @@ export default function BreathingFlow({
             <button
               onClick={onBackToRelief}
               aria-label="返回"
-              className="absolute left-5 top-12 z-10 grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+              className="absolute left-5 top-12 z-10 grid h-11 w-11 place-items-center rounded-full text-ink-soft outline-none transition-colors hover:bg-line-soft hover:text-ink focus-visible:outline-none"
             >
-              <ChevronLeft className="h-6 w-6" />
+              <ChevronLeft className="h-6 w-6" strokeWidth={1.8} />
             </button>
 
             {/* 在在与场景引导：左侧主视觉，右侧轻气泡。整体略下移，形成均衡三段结构上部 */}
@@ -529,9 +529,9 @@ export default function BreathingFlow({
                 setStopSheet(true);
               }}
               aria-label="返回"
-              className="absolute left-5 top-12 z-10 grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+              className="absolute left-5 top-12 z-10 grid h-11 w-11 place-items-center rounded-full text-ink-soft outline-none transition-colors hover:bg-line-soft hover:text-ink focus-visible:outline-none"
             >
-              <ChevronLeft className="h-6 w-6" />
+              <ChevronLeft className="h-6 w-6" strokeWidth={1.8} />
             </button>
 
             {/* 顶部陪伴层：在在上移，把中心位置留给呼吸圆环。 */}

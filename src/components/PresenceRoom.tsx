@@ -12,7 +12,6 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
-import { CollapseButton } from "./FeaturePageTransition";
 import LazyVideo from "./LazyVideo";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -102,6 +101,17 @@ export function SocialSceneSelectContent({
       transition={{ duration: 0.3, ease }}
       className="absolute inset-0 z-20 flex flex-col bg-white"
     >
+      {/* 左上角统一返回入口：与「缓解」模块同款（left-5 top-12，h-11 w-11 热区），
+          直接回产品主页。z-50 高于内部内容，保证退出路径不被拦截。 */}
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="返回主页"
+        className="absolute left-5 top-12 z-50 grid h-11 w-11 place-items-center rounded-full text-ink-soft outline-none transition-colors hover:bg-line-soft hover:text-ink focus-visible:outline-none"
+      >
+        <ChevronLeft className="h-6 w-6" strokeWidth={1.8} />
+      </button>
+
       {/* 顶部陪伴区：在在 GIF（左）+ 气泡文案（右）横向组合 */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
@@ -204,9 +214,6 @@ export function SocialSceneSelectContent({
           ))}
         </div>
       </motion.div>
-
-      {/* 底部中央返回箭头 */}
-      <CollapseButton onClick={onClose} ariaLabel="收起轻社交" />
     </motion.div>
   );
 }
@@ -442,9 +449,9 @@ function DazeReady({
       <button
         onClick={onBack}
         aria-label="返回场景选择"
-        className="absolute left-5 top-12 z-20 grid h-8 w-8 place-items-center rounded-full text-white/80 transition-colors hover:bg-white/10"
+        className="absolute left-5 top-12 z-20 grid h-11 w-11 place-items-center rounded-full text-white/80 outline-none transition-colors hover:bg-white/10 focus-visible:outline-none"
       >
-        <ChevronLeft className="h-6 w-6" />
+        <ChevronLeft className="h-6 w-6" strokeWidth={1.8} />
       </button>
 
       {/* 顶部文案 */}
@@ -600,7 +607,19 @@ function DazeActive({ onExit }: { onExit: () => void }) {
       transition={{ duration: 0.3, ease }}
       className="absolute inset-0"
     >
-      {/* 左上角共在动态流 */}
+      {/* 左上角统一返回入口：与底部「长按结束」共享同一个 onExit（即 onFinish →
+          handleDazeFinish），统一完成活动时长结算、能量奖励判断与页面状态清理，
+          避免两条退出路径产生数据不一致。z-30 高于 PresencePulse(z-10)。 */}
+      <button
+        type="button"
+        onClick={onExit}
+        aria-label="返回轻社交"
+        className="absolute left-5 top-12 z-30 grid h-11 w-11 place-items-center rounded-full text-white/80 outline-none transition-colors hover:bg-white/10 focus-visible:outline-none"
+      >
+        <ChevronLeft className="h-6 w-6" strokeWidth={1.8} />
+      </button>
+
+      {/* 左上角共在动态流（下移至 top-24，让出返回箭头空间） */}
       <PresencePulse />
 
       {/* 底部轻渐变蒙层：保证文案与按钮可读 */}
@@ -681,7 +700,7 @@ function PresencePulse({
   }, [messages]);
 
   return (
-    <div className="absolute left-5 top-12 z-10 flex max-w-[200px] flex-col gap-1.5">
+    <div className="absolute left-5 top-24 z-10 flex max-w-[200px] flex-col gap-1.5">
       {/* 左上角极轻渐变暗层：为整列文字可读，不做明显卡片 */}
       <div className="pointer-events-none absolute -left-5 -top-12 h-[220px] w-[240px] rounded-full bg-black/20 blur-2xl" />
 
@@ -1014,9 +1033,9 @@ function EatReady({
       <button
         onClick={onBack}
         aria-label="返回场景选择"
-        className="absolute left-5 top-12 z-20 grid h-8 w-8 place-items-center rounded-full text-white/80 transition-colors hover:bg-white/10"
+        className="absolute left-5 top-12 z-20 grid h-11 w-11 place-items-center rounded-full text-white/80 outline-none transition-colors hover:bg-white/10 focus-visible:outline-none"
       >
-        <ChevronLeft className="h-6 w-6" />
+        <ChevronLeft className="h-6 w-6" strokeWidth={1.8} />
       </button>
 
       {/* 顶部文案 */}
@@ -1093,7 +1112,19 @@ function EatActive({ onExit }: { onExit: () => void }) {
       transition={{ duration: 0.3, ease }}
       className="absolute inset-0"
     >
-      {/* 左上角共在动态流 */}
+      {/* 左上角统一返回入口：与底部「长按结束」共享同一个 onExit（即 onFinish →
+          handleEatFinish），统一完成活动时长结算、能量奖励判断与页面状态清理，
+          避免两条退出路径产生数据不一致。z-30 高于 PresencePulse(z-10)。 */}
+      <button
+        type="button"
+        onClick={onExit}
+        aria-label="返回轻社交"
+        className="absolute left-5 top-12 z-30 grid h-11 w-11 place-items-center rounded-full text-white/80 outline-none transition-colors hover:bg-white/10 focus-visible:outline-none"
+      >
+        <ChevronLeft className="h-6 w-6" strokeWidth={1.8} />
+      </button>
+
+      {/* 左上角共在动态流（下移至 top-24，让出返回箭头空间） */}
       <PresencePulse
         messages={EAT_PRESENCE_MESSAGES}
         mainText="正在一起吃饭"
