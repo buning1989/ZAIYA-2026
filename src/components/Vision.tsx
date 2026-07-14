@@ -178,7 +178,9 @@ export default function Vision() {
           <Reveal>
             <SectionEyebrow index={5} name="未来愿景" />
             <h2 className="mt-5 max-w-[900px] text-[26px] font-semibold leading-tight tracking-tight text-ink md:mt-6 md:text-[32px]">
-              让每一个因精神心理困扰而生活失序的人，都能连接起持续、完整的支持。
+              让每一个因精神心理困扰而生活失序的人，
+              <br />
+              都能连接起持续、完整的支持。
             </h2>
             <p className="mt-6 max-w-[860px] text-[15px] leading-relaxed text-ink-soft md:text-[16px]">
               在呀 ZÀIYA 先和用户建立持续连接，再帮他们把医疗、学校与家庭连起来，让分散的支持不再彼此断裂。
