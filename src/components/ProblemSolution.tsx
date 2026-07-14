@@ -72,7 +72,7 @@ export default function ProblemSolution() {
       <span id="problem" className="pointer-events-none absolute -top-20 h-px w-px" aria-hidden="true" />
       <div className="container pt-14 pb-20 md:pt-20 md:pb-24">
         <Reveal>
-          <SectionEyebrow index={1} name="需求与缺口" />
+          <SectionEyebrow index={1} name="现实缺口" />
         </Reveal>
 
         <Reveal delay={0.04}>

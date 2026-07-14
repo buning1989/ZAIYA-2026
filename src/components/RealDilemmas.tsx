@@ -36,7 +36,7 @@ export default function RealDilemmas() {
         <div className="h-px w-full bg-line" aria-hidden="true" />
         <SectionHeading
           index={2}
-          name="真实困境"
+          name="用户困境"
           title="他们面对的，远不只是情绪不好。"
           className="mt-7 md:mt-8"
         />

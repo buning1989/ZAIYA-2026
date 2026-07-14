@@ -12,11 +12,11 @@ type ObservedSectionId =
 type SolutionSubsectionId = "product" | "method" | "character";
 
 const mainSections: { id: MainSectionId; label: string; targetId: string }[] = [
-  { id: "needs", label: "需求与缺口", targetId: "needs" },
-  { id: "pain", label: "真实困境", targetId: "pain" },
-  { id: "solution", label: "解决方案", targetId: "solution-product" },
-  { id: "team", label: "为什么是我们", targetId: "team" },
-  { id: "vision", label: "愿景", targetId: "vision" },
+  { id: "needs", label: "现实缺口", targetId: "needs" },
+  { id: "pain", label: "用户困境", targetId: "pain" },
+  { id: "solution", label: "在呀方案", targetId: "solution-product" },
+  { id: "team", label: "关于团队", targetId: "team" },
+  { id: "vision", label: "未来愿景", targetId: "vision" },
 ];
 
 const observedSections: { id: ObservedSectionId; mainId: MainSectionId; subId?: SolutionSubsectionId }[] = [
@@ -30,9 +30,9 @@ const observedSections: { id: ObservedSectionId; mainId: MainSectionId; subId?: 
 ];
 
 const solutionSubsections: { id: SolutionSubsectionId; label: string; targetId: ObservedSectionId }[] = [
-  { id: "product", label: "我们怎么做", targetId: "solution-product" },
-  { id: "method", label: "专业方法", targetId: "solution-method" },
-  { id: "character", label: "角色设计", targetId: "solution-character" },
+  { id: "product", label: "产品机制", targetId: "solution-product" },
+  { id: "method", label: "心理技术", targetId: "solution-method" },
+  { id: "character", label: "陪伴角色", targetId: "solution-character" },
 ];
 
 function sectionIndexLabel(index: number) {

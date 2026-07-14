@@ -110,7 +110,7 @@ export default function CharacterDesign() {
           {/* 右侧：标题区 */}
           <div className="flex flex-col md:col-start-2">
             <Reveal y={10}>
-              <SubsectionEyebrow index="03.3" name="角色设计" />
+              <SubsectionEyebrow index="03.3" name="陪伴角色" />
             </Reveal>
 
             <Reveal delay={0.04} y={10}>

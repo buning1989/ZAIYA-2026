@@ -75,7 +75,7 @@ export default function ClinicalFramework() {
       <div className="container pt-12 pb-8 md:pt-12 md:pb-8">
         <div className="h-px w-full bg-line-soft" aria-hidden="true" />
         <Reveal className="mt-7 md:mt-8">
-          <SubsectionEyebrow index="03.2" name="专业方法" />
+          <SubsectionEyebrow index="03.2" name="心理技术" />
           <h2 className="mt-5 text-[26px] leading-tight tracking-tight text-ink md:mt-6 md:text-[32px]">
             先理解一个人的完整处境，
             <br />
