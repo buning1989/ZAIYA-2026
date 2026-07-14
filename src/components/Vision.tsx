@@ -124,32 +124,6 @@ function ConnectionDivider({ label }: { label: string }) {
   );
 }
 
-function ThreePartyConnector() {
-  return (
-    <div className="absolute inset-x-0 top-0 h-[118px]" aria-hidden="true">
-      <div className="absolute left-[calc((100%_-_2.5rem)/6)] right-[calc((100%_-_2.5rem)/6)] top-0 grid grid-cols-[1fr_auto_1fr] items-center gap-7">
-        <div className="h-px bg-ink-soft/55" />
-        <div className="text-center text-[15px] font-semibold leading-none tracking-tight text-ink md:text-[16px]">
-          在呀 ZÀIYA 帮用户连接三方
-        </div>
-        <div className="h-px bg-ink-soft/55" />
-      </div>
-      <div className="absolute inset-x-0 bottom-0 grid h-full grid-cols-3 gap-5">
-        {supports.map((support, index) => (
-          <div key={support.title} className="relative flex justify-center">
-            <div
-              className={[
-                "absolute bottom-0 w-px bg-ink-soft/55",
-                index === 1 ? "top-[36px]" : "top-3",
-              ].join(" ")}
-            />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function MobileConnection({ bidirectional = false }: { bidirectional?: boolean }) {
   return (
     <svg
@@ -207,9 +181,7 @@ export default function Vision() {
                   />
                 </div>
 
-                <div className="relative mt-10 pt-[118px]">
-                  <ThreePartyConnector />
-
+                <div className="relative mt-10">
                   <div className="grid grid-cols-3 gap-5">
                     {supports.map((support) => (
                       <SupportNode key={support.title} {...support} />
