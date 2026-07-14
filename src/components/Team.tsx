@@ -90,7 +90,8 @@ export default function Team() {
             为什么是我们
           </div>
           <h2 className="mt-4 max-w-3xl text-[34px] font-semibold leading-tight tracking-tight text-ink md:text-[44px]">
-            二十年亲历，三次实践。
+            <span className="inline-block">二十年亲历，</span>
+            <span className="inline-block">三次实践。</span>
           </h2>
           <p className="mt-5 max-w-[760px] text-[16px] leading-relaxed text-ink-soft md:text-[17px]">
             我们既理解精神心理困扰如何改变一个人的生活，也具备把复杂问题转化为低门槛、可使用产品的能力。
@@ -219,7 +220,8 @@ export default function Team() {
 
         <Reveal delay={0.3}>
           <p className="mx-auto mt-7 max-w-2xl text-center text-[18px] font-semibold leading-relaxed tracking-tight text-ink md:text-[22px]">
-            一个人更接近问题本身，一个人负责把问题做成产品。
+            <span className="inline-block">一个人更接近问题本身，</span>
+            <span className="inline-block">一个人负责把问题做成产品。</span>
           </p>
         </Reveal>
 
@@ -228,7 +230,8 @@ export default function Team() {
             <p className="text-[22px] font-semibold leading-snug tracking-tight text-ink md:text-[28px]">
               这不是一场临时参赛，
               <br />
-              而是我们会持续做下去的长期方向。
+              而是我们会持续做下去的
+              <span className="inline-block">长期方向。</span>
             </p>
           </div>
         </Reveal>
