@@ -90,7 +90,7 @@ export type AwakeDurationOption = {
   estimate?: number;
 };
 
-/* —— 大概上床时间（横滑时间轴，1 小时粒度） ——
+/* —— 大概上床时间（折叠分组，1 小时粒度） ——
  * label 为口语化短文案，rangeText/estimate 保留标准范围与估算值。
  * 「记不清」不再作为选项，改为页面下方的「记不清，先跳过」弱化按钮，跳过后字段为 null。 */
 export const bedTimeRanges: TimeRangeOption[] = [
@@ -116,7 +116,7 @@ export const fallAsleepDurationOptions: AwakeDurationOption[] = [
   { label: "几乎没睡着", value: "barely_slept" },
 ];
 
-/* —— 大概醒来或起床时间（横滑时间轴，1 小时粒度） ——
+/* —— 大概醒来或起床时间（折叠分组，1 小时粒度） ——
  * 方向：清晨 → 中午。label 为口语化短文案。 */
 export const wakeTimeRanges: TimeRangeOption[] = [
   { label: "6点前", value: "before_06", rangeText: "06:00 前", estimate: "05:30" },

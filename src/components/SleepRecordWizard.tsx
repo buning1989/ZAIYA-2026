@@ -4,7 +4,9 @@ import { Check } from "lucide-react";
 import RecordInlineInput from "./RecordInlineInput";
 import RecordNoteSection from "./RecordNoteSection";
 import RecordSummaryCard, { type SummaryRow } from "./RecordSummaryCard";
-import HorizontalTimeScale from "./HorizontalTimeScale";
+import GroupedTimeChoice, {
+  type GroupedTimeChoiceGroup,
+} from "./GroupedTimeChoice";
 import SegmentedTimeScale from "./SegmentedTimeScale";
 import {
   sleepLevels,
@@ -22,6 +24,24 @@ const ease = [0.22, 1, 0.36, 1] as const;
 const TOTAL_STEPS = 6;
 // 选中后保留 550ms 再进入下一题，让用户清楚看到选中反馈
 const AUTO_ADVANCE_MS = 550;
+
+const bedTimeGroups: GroupedTimeChoiceGroup[] = [
+  { id: "earlier", label: "更早", optionValues: ["before_21"] },
+  { id: "evening", label: "晚上", optionValues: ["21_22", "22_23", "23_00"] },
+  { id: "lateNight", label: "凌晨", optionValues: ["00_01", "01_02", "02_03"] },
+  { id: "later", label: "更晚", optionValues: ["after_03"] },
+];
+
+const wakeTimeGroups: GroupedTimeChoiceGroup[] = [
+  { id: "earlier", label: "更早", optionValues: ["before_06"] },
+  { id: "earlyMorning", label: "清晨", optionValues: ["06_07", "07_08"] },
+  {
+    id: "morning",
+    label: "上午",
+    optionValues: ["08_09", "09_10", "10_11", "11_12"],
+  },
+  { id: "later", label: "更晚", optionValues: ["after_12"] },
+];
 
 type Step = 1 | 2 | 3 | 4 | 5 | 6;
 // 三段状态机：editing（填写）→ preview（结算单预览，未保存）→ saved（保存成功）
@@ -555,20 +575,19 @@ export default function SleepRecordWizard({
               </div>
             )}
 
-            {/* —— Step 3：大概上床时间（横滑时间点刻度，自动进入） —— */}
+            {/* —— Step 3：大概上床时间（折叠分组，选择具体小时后自动进入） —— */}
             {step === 3 && (
               <div className="pt-10">
                 <p className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
                   大概几点上床？
                 </p>
                 <div className="mt-8">
-                  <HorizontalTimeScale
+                  <GroupedTimeChoice
                     options={bedTimeRanges}
+                    groups={bedTimeGroups}
                     value={bedTimeRange}
                     onChange={(v) => handleSelectTimeRange(v, 3)}
                     ariaLabel="上床时间"
-                    startLabel="晚上"
-                    endLabel="凌晨"
                     disabled={isLocked}
                   />
                 </div>
@@ -594,20 +613,19 @@ export default function SleepRecordWizard({
               </div>
             )}
 
-            {/* —— Step 5：大概醒来或起床时间（横滑时间点刻度，自动进入） —— */}
+            {/* —— Step 5：大概醒来或起床时间（折叠分组，选择具体小时后自动进入） —— */}
             {step === 5 && (
               <div className="pt-10">
                 <p className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
                   大概几点醒来或起床？
                 </p>
                 <div className="mt-8">
-                  <HorizontalTimeScale
+                  <GroupedTimeChoice
                     options={wakeTimeRanges}
+                    groups={wakeTimeGroups}
                     value={wakeTimeRange}
                     onChange={(v) => handleSelectTimeRange(v, 5)}
                     ariaLabel="醒来时间"
-                    startLabel="清晨"
-                    endLabel="中午"
                     disabled={isLocked}
                   />
                 </div>
