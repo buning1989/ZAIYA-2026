@@ -38,7 +38,7 @@ export default function RealDilemmas() {
         />
 
         <Reveal delay={0.1}>
-          <p className="mt-6 max-w-prose text-[15px] leading-relaxed text-ink-soft">
+          <p className="mt-6 max-w-prose text-[15px] leading-relaxed text-ink-soft md:text-[16px]">
             在一项基于小红书公开内容的探索性调研中，我们分析了约 13,900 条青少年与家长的表达。反复出现的，是生活无法启动、上学与社交受阻，以及痛苦长期被误解。
           </p>
         </Reveal>
@@ -47,7 +47,7 @@ export default function RealDilemmas() {
           {voiceCards.map((card, i) => (
             <Reveal key={card.tag} delay={0.12 + i * 0.06}>
               <article className="flex h-full min-h-[230px] flex-col rounded-lg border border-line bg-white p-6 md:min-h-[250px] md:p-7">
-                <h3 className="font-display text-[18px] font-semibold leading-snug tracking-tight text-ink md:text-[19px]">
+                <h3 className="font-display text-[17px] font-semibold leading-snug tracking-tight text-ink md:text-[18px]">
                   <span className="mr-2 font-body text-[12px] font-semibold tracking-[0.14em] text-ink-faint">
                     {String(i + 1).padStart(2, "0")}
                   </span>
@@ -59,10 +59,12 @@ export default function RealDilemmas() {
                     src={card.illustration}
                     alt=""
                     aria-hidden="true"
+                    loading="lazy"
+                    decoding="async"
                     className="h-[72px] w-[62px] shrink-0 object-contain opacity-80 md:h-[86px] md:w-[74px]"
                   />
 
-                  <blockquote className="bubble-copy min-w-0 flex-1 !max-w-none !text-left md:!text-[18px]">
+                  <blockquote className="bubble-copy min-w-0 flex-1 !max-w-none !text-left !text-[16px] md:!text-[16px]">
                     {card.voice}
                   </blockquote>
                 </div>

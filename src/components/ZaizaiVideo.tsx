@@ -88,7 +88,17 @@ export default function ZaizaiVideo({
     return () => v.removeEventListener("playing", onPlaying);
   }, [inView]);
 
-  if (reducedMotion || failed || !canLoadVideo) {
+  if (!canLoadVideo) {
+    return (
+      <div
+        ref={containerRef}
+        className={`pointer-events-none relative overflow-hidden ${className}`}
+        aria-hidden="true"
+      />
+    );
+  }
+
+  if (reducedMotion || failed) {
     return (
       <div
         ref={containerRef}
@@ -98,6 +108,8 @@ export default function ZaizaiVideo({
           src={ZAIZAI_VIDEO_POSTER}
           alt=""
           aria-hidden="true"
+          loading="lazy"
+          decoding="async"
           className="block h-full w-full select-none object-contain"
         />
       </div>
@@ -113,11 +125,13 @@ export default function ZaizaiVideo({
         <div className="absolute left-1/2 top-[84%] h-[10%] w-[56%] -translate-x-1/2 rounded-full bg-black/18 blur-[7px]" />
       )}
       {/* 静态首帧 poster：视频未 ready 前显示，ready 后隐藏（透明视频会透出 poster） */}
-      {!videoReady && (
+      {inView && !videoReady && (
         <img
           src={ZAIZAI_VIDEO_POSTER}
           alt=""
           aria-hidden="true"
+          loading="lazy"
+          decoding="async"
           className="pointer-events-none absolute left-1/2 top-1/2 block h-[170%] w-auto max-w-none -translate-x-1/2 -translate-y-1/2 select-none object-contain"
         />
       )}

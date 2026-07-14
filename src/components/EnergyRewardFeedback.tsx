@@ -8,13 +8,16 @@ import {
   getLightRewardTitle,
   type LightRewardKind,
 } from "@/lib/lightReward";
+import { getLightRewardTargetPoint } from "@/lib/lightRewardGeometry";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 const PARTICLE_COUNT = 3;
 const PARTICLE_START_S = 1.78;
 const PARTICLE_FLIGHT_S = 1.34;
 const PARTICLE_DELAY_S = 0.045;
-const ARRIVE_MS = 3120;
+const PARTICLE_LAND_AT = 0.84;
+const PARTICLE_ABSORB_AT = 0.93;
+const ARRIVE_MS = 3030;
 const DONE_MS = 3500;
 const REDUCED_DONE_MS = 2850;
 const FEEDBACK_BOTTOM_OFFSET = 185;
@@ -112,12 +115,13 @@ export default function EnergyRewardFeedback({
     const overlayBounds = overlayRef.current?.getBoundingClientRect();
     if (!overlayBounds) return;
 
-    const targetBounds = targetRef.current?.getBoundingClientRect();
+    const targetElement =
+      targetRef.current?.querySelector<SVGElement>(
+        "[data-light-reward-target]",
+      ) ?? targetRef.current;
+    const targetBounds = targetElement?.getBoundingClientRect();
     const target = targetBounds
-      ? {
-          x: targetBounds.left - overlayBounds.left + targetBounds.width / 2,
-          y: targetBounds.top - overlayBounds.top + targetBounds.height / 2,
-        }
+      ? getLightRewardTargetPoint(overlayBounds, targetBounds)
       : getFallbackTarget(overlayBounds);
 
     setGeometry({
@@ -153,6 +157,7 @@ export default function EnergyRewardFeedback({
   return (
     <div
       ref={overlayRef}
+      data-light-reward-overlay
       className="pointer-events-none absolute inset-0 z-50 overflow-hidden"
     >
       <AnimatePresence>
@@ -203,30 +208,48 @@ export default function EnergyRewardFeedback({
                 const offset = particleOffsets[index];
                 const dx = geometry.target.x - geometry.origin.x;
                 const dy = geometry.target.y - geometry.origin.y;
+                const delay =
+                  PARTICLE_START_S + index * PARTICLE_DELAY_S;
+                const flightTransition = {
+                  delay,
+                  duration: PARTICLE_FLIGHT_S,
+                  times: [
+                    0,
+                    0.1,
+                    0.68,
+                    PARTICLE_LAND_AT,
+                    PARTICLE_ABSORB_AT,
+                    1,
+                  ],
+                  ease,
+                };
 
                 return (
                   <motion.div
                     key={`${event.id}-${index}`}
                     initial={{ x: 0, y: 0, opacity: 0, scale: 0.72 }}
                     animate={{
-                      x: [0, offset.x, dx * 0.9, dx, dx],
-                      y: [0, offset.y, dy * 0.9, dy, dy],
-                      opacity: [0, 1, 1, 1, 0],
-                      scale: [0.72, 1.12, 0.98, 0.8, 0.36],
+                      x: [0, offset.x, dx * 0.88, dx, dx, dx],
+                      y: [0, offset.y, dy * 0.88, dy, dy, dy],
+                      opacity: 1,
+                      scale: [0.72, 1.12, 1, 0.92, 0.72, 0.18],
                       rotate: [
                         0,
                         offset.rotate,
                         offset.rotate * 0.55,
                         0,
                         0,
+                        0,
                       ],
                     }}
                     transition={{
-                      delay: PARTICLE_START_S + index * PARTICLE_DELAY_S,
-                      duration: PARTICLE_FLIGHT_S,
-                      times: [0, 0.1, 0.78, 0.9, 1],
-                      ease,
+                      x: flightTransition,
+                      y: flightTransition,
+                      scale: flightTransition,
+                      rotate: flightTransition,
+                      opacity: { delay, duration: 0.12, ease },
                     }}
+                    data-light-reward-particle
                     className={`absolute grid h-8 w-8 place-items-center ${visual.particleClass}`}
                     style={{
                       left: geometry.origin.x - 16,

@@ -1216,7 +1216,7 @@ export default function AppMainSurface({
                 ? "39%"
                 : "34%"
               : effectiveMode === "dialog"
-                ? "4%"
+                ? "-6%"
                 : "15%",
           scale: effectiveMode === "home" ? 1 : 0.65,
         }}
@@ -1430,12 +1430,12 @@ export default function AppMainSurface({
             {/* 消息区顶部渐变蒙层：只覆盖消息列表顶端，让上滑内容自然淡出。 */}
             <div
               className="pointer-events-none absolute inset-x-0 z-[25] h-16 bg-gradient-to-b from-white/95 via-white/70 to-white/0"
-              style={{ top: "33%" }}
+              style={{ top: "23%" }}
             />
 
             {/* 对话内容区：独立容器，位于在在动画下方、输入区上方，可滚动。
                 正常展示 mock 历史记录；dialogMessages 为空时保留轻量引导文案作为兜底。
-                top 33% 确保在在动画固定陪伴区（260px 高 + top 7%）下方，保留明确间距不重叠；
+                top 23% 与对话在在的 10% 上移幅度同步，为消息列表释放更多展示空间；
                 bottom 92px 让出底部输入区，最后一条气泡不被遮挡。
                 演示模式注入对话脚本时（hideInputDialog）输入区隐藏，bottom 收到 24px 让消息区下扩。 */}
             <motion.div
@@ -1445,7 +1445,7 @@ export default function AppMainSurface({
               exit={{ opacity: 0, y: 12 }}
               transition={{ duration: 0.35, ease, delay: 0.05 }}
               className="no-scrollbar absolute inset-x-0 z-20 overflow-y-auto px-6 pt-2"
-              style={{ top: "33%", bottom: hideInputDialog ? "24px" : "92px" }}
+              style={{ top: "23%", bottom: hideInputDialog ? "24px" : "92px" }}
             >
               {dialogMessages.length === 0 ? (
                 <p className="text-[13px] leading-relaxed text-ink-faint">

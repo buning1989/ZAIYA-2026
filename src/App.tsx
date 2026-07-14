@@ -2,12 +2,6 @@ import { useState, lazy, Suspense } from "react";
 import Nav from "@/components/Nav";
 import Hero from "@/components/Hero";
 import ProblemSolution from "@/components/ProblemSolution";
-import RealDilemmas from "@/components/RealDilemmas";
-import ProductFeatures from "@/components/ProductFeatures";
-import ClinicalFramework from "@/components/ClinicalFramework";
-import CharacterDesign from "@/components/CharacterDesign";
-import Team from "@/components/Team";
-import Vision from "@/components/Vision";
 import Footer from "@/components/Footer";
 import { demoExperienceLoader } from "@/lib/moduleLoaders";
 import { setStorageMode } from "@/shared/storage/namespacedStorage";
@@ -16,6 +10,12 @@ import { setStorageMode } from "@/shared/storage/namespacedStorage";
  * 10+ Demo 流程、场景数据等）拆分为独立 chunk，落地页首屏不加载 Demo 代码。
  * 预加载优化：使用集中式 loader，确保预加载与真实渲染复用同一份 Promise。 */
 const DemoExperience = lazy(demoExperienceLoader);
+const RealDilemmas = lazy(() => import("@/components/RealDilemmas"));
+const ProductFeatures = lazy(() => import("@/components/ProductFeatures"));
+const ClinicalFramework = lazy(() => import("@/components/ClinicalFramework"));
+const CharacterDesign = lazy(() => import("@/components/CharacterDesign"));
+const Team = lazy(() => import("@/components/Team"));
+const Vision = lazy(() => import("@/components/Vision"));
 
 /** 初始 URL 是否带 ?mode=guided / ?mode=free（用于直接访问对应模式）。 */
 function urlHasDemoMode(): boolean {
@@ -58,12 +58,14 @@ export default function App() {
         <main>
           <Hero onOpenDemo={() => setDemoOpen(true)} />
           <ProblemSolution />
-          <RealDilemmas />
-          <ProductFeatures />
-          <ClinicalFramework />
-          <CharacterDesign />
-          <Team />
-          <Vision />
+          <Suspense fallback={null}>
+            <RealDilemmas />
+            <ProductFeatures />
+            <ClinicalFramework />
+            <CharacterDesign />
+            <Team />
+            <Vision />
+          </Suspense>
         </main>
         <Footer />
       </div>

@@ -20,7 +20,7 @@ export const team: Member[] = [
     name: "琪茗",
     role: "联合创始人 · 康复亲历与精神健康认知",
     paragraphs: [
-      "二十年精神心理康复经历，负责用户处境理解、专业框架研究与康复策略设计。",
+      "二十年精神心理康复亲历，熟悉 DSM-5-TR、DBT、CBT、MI 等临床框架，并有中美专业机构专家顾问支持。",
     ],
     avatar: "./bingbing.png",
   },
@@ -28,7 +28,7 @@ export const team: Member[] = [
     name: "步宁",
     role: "联合创始人 · 产品策略与 AI 落地",
     paragraphs: [
-      "长期从事互联网产品与运营，负责用户研究、产品设计、商业判断与 AI 产品开发。",
+      "长期做互联网产品与运营，负责用户研究、产品设计、商业判断与 AI 落地。",
     ],
     avatar: "./buning.png",
   },

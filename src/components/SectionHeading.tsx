@@ -13,7 +13,7 @@ export default function SectionHeading({ eyebrow, title, className }: Props) {
       <div className="text-[12px] font-medium uppercase tracking-[0.16em] text-ink-faint">
         {eyebrow}
       </div>
-      <h2 className="mt-4 whitespace-nowrap text-[30px] leading-tight tracking-tight text-ink md:text-[40px]">
+      <h2 className="mt-4 text-[26px] leading-tight tracking-tight text-ink md:text-[32px]">
         {title}
       </h2>
     </Reveal>

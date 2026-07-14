@@ -388,7 +388,7 @@ export default function BreathingFlow({
       setStatus("playing");
     }
   };
-  // 统一退出入口：长按结束 / 停止确认「结束」/ 练习页顶部返回确认后均走此方法。
+  // 统一退出入口：长按结束 / 停止确认「结束」均走此方法。
   // 不再回到旧 select 选择页；显式回到缓解主页并保持呼吸法展开 + 保留所选方法。
   // 跳转前的 timer / 长按进度 / 暂停态清理由组件卸载时的 cleanup effect 兜底
   // （onExitToRelief 触发 setMode('reliefSelect') → 本组件卸载 → 清理 timerRef /
@@ -519,19 +519,6 @@ export default function BreathingFlow({
               ) : (
                 <Volume2 className="h-[18px] w-[18px]" strokeWidth={1.8} />
               )}
-            </button>
-
-            {/* 顶部：仅极简返回入口，播放态不保留呼吸法名称标题 */}
-            <button
-              onClick={() => {
-                statusBeforeStop.current = status;
-                setStatus("paused");
-                setStopSheet(true);
-              }}
-              aria-label="返回"
-              className="absolute left-5 top-12 z-10 grid h-11 w-11 place-items-center rounded-full text-ink-soft outline-none transition-colors hover:bg-line-soft hover:text-ink focus-visible:outline-none"
-            >
-              <ChevronLeft className="h-6 w-6" strokeWidth={1.8} />
             </button>
 
             {/* 顶部陪伴层：在在上移，把中心位置留给呼吸圆环。 */}
@@ -722,4 +709,3 @@ export default function BreathingFlow({
     </motion.div>
   );
 }
-

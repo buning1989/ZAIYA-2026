@@ -47,7 +47,7 @@ function PlaceholderIcons({ count, offset = 0 }: { count: number; offset?: numbe
   );
 }
 
-function WidgetCard() {
+function WidgetCard({ videoEager = true }: { videoEager?: boolean }) {
   return (
     <div className="col-start-3 row-start-1 col-span-2 row-span-2 relative overflow-hidden rounded-[24px] border border-white/80 bg-white/92 shadow-[0_10px_28px_-18px_rgba(0,0,0,0.24)] backdrop-blur-md">
       <div className="absolute left-3.5 top-3 z-20 font-display text-[16px] font-semibold leading-[1.16] tracking-normal text-ink">
@@ -58,7 +58,7 @@ function WidgetCard() {
       <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
         <LazyVideo
           src="./assets/zaiya/small-good-thing.webm"
-          eager
+          eager={videoEager}
           layout="natural"
           className="h-full w-full"
           mediaClassName="absolute left-[60%] top-[58%] h-[148%] w-auto max-w-none -translate-x-1/2 -translate-y-1/2 object-contain"
@@ -72,10 +72,10 @@ function WidgetCard() {
 }
 
 /* —— Widget 形态：手机桌面局部裁切，展示小组件在屏幕中的位置 —— */
-function WidgetSurface() {
+export function WidgetSurface({ videoEager = true }: { videoEager?: boolean }) {
   return (
-    <div className="mx-auto w-full max-w-[420px]">
-      <div className="relative h-[440px] overflow-hidden rounded-t-[42px] bg-ink p-[7px] pb-0 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.14)]">
+    <div className="mx-auto w-full max-w-[441px]">
+      <div className="relative h-[462px] overflow-hidden rounded-t-[44px] bg-ink p-[7px] pb-0 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.14)]">
         <div className="relative h-full overflow-hidden rounded-t-[33px] bg-white">
           <div className="absolute inset-0 bg-white" />
 
@@ -98,7 +98,7 @@ function WidgetSurface() {
 
           <div className="relative z-10 mt-6 grid grid-cols-[repeat(4,68px)] grid-flow-dense auto-rows-[68px] justify-center gap-[13px] px-6">
             <PlaceholderIcons count={2} />
-            <WidgetCard />
+            <WidgetCard videoEager={videoEager} />
             <PlaceholderIcons count={10} offset={2} />
           </div>
 

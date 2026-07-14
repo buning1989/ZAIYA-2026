@@ -34,7 +34,7 @@ const scenarios = [
     index: "02",
     title: "当情绪过载，暂时无法整理问题",
     method: "借鉴 DBT",
-    methodText: "先承接和稳定，再进入理解与行动。",
+    methodText: "先接住情绪、稳下来，再进入理解和行动。",
     product: [
       "先回应感受，不急于分析",
       "降低页面刺激与信息密度",
@@ -46,7 +46,7 @@ const scenarios = [
     index: "03",
     title: "当事件、想法和感受混在一起",
     method: "借鉴 CBT",
-    methodText: "帮助用户逐步看见它们之间的关系。",
+    methodText: "帮用户一点点看清它们之间的关系。",
     product: [
       "将复杂表达拆成事实、感受与想法",
       "每次只推进一个问题",
@@ -57,7 +57,7 @@ const scenarios = [
   {
     index: "04",
     title: "当状态零散，长期变化难以判断",
-    method: "基于 BPS 与社会功能视角",
+    method: "借鉴 BPS 与社会功能视角",
     methodText: "把多维信息放回完整生活中理解。",
     product: [
       "共同观察情绪、睡眠、饮食、用药、活动和关系",
@@ -94,7 +94,7 @@ export default function ClinicalFramework() {
               </div>
             </div>
 
-            <h3 className="mt-5 max-w-2xl font-display text-[24px] font-semibold leading-tight tracking-tight text-ink md:text-[30px]">
+            <h3 className="mt-5 max-w-2xl font-display text-[22px] font-semibold leading-tight tracking-tight text-ink md:text-[26px]">
               不只看情绪，也看生活是否正在重新稳定。
             </h3>
 
@@ -106,7 +106,7 @@ export default function ClinicalFramework() {
                     index === 0 ? "md:pl-0" : "border-t border-line md:border-l md:border-t-0"
                   } ${index === dimensions.length - 1 ? "md:pr-0" : ""}`}
                 >
-                  <h4 className="font-display text-[18px] font-semibold leading-tight tracking-tight text-ink">
+                  <h4 className="font-display text-[17px] font-semibold leading-tight tracking-tight text-ink md:text-[18px]">
                     {dimension.title}
                   </h4>
                   <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
@@ -130,7 +130,7 @@ export default function ClinicalFramework() {
               <Reveal key={scenario.index} delay={0.26 + i * 0.06}>
                 <article className="flex h-full flex-col rounded-lg border border-line bg-white p-5 md:p-6">
                   <div className="flex items-start justify-between gap-4">
-                    <h3 className="font-display text-[20px] font-semibold leading-tight tracking-tight text-ink md:text-[22px]">
+                    <h3 className="font-display text-[19px] font-semibold leading-tight tracking-tight text-ink md:text-[21px]">
                       {scenario.title}
                     </h3>
                     <span className="shrink-0 text-[12px] font-medium tracking-[0.16em] text-ink-faint">

@@ -263,11 +263,10 @@ const DAZE_BGM = "./assets/social/daze/together-bgm.mp3";
  * 通过横滑选择发呆动作，确认后进入正式发呆态。
  * 正式态仅保留沉浸画面 + 左上角共在动态 + 底部状态文案 + 透明圆形长按退出。
  *
- * - onExit：准备态返回（无能量）
+ * - onExit：保留给外层流程兜底返回（沉浸场景内不显示返回入口）
  * - onFinish：正式发呆态长按结束（触发能量奖励并返回）
  */
 export function DazeFlow({
-  onExit,
   onFinish,
 }: {
   onExit: () => void;
@@ -348,7 +347,6 @@ export function DazeFlow({
             key="ready"
             selected={selected}
             onSelect={setSelected}
-            onBack={onExit}
             onConfirm={() => setPhase("dazing")}
           />
         ) : (
@@ -371,12 +369,10 @@ const HOME_COPY = 2; // 中段副本索引，归一化目标范围 [HOME_COPY*n,
 function DazeReady({
   selected,
   onSelect,
-  onBack,
   onConfirm,
 }: {
   selected: string;
   onSelect: (id: string) => void;
-  onBack: () => void;
   onConfirm: () => void;
 }) {
   const n = dazePostures.length;
@@ -450,15 +446,6 @@ function DazeReady({
     >
       {/* 轻微毛玻璃蒙层：仍能看见场景，但不喧宾夺主 */}
       <div className="absolute inset-0 bg-ink/30 backdrop-blur-[2px]" />
-
-      {/* 左上角返回 */}
-      <button
-        onClick={onBack}
-        aria-label="返回场景选择"
-        className="absolute left-5 top-12 z-20 grid h-11 w-11 place-items-center rounded-full text-white/80 outline-none transition-colors hover:bg-white/10 focus-visible:outline-none"
-      >
-        <ChevronLeft className="h-6 w-6" strokeWidth={1.8} />
-      </button>
 
       {/* 顶部文案 */}
       <div className="absolute inset-x-0 top-24 px-6 text-center">
@@ -613,19 +600,7 @@ function DazeActive({ onExit }: { onExit: () => void }) {
       transition={{ duration: 0.3, ease }}
       className="absolute inset-0"
     >
-      {/* 左上角统一返回入口：与底部「长按结束」共享同一个 onExit（即 onFinish →
-          handleDazeFinish），统一完成活动时长结算、能量奖励判断与页面状态清理，
-          避免两条退出路径产生数据不一致。z-30 高于 PresencePulse(z-10)。 */}
-      <button
-        type="button"
-        onClick={onExit}
-        aria-label="返回轻社交"
-        className="absolute left-5 top-12 z-30 grid h-11 w-11 place-items-center rounded-full text-white/80 outline-none transition-colors hover:bg-white/10 focus-visible:outline-none"
-      >
-        <ChevronLeft className="h-6 w-6" strokeWidth={1.8} />
-      </button>
-
-      {/* 左上角共在动态流（下移至 top-24，让出返回箭头空间） */}
+      {/* 左上角共在动态流 */}
       <PresencePulse />
 
       {/* 底部轻渐变蒙层：保证文案与按钮可读 */}
@@ -706,7 +681,7 @@ function PresencePulse({
   }, [messages]);
 
   return (
-    <div className="absolute left-5 top-24 z-10 flex max-w-[200px] flex-col gap-1.5">
+    <div className="absolute left-5 top-12 z-10 flex max-w-[200px] flex-col gap-1.5">
       {/* 左上角极轻渐变暗层：为整列文字可读，不做明显卡片 */}
       <div className="pointer-events-none absolute -left-5 -top-12 h-[220px] w-[240px] rounded-full bg-black/20 blur-2xl" />
 
@@ -900,11 +875,10 @@ const EAT_PRESENCE_MESSAGES = [
  * 通过横滑选择想一起吃的食物，确认后进入正式吃饭态。
  * 正式态仅保留沉浸画面 + 左上角共在动态 + 底部状态文案 + 透明圆形长按退出。
  *
- * - onExit：准备态返回（无能量）
+ * - onExit：保留给外层流程兜底返回（沉浸场景内不显示返回入口）
  * - onFinish：正式吃饭态长按结束（触发能量奖励并返回）
  */
 export function EatFlow({
-  onExit,
   onFinish,
 }: {
   onExit: () => void;
@@ -939,7 +913,6 @@ export function EatFlow({
             key="ready"
             selected={selected}
             onSelect={setSelected}
-            onBack={onExit}
             onConfirm={() => setPhase("eating")}
           />
         ) : (
@@ -955,12 +928,10 @@ export function EatFlow({
 function EatReady({
   selected,
   onSelect,
-  onBack,
   onConfirm,
 }: {
   selected: string;
   onSelect: (id: string) => void;
-  onBack: () => void;
   onConfirm: () => void;
 }) {
   const n = eatFoods.length;
@@ -1034,15 +1005,6 @@ function EatReady({
     >
       {/* 轻微毛玻璃蒙层：仍能看见吃饭广场场景，但不喧宾夺主 */}
       <div className="absolute inset-0 bg-ink/30 backdrop-blur-[2px]" />
-
-      {/* 左上角返回 */}
-      <button
-        onClick={onBack}
-        aria-label="返回场景选择"
-        className="absolute left-5 top-12 z-20 grid h-11 w-11 place-items-center rounded-full text-white/80 outline-none transition-colors hover:bg-white/10 focus-visible:outline-none"
-      >
-        <ChevronLeft className="h-6 w-6" strokeWidth={1.8} />
-      </button>
 
       {/* 顶部文案 */}
       <div className="absolute inset-x-0 top-24 px-6 text-center">
@@ -1118,19 +1080,7 @@ function EatActive({ onExit }: { onExit: () => void }) {
       transition={{ duration: 0.3, ease }}
       className="absolute inset-0"
     >
-      {/* 左上角统一返回入口：与底部「长按结束」共享同一个 onExit（即 onFinish →
-          handleEatFinish），统一完成活动时长结算、能量奖励判断与页面状态清理，
-          避免两条退出路径产生数据不一致。z-30 高于 PresencePulse(z-10)。 */}
-      <button
-        type="button"
-        onClick={onExit}
-        aria-label="返回轻社交"
-        className="absolute left-5 top-12 z-30 grid h-11 w-11 place-items-center rounded-full text-white/80 outline-none transition-colors hover:bg-white/10 focus-visible:outline-none"
-      >
-        <ChevronLeft className="h-6 w-6" strokeWidth={1.8} />
-      </button>
-
-      {/* 左上角共在动态流（下移至 top-24，让出返回箭头空间） */}
+      {/* 左上角共在动态流 */}
       <PresencePulse
         messages={EAT_PRESENCE_MESSAGES}
         mainText="正在一起吃饭"

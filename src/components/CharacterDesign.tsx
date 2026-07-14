@@ -5,19 +5,19 @@ import ZaizaiVideo from "./ZaizaiVideo";
 const reasons = [
   {
     title: "一粒种子，而不是一张固定的脸",
-    desc: "它不定义用户此刻应该是什么状态，只保留继续生长的可能。",
+    desc: "不定义此刻状态，只留继续生长的可能。",
   },
   {
     title: "不像人，也不像宠物",
-    desc: '不扮演医生、老师或家人，也不过度制造"只有它懂我"的关系感。',
+    desc: '不扮演医生、老师或家人，不制造"懂你"的错觉。',
   },
   {
     title: "没有嘴，不要求你回应",
-    desc: "不急着说话，也不索取关注，用动作、目光和小芽表达状态。",
+    desc: "不索取关注，用动作和小芽表达自己。",
   },
   {
     title: "住在屏幕里，却始终指向屏幕外",
-    desc: "通过吃饭、休息、看书和出门等动作，陪用户重新参与真实生活。",
+    desc: "会吃饭、休息、看书、出门，陪你回到真实生活。",
   },
 ];
 
@@ -113,8 +113,8 @@ export default function CharacterDesign() {
             </Reveal>
 
             <Reveal delay={0.04} y={10}>
-              <h2 className="mt-4 text-[26px] font-semibold leading-[1.22] tracking-tight text-ink md:text-[32px] min-[1200px]:text-[36px]">
-                我们把在在设计成一粒种子，因为真正的陪伴，不该把人留在屏幕里。
+              <h2 className="mt-4 text-[26px] font-semibold leading-[1.22] tracking-tight text-ink md:text-[32px]">
+                我们把在在设计成一粒种子：陪你长大，也把你带回屏幕外。
               </h2>
             </Reveal>
 
@@ -125,10 +125,10 @@ export default function CharacterDesign() {
             {reasons.map((r, i) => (
               <Reveal key={r.title} delay={0.12 + i * 0.05} y={10}>
                 <article className="flex h-full min-h-[118px] flex-col gap-2 rounded-xl border border-line bg-white p-3 shadow-[0_1px_2px_rgba(39,51,31,0.04)] md:min-h-[133px] md:p-4 min-[1200px]:min-h-[130px] min-[1200px]:p-4">
-                  <h3 className="text-[16px] font-semibold leading-snug tracking-tight text-ink md:text-[16px] min-[1200px]:text-[18px]">
+                  <h3 className="text-[16px] font-semibold leading-snug tracking-tight text-ink md:text-[17px]">
                     {r.title}
                   </h3>
-                  <p className="text-[13px] leading-relaxed text-ink-soft md:text-[13px] min-[1200px]:text-[14px]">
+                  <p className="text-[13px] leading-relaxed text-ink-soft md:text-[14px]">
                     {r.desc}
                   </p>
                 </article>

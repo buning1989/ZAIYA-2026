@@ -76,7 +76,11 @@ export default function EnergyBadge({
             : "border-light-warm/25 bg-light-soft/60"
         }`}
       >
-        <Sprout className="h-4 w-4 text-light-warm" strokeWidth={1.8} />
+        <Sprout
+          data-light-reward-target
+          className="h-4 w-4 text-light-warm"
+          strokeWidth={1.8}
+        />
       </motion.button>
 
       {/* 点击提示：紧贴入口下方展开，2.5s 自动淡出。

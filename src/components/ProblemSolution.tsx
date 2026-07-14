@@ -43,11 +43,11 @@ function StatCardView({ stat, delay }: { stat: StatCard; delay: number }) {
 
         <div className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-1">
           <span className="flex items-baseline gap-1">
-            <span className="text-[40px] font-semibold leading-none tracking-tightest text-ink md:text-[48px]">
+            <span className="text-[36px] font-semibold leading-none tracking-tightest text-ink md:text-[42px]">
               {stat.value}
             </span>
             {stat.suffix && (
-              <span className="text-[20px] font-semibold leading-none tracking-tight text-ink md:text-[24px]">
+              <span className="text-[18px] font-semibold leading-none tracking-tight text-ink md:text-[21px]">
                 {stat.suffix}
               </span>
             )}
@@ -76,13 +76,13 @@ export default function ProblemSolution() {
         </Reveal>
 
         <Reveal delay={0.04}>
-          <h2 className="mt-4 max-w-2xl text-[30px] leading-tight tracking-tight text-ink md:text-[40px]">
+          <h2 className="mt-4 max-w-2xl text-[26px] leading-tight tracking-tight text-ink md:text-[32px]">
             对受精神心理困扰的社会功能损伤人群而言，真正的难题在诊室之外
           </h2>
         </Reveal>
 
         <Reveal delay={0.08}>
-          <p className="mt-3 text-[17px] leading-relaxed text-ink-soft md:text-[19px]">
+          <p className="mt-3 text-[15px] leading-relaxed text-ink-soft md:text-[16px]">
             精神心理困扰影响的不只是情绪——睡眠、饮食、上学、社交、家庭，都会慢慢失序。
           </p>
         </Reveal>

@@ -19,7 +19,7 @@ const columns = [
     links: [
       { label: "体验 Demo", href: "#demo" },
       { label: "需求与方案", href: "#problem" },
-      { label: "产品与核心功能", href: "#product" },
+      { label: "产品功能", href: "#product" },
       { label: "技术实践", href: "#clinical" },
     ],
   },
@@ -27,8 +27,8 @@ const columns = [
     title: "关于",
     links: [
       { label: "角色设计", href: "#character" },
-      { label: "团队", href: "#team" },
-      { label: "愿景", href: "#vision" },
+      { label: "团队介绍", href: "#team" },
+      { label: "产品愿景", href: "#vision" },
     ],
   },
 ];
@@ -37,14 +37,14 @@ export default function Footer() {
   return (
     <footer className="border-t border-line">
       <div className="container grid gap-10 py-14 md:grid-cols-[1.5fr_1fr_1fr]">
-        <div>
+        <div className="flex flex-col items-start text-left">
           <a href="#top" className="flex items-center">
             <Logo />
           </a>
           <p className="mt-4 max-w-xs text-[13px] leading-relaxed text-ink-soft">
             面向精神心理困扰人群的 AI 健康生活伙伴。
           </p>
-          <div className="mt-4 flex flex-wrap items-center gap-3.5">
+          <div className="mt-4 flex flex-wrap items-center justify-start gap-1.5 self-start">
             {socialLinks.map((link) => (
               <a
                 key={link.label}
@@ -52,17 +52,19 @@ export default function Footer() {
                 target="_blank"
                 rel="noreferrer"
                 aria-label={link.label}
-                className="group inline-flex items-center justify-center"
+                className="group inline-flex shrink-0 items-center justify-center"
               >
                 <img
                   src={link.icon}
                   alt=""
                   aria-hidden="true"
+                  loading="lazy"
+                  decoding="async"
                   className={[
-                    "h-[26px] w-[26px] object-contain transition-opacity",
+                    "object-contain transition-opacity",
                     link.label === "GitHub"
-                      ? "rounded-full opacity-[0.72] group-hover:opacity-100"
-                      : "rounded-[5px] opacity-[0.82] group-hover:opacity-100",
+                      ? "h-[30px] w-[30px] rounded-full opacity-[0.72] group-hover:opacity-100"
+                      : "h-[14px] w-[42px] opacity-[0.72] group-hover:opacity-100",
                   ].join(" ")}
                 />
               </a>

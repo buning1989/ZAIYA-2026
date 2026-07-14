@@ -249,6 +249,8 @@ const LazyVideo = forwardRef<LazyVideoHandle, Props>(function LazyVideo(
           alt={alt}
           aria-hidden="true"
           draggable={false}
+          loading={eager ? "eager" : "lazy"}
+          decoding="async"
           className={sharedMediaClass}
           style={{
             ...(mediaStyle ?? {}),
