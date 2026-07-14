@@ -124,7 +124,7 @@ export default function HomeBubbleCopy({
   return (
     <motion.div
       variants={softRevealItemVariants}
-      className="bubble-copy min-h-[60px]"
+      className="bubble-copy mx-auto min-h-[60px] w-[260px] max-w-[calc(100vw-80px)] !whitespace-normal !text-left [overflow-wrap:anywhere]"
     >
       {hasEmphasis ? (
         <>

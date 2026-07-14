@@ -68,7 +68,7 @@ export default function RealDilemmas() {
                     className="h-[72px] w-[62px] shrink-0 object-contain opacity-80 md:h-[86px] md:w-[74px]"
                   />
 
-                  <blockquote className="bubble-copy min-w-0 flex-1 !max-w-none !text-left !text-[16px] md:!text-[16px]">
+                  <blockquote className="bubble-copy min-w-0 flex-1 !max-w-none !whitespace-normal !text-left !text-[16px] [overflow-wrap:anywhere] md:!text-[16px]">
                     {card.voice}
                   </blockquote>
                 </div>

@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from "react";
+import { motion, useInView, useReducedMotion } from "framer-motion";
 import Reveal from "./Reveal";
 import SectionEyebrow from "./SectionEyebrow";
 
@@ -23,6 +25,12 @@ const supports: Support[] = [
       "减少猜测、催促和对抗，让家人更清楚孩子正在经历什么、此刻能做什么。",
   },
 ];
+
+const closingPrefix = "真正的改变，发生在被";
+const closingEmphasis = "认真对待";
+const closingSuffix = "的每一天里。";
+const closingText = `${closingPrefix}${closingEmphasis}${closingSuffix}`;
+const typingIntervalMs = 72;
 
 type CoreNodeProps = {
   title: string;
@@ -138,10 +146,102 @@ function MobileConnection({ bidirectional = false }: { bidirectional?: boolean }
   );
 }
 
+function ClosingStatement() {
+  const ref = useRef<HTMLParagraphElement | null>(null);
+  const isInView = useInView(ref, { once: true, margin: "-80px" });
+  const shouldReduceMotion = useReducedMotion();
+  const [visibleCount, setVisibleCount] = useState(0);
+
+  useEffect(() => {
+    if (!isInView) return;
+
+    if (shouldReduceMotion) {
+      setVisibleCount(closingText.length);
+      return;
+    }
+
+    setVisibleCount(0);
+    const timer = window.setInterval(() => {
+      setVisibleCount((current) => {
+        if (current >= closingText.length) {
+          window.clearInterval(timer);
+          return current;
+        }
+
+        return current + 1;
+      });
+    }, typingIntervalMs);
+
+    return () => window.clearInterval(timer);
+  }, [isInView, shouldReduceMotion]);
+
+  const emphasisStart = closingPrefix.length;
+  const emphasisEnd = emphasisStart + closingEmphasis.length;
+  const prefixVisible = closingPrefix.slice(0, Math.min(visibleCount, emphasisStart));
+  const emphasisVisible = closingEmphasis.slice(
+    0,
+    Math.max(0, Math.min(visibleCount - emphasisStart, closingEmphasis.length)),
+  );
+  const suffixVisible = closingSuffix.slice(
+    0,
+    Math.max(0, visibleCount - emphasisEnd),
+  );
+  const isComplete = visibleCount >= closingText.length;
+
+  return (
+    <p
+      ref={ref}
+      className="mx-auto mt-24 max-w-[900px] text-center text-[26px] font-semibold leading-tight tracking-tight text-ink md:mt-32 md:text-[32px]"
+      aria-label={closingText}
+    >
+      <span className="relative inline-block max-w-full text-left align-top">
+        <span className="invisible block" aria-hidden="true">
+          {closingPrefix}
+          <span className="relative inline-block whitespace-nowrap">
+            {closingEmphasis}
+          </span>
+          {closingSuffix}
+        </span>
+        <span className="absolute left-0 top-0 w-full text-left" aria-hidden="true">
+          {prefixVisible}
+          <span className="relative inline-block whitespace-nowrap">
+            {emphasisVisible}
+            <svg
+              className="pointer-events-none absolute -bottom-1 left-0 h-2 w-full text-action-primary md:-bottom-1.5 md:h-2.5"
+              viewBox="0 0 128 12"
+              fill="none"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <motion.path
+                d="M3 8.5C23 5.7 42.5 6.6 62.2 7.8C82.7 9 104.6 7.3 125 4.2"
+                stroke="currentColor"
+                strokeWidth="5"
+                strokeLinecap="round"
+                initial={false}
+                animate={{
+                  opacity: isComplete ? 1 : 0,
+                  pathLength: isComplete ? 1 : 0,
+                }}
+                transition={
+                  shouldReduceMotion
+                    ? { duration: 0 }
+                    : { duration: 0.72, ease: [0.22, 1, 0.36, 1] }
+                }
+              />
+            </svg>
+          </span>
+          {suffixVisible}
+        </span>
+      </span>
+    </p>
+  );
+}
+
 export default function Vision() {
   return (
     <section id="vision" className="scroll-mt-20">
-      <div className="container pt-20 pb-14 md:pt-24 md:pb-20">
+      <div className="container pt-20 pb-24 md:pt-24 md:pb-32">
         <div className="h-px w-full bg-line" aria-hidden="true" />
         <div className="mx-auto mt-7 max-w-[940px] md:mt-8">
           <Reveal>
@@ -222,15 +322,13 @@ export default function Vision() {
           </Reveal>
 
           <Reveal delay={0.28} y={8}>
-            <p className="mx-auto mt-12 max-w-[760px] text-center text-[20px] font-semibold leading-relaxed tracking-tight text-ink-soft md:mt-14 md:text-[22px]">
-              真正的改变，发生在被认真对待的每一天里。
-            </p>
-          </Reveal>
-
-          <Reveal delay={0.34} y={8}>
             <p className="mt-4 max-w-[860px] text-[12px] leading-relaxed text-ink-faint md:mt-5 md:text-[13px]">
               在呀 ZÀIYA 不替代医疗、学校或家庭中的任何角色，也不绕过用户直接共享信息。所有连接都以用户知情、确认与授权为前提。
             </p>
+          </Reveal>
+
+          <Reveal delay={0.38} y={8}>
+            <ClosingStatement />
           </Reveal>
         </div>
       </div>

@@ -251,7 +251,7 @@ function DeferredPreview({
 function ReliefEntryPreview() {
   return (
     <div className="mx-auto w-full max-w-[390px]">
-      <div className="relative h-[500px] overflow-hidden rounded-t-[42px] border-[7px] border-b-0 border-ink bg-ink shadow-[0_8px_40px_-12px_rgba(0,0,0,0.18)]">
+      <div className="relative h-[500px] overflow-hidden rounded-t-[42px] border-[7px] border-b-0 border-ink bg-ink">
         <div className="relative h-full overflow-hidden rounded-t-[34px] bg-white px-7 pt-4">
           <div className="flex items-center justify-between text-[12px] font-semibold text-ink">
             <span>22:01</span>
@@ -319,7 +319,7 @@ function ReliefEntryPreview() {
 function DialogRecordPreview() {
   return (
     <div className="mx-auto w-full max-w-[390px]">
-      <div className="relative h-[430px] overflow-hidden rounded-t-[42px] border-[7px] border-b-0 border-ink bg-ink shadow-[0_8px_40px_-12px_rgba(0,0,0,0.18)]">
+      <div className="relative h-[500px] overflow-hidden rounded-t-[42px] border-[7px] border-b-0 border-ink bg-ink">
         <div className="relative h-full overflow-hidden rounded-t-[34px] bg-white px-6 pt-4">
           <div className="flex items-center justify-between text-[12px] font-semibold text-ink">
             <span>01:30</span>
@@ -356,9 +356,6 @@ function DialogRecordPreview() {
           </div>
 
           <div className="mt-4 space-y-3.5">
-            <div className="max-w-[48%] rounded-[17px] border border-line bg-white px-4 py-3 text-[13px] leading-relaxed text-ink-soft">
-              ......嗯？我在......
-            </div>
             <div className="ml-auto max-w-[34%] rounded-[17px] bg-[#EFF0EC] px-4 py-3 text-[13px] leading-relaxed text-ink">
               睡不着。
             </div>
@@ -368,12 +365,6 @@ function DialogRecordPreview() {
             <div className="ml-auto max-w-[78%] rounded-[17px] bg-[#EFF0EC] px-4 py-3 text-[13px] leading-relaxed text-ink">
               一躺下就开始想 我爸那张暴怒的脸 没写完的卷子
               同学一直在上学 我去不了学校成绩就一直下滑 各种乱七八糟的。
-            </div>
-            <div className="max-w-[76%] rounded-[17px] border border-line bg-white px-4 py-3 text-[13px] leading-relaxed text-ink-soft">
-              脑子里在放电视剧，循环播放那种，最烦了。
-            </div>
-            <div className="max-w-[82%] rounded-[17px] border border-line bg-white px-4 py-3 text-[13px] leading-relaxed text-ink-soft">
-              那些事让它们先在门口等等，天亮了再说，现在不是它们的时间。
             </div>
           </div>
         </div>
@@ -385,11 +376,13 @@ function DialogRecordPreview() {
 function HalfPhonePreviewStage({
   children,
   ariaLabel,
-  stageClassName = "min-h-[330px] md:min-h-[370px]",
+  stageClassName = "h-[430px] md:h-[470px]",
+  contentClassName = "w-full max-w-[390px] scale-[0.84] md:scale-[0.9]",
 }: {
   children: ReactNode;
   ariaLabel: string;
   stageClassName?: string;
+  contentClassName?: string;
 }) {
   return (
     <div
@@ -397,7 +390,7 @@ function HalfPhonePreviewStage({
       role="img"
       aria-label={ariaLabel}
     >
-      <div className="w-full -translate-y-5 scale-[0.82] md:scale-[0.85]">
+      <div className={contentClassName}>
         {children}
       </div>
     </div>
@@ -426,30 +419,23 @@ function SolutionSection({ solution, index }: { solution: Solution; index: numbe
 
           <div className={mediaFirst ? "md:order-1" : undefined}>
             {solution.mediaComponent === "widget" ? (
-              <DeferredPreview
-                className="flex min-h-[330px] items-center justify-center overflow-hidden bg-white md:min-h-[370px]"
-              >
-                <div
-                  className="flex min-h-[330px] items-center justify-center overflow-hidden bg-white md:min-h-[370px]"
-                  role="img"
-                  aria-label="在呀 ZÀIYA 手机桌面小组件产品展示"
+              <DeferredPreview className="h-[430px] md:h-[470px]">
+                <HalfPhonePreviewStage
+                  ariaLabel="在呀 ZÀIYA 手机桌面小组件产品展示"
                 >
-                  <div className="w-full scale-[0.7]">
-                    <WidgetSurface videoEager={false} />
-                  </div>
-                </div>
+                  <WidgetSurface videoEager={false} frameShadow={false} />
+                </HalfPhonePreviewStage>
               </DeferredPreview>
             ) : solution.mediaComponent === "relief" ? (
-              <DeferredPreview className="min-h-[430px] md:min-h-[455px]">
+              <DeferredPreview className="h-[430px] md:h-[470px]">
                 <HalfPhonePreviewStage
                   ariaLabel="在呀 ZÀIYA 缓解入口半屏产品展示"
-                  stageClassName="min-h-[430px] md:min-h-[455px]"
                 >
                   <ReliefEntryPreview />
                 </HalfPhonePreviewStage>
               </DeferredPreview>
             ) : solution.mediaComponent === "dialog" ? (
-              <DeferredPreview className="min-h-[330px] md:min-h-[370px]">
+              <DeferredPreview className="h-[430px] md:h-[470px]">
                 <HalfPhonePreviewStage ariaLabel="在呀 ZÀIYA 对话记录半屏产品展示">
                   <DialogRecordPreview />
                 </HalfPhonePreviewStage>
