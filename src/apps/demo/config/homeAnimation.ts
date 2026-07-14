@@ -22,10 +22,10 @@ export const DEMO_HOME_PHASE_SCENE: Record<HomeTimePhase, string> = {
 
 /** 演示模式：各时间段对应的气泡文案 */
 export const DEMO_HOME_PHASE_BUBBLE_TEXT: Record<HomeTimePhase, string> = {
-  morning: "今天有什么小小的好事发生吗？",
+  morning: "今天有什么小小\n的好事发生吗？",
   forenoon: "根往下扎的时候看不见，等看见时，小苗已经长高了。",
   noon: "累了就歇一会儿，草地不会催种子发芽。",
-  afternoon: "今天有什么小小的好事发生吗？",
+  afternoon: "今天有什么小小\n的好事发生吗？",
   dusk: "我喜欢把小事记下来，不然它们会像风一样跑掉。",
   evening: "走的时候只顾着累，回头才发现，已经走出好远了。",
   night: "把心里的事一件件摆出来，它们就没那么挤了。",
