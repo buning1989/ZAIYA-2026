@@ -2,17 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { preloadVideo } from "@/lib/mediaPreloader";
 
-/* —— 对话模式顶部在在动画：基于对话状态切换 WebM ——
- * 四种状态：idle / listening / thinking / responding
- * - idle / listening / thinking：循环播放
- * - responding：播放一次短动作后回到 idle（由父级 onRespondingEnd 触发）
+/* —— 对话模式顶部在在动画 ——
+ * 对话场景统一使用静静趴着 WebM，保留 idle / listening / thinking / responding
+ * 四状态接口，避免影响父级对话状态机。
  * - 四个 video 常驻叠层，preload="none"：仅 active 状态由 play() 触发加载
  *   性能优化（2026-07-13）：从 preload="auto" 改为 "none"，避免一次性加载 4 个视频
- * - 预加载优化（2026-07-13）：状态预加载链
- *   idle 显示时预加载 listening；
- *   用户开始输入时预加载 thinking；
- *   thinking 显示时预加载 responding；
- *   不一次加载四个状态。
+ * - 预加载优化：状态接口仍走预加载链，但当前四状态共享同一个 WebM。
  * - 切换加 200ms 淡入淡出，容器尺寸不变，不抖动
  * - 任一视频加载失败：回退到 idle，控制台 warning，不阻断使用
  * - video 容器背景透明，承接 WebM 透明底素材
@@ -24,18 +19,22 @@ export type DialogueAnimState =
   | "thinking"
   | "responding";
 
+export const DIALOGUE_PRONE_REST_VIDEO =
+  "./assets/zaiya/dialogue/zaiya-dialogue-prone-rest.webm";
+
 const VIDEO_SOURCES: Record<DialogueAnimState, string> = {
-  idle: "./assets/zaiya/dialogue/zaiya-dialogue-idle.webm",
-  listening: "./assets/zaiya/dialogue/zaiya-dialogue-listening.webm",
-  thinking: "./assets/zaiya/dialogue/zaiya-dialogue-thinking.webm",
-  responding: "./assets/zaiya/dialogue/zaiya-dialogue-responding.webm",
+  idle: DIALOGUE_PRONE_REST_VIDEO,
+  listening: DIALOGUE_PRONE_REST_VIDEO,
+  thinking: DIALOGUE_PRONE_REST_VIDEO,
+  responding: DIALOGUE_PRONE_REST_VIDEO,
 };
 
-// 循环播放的状态：idle / listening / thinking；responding 只播放一次
+// 当前素材是持续陪伴动作，四种对话状态都循环播放。
 const LOOP_STATES: Set<DialogueAnimState> = new Set([
   "idle",
   "listening",
   "thinking",
+  "responding",
 ]);
 
 const CROSSFADE_MS = 200;
@@ -153,6 +152,8 @@ export default function DialogueZaiyaAnimation({
             )}
             style={{
               opacity: active ? 1 : 0,
+              transform: "scale(2)",
+              transformOrigin: "center center",
               transitionDuration: `${CROSSFADE_MS}ms`,
               transitionTimingFunction: ease,
             }}
