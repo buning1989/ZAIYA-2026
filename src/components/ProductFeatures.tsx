@@ -409,7 +409,11 @@ function SolutionSection({ solution, index }: { solution: Solution; index: numbe
 
   return (
     <Reveal delay={0.08 + index * 0.06}>
-      <article className="border-t border-line pt-10 md:pt-12">
+      <article>
+        <div
+          className="mx-auto mb-10 h-px w-[70%] bg-line md:mb-12"
+          aria-hidden="true"
+        />
         <div className="grid gap-7 md:grid-cols-2 md:items-center md:gap-12">
           <div className={mediaFirst ? "md:order-2" : undefined}>
             <div className="text-[12px] font-medium tracking-[0.16em] text-ink-faint">
@@ -506,7 +510,7 @@ export default function ProductFeatures() {
         <div className="h-px w-full bg-line" aria-hidden="true" />
         <Reveal className="mt-7 md:mt-8">
           <SectionEyebrow index={3} name="在呀方案" />
-          <SubsectionEyebrow index="03.1" name="产品机制" className="mt-5" />
+          <SubsectionEyebrow index="03.A" name="产品机制" className="mt-5" />
           <h2 className="mt-5 text-[26px] leading-tight tracking-tight text-ink md:mt-6 md:text-[32px]">
             在呀 ZÀIYA，把支持带进每天的真实生活。
           </h2>
@@ -522,7 +526,11 @@ export default function ProductFeatures() {
           ))}
 
           <Reveal delay={0.22}>
-            <article className="border-t border-line pt-10 md:pt-12">
+            <article>
+              <div
+                className="mx-auto mb-10 h-px w-[70%] bg-line md:mb-12"
+                aria-hidden="true"
+              />
               <div className="max-w-3xl">
                 <div className="text-[12px] font-medium tracking-[0.16em] text-ink-faint">
                   04｜双层信息输出
