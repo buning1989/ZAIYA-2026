@@ -147,7 +147,7 @@ export default function ClinicalFramework() {
                   </p>
 
                   <FeatureDisclosure
-                    label="查看产品表现与典型场景"
+                    label="应用场景"
                     items={[...scenario.product, `典型场景：${scenario.situation.replace(/\n/g, " ")}`]}
                   />
                 </article>
