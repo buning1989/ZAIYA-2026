@@ -93,12 +93,6 @@ const particleOffsets = [
   { x: -4, y: 18, rotate: -4 },
 ];
 
-const particleSettleOffsets = [
-  { x: -3, y: -2 },
-  { x: 3, y: -2 },
-  { x: 0, y: 3 },
-];
-
 export default function EnergyRewardFeedback({
   event,
   targetRef,
@@ -207,27 +201,24 @@ export default function EnergyRewardFeedback({
             {!prefersReducedMotion &&
               Array.from({ length: PARTICLE_COUNT }).map((_, index) => {
                 const offset = particleOffsets[index];
-                const settleOffset = particleSettleOffsets[index];
                 const dx = geometry.target.x - geometry.origin.x;
                 const dy = geometry.target.y - geometry.origin.y;
-                const settleDx = dx + settleOffset.x;
-                const settleDy = dy + settleOffset.y;
 
                 return (
                   <motion.div
                     key={`${event.id}-${index}`}
                     initial={{ x: 0, y: 0, opacity: 0, scale: 0.72 }}
                     animate={{
-                      x: [0, offset.x, dx * 0.9, dx, settleDx],
-                      y: [0, offset.y, dy * 0.9, dy, settleDy],
+                      x: [0, offset.x, dx * 0.9, dx, dx],
+                      y: [0, offset.y, dy * 0.9, dy, dy],
                       opacity: [0, 1, 1, 1, 0],
-                      scale: [0.72, 1.12, 0.98, 0.82, 0.48],
+                      scale: [0.72, 1.12, 0.98, 0.8, 0.36],
                       rotate: [
                         0,
                         offset.rotate,
                         offset.rotate * 0.55,
                         0,
-                        settleOffset.x * 2,
+                        0,
                       ],
                     }}
                     transition={{
