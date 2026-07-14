@@ -1,70 +1,39 @@
 import Reveal from "./Reveal";
 import SectionHeading from "./SectionHeading";
 
-type Card = {
+type VoiceCard = {
+  voice: string[];
   name: string;
-  note: string;
-  /** 弱化呈现：降低正文颜色（不改变卡片结构与字号）。 */
-  muted?: boolean;
+  explanation: string;
 };
 
-type Group = {
-  title: string;
-  cards: Card[];
-};
-
-const groups: Group[] = [
+const voiceCards: VoiceCard[] = [
   {
-    title: "你不用逼自己，也能动起来",
-    cards: [
-      {
-        name: "在在陪伴",
-        note: "早上、吃饭、睡前，在在自己出现在屏幕上，陪你把这件事做完，你不用想起来打开它",
-      },
-      {
-        name: "一起做",
-        note: "不想一个人做的事，和在在、和其他人一起做：一起吃饭、一起发呆，做着做着就开始了",
-      },
-      {
-        name: "收下日月星光",
-        note: "每做完一件小事，就按此刻的时间留下一点日光、月光或星光。不是打卡任务，是让你看见自己一点点在往前走",
-      },
+    voice: [
+      "“我知道应该起床、吃饭、洗澡，",
+      "可每一件小事都像要用完全部力气。”",
     ],
+    name: "生活很难启动",
+    explanation:
+      "他们不是不知道应该做什么，而是连最普通的日常行动，也可能变得异常困难。",
   },
   {
-    title: "你只是随口说说，它已经在悄悄帮你",
-    cards: [
-      {
-        name: "和在在聊聊",
-        note: "你只是说说今天怎么了，但每一句回应背后都有方法，轻轻帮你把钻进去的念头松开一点——不是陪聊，也不是讲道理",
-      },
-      {
-        name: "随口就记下了",
-        note: "心情、吃了没、睡得好不好、药吃了没，你不用填表，说一句、点一下，这一天就留下来了",
-      },
-      {
-        name: "偶然瞥见的一句话",
-        note: "待机时飘过的句子，有时是一句被人读了很多年的话，恰好在这一刻被你看到",
-        muted: true,
-      },
+    voice: [
+      "“一想到要回学校，身体就先开始难受。",
+      "放假时，我又好像恢复了一点。”",
     ],
+    name: "学习与社交逐渐受阻",
+    explanation:
+      "返校、考试和人际互动，可能引发明显的恐惧、躯体不适与回避，让原本正常的学习和社交难以继续。",
   },
   {
-    title: "你的难，第一次被人完整看见",
-    cards: [
-      {
-        name: "帮我整理",
-        note: "散落的日常，一键整理成一份材料，给复诊的医生，也给想理解你的父母、老师、咨询师",
-      },
-      {
-        name: "回头看看",
-        note: "这段时间到底是怎么过来的，你自己也看得见：哪几天特别难，哪几天好一点，一目了然",
-      },
-      {
-        name: "你说了算",
-        note: "哪些给谁看，你自己决定；敏感内容，发出去之前一定先问过你",
-      },
+    voice: [
+      "“我不是故意不配合，",
+      "可家里看到的，常常只是懒、叛逆和不努力。”",
     ],
+    name: "痛苦难以表达，也容易被误解",
+    explanation:
+      "自己很难说清发生了什么，家长看到的却往往只是行为结果，误解和家庭冲突也因此不断加深。",
   },
 ];
 
@@ -73,49 +42,56 @@ export default function ProductFeatures() {
     <section id="product" className="border-t border-line">
       <div className="container py-20 md:py-32">
         <SectionHeading
-          eyebrow="产品与核心功能"
-          title="别人让你打卡、坚持、完成目标。在呀反过来——你什么都不用做。"
+          eyebrow="真实困境"
+          title="他们面对的，远不只是情绪不好。"
         />
 
         <Reveal delay={0.1}>
           <p className="mt-6 max-w-prose text-[15px] leading-relaxed text-ink-soft">
-            因为对这群人来说，\u201c坚持\u201d本身就是那件做不到的事。在呀不靠你努力，而是从三个方向，悄悄陪你一点点变好。
+            在一项基于小红书公开内容的探索性调研中，我们分析了约 13,900 条青少年与家长的表达。反复出现的，是生活无法启动、上学与社交受阻，以及痛苦长期被误解。
           </p>
         </Reveal>
 
-        <div className="mt-14 flex flex-col gap-14">
-          {groups.map((g, gi) => (
-            <Reveal key={g.title} delay={0.08 + gi * 0.06}>
-              <div>
-                <div className="border-t border-line pt-8">
-                  <div className="text-[20px] font-medium tracking-tight text-ink md:text-[22px]">
-                    {g.title}
-                  </div>
-                </div>
-
-                <div className="mt-6 grid gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-3">
-                  {g.cards.map((c) => (
-                    <div
-                      key={c.name}
-                      className="flex h-full flex-col gap-3 bg-white p-8"
-                    >
-                      <div className="text-[18px] font-semibold tracking-tight text-ink">
-                        {c.name}
-                      </div>
-                      <p
-                        className={`text-[13px] leading-relaxed ${
-                          c.muted ? "text-ink-faint" : "text-ink-soft"
-                        }`}
-                      >
-                        {c.note}
-                      </p>
-                    </div>
+        <div className="mt-14 grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-5">
+          {voiceCards.map((card, i) => (
+            <Reveal key={card.name} delay={0.12 + i * 0.06}>
+              <article className="flex h-full min-h-[330px] flex-col rounded-lg border border-line bg-white px-6 py-7 md:min-h-[360px] md:px-7 md:py-8">
+                <blockquote className="text-[19px] font-medium leading-loose tracking-tight text-ink md:text-[20px]">
+                  {card.voice.map((line) => (
+                    <span key={line} className="block">
+                      {line}
+                    </span>
                   ))}
+                </blockquote>
+
+                <div className="mt-auto pt-10">
+                  <h3 className="font-display text-[19px] font-semibold leading-snug tracking-tight text-ink md:text-[20px]">
+                    {card.name}
+                  </h3>
+                  <p className="mt-3 text-[13px] leading-relaxed text-ink-soft md:text-[14px]">
+                    {card.explanation}
+                  </p>
                 </div>
-              </div>
+              </article>
             </Reveal>
           ))}
         </div>
+
+        <Reveal delay={0.34}>
+          <div className="mt-10 rounded-lg border border-line bg-accent-soft px-6 py-7 md:px-8 md:py-8">
+            <p className="max-w-2xl text-[18px] font-medium leading-relaxed text-ink md:text-[20px]">
+              他们失去的，不只是情绪稳定，
+              <br />
+              而是对日常生活的参与感和掌控感。
+            </p>
+          </div>
+        </Reveal>
+
+        <Reveal delay={0.42}>
+          <p className="mt-8 text-[11px] leading-relaxed text-ink-faint">
+            调研说明：以上内容基于 2026 年 6 月对小红书公开笔记及评论区的探索性研究，相关表达均由多条评论脱敏归纳，并非对单一用户原文的直接引用。平台用户结构、样本筛选与关键词设置可能带来偏差，结果仅用于理解典型需求场景，不代表总体人群比例或严格统计结论。
+          </p>
+        </Reveal>
       </div>
     </section>
   );
