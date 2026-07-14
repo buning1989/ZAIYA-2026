@@ -19,8 +19,8 @@ import type { Answers, RecordType } from "@/data/record";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 const TOTAL_STEPS = 6;
-// 选中后保留 300ms 再进入下一题，让用户看到选择反馈（spec: 250–350ms）
-const AUTO_ADVANCE_MS = 300;
+// 选中后保留 550ms 再进入下一题，让用户清楚看到选中反馈
+const AUTO_ADVANCE_MS = 550;
 
 type Step = 1 | 2 | 3 | 4 | 5 | 6;
 // 三段状态机：editing（填写）→ preview（结算单预览，未保存）→ saved（保存成功）
@@ -72,6 +72,9 @@ export default function SleepRecordWizard({
   // 补充说明（结算页可点击行触发抽屉输入，非必填）
   const [note, setNote] = useState("");
 
+  // 点击锁定：选中后等待自动跳转期间，禁止重复触发（避免连续快速点击跳过多个问题）
+  const [isLocked, setIsLocked] = useState(false);
+
   // 自动跳转计时器
   const autoAdvanceTimer = useRef<number | null>(null);
 
@@ -119,55 +122,6 @@ export default function SleepRecordWizard({
     () => awakeDurationOptions.find((o) => o.value === awakeDurationRange) ?? null,
     [awakeDurationRange],
   );
-
-  // —— 选择摘要文案（时间尺下方展示，未选择时为 undefined） ——
-  const bedTimeSummary = useMemo(() => {
-    if (!bedTimeOption) return undefined;
-    const map: Record<string, string> = {
-      before_21: "大概晚上 9 点前上床",
-      "21_23": "大概晚上 9 到 11 点上床",
-      "23_01": "大概晚上 11 点到凌晨 1 点上床",
-      "01_03": "大概凌晨 1 到 3 点上床",
-      after_03: "大概凌晨 3 点后上床",
-    };
-    return map[bedTimeOption.value];
-  }, [bedTimeOption]);
-
-  const fallAsleepSummary = useMemo(() => {
-    if (!fallAsleepOption) return undefined;
-    if (fallAsleepOption.label === "几乎没睡着") return "几乎没睡着";
-    const map: Record<string, string> = {
-      within_15m: "躺下后大约 15 分钟内睡着",
-      "15_30m": "躺下后大约 15 到 30 分钟睡着",
-      "30_60m": "躺下后大约 30 到 60 分钟睡着",
-      over_60m: "躺下后超过 1 小时才睡着",
-    };
-    return map[fallAsleepOption.value];
-  }, [fallAsleepOption]);
-
-  const wakeTimeSummary = useMemo(() => {
-    if (!wakeTimeOption) return undefined;
-    const map: Record<string, string> = {
-      before_06: "大概早上 6 点前醒来",
-      "06_08": "大概早上 6 到 8 点醒来",
-      "08_10": "大概早上 8 到 10 点醒来",
-      "10_12": "大概早上 10 到 12 点醒来",
-      after_12: "大概中午以后醒来",
-    };
-    return map[wakeTimeOption.value];
-  }, [wakeTimeOption]);
-
-  const awakeDurationSummary = useMemo(() => {
-    if (!awakeOption) return undefined;
-    if (awakeOption.label === "没怎么醒") return "夜里基本没怎么醒";
-    const map: Record<string, string> = {
-      within_15m: "夜里大约醒着 15 分钟内",
-      "15_30m": "夜里大约醒着 15 到 30 分钟",
-      "30_60m": "夜里大约醒着 30 到 60 分钟",
-      over_60m: "夜里大约醒着 1 小时以上",
-    };
-    return map[awakeOption.value];
-  }, [awakeOption]);
 
   // —— 进度上报 ——
   useEffect(() => {
@@ -351,11 +305,14 @@ export default function SleepRecordWizard({
     }
   };
 
-  // Steps 3-6：分段时间轴单选 → 选中后保留 300ms 再进入下一题
+  // Steps 3-6：分段时间轴单选 → 选中后保留 550ms 再进入下一题
+  // 等待期间锁定点击，避免连续快速点击跳过多个问题
   const handleSelectTimeRange = (
     value: string,
     stepNum: Step,
   ) => {
+    if (isLocked) return;
+    setIsLocked(true);
     clearAutoAdvance();
     switch (stepNum) {
       case 3:
@@ -379,12 +336,14 @@ export default function SleepRecordWizard({
       } else {
         setPhase("preview");
       }
+      setIsLocked(false);
     }, AUTO_ADVANCE_MS);
   };
 
   // 「记不清，先跳过」：当前字段保存为 null，直接进入下一题
   // 跳过不写入 label / rangeText / estimate，结算页不展示该行
   const handleSkipTimeRange = (stepNum: Step) => {
+    if (isLocked) return;
     clearAutoAdvance();
     switch (stepNum) {
       case 3:
@@ -589,16 +548,13 @@ export default function SleepRecordWizard({
               </div>
             )}
 
-            {/* —— Step 3：大概上床时间（大尺寸分段时间尺，单选，自动进入） —— */}
+            {/* —— Step 3：大概上床时间（大尺寸分段时间轴，单选，自动进入） —— */}
             {step === 3 && (
-              <div className="pt-6">
+              <div className="pt-10">
                 <p className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
                   大概几点上床？
                 </p>
-                <p className="mt-2 text-center text-[12px] text-ink-faint">
-                  点击或左右滑动选择
-                </p>
-                <div className="mt-7">
+                <div className="mt-8">
                   <SegmentedTimeScale
                     options={bedTimeRanges}
                     value={bedTimeRange}
@@ -606,22 +562,18 @@ export default function SleepRecordWizard({
                     ariaLabel="上床时间"
                     startLabel="晚上"
                     endLabel="凌晨"
-                    summary={bedTimeSummary}
                   />
                 </div>
               </div>
             )}
 
-            {/* —— Step 4：入睡用时（大尺寸分段时间尺，单选，自动进入） —— */}
+            {/* —— Step 4：入睡用时（大尺寸分段时间轴，单选，自动进入） —— */}
             {step === 4 && (
-              <div className="pt-6">
+              <div className="pt-10">
                 <p className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
                   躺下后多久睡着？
                 </p>
-                <p className="mt-2 text-center text-[12px] text-ink-faint">
-                  点击或左右滑动选择
-                </p>
-                <div className="mt-7">
+                <div className="mt-8">
                   <SegmentedTimeScale
                     options={fallAsleepDurationOptions}
                     value={fallAsleepTimeRange}
@@ -629,22 +581,18 @@ export default function SleepRecordWizard({
                     ariaLabel="入睡用时"
                     startLabel="很快"
                     endLabel="很久"
-                    summary={fallAsleepSummary}
                   />
                 </div>
               </div>
             )}
 
-            {/* —— Step 5：大概醒来或起床时间（大尺寸分段时间尺，单选，自动进入） —— */}
+            {/* —— Step 5：大概醒来或起床时间（大尺寸分段时间轴，单选，自动进入） —— */}
             {step === 5 && (
-              <div className="pt-6">
+              <div className="pt-10">
                 <p className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
                   大概几点醒来或起床？
                 </p>
-                <p className="mt-2 text-center text-[12px] text-ink-faint">
-                  点击或左右滑动选择
-                </p>
-                <div className="mt-7">
+                <div className="mt-8">
                   <SegmentedTimeScale
                     options={wakeTimeRanges}
                     value={wakeTimeRange}
@@ -652,22 +600,18 @@ export default function SleepRecordWizard({
                     ariaLabel="醒来时间"
                     startLabel="清晨"
                     endLabel="中午"
-                    summary={wakeTimeSummary}
                   />
                 </div>
               </div>
             )}
 
-            {/* —— Step 6：夜里醒着大概多久（大尺寸分段时间尺，单选，自动进入） —— */}
+            {/* —— Step 6：夜里醒着大概多久（大尺寸分段时间轴，单选，自动进入） —— */}
             {step === 6 && (
-              <div className="pt-6">
+              <div className="pt-10">
                 <p className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
                   夜里一共醒着多久？
                 </p>
-                <p className="mt-2 text-center text-[12px] text-ink-faint">
-                  点击或左右滑动选择
-                </p>
-                <div className="mt-7">
+                <div className="mt-8">
                   <SegmentedTimeScale
                     options={awakeDurationOptions}
                     value={awakeDurationRange}
@@ -675,7 +619,6 @@ export default function SleepRecordWizard({
                     ariaLabel="夜间清醒时长"
                     startLabel="很少"
                     endLabel="很久"
-                    summary={awakeDurationSummary}
                   />
                 </div>
               </div>
