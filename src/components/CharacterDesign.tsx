@@ -1,26 +1,21 @@
-import { Sprout, EyeOff, Anchor, Sun } from "lucide-react";
 import Reveal from "./Reveal";
 import ZaizaiVideo from "./ZaizaiVideo";
 
 /** 右侧四项设计理由：标题 + 一句解释。 */
 const reasons = [
   {
-    icon: Sprout,
     title: "一粒种子，而不是一张固定的脸",
     desc: "它不定义用户此刻应该是什么状态，只保留继续生长的可能。",
   },
   {
-    icon: EyeOff,
     title: "不像人，也不像宠物",
-    desc: "不扮演医生、老师或家人，也不过度制造“只有它懂我”的关系感。",
+    desc: '不扮演医生、老师或家人，也不过度制造"只有它懂我"的关系感。',
   },
   {
-    icon: Anchor,
     title: "没有嘴，不要求你回应",
     desc: "不急着说话，也不索取关注，用动作、目光和小芽表达状态。",
   },
   {
-    icon: Sun,
     title: "住在屏幕里，却始终指向屏幕外",
     desc: "通过吃饭、休息、看书和出门等动作，陪用户重新参与真实生活。",
   },
@@ -114,11 +109,6 @@ export default function CharacterDesign() {
               </h2>
             </Reveal>
 
-            <Reveal delay={0.08} y={10}>
-              <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-ink-soft md:text-[16px] min-[1200px]:text-[17px]">
-                它不扮演医生，也不要求用户回应。只以稳定、低压力的方式在场，陪用户重新回到吃饭、睡觉、出门和与人相处。
-              </p>
-            </Reveal>
           </div>
 
           {/* 右侧：2×2 设计理由卡片，移动端置于形象之后单列显示 */}
@@ -126,13 +116,6 @@ export default function CharacterDesign() {
             {reasons.map((r, i) => (
               <Reveal key={r.title} delay={0.12 + i * 0.05} y={10}>
                 <article className="flex h-full min-h-[168px] flex-col gap-2.5 rounded-xl border border-line bg-white p-4 shadow-[0_1px_2px_rgba(39,51,31,0.04)] md:min-h-[190px] md:p-5 min-[1200px]:min-h-[186px] min-[1200px]:p-5">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-soft">
-                    <r.icon
-                      className="h-[18px] w-[18px] text-accent"
-                      strokeWidth={1.6}
-                      aria-hidden="true"
-                    />
-                  </div>
                   <h3 className="text-[16px] font-semibold leading-snug tracking-tight text-ink md:text-[16px] min-[1200px]:text-[18px]">
                     {r.title}
                   </h3>
@@ -144,48 +127,6 @@ export default function CharacterDesign() {
             ))}
           </div>
         </div>
-
-        {/* 底部价值总结：横跨主体宽度 */}
-        <Reveal delay={0.32} y={10}>
-          <div className="relative mt-6 overflow-hidden rounded-2xl border border-line bg-gradient-to-br from-accent-soft via-accent-soft/40 to-transparent md:mt-8 min-[1200px]:mt-8">
-            <div className="flex items-center gap-4 px-6 py-6 md:gap-5 md:px-8 md:py-7 min-[1200px]:px-10">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/70 md:h-11 md:w-11">
-                <Sprout
-                  className="h-5 w-5 text-accent"
-                  strokeWidth={1.6}
-                  aria-hidden="true"
-                />
-              </div>
-              <p className="text-[20px] font-semibold leading-snug tracking-tight text-ink md:text-[24px] min-[1200px]:text-[28px]">
-                在在不是情绪陪伴的终点，
-                <br />
-                而是重新参与生活的入口。
-              </p>
-              {/* 右侧弱化植物路径意象：明显弱于文字 */}
-              <svg
-                className="ml-auto hidden h-16 w-24 text-accent/25 md:block min-[1200px]:h-20 min-[1200px]:w-32"
-                viewBox="0 0 144 96"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M6 86 C 36 74, 52 52, 72 56 S 110 30, 134 14"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeDasharray="3 5"
-                />
-                <circle cx="134" cy="14" r="3" fill="currentColor" />
-                <path
-                  d="M72 56 q -7 -11 2 -18 M72 56 q 9 -9 16 -2"
-                  stroke="currentColor"
-                  strokeWidth="1.2"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </div>
-          </div>
-        </Reveal>
       </div>
     </section>
   );

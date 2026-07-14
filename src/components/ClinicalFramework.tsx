@@ -153,17 +153,8 @@ export default function ClinicalFramework() {
             ))}
           </div>
         </div>
-
-        <Reveal delay={0.5}>
-          <div className="mt-10 rounded-lg bg-accent-soft px-5 py-5 md:px-6 md:py-6">
-            <p className="text-[16px] font-semibold leading-relaxed text-ink md:text-[18px]">
-              框架决定我们如何理解一个人，技术决定此刻如何回应。
-            </p>
-          </div>
-        </Reveal>
-
         <Reveal delay={0.56}>
-          <p className="mt-6 text-[12px] leading-relaxed text-ink-faint">
+          <p className="mt-5 text-[12px] leading-relaxed text-ink-faint">
             在呀借鉴专业方法中的日常支持原则，不提供医学诊断、心理治疗或用药建议，也不替代专业人员的判断。
           </p>
         </Reveal>

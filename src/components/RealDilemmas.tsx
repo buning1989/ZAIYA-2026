@@ -80,9 +80,6 @@ export default function RealDilemmas() {
                     <h3 className="font-display text-[19px] font-semibold leading-snug tracking-tight text-ink md:text-[20px]">
                       {card.name}
                     </h3>
-                    <p className="mt-3 text-[13px] leading-relaxed text-ink-soft md:text-[14px]">
-                      {card.explanation}
-                    </p>
                   </div>
                 </div>
               </article>
@@ -91,17 +88,7 @@ export default function RealDilemmas() {
         </div>
 
         <Reveal delay={0.34}>
-          <div className="mt-10 rounded-lg border border-line bg-accent-soft px-6 py-7 md:px-8 md:py-8">
-            <p className="max-w-2xl text-[18px] font-medium leading-relaxed text-ink md:text-[20px]">
-              他们失去的，不只是情绪稳定，
-              <br />
-              而是对日常生活的参与感和掌控感。
-            </p>
-          </div>
-        </Reveal>
-
-        <Reveal delay={0.42}>
-          <p className="mt-8 text-[11px] leading-relaxed text-ink-faint">
+          <p className="mt-6 text-[11px] leading-relaxed text-ink-faint md:mt-7">
             调研说明：以上内容基于 2026 年 6 月对小红书公开笔记及评论区的探索性研究，相关表达均由多条评论脱敏归纳，并非对单一用户原文的直接引用。平台用户结构、样本筛选与关键词设置可能带来偏差，结果仅用于理解典型需求场景，不代表总体人群比例或严格统计结论。
           </p>
         </Reveal>

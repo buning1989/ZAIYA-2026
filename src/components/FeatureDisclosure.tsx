@@ -21,7 +21,7 @@ export default function FeatureDisclosure({
   return (
     <details className="group mt-5">
       <summary className="w-fit cursor-pointer select-none list-none text-[13px] font-medium text-ink-faint transition-colors hover:text-ink [&::-webkit-details-marker]:hidden">
-        <span className="group-open:hidden">{label} +</span>
+        <span className="group-open:hidden">{label} &gt;</span>
         <span className="hidden group-open:inline">收起 −</span>
       </summary>
       <div className="mt-3">

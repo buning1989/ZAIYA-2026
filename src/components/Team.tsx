@@ -93,7 +93,7 @@ export default function Team() {
             <span className="inline-block">二十年亲历，</span>
             <span className="inline-block">三次实践。</span>
           </h2>
-          <p className="mt-5 max-w-[760px] text-[16px] leading-relaxed text-ink-soft md:text-[17px]">
+          <p className="mt-5 text-[16px] leading-relaxed text-ink-soft md:text-[17px]">
             我们既理解精神心理困扰如何改变一个人的生活，也具备把复杂问题转化为低门槛、可使用产品的能力。
           </p>
         </Reveal>
@@ -118,7 +118,7 @@ export default function Team() {
           <div className="mt-12 md:mt-14">
             <div className="max-w-[760px]">
               <h3 className="text-[24px] font-semibold leading-tight tracking-tight text-ink md:text-[28px]">
-                三次实践
+                三次实践，持续升级
               </h3>
               <p className="mt-3 text-[15px] leading-relaxed text-ink-soft md:text-[16px]">
                 从记录情绪，到降低记录门槛，再到帮助用户重新参与生活，我们围绕同一个问题进行了三次持续迭代。
@@ -219,21 +219,10 @@ export default function Team() {
         </div>
 
         <Reveal delay={0.3}>
-          <p className="mx-auto mt-7 max-w-2xl text-center text-[18px] font-semibold leading-relaxed tracking-tight text-ink md:text-[22px]">
+          <p className="mx-auto mt-9 max-w-2xl text-center text-[18px] font-semibold leading-relaxed tracking-tight text-accent-deep md:mt-10 md:text-[22px]">
             <span className="inline-block">一个人更接近问题本身，</span>
             <span className="inline-block">一个人负责把问题做成产品。</span>
           </p>
-        </Reveal>
-
-        <Reveal delay={0.34}>
-          <div className="mt-9 rounded-2xl bg-accent-soft px-7 py-7 text-center md:px-10 md:py-9">
-            <p className="text-[22px] font-semibold leading-snug tracking-tight text-ink md:text-[28px]">
-              这不是一场临时参赛，
-              <br />
-              而是我们会持续做下去的
-              <span className="inline-block">长期方向。</span>
-            </p>
-          </div>
         </Reveal>
       </div>
     </section>

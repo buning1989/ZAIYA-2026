@@ -272,14 +272,6 @@ export default function ProductFeatures() {
             </article>
           </Reveal>
         </div>
-
-        <Reveal delay={0.34}>
-          <div className="mt-12 rounded-lg bg-accent-soft px-6 py-6 md:mt-14 md:px-8 md:py-7">
-            <p className="max-w-3xl text-[18px] font-semibold leading-relaxed text-ink md:text-[20px]">
-              让用户更容易开始，让生活自然留下记录，让每一次支持都建立在更完整的信息上。
-            </p>
-          </div>
-        </Reveal>
       </div>
     </section>
   );

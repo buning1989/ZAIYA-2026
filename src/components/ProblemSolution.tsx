@@ -2,7 +2,6 @@ import Reveal from "./Reveal";
 
 type StatCard = {
   label: string;
-  prefix?: string;
   value: string;
   suffix?: string;
   meaning: string;
@@ -17,14 +16,12 @@ const stats: StatCard[] = [
   },
   {
     label: "专业支持仍然有限",
-    prefix: "不足",
     value: "20",
     suffix: "%",
     meaning: "多数孩子的困扰，还没进入持续、专业的支持。",
   },
   {
     label: "更多时间发生在日常",
-    prefix: "约",
     value: "8700",
     suffix: "小时",
     meaning:
@@ -41,11 +38,6 @@ function StatCardView({ stat, delay }: { stat: StatCard; delay: number }) {
         </span>
 
         <div className="mt-4 flex items-baseline gap-1">
-          {stat.prefix && (
-            <span className="text-[20px] font-semibold leading-none tracking-tight text-ink md:text-[24px]">
-              {stat.prefix}
-            </span>
-          )}
           <span className="text-[40px] font-semibold leading-none tracking-tightest text-ink md:text-[48px]">
             {stat.value}
           </span>
@@ -81,7 +73,7 @@ export default function ProblemSolution() {
         </Reveal>
 
         <Reveal delay={0.08}>
-          <p className="mt-3 max-w-2xl text-[17px] leading-relaxed text-ink-soft md:text-[19px]">
+          <p className="mt-3 text-[17px] leading-relaxed text-ink-soft md:text-[19px]">
             精神心理困扰影响的不只是情绪——睡眠、饮食、上学、社交、家庭，都会慢慢失序。
           </p>
         </Reveal>
@@ -92,16 +84,8 @@ export default function ProblemSolution() {
           ))}
         </div>
 
-        <Reveal delay={0.36}>
-          <div className="mt-8 rounded-lg bg-accent-soft px-6 py-5 md:px-8 md:py-6">
-            <p className="max-w-2xl text-[16px] leading-relaxed text-accent-deep md:text-[18px]">
-              在呀不替代诊断和治疗，而是让专业支持覆盖不到的日常，也能被看见、被管理。
-            </p>
-          </div>
-        </Reveal>
-
-        <Reveal delay={0.44}>
-          <p className="mt-5 text-[11px] leading-relaxed text-ink-faint">
+        <Reveal delay={0.34}>
+          <p className="mt-4 text-[11px] leading-relaxed text-ink-faint md:mt-5">
             数据来源：中国 6—16 岁儿童青少年精神障碍流行病学调查；就诊率、8700
             小时为相关研究与测算（按每周 1 小时专业支持估算）。
           </p>
