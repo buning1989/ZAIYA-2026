@@ -9,7 +9,7 @@ import type { HomeTimePhase } from "@/lib/homeTimePhase";
 
 /** 演示模式：各时间段对应的在在首页动画素材路径 */
 export const DEMO_HOME_PHASE_SCENE: Record<HomeTimePhase, string> = {
-  morning: "/assets/homepage-animations/打开窗帘，阳光自己就挤进来了.webm",
+  morning: "/assets/homepage-animations/今天有什么小小的好事发生吗？.webm",
   forenoon:
     "/assets/homepage-animations/根往下扎的时候看不见，等看见时，小苗已经长高了。.webm",
   noon: "/assets/homepage-animations/累了就歇一会儿,草地不会催种子发芽。.webm",
@@ -22,7 +22,7 @@ export const DEMO_HOME_PHASE_SCENE: Record<HomeTimePhase, string> = {
 
 /** 演示模式：各时间段对应的气泡文案 */
 export const DEMO_HOME_PHASE_BUBBLE_TEXT: Record<HomeTimePhase, string> = {
-  morning: "打开窗帘，阳光自己就挤进来了",
+  morning: "今天有什么小小的好事发生吗？",
   forenoon: "根往下扎的时候看不见，等看见时，小苗已经长高了。",
   noon: "累了就歇一会儿，草地不会催种子发芽。",
   afternoon: "今天有什么小小的好事发生吗？",

@@ -41,8 +41,8 @@ export const HOMEPAGE_ANIMATION_CONFIGS: HomepageAnimationConfig[] = [
     phase: "morning",
     startMinutes: 360, // 06:00
     endMinutes: 569, // 09:29
-    src: "/assets/homepage-animations/打开窗帘，阳光自己就挤进来了.webm",
-    bubbleText: "打开窗帘，阳光自己就挤进来了",
+    src: "/assets/homepage-animations/今天有什么小小的好事发生吗？.webm",
+    bubbleText: "今天有什么小小的好事发生吗？",
   },
   {
     phase: "forenoon",
