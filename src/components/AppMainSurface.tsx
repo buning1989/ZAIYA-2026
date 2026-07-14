@@ -70,6 +70,7 @@ import {
 } from "@/lib/moduleLoaders";
 import { preloadVideo } from "@/lib/mediaPreloader";
 import { usePrefetch } from "@/lib/usePrefetch";
+import { storageGet, storageSet } from "@/shared/storage/namespacedStorage";
 
 const SocialSceneSelectContent = lazy(() =>
   presenceRoomLoader().then((m) => ({ default: m.SocialSceneSelectContent })),
@@ -640,29 +641,18 @@ export default function AppMainSurface({
   const [homeShortcut, setHomeShortcut] = useState(false);
 
   // —— 应用锁 ——
-  // appLock：是否开启应用锁，localStorage 持久化（zaiya_app_lock）
+  // appLock：是否开启应用锁，命名空间 localStorage 持久化（zaiya-<mode>-app_lock）
   // sessionVerified：本会话内是否已通过验证；不持久化，刷新页面后重置为 false
   // pendingProtectedItem：受保护入口被拦截时暂存目标 id，验证通过后进入该页
   // 受保护入口：回头看看 / 帮我整理 / 我的隐私 / 夸夸自己
   // 不保护：首页 / 记一下的新建入口 / 帮助与反馈 / 设置首页 / 隐私条款 / 用户协议
-  const [appLock, setAppLockState] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      return window.localStorage.getItem("zaiya_app_lock") === "true";
-    } catch {
-      return false;
-    }
-  });
+  const [appLock, setAppLockState] = useState<boolean>(() => storageGet("app_lock") === "true");
   const [sessionVerified, setSessionVerified] = useState(false);
   const [pendingProtectedItem, setPendingProtectedItem] =
     useState<MoreItemId | null>(null);
   const setAppLock = (v: boolean) => {
     setAppLockState(v);
-    try {
-      window.localStorage.setItem("zaiya_app_lock", v ? "true" : "false");
-    } catch {
-      // 忽略写入失败（隐私模式 / 配额满）
-    }
+    storageSet("app_lock", v ? "true" : "false");
   };
 
   // —— 记录历史 + 快捷入口提示（本地 mock） ——

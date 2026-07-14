@@ -24,7 +24,7 @@
  * 数据源：本文件内统一 Mock（小晨数据），不分散硬编码。
  *   用户基本信息（昵称 / 年龄 / 年级）从 userProfile 统一读取，不在此处重复维护。 */
 
-import { calculateAge, MOCK_USER_PROFILE } from "@/data/userProfile";
+import { calculateAge, getUserProfile } from "@/data/userProfile";
 
 /* =========================================================
  * 沟通对象与可信联系人
@@ -733,7 +733,7 @@ export function buildFullMaterial(session: CommunicationSession): MaterialSectio
   const sections: MaterialSection[] = [];
   const name = session.contactSnapshot.displayName;
   const materialTopics = getMaterialTopics(session);
-  const { nickname, birthDate, grade } = MOCK_USER_PROFILE.basicInfo;
+  const { nickname, birthDate, grade } = getUserProfile();
   const age = calculateAge(birthDate);
 
   // 1. 基本信息
@@ -859,7 +859,7 @@ export function buildFullMaterial(session: CommunicationSession): MaterialSectio
 export function buildShareText(session: CommunicationSession): string {
   const name = session.contactSnapshot.displayName;
   const lines: string[] = [];
-  const { nickname, birthDate, grade } = MOCK_USER_PROFILE.basicInfo;
+  const { nickname, birthDate, grade } = getUserProfile();
   const age = calculateAge(birthDate);
   const materialTopics = getMaterialTopics(session);
 
@@ -999,27 +999,25 @@ export function formatHighRiskRecordTime(iso: string): string {
 }
 
 /* =========================================================
- * localStorage 持久化
+ * 命名空间 localStorage 持久化
+ * 演示模式与体验模式各自独立：zaiya-<mode>-organize_session / history / contacts。
  * ======================================================= */
+import { storageGetJSON, storageSetJSON, storageRemove, storageGet } from "@/shared/storage/namespacedStorage";
 
-const SESSION_KEY = "zaiya_organize_session";
-const HISTORY_KEY = "zaiya_organize_history";
-const CONTACTS_KEY = "zaiya_organize_contacts";
+const SESSION_NAME = "organize_session";
+const HISTORY_NAME = "organize_history";
+const CONTACTS_NAME = "organize_contacts";
 
 /** 保存进行中的会话 */
 export function saveSession(session: CommunicationSession): void {
-  try {
-    window.localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  } catch {
-    // 忽略写入失败
-  }
+  storageSetJSON(SESSION_NAME, session);
 }
 
 /** 加载进行中的会话（刷新恢复） */
 export function loadSession(): CommunicationSession | null {
+  const raw = storageGet(SESSION_NAME);
+  if (!raw) return null;
   try {
-    const raw = window.localStorage.getItem(SESSION_KEY);
-    if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!isRestorableSession(parsed)) return null;
     return parsed;
@@ -1059,18 +1057,14 @@ function isRestorableSession(value: unknown): value is CommunicationSession {
 
 /** 清除进行中的会话 */
 export function clearSession(): void {
-  try {
-    window.localStorage.removeItem(SESSION_KEY);
-  } catch {
-    // 忽略
-  }
+  storageRemove(SESSION_NAME);
 }
 
-/** 加载沟通对象列表（localStorage + Mock 默认） */
+/** 加载沟通对象列表（命名空间 localStorage + Mock 默认） */
 export function loadContacts(): CommunicationContact[] {
+  const raw = storageGet(CONTACTS_NAME);
+  if (!raw) return [...MOCK_COMMUNICATION_CONTACTS];
   try {
-    const raw = window.localStorage.getItem(CONTACTS_KEY);
-    if (!raw) return [...MOCK_COMMUNICATION_CONTACTS];
     return JSON.parse(raw) as CommunicationContact[];
   } catch {
     return [...MOCK_COMMUNICATION_CONTACTS];
@@ -1079,11 +1073,7 @@ export function loadContacts(): CommunicationContact[] {
 
 /** 保存沟通对象列表 */
 export function saveContacts(contacts: CommunicationContact[]): void {
-  try {
-    window.localStorage.setItem(CONTACTS_KEY, JSON.stringify(contacts));
-  } catch {
-    // 忽略
-  }
+  storageSetJSON(CONTACTS_NAME, contacts);
 }
 
 /** 新增沟通对象 */
@@ -1093,24 +1083,15 @@ export function addContact(contact: CommunicationContact): CommunicationContact[
   return next;
 }
 
-/** 加载历史（localStorage，跨刷新持久） */
+/** 加载历史（命名空间 localStorage，跨刷新持久） */
 export function loadHistory(): OrganizeHistoryEntry[] {
-  try {
-    const raw = window.localStorage.getItem(HISTORY_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw) as OrganizeHistoryEntry[];
-  } catch {
-    return [];
-  }
+  const arr = storageGetJSON<OrganizeHistoryEntry[] | null>(HISTORY_NAME, null);
+  return Array.isArray(arr) ? arr : [];
 }
 
 /** 保存历史（全量写入） */
 export function saveHistory(history: OrganizeHistoryEntry[]): void {
-  try {
-    window.localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-  } catch {
-    // 忽略
-  }
+  storageSetJSON(HISTORY_NAME, history);
 }
 
 /** 追加一条历史 */

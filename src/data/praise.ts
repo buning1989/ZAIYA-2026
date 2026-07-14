@@ -115,29 +115,20 @@ export function buildTimeLabel(d: Date = new Date()): string {
   return `${d.getMonth() + 1}月${d.getDate()}日`;
 }
 
-/* —— localStorage 持久化 —— */
-const STORAGE_KEY = "zaiya_praise_cards";
+/* —— 命名空间 localStorage 持久化 ——
+ * key = zaiya-<mode>-praise_cards，演示模式与体验模式各自独立。 */
+import { storageGetJSON, storageSetJSON } from "@/shared/storage/namespacedStorage";
+
+const STORAGE_NAME = "praise_cards";
 
 export function loadCards(): PraiseCard[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as PraiseCard[];
-    if (!Array.isArray(parsed)) return [];
-    return parsed;
-  } catch {
-    return [];
-  }
+  const parsed = storageGetJSON<PraiseCard[] | null>(STORAGE_NAME, null);
+  if (!Array.isArray(parsed)) return [];
+  return parsed;
 }
 
 export function saveCards(cards: PraiseCard[]): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
-  } catch {
-    // 忽略写入失败（隐私模式 / 配额满）
-  }
+  storageSetJSON(STORAGE_NAME, cards);
 }
 
 /* —— 创建一张夸夸卡片 ——

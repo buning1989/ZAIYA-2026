@@ -1,4 +1,5 @@
-import { calculateAge, MOCK_USER_PROFILE } from "@/data/userProfile";
+import { calculateAge } from "@/data/userProfile";
+import { DEMO_USER_PROFILE } from "@/apps/demo/data/demoUser";
 
 type ImpairmentPoint = {
   title: string;
@@ -34,7 +35,7 @@ const impairmentPoints: ImpairmentPoint[] = [
  *   C. 观看提示区：案例说明
  */
 export default function XiaochenCaseIntro() {
-  const { nickname, birthDate } = MOCK_USER_PROFILE.basicInfo;
+  const { nickname, birthDate } = DEMO_USER_PROFILE.basicInfo;
   const age = calculateAge(birthDate);
   return (
     <div className="mx-auto w-[min(680px,calc(100vw-48px))] max-w-[680px]">
