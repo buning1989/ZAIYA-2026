@@ -78,7 +78,7 @@ export default function ConclusionSummaryPage() {
           {conclusionContent.stakeholderValues.map((value) => (
             <div
               key={value.target}
-              className="rounded-2xl border border-line-soft bg-card-soft/60 px-5 py-4"
+              className="rounded-2xl border border-line-soft bg-surface-soft/60 px-5 py-4"
             >
               <p className="text-[16px] font-semibold leading-[1.4] text-ink">
                 {value.target}
@@ -94,7 +94,7 @@ export default function ConclusionSummaryPage() {
       {/* —— E. GPM 说明 —— */}
       <section
         aria-label="GPM 说明"
-        className="mt-10 rounded-2xl border border-line-soft bg-card-soft/40 px-6 py-6"
+        className="mt-10 rounded-2xl border border-line-soft bg-surface-soft/40 px-6 py-6"
       >
         {conclusionContent.gpm.map((line, index) => {
           const isFirst = index === 0;

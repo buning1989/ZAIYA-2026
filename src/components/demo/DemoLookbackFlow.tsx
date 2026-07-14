@@ -1,11 +1,12 @@
 import { useMemo } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   TimeModeTabs,
   TimeRangeSwitcher,
   SceneTabs,
   TrendArea,
+  SleepRow,
   themes,
   scenes,
   tx,
@@ -14,26 +15,19 @@ import {
 } from "@/components/LookbackPage";
 import {
   SLEEP_TREND_14_DAYS,
-  MEAL_RECORD_DAYS,
   DATE_RANGE_LABEL,
-  formatSleepTime,
-  averageSleepMinutes,
   toDailyLookbackData,
 } from "./demoLookbackData";
 
 /* —— 第二周 21:00 节点：回头看看 近两周趋势 演示页 ——
  *
- * 核心表达：
- *   小晨第一次不只依靠当下感受判断自己，而是通过连续记录，
- *   从外部看见这两周真实发生的变化。
+ * UI 对齐体验模式「回头看看」页面布局：
+ *   导航 → 时间模式 → 时间范围 → 场景标签 → 趋势图 → 每日记录列表
  *
- * 展示两个事实：
- *   1. 入睡时间整体有所提前，但仍存在波动；
- *   2. 第二周留下饮食记录的天数比第一周增加。
- *
- * UI 对齐：直接复用 LookbackPage 的 TimeModeTabs / TimeRangeSwitcher /
- *   SceneTabs / TrendArea / themes / tx 等正式组件与 token，
- *   Guided Demo 仅以固定近两周数据驱动，不改变正式页面行为。
+ * 内容保留演示模块所需：
+ *   - 趋势图下方保留周分界虚线
+ *   - 每日记录列表使用 SleepRow（对齐体验模式行结构）
+ *   - 列表下方保留演示专属的睡眠摘要文案和饮食记录摘要
  *
  * 数据隔离：所有数据为组件内固定 Demo 数据，不写入 localStorage、
  * 不读取真实记录、不影响自由体验模式。
@@ -44,27 +38,19 @@ import {
 export default function DemoLookbackFlow() {
   const prefersReducedMotion = useReducedMotion();
 
-  /* 转换为 DailyLookbackData[] 供正式 SleepTrend 组件消费 */
+  /* 转换为 DailyLookbackData[] 供正式组件消费 */
   const data = useMemo(() => toDailyLookbackData(SLEEP_TREND_14_DAYS), []);
 
-  /* 周平均值（使用原始分钟数据计算，不改数值） */
-  const firstWeekAvg = useMemo(
-    () => averageSleepMinutes(SLEEP_TREND_14_DAYS, 0, 6),
-    [],
-  );
-  const secondWeekAvg = useMemo(
-    () => averageSleepMinutes(SLEEP_TREND_14_DAYS, 7, 13),
-    [],
-  );
-
   const sleepTheme = themes.sleep;
-  const mealTheme = themes.meals;
 
   /* Demo 固定参数 */
   const fixedReferenceDate = new Date("2026-07-13T23:59:59+08:00");
   const fixedWeekStartKey = "2026-06-30";
   const fixedMonthKey = "2026-07";
   const sleepSceneIdx = 1; // scenes[1] = { key: "sleep", label: "入睡" }
+
+  /* 每日列表：降序（最近一天在顶部），与体验模式 ScenePanel 一致 */
+  const reversedData = useMemo(() => [...data].reverse(), [data]);
 
   return (
     <motion.div
@@ -74,12 +60,12 @@ export default function DemoLookbackFlow() {
       animate={{ opacity: 1 }}
       transition={{ duration: prefersReducedMotion ? 0 : 0.28, ease }}
     >
-      {/* === 顶部导航：返回按钮 + 标题（与正式 LookbackPage 一致）=== */}
+      {/* === 顶部导航：返回按钮 + 标题 === */}
       <div className="flex items-center gap-3 px-5 pt-14 pb-3">
         <button
           onClick={() => {}}
           aria-label="返回"
-          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface-soft"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
@@ -116,18 +102,8 @@ export default function DemoLookbackFlow() {
       />
 
       {/* === 内容区：可滚动 === */}
-      <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-6">
-        {/* 睡眠指标标题 */}
-        <div className="pb-2 pt-1">
-          <span
-            className="font-medium"
-            style={{ fontSize: tx.cardTitle, color: sleepTheme.text }}
-          >
-            入睡时间趋势
-          </span>
-        </div>
-
-        {/* 趋势图：直接复用正式 TrendArea + SleepTrend */}
+      <div className="no-scrollbar flex-1 overflow-y-auto px-4 pb-6 pt-1">
+        {/* 趋势图：复用正式 TrendArea */}
         <div className="relative">
           <TrendArea sceneKey="sleep" data={data} />
           {/* 周分界虚线：覆盖在图表区域上 */}
@@ -135,174 +111,66 @@ export default function DemoLookbackFlow() {
             className="pointer-events-none absolute"
             style={{
               left: "50%",
-              top: "14px" /* TrendArea py-3.5 */,
-              height: "80px" /* TrendArea chart height */,
+              top: "14px",
+              height: "80px",
               borderLeft: `1px dashed ${sleepTheme.mark}`,
               opacity: 0.3,
             }}
           />
         </div>
 
-        {/* 周次标记 */}
-        <div className="mt-1.5 flex items-center justify-between px-1">
-          <span
-            style={{
-              fontSize: tx.chartAxisLabel,
-              color: sleepTheme.text,
-              opacity: 0.5,
-            }}
-          >
-            第一周
-          </span>
-          <span
-            style={{
-              fontSize: tx.chartAxisLabel,
-              color: sleepTheme.text,
-              opacity: 0.3,
-            }}
-          >
-            |
-          </span>
-          <span
-            style={{
-              fontSize: tx.chartAxisLabel,
-              color: sleepTheme.text,
-              opacity: 0.5,
-            }}
-          >
-            第二周
-          </span>
-        </div>
-
-        {/* === 第一周 / 第二周平均值 === */}
-        <div className="mt-3 flex gap-3">
-          <div className="flex-1 rounded-[20px] border border-line-soft bg-white px-3 py-2.5 shadow-[0_1px_3px_-1px_rgba(0,0,0,0.04)]">
-            <div
-              style={{
-                fontSize: tx.cardMeta,
-                color: sleepTheme.text,
-                opacity: 0.5,
-              }}
-            >
-              第一周平均
-            </div>
-            <div
-              className="mt-0.5 font-medium"
-              style={{ fontSize: tx.cardTitle, color: sleepTheme.text }}
-            >
-              {formatSleepTime(firstWeekAvg)}
-            </div>
+        {/* === 每日记录列表：对齐体验模式 ScenePanel 的日列表结构 === */}
+        <div className="mt-4 flex flex-col gap-3">
+          {/* 月份分组标题 */}
+          <div className="mb-1.5 px-1 text-[12px] font-medium text-ink-faint">
+            2026年7月
           </div>
-          <div className="flex-1 rounded-[20px] border border-line-soft bg-white px-3 py-2.5 shadow-[0_1px_3px_-1px_rgba(0,0,0,0.04)]">
-            <div
-              style={{
-                fontSize: tx.cardMeta,
-                color: sleepTheme.text,
-                opacity: 0.5,
-              }}
-            >
-              第二周平均
-            </div>
-            <div
-              className="mt-0.5 font-medium"
-              style={{ fontSize: tx.cardTitle, color: sleepTheme.text }}
-            >
-              {formatSleepTime(secondWeekAvg)}
-            </div>
-          </div>
-        </div>
-
-        {/* === 睡眠摘要文案（弱于核心数据）=== */}
-        <p
-          className="mt-3 leading-relaxed"
-          style={{
-            fontSize: tx.listContent,
-            color: sleepTheme.text,
-            opacity: 0.6,
-          }}
-        >
-          入睡时间整体有所提前，但仍有波动。
-        </p>
-
-        {/* === 饮食记录摘要 === */}
-        <section className="mt-6">
-          <span
-            className="font-medium"
-            style={{ fontSize: tx.cardTitle, color: mealTheme.text }}
-          >
-            饮食记录
-          </span>
-
-          {/* 数据摘要卡：白底 + 浅描边，视觉权重低于趋势图 */}
-          <div className="mt-3 rounded-[20px] border border-line-soft bg-white px-4 py-3.5 shadow-[0_1px_3px_-1px_rgba(0,0,0,0.04)]">
-            <div
-              style={{
-                fontSize: tx.listContent,
-                color: mealTheme.text,
-                opacity: 0.6,
-              }}
-            >
-              留下饮食记录的天数
-            </div>
-            <div className="mt-2 flex items-baseline gap-3">
-              <div>
-                <div
-                  style={{
-                    fontSize: tx.cardMeta,
-                    color: mealTheme.text,
-                    opacity: 0.5,
-                  }}
-                >
-                  第一周
-                </div>
-                <div
-                  className="font-medium"
-                  style={{ fontSize: tx.cardTitle, color: mealTheme.text }}
-                >
-                  {MEAL_RECORD_DAYS.firstWeek} 天
-                </div>
-              </div>
-              <span
+          {/* 当月详情卡 */}
+          <div className="overflow-hidden rounded-[20px] border border-line-soft bg-white shadow-[0_1px_3px_-1px_rgba(0,0,0,0.04)]">
+            {reversedData.map((day, idx) => (
+              <div
+                key={day.date}
+                className="flex items-center gap-3 px-4"
                 style={{
-                  fontSize: tx.cardTitle,
-                  color: mealTheme.text,
-                  opacity: 0.3,
+                  height: 52,
+                  borderBottom:
+                    idx === reversedData.length - 1
+                      ? "none"
+                      : "1px solid var(--color-line, #D8E0CA)",
                 }}
               >
-                →
-              </span>
-              <div>
-                <div
-                  style={{
-                    fontSize: tx.cardMeta,
-                    color: mealTheme.text,
-                    opacity: 0.5,
-                  }}
-                >
-                  第二周
+                {/* 左：日期 + 星期 */}
+                <div className="w-12 shrink-0 text-left">
+                  <div
+                    className="font-medium text-ink"
+                    style={{ fontSize: tx.listDate }}
+                  >
+                    {day.displayDate.replace("月", "/").replace("日", "")}
+                  </div>
+                  <div className="text-ink-faint" style={{ fontSize: tx.listWeekday }}>
+                    {weekday(day.date)}
+                  </div>
                 </div>
-                <div
-                  className="font-medium"
-                  style={{ fontSize: tx.cardTitle, color: mealTheme.text }}
-                >
-                  {MEAL_RECORD_DAYS.secondWeek} 天
+                {/* 中：SleepRow 入睡可视化 */}
+                <div className="flex h-full flex-1 items-center">
+                  <SleepRow day={day} />
                 </div>
+                {/* 右：弱箭头 */}
+                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-ink-faint/40" />
               </div>
-            </div>
-            <p
-              className="mt-3 leading-relaxed"
-              style={{
-                fontSize: tx.cardMeta,
-                color: mealTheme.text,
-                opacity: 0.5,
-              }}
-            >
-              第二周比第一周多留下了{" "}
-              {MEAL_RECORD_DAYS.secondWeek - MEAL_RECORD_DAYS.firstWeek} 天记录。
-            </p>
+            ))}
           </div>
-        </section>
+        </div>
+
+
       </div>
     </motion.div>
   );
+}
+
+/* —— 工具：YYYY-MM-DD → 星期 —— */
+function weekday(dateStr: string): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  return ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][date.getDay()];
 }

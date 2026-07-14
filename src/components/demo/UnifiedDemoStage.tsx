@@ -8,18 +8,24 @@ import GuidedDemoControls, { NavArrow } from "./GuidedDemoControls";
 import XiaochenCaseIntro from "./XiaochenCaseIntro";
 import DayOneSummaryPage from "./DayOneSummaryPage";
 import TwoWeekTransition from "./TwoWeekTransition";
-import ConclusionSummaryPage from "./ConclusionSummaryPage";
+import GuidedCaseResultPage from "./GuidedCaseResultPage";
+import GuidedProductValuePage from "./GuidedProductValuePage";
 import DemoPhoneFrame from "./DemoPhoneFrame";
 import DemoWatchFrame from "./DemoWatchFrame";
 import DemoSleepRecordFlow from "./DemoSleepRecordFlow";
 import DemoOrganizeFlow from "./DemoOrganizeFlow";
-import DemoPraiseFlow from "./DemoPraiseFlow";
+import DemoPraisePreview from "./DemoPraisePreview";
 import DemoLookbackFlow from "./DemoLookbackFlow";
 import FreeExperiencePanel from "./FreeExperiencePanel";
 import { xiaochenDay1Scenario } from "./scenarios/xiaochenDay1";
 import { xiaochenDay2Scenario } from "./scenarios/xiaochenDay2";
+import { day2PraiseDemo } from "./scenarios/xiaochenTwoWeekSummary";
 import type { DialogItem } from "./types";
 import { SOFT_EASE } from "@/lib/motionVariants";
+import {
+  getNextNodeKey,
+  preloadNodeResources,
+} from "./demoPreloadMap";
 
 type Props = {
   mode: "guided" | "free";
@@ -29,31 +35,35 @@ type Props = {
 };
 
 /* —— 线性叙事相位 ——
- * intro         → 案例介绍（第 0 页）
- * day1          → 第一天 1/5 … 5/5
- * day1-summary  → 第一天结束总结页
- * week2-intro   → 两周后开场页
- * day2          → 小晨两周后 1/5 … 5/5
- * conclusion    → 结尾总结页（最后一页，只显示左箭头）
+ * intro              → 案例介绍（第 0 页）
+ * day1               → 第一天 1/5 … 5/5
+ * day1-summary       → 第一天结束总结页
+ * week2-intro        → 两周后开场页
+ * day2               → 小晨两周后 1/5 … 5/5
+ * guided-result      → 案例结果页（小晨这两周发生了什么）
+ * guided-product-value → 产品价值总结页（最后一页，只显示左箭头）
  *
- * 注：独立复诊整理页已移除，第二周第 5 节点直接进入最终总结。
+ * 注：独立复诊整理页已移除，第二周第 5 节点直接进入案例结果页。
+ * 原单页总结已拆分为两页：第一页只讲案例人物变化，第二页预留产品价值内容。
  *
  * 所有阶段统一使用左右箭头 / 键盘 ← → / 移动端左右滑动切换。
- * 不再设置任何用于推进流程的 CTA 按钮。
+ * 不再设置任何用于推进流程的 CTA 按钮（案例结果页主按钮除外，与右箭头等价）。
  */
-type GuidedPhase =
+export type GuidedPhase =
   | "intro"
   | "day1"
   | "day1-summary"
   | "week2-intro"
   | "day2"
-  | "conclusion";
+  | "guided-result"
+  | "guided-product-value";
 
 /* 阶段页：无手机 Demo、无分页圆点，但保留左右箭头 */
 const PHASE_PAGES: GuidedPhase[] = [
   "day1-summary",
   "week2-intro",
-  "conclusion",
+  "guided-result",
+  "guided-product-value",
 ];
 
 function isPhasePage(phase: GuidedPhase): boolean {
@@ -156,10 +166,12 @@ export default function UnifiedDemoStage({
       setDay2Index(0);
       setPhase("day2");
     } else if (phase === "day2") {
-      if (atEnd) setPhase("conclusion");
+      if (atEnd) setPhase("guided-result");
       else setDay2Index((i) => Math.min(i + 1, xiaochenDay2Scenario.steps.length - 1));
+    } else if (phase === "guided-result") {
+      setPhase("guided-product-value");
     }
-    // conclusion：无下一页
+    // guided-product-value：无下一页（最后一页）
   }, [phase, atEnd]);
 
   const prev = useCallback(() => {
@@ -174,9 +186,11 @@ export default function UnifiedDemoStage({
     } else if (phase === "day2") {
       if (atStart) setPhase("week2-intro");
       else setDay2Index((i) => Math.max(i - 1, 0));
-    } else if (phase === "conclusion") {
+    } else if (phase === "guided-result") {
       setDay2Index(xiaochenDay2Scenario.steps.length - 1);
       setPhase("day2");
+    } else if (phase === "guided-product-value") {
+      setPhase("guided-result");
     }
     // intro：无上一页
   }, [phase, atStart]);
@@ -195,7 +209,8 @@ export default function UnifiedDemoStage({
   const showIntro = mode === "guided" && phase === "intro";
   const showDay1Summary = mode === "guided" && phase === "day1-summary";
   const showWeek2Intro = mode === "guided" && phase === "week2-intro";
-  const showConclusion = mode === "guided" && phase === "conclusion";
+  const showGuidedResult = mode === "guided" && phase === "guided-result";
+  const showGuidedProductValue = mode === "guided" && phase === "guided-product-value";
   const showGuidedNav = mode === "guided";
 
   // 阶段页（无手机 Demo、无圆点，但保留左右箭头）
@@ -226,6 +241,26 @@ export default function UnifiedDemoStage({
     },
     [phase, goTo],
   );
+
+  /* —— 预加载下一节点资源 ——
+   * 当前节点稳定显示后（延迟 600ms，避免与当前节点渲染争抢带宽），
+   * 后台只预加载下一个节点的：动态 JS chunk + 首个 WebM + poster + 音频。
+   * 不预加载下下个节点。已加载缓存保留，返回不重复下载。 */
+  useEffect(() => {
+    if (mode !== "guided") return;
+    const nextKey = getNextNodeKey(
+      phase,
+      day1Index,
+      day2Index,
+      xiaochenDay1Scenario.steps.length,
+      xiaochenDay2Scenario.steps.length,
+    );
+    if (!nextKey) return;
+    const timer = window.setTimeout(() => {
+      preloadNodeResources(nextKey);
+    }, 600);
+    return () => window.clearTimeout(timer);
+  }, [phase, day1Index, day2Index, mode]);
 
   /* —— 对话自动逐条出现 ——
    * 07:35（day1[1]）：短消息 400ms，长消息 750ms，对话全部出现后停留
@@ -294,7 +329,7 @@ export default function UnifiedDemoStage({
         e.preventDefault();
         prev();
       } else if (e.key === "ArrowRight") {
-        if (phase === "conclusion") return; // conclusion 无下一页
+        if (phase === "guided-product-value") return; // 最后一页无下一页
         e.preventDefault();
         next();
       }
@@ -335,7 +370,7 @@ export default function UnifiedDemoStage({
         if (phase !== "intro") prev();
       } else {
         // 向左滑 = 下一页
-        if (phase !== "conclusion") next();
+        if (phase !== "guided-product-value") next();
       }
     },
     [mode, phase, prev, next],
@@ -349,10 +384,12 @@ export default function UnifiedDemoStage({
           ? "day1-summary"
           : showWeek2Intro
             ? "week2-intro"
-            : showConclusion
-              ? "conclusion"
-              : "stage",
-    [showIntro, showDay1Summary, showWeek2Intro, showConclusion],
+            : showGuidedResult
+              ? "guided-result"
+              : showGuidedProductValue
+                ? "guided-product-value"
+                : "stage",
+    [showIntro, showDay1Summary, showWeek2Intro, showGuidedResult, showGuidedProductValue],
   );
 
   return (
@@ -366,7 +403,7 @@ export default function UnifiedDemoStage({
         <button
           type="button"
           onClick={onReturnHome}
-          aria-label="返回在呀主页"
+          aria-label="返回在呀 ZÀIYA 主页"
           className="inline-flex h-9 items-center justify-self-start rounded-full px-1 text-[13px] text-ink-faint transition-colors hover:text-ink-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/25 focus-visible:ring-offset-4"
         >
           ← 返回主页
@@ -390,12 +427,15 @@ export default function UnifiedDemoStage({
       <div className="relative mt-6 flex flex-1 flex-col justify-center">
         {showGuidedNav && (
           <div className="pointer-events-none absolute inset-y-0 z-20 hidden items-center justify-between lg:-left-10 lg:-right-10 lg:flex xl:-left-20 xl:-right-20 2xl:-left-28 2xl:-right-28">
+            {/* 最后一页（guided-product-value）隐藏右箭头，只保留左箭头返回 */}
             <div className="pointer-events-auto">
               <NavArrow direction="left" disabled={phase === "intro"} onClick={prev} />
             </div>
-            <div className="pointer-events-auto">
-              <NavArrow direction="right" disabled={phase === "conclusion"} onClick={next} />
-            </div>
+            {phase !== "guided-product-value" && (
+              <div className="pointer-events-auto">
+                <NavArrow direction="right" disabled={false} onClick={next} />
+              </div>
+            )}
           </div>
         )}
 
@@ -436,16 +476,30 @@ export default function UnifiedDemoStage({
                 <TwoWeekTransition />
               </div>
             </motion.div>
-          ) : showConclusion ? (
+          ) : showGuidedResult ? (
             <motion.div
-              key="conclusion"
+              key="guided-result"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.28, ease: SOFT_EASE }}
             >
               <div className="lg:px-20">
-                <ConclusionSummaryPage />
+                <GuidedCaseResultPage />
+              </div>
+            </motion.div>
+          ) : showGuidedProductValue ? (
+            <motion.div
+              key="guided-product-value"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.28, ease: SOFT_EASE }}
+            >
+              <div className="lg:px-20">
+                <GuidedProductValuePage
+                  onEnterFreeExperience={onSwitchToFree}
+                />
               </div>
             </motion.div>
           ) : mode === "free" ? (
@@ -456,12 +510,12 @@ export default function UnifiedDemoStage({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.28, ease: SOFT_EASE }}
             >
-              <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-[390px_420px] lg:justify-center lg:gap-x-24 lg:gap-y-0">
-                <div className="justify-self-center">
+              <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-[auto_400px] lg:justify-center lg:gap-x-20 lg:gap-y-0">
+                <div className="order-2 justify-self-center lg:order-1">
                   <DemoPhoneFrame />
                 </div>
 
-                <div className="w-full lg:h-full">
+                <div className="order-1 w-full lg:order-2">
                   <AnimatePresence mode="wait" initial={false}>
                     <motion.div
                       key="free-panel"
@@ -469,7 +523,6 @@ export default function UnifiedDemoStage({
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 24 }}
                       transition={{ duration: 0.32, ease: SOFT_EASE }}
-                      className="h-full"
                     >
                       <FreeExperiencePanel />
                     </motion.div>
@@ -485,7 +538,7 @@ export default function UnifiedDemoStage({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.28, ease: SOFT_EASE }}
             >
-              <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-[390px_420px] lg:justify-center lg:gap-x-16 lg:gap-y-0 lg:px-10 xl:gap-x-24 xl:px-20">
+              <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-[390px_560px] lg:justify-center lg:gap-x-10 lg:gap-y-0 lg:px-10">
                 {/* 设备 Demo：06:40 桌面小组件 / 12:00 手表 / 其他 手机 App */}
                 <div className="relative justify-self-center lg:col-start-1">
                   {phase === "day1" && day1Index === 0 ? (
@@ -555,10 +608,10 @@ export default function UnifiedDemoStage({
                       overlay={<DemoOrganizeFlow />}
                     />
                   ) : isDay2PraiseNode && mode === "guided" ? (
-                    /* 第二周 16:30：夸夸卡创建 → 保存（内部两状态流程） */
+                    /* 第二周 16:30：夸夸自己首页 feed（对齐体验模式） */
                     <DemoPhoneFrame
                       demoState={step.demoState}
-                      overlay={<DemoPraiseFlow />}
+                      overlay={<DemoPraisePreview preset={day2PraiseDemo} />}
                     />
                   ) : isDay2LookbackNode && mode === "guided" ? (
                     /* 第二周 21:00：回头看看 近两周睡眠趋势 + 饮食摘要 */

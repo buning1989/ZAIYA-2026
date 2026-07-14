@@ -88,7 +88,7 @@ export default function DemoExperience({ onClose }: Props) {
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="在呀 Demo"
+      aria-label="在呀 ZÀIYA Demo"
       className="fixed inset-0 z-[100] overflow-y-auto bg-white"
     >
       {mode === "select" && (

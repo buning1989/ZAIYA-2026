@@ -15,6 +15,16 @@
   --z-text-secondary: #68735C;
   --z-text-tertiary: #8B947D;
 
+  /* Readability tokens / 案例演示页阅读优化专用（更高对比度） */
+  --text-primary: #243020;
+  --text-secondary: #596255;
+  --text-muted: #7B8376;
+
+  /* Chat / 对话气泡文字色（中性色，不使用浅绿） */
+  --chat-text-primary: #252A24;
+  --chat-text-secondary: #3F443D;
+  --chat-text-muted: #A2A59F;
+
   /* Action / 行动 */
   --z-action-primary: #E6F46B;
   --z-action-primary-rgb: 230 244 107;
@@ -22,8 +32,23 @@
   --z-action-pressed: #536652;
   --z-action-disabled: #D8DDD6;
   --z-action-subtle: #EEF3ED;
+  --z-action-soft: #FCFDED; /* 主行动绿色 ~12% 浓度，用于选中态/轻量交互反馈 */
   --z-action-deep: #27331F;
   --z-action-deep-text: #F8FAEF;
+
+  /* Surface / 中性表面（替代 line-soft 作为卡片/气泡/禁用态背景） */
+  --z-surface-soft: #F6F4ED; /* 暖白中性，用于卡片/气泡/提示条 */
+  --z-surface-muted: #ECECE7; /* 中性浅灰米，用于禁用态/暂未开放 */
+
+  /* Line / 分隔线、边框、进度条轨道（语义化变量，与 --z-space-bg-soft 同值） */
+  --z-line-soft: #EEF1E2;
+
+  /* Light / 光（能量/光奖励专用暖色，不使用状态绿） */
+  --z-light-warm: #C9A85C;
+  --z-light-soft: #F5EFE0;
+
+  /* Risk / 风险语义浅背景 */
+  --z-risk-soft: #F7E6DD;
 
   /* Status / 状态（记录分类色 —— 仅用于数据可视化，不得用于通用交互） */
   --z-status-mood: #A7B765;
@@ -49,14 +74,14 @@
   --z-status-weight-bg: #F2EFF7;
 
   /* Praise / 夸夸卡片装饰色例外（仅用于夸夸卡片背景，8 种固定色） */
-  --z-praise-card-1: #F1F3E8;
-  --z-praise-card-2: #EEF1E2;
-  --z-praise-card-3: #E6F0F1;
-  --z-praise-card-4: #FBF6E9;
-  --z-praise-card-5: #F4F8DD;
-  --z-praise-card-6: #F2EFF7;
-  --z-praise-card-7: #F6F8EF;
-  --z-praise-card-8: #EDF4ED;
+  --z-praise-card-1: #F1F3E8; /* 苔灰绿（保留浅绿 1/2） */
+  --z-praise-card-2: #E6EDF3; /* 浅蓝 */
+  --z-praise-card-3: #E6F0F1; /* 浅青 */
+  --z-praise-card-4: #FBF6E9; /* 暖米 */
+  --z-praise-card-5: #F5E8EE; /* 淡粉 */
+  --z-praise-card-6: #F2EFF7; /* 浅藤紫 */
+  --z-praise-card-7: #F6F8EF; /* 空间底（保留浅绿 2/2） */
+  --z-praise-card-8: #F5EAE0; /* 浅杏 */
 
   /* Risk / 风险 */
   --z-risk-low: #D7C8A3;
@@ -99,6 +124,19 @@
 
 .ring-action-primary {
   --tw-ring-color: var(--z-action-primary);
+}
+
+/* 陪伴文案：首页在在气泡短句，区别于功能字体（时间/日期/导航/按钮/标签）。
+ * 中文字体栈 + 柔和深灰绿 + 宽松行高，营造轻声陪伴感而非系统提示感。 */
+.bubble-copy {
+  font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  font-size: 17px;
+  line-height: 1.75;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  color: #4C5348;
+  text-align: center;
+  max-width: 240px;
 }
 
 /* 预留深夜色 token：当前 Demo 无模式切换入口，仅保留变量，不接交互 */
@@ -215,4 +253,30 @@ body::-webkit-scrollbar-thumb:hover {
   display: none;
   width: 0;
   height: 0;
+}
+
+/* Hero 品牌标题：中英文拆分 span，按基线对齐，避免字体度量差异导致的上下错位。
+   中英文均使用衬线体；中文稳重，英文修长优雅，不追求机械等高。
+   以 ZAIYA 主体帽高与中文主体高度为对齐依据，À 重音可自然略高。 */
+.hero-brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.16em;
+  line-height: 0.9;
+  white-space: nowrap;
+}
+.hero-brand-cn {
+  font-family: "Songti SC", "STSong", "Noto Serif CJK SC", serif;
+  font-size: 1em;
+  line-height: 0.9;
+  font-weight: 600;
+}
+.hero-brand-en {
+  font-family: "Cormorant Garamond", "Bodoni Moda", "Libre Baskerville", serif;
+  font-size: 0.96em;
+  line-height: 0.84;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  transform: translateY(0.035em);
+  display: inline-block;
 }

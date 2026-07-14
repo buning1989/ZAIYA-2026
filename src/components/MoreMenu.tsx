@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import {
   ChevronLeft,
@@ -12,18 +12,50 @@ import {
   ImagePlus,
   X,
   Plus,
-  Zap,
+  Sprout,
   type LucideProps,
 } from "lucide-react";
 import type { ForwardRefExoticComponent } from "react";
-import RecordFlow from "./RecordFlow";
-import LookbackPage from "./LookbackPage";
-import OrganizePage from "./OrganizePage";
-import PraisePage from "./PraisePage";
-import PrivacyPage from "./PrivacyPage";
 import VoiceInputBar from "./VoiceInputBar";
 import type { Answers, RecordTypeId } from "@/data/record";
 import type { OrganizeHistoryEntry } from "@/data/organize";
+
+/* 性能优化（2026-07-13）：MoreMenu 中各功能页按需懒加载，
+ * 首屏 / 主菜单态不加载 RecordFlow / LookbackPage / OrganizePage / PraisePage / PrivacyPage 代码。
+ * 预加载优化（2026-07-13）：所有 loader 复用集中式 moduleLoaders，
+ * 确保 React.lazy 和预加载（preloadModule）使用同一个 Promise。 */
+import {
+  recordFlowLoader,
+  lookbackPageLoader,
+  organizePageLoader,
+  praisePageLoader,
+  privacyPageLoader,
+  loadRecordFlow,
+  loadLookbackPage,
+  loadOrganizePage,
+  loadPraisePage,
+  loadPrivacyPage,
+} from "@/lib/moduleLoaders";
+import { usePrefetchMap } from "@/lib/usePrefetch";
+
+const RecordFlow = lazy(recordFlowLoader);
+const LookbackPage = lazy(lookbackPageLoader);
+const OrganizePage = lazy(organizePageLoader);
+const PraisePage = lazy(praisePageLoader);
+const PrivacyPage = lazy(privacyPageLoader);
+
+/* —— Intent Prefetch 映射：MoreItemId → 预加载函数 ——
+ * 在用户 hover/focus/touch 功能入口时预加载对应模块 chunk。 */
+const PREFETCH_MAP: Record<MoreItemId, () => void> = {
+  note: loadRecordFlow,
+  review: loadLookbackPage,
+  organize: loadOrganizePage,
+  praise: loadPraisePage,
+  privacy: loadPrivacyPage,
+  energy: () => {},
+  help: () => {},
+  settings: () => {},
+};
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -48,7 +80,7 @@ export const moreMenuItems: {
   { id: "review", label: "回头看看", Icon: Clock },
   { id: "organize", label: "帮我整理", Icon: FolderOpen },
   { id: "praise", label: "夸夸自己", Icon: Sparkles },
-  { id: "energy", label: "我的能量", Icon: Zap },
+  { id: "energy", label: "看看收获", Icon: Sprout },
   { id: "privacy", label: "我的隐私", Icon: Shield },
 ];
 
@@ -63,7 +95,7 @@ const bottomMenuItems: {
 ];
 
 /* —— 更多侧边栏内容 ——
- * 上半部分：功能区（记一下 / 回头看看 / 帮我整理 / 夸夸自己 / 我的能量 / 我的隐私）
+ * 上半部分：功能区（记一下 / 回头看看 / 帮我整理 / 夸夸自己 / 我的光 / 我的隐私）
  * 底部固定：应用级入口（帮助与反馈 / 设置），低权重色 */
 export function MoreContent({
   onSelect,
@@ -74,6 +106,7 @@ export function MoreContent({
   /** 点击「暂未开放」入口时触发，由父级展示统一提示 */
   onUnavailable?: (msg: string) => void;
 }) {
+  const prefetchMap = usePrefetchMap(PREFETCH_MAP);
   return (
     <div className="relative flex h-full flex-col bg-white">
       {/* 上半部分：功能区 */}
@@ -81,6 +114,7 @@ export function MoreContent({
         <ul className="flex flex-col">
           {moreMenuItems.map((item, i) => {
             const isUnavailable = item.id === "energy";
+            const prefetch = prefetchMap[item.id];
             return (
               <motion.li
                 key={item.id}
@@ -100,6 +134,10 @@ export function MoreContent({
                       onSelect(item.id);
                     }
                   }}
+                  onPointerEnter={prefetch}
+                  onFocus={prefetch}
+                  onTouchStart={prefetch}
+                  onPointerDown={prefetch}
                   className="flex w-full items-center gap-4 py-4 text-left transition-colors hover:text-ink-faint"
                 >
                   <item.Icon
@@ -623,40 +661,56 @@ export function MoreDetailContent({
 }) {
   if (itemId === "note") {
     return (
-      <RecordFlow
-        onBack={onBack}
-        onRecordComplete={onRecordComplete}
-        onSaveFirst={onSaveFirst}
-        onOpenZaiyaDialog={onOpenZaiyaDialog}
-        showShortcutHint={showShortcutHint}
-        onAcceptShortcut={onAcceptShortcut}
-        onDismissShortcutHint={onDismissShortcutHint}
-        recordHistory={recordHistory}
-      />
+      <Suspense fallback={null}>
+        <RecordFlow
+          onBack={onBack}
+          onRecordComplete={onRecordComplete}
+          onSaveFirst={onSaveFirst}
+          onOpenZaiyaDialog={onOpenZaiyaDialog}
+          showShortcutHint={showShortcutHint}
+          onAcceptShortcut={onAcceptShortcut}
+          onDismissShortcutHint={onDismissShortcutHint}
+          recordHistory={recordHistory}
+        />
+      </Suspense>
     );
   }
 
   if (itemId === "review") {
-    return <LookbackPage onBack={onBack} />;
+    return (
+      <Suspense fallback={null}>
+        <LookbackPage onBack={onBack} />
+      </Suspense>
+    );
   }
 
   if (itemId === "organize") {
     return (
-      <OrganizePage
-        onBack={onBack}
-        organizeHistory={organizeHistory}
-        onSaveToHistory={onSaveOrganizeToHistory}
-        onDeleteHistory={onDeleteOrganizeHistory}
-      />
+      <Suspense fallback={null}>
+        <OrganizePage
+          onBack={onBack}
+          organizeHistory={organizeHistory}
+          onSaveToHistory={onSaveOrganizeToHistory}
+          onDeleteHistory={onDeleteOrganizeHistory}
+        />
+      </Suspense>
     );
   }
 
   if (itemId === "praise") {
-    return <PraisePage onBack={onBack} />;
+    return (
+      <Suspense fallback={null}>
+        <PraisePage onBack={onBack} />
+      </Suspense>
+    );
   }
 
   if (itemId === "privacy") {
-    return <PrivacyPage onBack={onBack} />;
+    return (
+      <Suspense fallback={null}>
+        <PrivacyPage onBack={onBack} />
+      </Suspense>
+    );
   }
 
   if (itemId === "settings") {

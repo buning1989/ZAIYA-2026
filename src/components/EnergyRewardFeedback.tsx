@@ -1,37 +1,38 @@
-/* —— 能量奖励反馈动效 ——
- * 原名 RecordEnergyToast：实际是能量获得后的奖励飞行动画（粒子 → 能量入口），
- * 不是普通操作结果 Toast。重命名为 EnergyRewardFeedback 以分离语义：
- *   - Toast：轻量、即时、可自动消失的操作结果反馈（复制成功 / 保存失败等）
- *   - EnergyRewardFeedback：能量奖励的视觉反馈动效，不承载信息传递职责
- * 两者不应共用语义或组件命名。 */
+/* —— 光奖励反馈 ——
+ * 保留文件名以减少调用侧 churn；视觉语义为收下当下这一点日光、月光或星光。 */
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Zap } from "lucide-react";
+import { Moon, Star, Sun, type LucideIcon } from "lucide-react";
+import {
+  getLightRewardKind,
+  getLightRewardTitle,
+  type LightRewardKind,
+} from "@/lib/lightReward";
 
 const ease = [0.22, 1, 0.36, 1] as const;
-const PARTICLE_COUNT = 5;
-const PARTICLE_START_S = 1.86;
-const PARTICLE_FLIGHT_S = 0.9;
-const ARRIVE_MS = 3020;
-const DONE_MS = 3350;
-const REDUCED_ARRIVE_MS = 2000;
-const REDUCED_DONE_MS = 2300;
+const PARTICLE_COUNT = 3;
+const PARTICLE_START_S = 2.36;
+const PARTICLE_FLIGHT_S = 1.12;
+const PARTICLE_DELAY_S = 0.07;
+const ARRIVE_MS = 3600;
+const DONE_MS = 3980;
+const REDUCED_DONE_MS = 2850;
 const FEEDBACK_BOTTOM_OFFSET = 185;
 const FEEDBACK_MIN_Y_RATIO = 0.58;
 const FEEDBACK_BOTTOM_SAFE_GAP = 118;
 
-export interface EnergyRewardEvent {
+export interface LightRewardEvent {
   id: number;
-  reward: number;
+  occurredAt: number;
 }
 
+export type EnergyRewardEvent = LightRewardEvent;
+
 export interface EnergyRewardFeedbackProps {
-  event: EnergyRewardEvent | null;
+  event: LightRewardEvent | null;
   targetRef: RefObject<HTMLElement | null>;
   onArrive: () => void;
   onDone: () => void;
-  /** 自定义文案；不传则使用默认「获得了 N 个能量值」 */
-  text?: string;
 }
 
 type Point = {
@@ -42,6 +43,26 @@ type Point = {
 type FlightGeometry = {
   origin: Point;
   target: Point;
+};
+
+type LightVisual = {
+  Icon: LucideIcon;
+  particleClass: string;
+};
+
+const lightVisuals: Record<LightRewardKind, LightVisual> = {
+  sunlight: {
+    Icon: Sun,
+    particleClass: "text-ink/75 drop-shadow-[0_7px_12px_rgba(44,59,39,0.16)]",
+  },
+  moonlight: {
+    Icon: Moon,
+    particleClass: "text-ink/75 drop-shadow-[0_7px_12px_rgba(44,59,39,0.16)]",
+  },
+  starlight: {
+    Icon: Star,
+    particleClass: "text-ink/75 drop-shadow-[0_7px_12px_rgba(44,59,39,0.16)]",
+  },
 };
 
 function getFallbackTarget(bounds: DOMRect): Point {
@@ -67,11 +88,9 @@ function getFeedbackOrigin(bounds: DOMRect): Point {
 }
 
 const particleOffsets = [
-  { x: -26, y: -16, rotate: -18 },
-  { x: 18, y: -26, rotate: 16 },
-  { x: -14, y: 18, rotate: -8 },
-  { x: 28, y: 12, rotate: 24 },
-  { x: 0, y: -34, rotate: 6 },
+  { x: -22, y: -18, rotate: -14 },
+  { x: 20, y: -22, rotate: 12 },
+  { x: -4, y: 18, rotate: -4 },
 ];
 
 export default function EnergyRewardFeedback({
@@ -79,7 +98,6 @@ export default function EnergyRewardFeedback({
   targetRef,
   onArrive,
   onDone,
-  text,
 }: EnergyRewardFeedbackProps) {
   const prefersReducedMotion = useReducedMotion();
   const overlayRef = useRef<HTMLDivElement | null>(null);
@@ -111,23 +129,26 @@ export default function EnergyRewardFeedback({
   useEffect(() => {
     if (!event) return;
 
-    const arriveTimer = window.setTimeout(
-      onArrive,
-      prefersReducedMotion ? REDUCED_ARRIVE_MS : ARRIVE_MS,
-    );
+    const arriveTimer = prefersReducedMotion
+      ? null
+      : window.setTimeout(onArrive, ARRIVE_MS);
     const doneTimer = window.setTimeout(
       onDone,
       prefersReducedMotion ? REDUCED_DONE_MS : DONE_MS,
     );
 
     return () => {
-      window.clearTimeout(arriveTimer);
+      if (arriveTimer !== null) window.clearTimeout(arriveTimer);
       window.clearTimeout(doneTimer);
     };
   }, [event, onArrive, onDone, prefersReducedMotion]);
 
-  const reward = event?.reward ?? 0;
-  const readableText = text ?? `获得了 ${reward} 个能量值`;
+  const lightKind = event
+    ? getLightRewardKind(event.occurredAt)
+    : "starlight";
+  const visual = lightVisuals[lightKind];
+  const LightIcon = visual.Icon;
+  const title = getLightRewardTitle(lightKind);
 
   return (
     <div
@@ -164,15 +185,16 @@ export default function EnergyRewardFeedback({
                       }
                 }
                 transition={{
-                  duration: prefersReducedMotion ? 2.15 : 2.08,
-                  times: prefersReducedMotion
-                    ? [0, 0.12, 0.9, 1]
-                    : [0, 0.12, 0.875, 1],
+                  duration: prefersReducedMotion ? 2.75 : 2.68,
+                  times: [0, 0.1, 0.82, 1],
                   ease,
                 }}
-                className="whitespace-nowrap rounded-full border border-status-mood/40 bg-canvas-soft px-4 py-2 text-[14px] font-semibold tracking-tight text-ink shadow-[0_6px_16px_rgba(44,59,39,0.12)]"
+                role="status"
+                className="min-w-[146px] rounded-[18px] border border-line/70 bg-white/80 px-4 py-3 text-center text-ink shadow-[0_8px_20px_rgba(44,59,39,0.08)] backdrop-blur-sm"
               >
-                {readableText}
+                <div className="text-[14px] font-semibold leading-tight tracking-tight">
+                  {title}
+                </div>
               </motion.div>
             </div>
 
@@ -194,18 +216,22 @@ export default function EnergyRewardFeedback({
                       rotate: [0, offset.rotate, offset.rotate * 0.4],
                     }}
                     transition={{
-                      delay: PARTICLE_START_S + index * 0.045,
+                      delay: PARTICLE_START_S + index * PARTICLE_DELAY_S,
                       duration: PARTICLE_FLIGHT_S,
-                      times: [0, 0.14, 1],
+                      times: [0, 0.18, 1],
                       ease,
                     }}
-                    className="absolute grid h-6 w-6 place-items-center rounded-full border border-status-mood/45 bg-action-primary/20 text-ink shadow-[0_8px_18px_rgba(44,59,39,0.16)]"
+                    className={`absolute grid h-7 w-7 place-items-center ${visual.particleClass}`}
                     style={{
-                      left: geometry.origin.x - 12,
-                      top: geometry.origin.y - 12,
+                      left: geometry.origin.x - 14,
+                      top: geometry.origin.y - 14,
                     }}
                   >
-                    <Zap className="h-3.5 w-3.5 fill-current" strokeWidth={1.8} />
+                    <LightIcon
+                      aria-hidden="true"
+                      className="h-5 w-5"
+                      strokeWidth={1.65}
+                    />
                   </motion.div>
                 );
               })}

@@ -356,7 +356,7 @@ function HomeView({
         <button
           onClick={onBack}
           aria-label="返回更多"
-          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface-soft"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
@@ -373,6 +373,7 @@ function HomeView({
             loop
             muted
             playsInline
+            preload="none"
             className="h-full w-full object-cover object-[50%_18%]"
           />
         </div>
@@ -480,7 +481,7 @@ function PageHeader({
         <button
           onClick={onBack}
           aria-label="返回"
-          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface-soft"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
@@ -632,7 +633,7 @@ function BasicProfileEdit({
           <div className="mt-3 flex items-center gap-4">
             <button
               onClick={() => fileRef.current?.click()}
-              className="relative grid h-16 w-16 place-items-center overflow-hidden rounded-full border border-line bg-line-soft text-ink-faint transition-colors hover:border-ink-faint"
+              className="relative grid h-16 w-16 place-items-center overflow-hidden rounded-full border border-line bg-surface-soft text-ink-faint transition-colors hover:border-ink-faint"
             >
               {avatar ? (
                 <img
@@ -954,7 +955,7 @@ function ContactList({
                         {c.name}
                       </span>
                       {c.isEmergencyContact && (
-                        <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10.5px] font-medium text-risk-high">
+                        <span className="rounded-full bg-risk-soft px-2 py-0.5 text-[10.5px] font-medium text-risk-high">
                           紧急联系人
                         </span>
                       )}
@@ -980,7 +981,7 @@ function ContactList({
                           current === c.id ? null : c.id,
                         )
                       }
-                      className="grid h-7 w-7 place-items-center rounded-full text-ink-faint transition-colors hover:bg-line-soft hover:text-ink"
+                      className="grid h-7 w-7 place-items-center rounded-full text-ink-faint transition-colors hover:bg-surface-soft hover:text-ink"
                     >
                       <MoreHorizontal className="h-4 w-4" strokeWidth={1.8} />
                     </button>
@@ -1002,7 +1003,7 @@ function ContactList({
                               setOpenMenuId(null);
                               onEdit(c.id);
                             }}
-                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-[13px] text-ink-soft transition-colors hover:bg-line-soft"
+                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-[13px] text-ink-soft transition-colors hover:bg-surface-soft"
                           >
                             <Pencil className="h-3.5 w-3.5" strokeWidth={1.8} />
                             修改
@@ -1014,7 +1015,7 @@ function ContactList({
                               setOpenMenuId(null);
                               setDeleteId(c.id);
                             }}
-                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-[13px] text-risk-medium transition-colors hover:bg-accent-soft"
+                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-[13px] text-risk-medium transition-colors hover:bg-risk-soft"
                           >
                             <Trash2 className="h-3.5 w-3.5" strokeWidth={1.8} />
                             删除
@@ -1031,8 +1032,8 @@ function ContactList({
                     onClick={() => handleToggleEmergency(c)}
                     className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-[13px] transition-colors ${
                       c.isEmergencyContact
-                        ? "bg-accent-soft text-risk-high"
-                        : "bg-line-soft text-ink-soft hover:bg-line"
+                        ? "bg-accent-soft text-accent border border-accent"
+                        : "bg-surface-soft text-ink-soft hover:bg-surface-muted"
                     }`}
                   >
                     <Star
@@ -1044,14 +1045,14 @@ function ContactList({
                   </button>
                   <a
                     href={`tel:${c.phone}`}
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-line-soft py-2 text-[13px] text-ink-soft transition-colors hover:bg-line"
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-surface-soft py-2 text-[13px] text-ink-soft transition-colors hover:bg-surface-muted"
                   >
                     <Phone className="h-3.5 w-3.5" strokeWidth={1.8} />
                     拨打
                   </a>
                   <button
                     onClick={() => handleCopy(c)}
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-line-soft py-2 text-[13px] text-ink-soft transition-colors hover:bg-line"
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-surface-soft py-2 text-[13px] text-ink-soft transition-colors hover:bg-surface-muted"
                   >
                     {copiedId === c.id ? (
                       <>
@@ -1477,7 +1478,7 @@ function DeleteConfirm({
           </button>
           <button
             onClick={onCancel}
-            className="w-full rounded-xl bg-line-soft py-3 text-[15px] text-ink-soft transition-colors hover:bg-line"
+            className="w-full rounded-xl bg-surface-soft py-3 text-[15px] text-ink-soft transition-colors hover:bg-surface-muted"
           >
             取消
           </button>

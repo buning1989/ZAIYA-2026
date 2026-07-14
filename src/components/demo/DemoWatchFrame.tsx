@@ -24,41 +24,43 @@ export default function DemoWatchFrame({ time = "12:00" }: Props) {
     <div className="flex h-full w-full flex-col items-center justify-center bg-white">
       {/* —— 手表外壳 —— */}
       <div className="relative aspect-square w-[min(300px,calc(100vw-96px),calc(52vh-24px))] shrink-0">
-        {/* 表壳 */}
-        <div className="absolute inset-0 rounded-[42px] border-[6px] border-ink bg-ink shadow-[0_8px_40px_-12px_rgba(0,0,0,0.22)]">
+        {/* 表壳：扁平统一描边，无阴影、无伪元素、无双层边框 */}
+        <div className="absolute inset-0 rounded-[42px] border-[5px] border-[#243020] bg-white">
           {/* 单表冠 */}
-          <div className="absolute -right-[7px] top-[38%] h-9 w-[5px] rounded-r-full bg-ink/85 shadow-sm" />
+          <div className="absolute -right-[7px] top-[38%] h-9 w-[5px] rounded-r-full bg-[#243020]" />
 
-          {/* 表盘屏幕 */}
-          <div className="relative flex h-full w-full flex-col items-center overflow-hidden rounded-[36px] bg-white">
-            {/* 顶部大时间（主视觉） */}
-            <div className="mt-7 w-full text-center">
-              <p className="font-watch text-[72px] font-medium leading-none tracking-normal text-ink">
+          {/* 表盘屏幕：纵向 flex-start 紧凑布局，不平均分布 */}
+          <div className="relative flex h-full w-full flex-col items-center overflow-hidden rounded-[36px] bg-white px-6 pt-[28px]">
+            {/* 顶部大时间（适中尺寸，不压制角色） */}
+            <div className="w-full text-center">
+              <p className="font-watch text-[72px] font-medium leading-[0.95] tracking-[-0.045em] tabular-nums text-[#243020]">
                 {time}
               </p>
             </div>
 
-            {/* 中部在在吃饭形象（居中放大） */}
-            <div className="relative -mt-1 flex h-[40%] w-full items-center justify-center">
+            {/* 中部在在吃饭形象（放大实际可见主体） */}
+            <div className="mt-2 flex h-[94px] w-[106px] items-center justify-center overflow-visible">
               <video
                 src="./assets/zaiya/zaizai-eating.webm"
                 autoPlay
                 loop
                 muted
                 playsInline
-                className="block h-full w-auto max-w-none select-none object-contain"
+                preload="auto"
+                className="block h-full w-full select-none object-contain"
                 style={{
-                  transform: "scale(1.42)",
+                  transform: "scale(1.95) translateY(0%)",
                   transformOrigin: "center center",
                 }}
               />
             </div>
 
-            {/* 底部短文案（轻提醒） */}
-            <div className="mt-auto mb-6 w-full px-5 text-center">
-              <p className="text-[14px] font-medium leading-[1.45] text-ink-soft">
-                到饭点啦，
-                <br />
+            {/* 文案区域（标题 + 辅助文案） */}
+            <div className="mt-auto w-full pb-[20px] text-center">
+              <p className="text-[15px] font-semibold leading-[21px] text-[#34402F]">
+                到饭点啦
+              </p>
+              <p className="mt-px text-[13px] font-normal leading-[19px] text-[#737A70]">
                 今天吃点什么呀?
               </p>
             </div>

@@ -122,7 +122,7 @@ export default function TopicsStep({ session, onBack, onNext }: Props) {
         <button
           onClick={() => onBack(topics, rangeData)}
           aria-label="返回"
-          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface-soft"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
@@ -141,7 +141,7 @@ export default function TopicsStep({ session, onBack, onNext }: Props) {
         </h2>
 
         {/* 时间范围信息 */}
-        <div className="mt-3 rounded-xl bg-card-soft/40 px-4 py-3">
+        <div className="mt-3 rounded-xl bg-surface-soft/40 px-4 py-3">
           <div className="text-[13px] font-medium text-ink">
             {formatRangeChinese(rangeData.startDate)}—{formatRangeChinese(rangeData.endDate)}
           </div>
@@ -177,7 +177,7 @@ export default function TopicsStep({ session, onBack, onNext }: Props) {
         {/* 补充一条 */}
         <button
           onClick={() => setAddingTopic(true)}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-line bg-card-soft/20 px-4 py-3.5 text-[13px] font-medium text-ink-soft transition-colors hover:bg-card-soft/40"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-line bg-surface-soft/20 px-4 py-3.5 text-[13px] font-medium text-ink-soft transition-colors hover:bg-surface-soft/40"
         >
           <Plus className="h-4 w-4" strokeWidth={2.4} />
           补充一条
@@ -208,8 +208,8 @@ export default function TopicsStep({ session, onBack, onNext }: Props) {
                     onClick={() => handleRangeSelect(opt.value)}
                     className={`flex items-center justify-between rounded-xl border px-4 py-3.5 text-left transition-colors ${
                       rangeKey === opt.value
-                        ? "border-accent bg-accent-soft/50"
-                        : "border-line bg-white hover:bg-card-soft/30"
+                        ? "border-transparent bg-accent-soft"
+                        : "border-line bg-white hover:bg-surface-soft/30"
                     }`}
                   >
                     <div>
@@ -308,7 +308,7 @@ const TopicCard = forwardRef<HTMLDivElement, TopicCardProps>(function TopicCard(
           }`}
         >
           {topic.selected && (
-            <Check className="h-3 w-3 text-white" strokeWidth={2.4} />
+            <Check className="h-3 w-3 text-accent-text" strokeWidth={2.4} />
           )}
         </span>
 
@@ -332,13 +332,13 @@ const TopicCard = forwardRef<HTMLDivElement, TopicCardProps>(function TopicCard(
       <div className="mt-3 flex items-center justify-end gap-1 px-4 pb-1">
         <button
           onClick={onToggleEvidence}
-          className="rounded-lg px-2.5 py-1.5 text-[12px] text-ink-faint transition-colors hover:bg-line-soft"
+          className="rounded-lg px-2.5 py-1.5 text-[12px] text-ink-faint transition-colors hover:bg-surface-soft"
         >
           {expanded ? "收起依据" : "查看依据"}
         </button>
         <button
           onClick={onEdit}
-          className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12px] text-ink-faint transition-colors hover:bg-line-soft"
+          className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12px] text-ink-faint transition-colors hover:bg-surface-soft"
         >
           <Pencil className="h-3 w-3" strokeWidth={1.8} />
           修改
@@ -355,7 +355,7 @@ const TopicCard = forwardRef<HTMLDivElement, TopicCardProps>(function TopicCard(
             transition={{ duration: 0.25, ease }}
             className="overflow-hidden"
           >
-            <div className="mx-4 mb-4 rounded-xl bg-card-soft/50 px-3.5 py-3">
+            <div className="mx-4 mb-4 rounded-xl bg-surface-soft/50 px-3.5 py-3">
               <div className="text-[11px] font-medium text-ink-faint">
                 依据摘要
               </div>
@@ -424,7 +424,7 @@ function EditSheet({
         </button>
         <button
           onClick={() => onSave(title.trim() || topic.title, content.trim())}
-          className="flex-1 rounded-xl bg-action-primary py-3 text-[13px] font-medium text-action-primary-text"
+          className="flex-1 rounded-xl bg-action-primary py-3 text-[13px] font-medium text-accent-text"
         >
           保存
         </button>
@@ -480,7 +480,7 @@ function AddSheet({
         <button
           onClick={() => canSave && onSave(title.trim(), content.trim())}
           disabled={!canSave}
-          className="flex-1 rounded-xl bg-action-primary py-3 text-[13px] font-medium text-action-primary-text disabled:opacity-30"
+          className="flex-1 rounded-xl bg-action-primary py-3 text-[13px] font-medium text-accent-text disabled:opacity-30"
         >
           添加
         </button>

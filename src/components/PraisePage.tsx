@@ -13,17 +13,13 @@ import {
   saveCards,
   type PraiseCard,
 } from "@/data/praise";
-import {
-  PRAISE_CARD_ENERGY_REWARD,
-  grantEnergy,
-} from "@/data/userProfile";
+import { grantEnergy } from "@/data/userProfile";
 import ZaizaiVideo from "./ZaizaiVideo";
 import VoiceInputBar from "./VoiceInputBar";
 import EnergyBadge from "./EnergyBadge";
 import EnergyRewardFeedback, {
   type EnergyRewardEvent,
 } from "./EnergyRewardFeedback";
-import { useEnergy } from "@/hooks/useEnergy";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -61,9 +57,7 @@ export default function PraisePage({ onBack }: Props) {
   // 详情页查看的卡片
   const [detailId, setDetailId] = useState<string | null>(null);
 
-  // —— 能量奖励：复用「一起发呆」完成后的反馈方式 ——
-  // useEnergy 订阅全局 pub/sub，跨模块同步；freeze/unfreeze 用于 toast 飞行期间冻结展示
-  const { value: praiseEnergy, freeze: freezePraiseEnergy, unfreeze: unfreezePraiseEnergy } = useEnergy();
+  // —— 光反馈：底层仍沿用能量奖励数据 ——
   const [praiseEnergyReward, setPraiseEnergyReward] =
     useState<EnergyRewardEvent | null>(null);
   const [praiseEnergyPulse, setPraiseEnergyPulse] = useState(false);
@@ -95,8 +89,7 @@ export default function PraisePage({ onBack }: Props) {
     persist([card, ...cards]);
     setLayer("home");
 
-    // 触发能量奖励：以卡片唯一 ID 做幂等校验
-    freezePraiseEnergy();
+    // 触发光反馈：以卡片唯一 ID 做幂等校验
     const result = grantEnergy({
       source: "praise_card_created",
       sourceId: card.id,
@@ -105,18 +98,12 @@ export default function PraisePage({ onBack }: Props) {
       praiseRewardIdRef.current += 1;
       setPraiseEnergyReward({
         id: praiseRewardIdRef.current,
-        reward: result.reward,
+        occurredAt: Date.now(),
       });
-    } else {
-      // 已发放过（幂等拦截）：立即解冻，不展示反馈
-      unfreezePraiseEnergy();
     }
   };
 
-  // toast 粒子飞抵右上角：解冻展示值 + pulse
   const handlePraiseEnergyArrive = useCallback(() => {
-    if (!praiseEnergyReward) return;
-    unfreezePraiseEnergy();
     setPraiseEnergyPulse(true);
     if (praisePulseTimer.current)
       window.clearTimeout(praisePulseTimer.current);
@@ -124,7 +111,7 @@ export default function PraisePage({ onBack }: Props) {
       setPraiseEnergyPulse(false);
       praisePulseTimer.current = null;
     }, 420);
-  }, [praiseEnergyReward, unfreezePraiseEnergy]);
+  }, []);
 
   // toast 整段动画结束：清空 event
   const handlePraiseEnergyDone = useCallback(() => {
@@ -183,22 +170,20 @@ export default function PraisePage({ onBack }: Props) {
         </motion.div>
       </AnimatePresence>
 
-      {/* 右上角能量入口：仅模块主页展示；写入 / 详情态保持专注，不常驻入口。 */}
+      {/* 右上角我的光入口：仅模块主页展示；写入 / 详情态保持专注，不常驻入口。 */}
       {layer === "home" && (
         <EnergyBadge
-          value={praiseEnergy}
           pulse={praiseEnergyPulse}
           buttonRef={praiseBadgeRef}
           position="floating"
         />
       )}
-      {/* 能量获得 toast：复用「一起发呆」组件，飞向右上角能量入口 */}
+      {/* 光反馈：保存有效卡片后飞向右上角入口 */}
       <EnergyRewardFeedback
         event={praiseEnergyReward}
         targetRef={praiseBadgeRef}
         onArrive={handlePraiseEnergyArrive}
         onDone={handlePraiseEnergyDone}
-        text={`获得 +${PRAISE_CARD_ENERGY_REWARD} 能量`}
       />
     </div>
   );
@@ -223,12 +208,12 @@ function HomeView({
 
   return (
     <div className="relative flex h-full flex-col bg-white">
-      {/* 顶部：返回 + 标题（右上角能量入口由 PraisePage 根级 floating EnergyBadge 承载） */}
+      {/* 顶部：返回 + 标题（右上角我的光入口由 PraisePage 根级 floating EnergyBadge 承载） */}
       <header className="flex items-center gap-3 px-5 pt-14 pb-1">
         <button
           onClick={onBack}
           aria-label="返回更多"
-          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface-soft"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
@@ -310,7 +295,7 @@ function ZaizaiBubble({ items }: { items: string[] }) {
           className="absolute inset-x-0 top-2"
         >
           {/* 气泡主体：偏方正、轻圆角 */}
-          <div className="relative min-h-[42px] rounded-lg bg-line-soft px-3 py-2">
+          <div className="relative min-h-[42px] rounded-lg bg-surface-soft px-3 py-2">
             <p className="line-clamp-2 text-[12px] leading-relaxed text-ink-soft">
               {items[index]}
             </p>
@@ -321,7 +306,7 @@ function ZaizaiBubble({ items }: { items: string[] }) {
                 height="12"
                 viewBox="0 0 8 12"
                 fill="none"
-                className="text-line-soft"
+                className="text-surface-soft"
               >
                 <path d="M0 6L8 0v12L0 6z" fill="currentColor" />
               </svg>
@@ -601,7 +586,7 @@ function DeleteConfirm({
           </button>
           <button
             onClick={onCancel}
-            className="w-full rounded-xl bg-line-soft py-3 text-[15px] text-ink-soft transition-colors hover:bg-line"
+            className="w-full rounded-xl bg-surface-soft py-3 text-[15px] text-ink-soft transition-colors hover:bg-line"
           >
             取消
           </button>

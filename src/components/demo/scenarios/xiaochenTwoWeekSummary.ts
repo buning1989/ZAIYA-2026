@@ -27,6 +27,12 @@ export const day2PraiseDemo: PraiseDemoConfig = {
   readOnly: true,
   cards: [
     {
+      id: "day2-organize-card",
+      text: "今天把这两周整理好了，还写下了最想问医生的那句话。",
+      dateLabel: "7月26日",
+      gradientId: "g4",
+    },
+    {
       id: "day2-school-card",
       text: "我今天下午去了学校，把作业交了。",
       dateLabel: "7月26日",
@@ -214,7 +220,7 @@ export const day2OrganizeDemo: OrganizeDemoConfig = {
  * 后续任务可复用此数据扩展真实回头看看 / 帮我整理模块。
  */
 export const xiaochenTwoWeekSummary = {
-  period: "使用在呀约 2 周",
+  period: "使用在呀 ZÀIYA 约 2 周",
   records: [
     {
       type: "food" as const,

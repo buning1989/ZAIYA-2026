@@ -7,7 +7,7 @@ import { HOME_PHASE_BUBBLE_TEXT, type HomeTimePhase } from "@/lib/homeTimePhase"
  * 每个时间段显示对应的一句文案，与动画绑定。
  * 文案以打字机节奏出现。
  *
- * 视觉：普通居中文案，无卡片背景；增加对比度和行高，避免弱到不像引导语。
+ * 视觉：普通居中文案，无卡片背景；使用 .bubble-copy 陪伴文案样式（中文字体栈、柔和深灰绿、宽松行高），区别于功能字体。
  * 动效：跟随动画模块的 soft reveal。
  *
  * 演示模式：传入 overrideCopy 时只展示该文案，并循环使用打字机增强在场感。
@@ -123,13 +123,12 @@ export default function HomeBubbleCopy({
   return (
     <motion.div
       variants={softRevealItemVariants}
-      className="min-h-[40px] max-w-[226px] text-left text-[14px] font-normal leading-[20px]"
-      style={{ color: "rgba(0, 0, 0, 0.68)" }}
+      className="bubble-copy min-h-[60px]"
     >
       {hasEmphasis ? (
         <>
           {visibleText.slice(0, emphasisStart)}
-          <span className="font-semibold decoration-[#7d9b7d] decoration-[1px] underline underline-offset-[3px]">
+          <span className="decoration-[#7d9b7d] decoration-[1px] underline underline-offset-[3px]">
             {visibleText.slice(emphasisStart, emphasisStart + emphasisText.length)}
           </span>
           {visibleText.slice(emphasisStart + emphasisText.length)}

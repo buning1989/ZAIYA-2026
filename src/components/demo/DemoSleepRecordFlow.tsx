@@ -58,18 +58,18 @@ export default function DemoSleepRecordFlow() {
       {/* iOS 风格状态栏 */}
       <PhoneStatusBar />
 
-      {/* 页面导航栏：返回箭头 + 标题 + 能量入口 */}
+      {/* 页面导航栏：返回箭头 + 标题 + 我的光入口 */}
       <div className="relative flex items-center gap-3 bg-white px-5 pt-14 pb-2">
         <button
           aria-label="返回"
-          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface-soft"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
         <h2 className="flex-1 text-[17px] font-semibold tracking-tight text-ink">
           睡眠
         </h2>
-        <EnergyBadge value={0} position="inline" />
+        <EnergyBadge position="inline" />
       </div>
 
       {/* 记录确认 / 已保存主体：与体验模式 SleepRecordWizard 完成态同构 */}

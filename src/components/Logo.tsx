@@ -1,4 +1,11 @@
-import RivePlayer from "./RivePlayer";
+import { lazy, Suspense } from "react";
+import { rivePlayerLoader } from "@/lib/moduleLoaders";
+
+/* 性能优化（2026-07-13）：@rive-app/react-canvas 库较大（~250KB gzip），
+ * 通过 React.lazy 将 RivePlayer 拆为独立 chunk，Logo 文字部分立即可见，
+ * Rive 动画在主 bundle 解析完成后异步加载，避免阻塞首屏文字渲染。
+ * 预加载优化：使用集中式 loader，确保预加载与真实渲染复用同一份 Promise。 */
+const RivePlayer = lazy(rivePlayerLoader);
 
 type Props = {
   className?: string;
@@ -22,14 +29,16 @@ export default function Logo({
         }`}
         aria-hidden="true"
       >
-        <RivePlayer
-          src="./color_eyes_interaction.riv"
-          stateMachines="State Machine 1"
-          stateMachineBooleans={{ "Following?": true, "Annoying?": false }}
-          className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 ${
-            isNav ? "h-32 w-32" : "h-24 w-24"
-          }`}
-        />
+        <Suspense fallback={null}>
+          <RivePlayer
+            src="./color_eyes_interaction.riv"
+            stateMachines="State Machine 1"
+            stateMachineBooleans={{ "Following?": true, "Annoying?": false }}
+            className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 ${
+              isNav ? "h-32 w-32" : "h-24 w-24"
+            }`}
+          />
+        </Suspense>
       </span>
       {showWordmark && (
         <span

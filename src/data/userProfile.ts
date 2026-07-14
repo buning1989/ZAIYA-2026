@@ -283,10 +283,19 @@ export const PRAISE_CARD_ENERGY_REWARD = 3;
 /** 呼吸练习完成奖励的能量值 */
 export const BREATHING_EXERCISE_ENERGY_REWARD = 3;
 
+/** 一起发呆结束奖励的能量值 */
+export const SOCIAL_DAZE_ENERGY_REWARD = 3;
+
+/** 一起吃饭结束奖励的能量值 */
+export const SOCIAL_MEAL_ENERGY_REWARD = 3;
+
 /** 能量奖励来源标识（用于幂等校验） */
 export type EnergySource =
   | "praise_card_created"
-  | "breathing_exercise_completed";
+  | "breathing_exercise_completed"
+  | "record_completed"
+  | "social_daze_completed"
+  | "social_meal_completed";
 
 /** 读取指定来源的奖励能量值 */
 export function getEnergyReward(source: EnergySource): number {
@@ -295,6 +304,12 @@ export function getEnergyReward(source: EnergySource): number {
       return PRAISE_CARD_ENERGY_REWARD;
     case "breathing_exercise_completed":
       return BREATHING_EXERCISE_ENERGY_REWARD;
+    case "record_completed":
+      return FULL_RECORD_ENERGY_REWARD;
+    case "social_daze_completed":
+      return SOCIAL_DAZE_ENERGY_REWARD;
+    case "social_meal_completed":
+      return SOCIAL_MEAL_ENERGY_REWARD;
   }
 }
 

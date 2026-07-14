@@ -218,13 +218,13 @@ export default function WeightRecordWizard({
   const chipClass = (selected: boolean) =>
     `inline-flex items-center justify-center rounded-full border px-4 py-2 text-[14px] font-medium whitespace-nowrap transition-all active:scale-[0.97] ${
       selected
-        ? "border-status-mood/90 bg-status-mood/[0.22] text-ink"
-        : "border-status-mood/45 bg-white text-ink hover:border-status-mood/70"
+        ? "border-transparent bg-accent-soft text-ink"
+        : "border-line bg-white text-ink hover:border-action-primary/60"
     }`;
 
   // 步进胶囊（−0.1 / +0.1）
   const stepperClass =
-    "inline-flex items-center justify-center rounded-full border border-status-mood/45 bg-white px-4 py-2 text-[14px] font-medium text-ink transition-all active:scale-[0.97] hover:border-status-mood/70";
+    "inline-flex items-center justify-center rounded-full border border-line bg-white px-4 py-2 text-[14px] font-medium text-ink transition-all active:scale-[0.97] hover:border-ink-faint";
 
   const summaryRows: SummaryRow[] = [
     {
@@ -286,7 +286,7 @@ export default function WeightRecordWizard({
                 <div className="flex items-center gap-2.5">
                   <div className="h-[2px] flex-1 rounded-full bg-line-soft">
                     <div
-                      className="h-full rounded-full bg-status-mood/70 transition-all duration-300"
+                      className="h-full rounded-full bg-accent-soft transition-all duration-300"
                       style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
                     />
                   </div>
@@ -326,7 +326,7 @@ export default function WeightRecordWizard({
                           value={weightInput}
                           onChange={(e) => handleWeightChange(e.target.value)}
                           placeholder="0.0"
-                          className="w-[150px] border-b-2 border-status-mood/50 bg-transparent text-center text-[40px] font-[650] leading-tight tracking-tight text-ink outline-none placeholder:text-ink-faint/40 focus:border-status-mood/90"
+                          className="w-[150px] border-b-2 border-action-primary/50 bg-transparent text-center text-[40px] font-[650] leading-tight tracking-tight text-ink outline-none placeholder:text-ink-faint/40 focus:border-action-primary"
                         />
                         <span className="pb-1.5 text-[16px] font-medium text-ink-faint">
                           kg
@@ -397,7 +397,7 @@ export default function WeightRecordWizard({
                   className={`w-full rounded-xl px-4 py-3 text-[14px] font-medium transition-opacity ${
                     weightValue !== null
                       ? "bg-action-primary text-action-primary-text hover:opacity-90"
-                      : "bg-line-soft text-ink-faint"
+                      : "bg-surface-muted text-ink-faint"
                   }`}
                 >
                   {editMode ? "确认修改" : "继续"}
@@ -409,7 +409,7 @@ export default function WeightRecordWizard({
               <div className="bg-white px-5 pb-6 pt-3">
                 <button
                   onClick={handleSkipContext}
-                  className="w-full rounded-full border border-line-soft bg-line-soft/55 px-4 py-3 text-[13px] font-medium text-ink-soft transition-colors hover:border-ink-faint hover:bg-white"
+                  className="w-full rounded-full border border-line bg-surface-soft px-4 py-3 text-[13px] font-medium text-ink-soft transition-colors hover:border-ink-faint hover:bg-white"
                 >
                   暂不补充
                 </button>

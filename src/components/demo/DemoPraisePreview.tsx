@@ -37,7 +37,7 @@ export default function DemoPraisePreview({ preset }: Props) {
           <h2 className="flex-1 text-[17px] font-semibold tracking-tight text-ink">
             夸夸自己
           </h2>
-          <EnergyBadge value={preset.energyValue} />
+          <EnergyBadge />
         </header>
 
         <section className="relative z-20 h-[96px] shrink-0 overflow-visible px-5">
@@ -84,7 +84,7 @@ function GuideBubble({ text }: { text: string }) {
           transition={{ duration: 0.3, ease }}
           className="absolute inset-x-0 top-2"
         >
-          <div className="relative min-h-[42px] rounded-lg bg-line-soft px-3 py-2">
+          <div className="relative min-h-[42px] rounded-lg bg-surface-soft px-3 py-2">
             <p className="line-clamp-2 text-[12px] leading-relaxed text-ink-soft">
               {text}
             </p>
@@ -94,7 +94,7 @@ function GuideBubble({ text }: { text: string }) {
                 height="12"
                 viewBox="0 0 8 12"
                 fill="none"
-                className="text-line-soft"
+                className="text-surface-soft"
                 aria-hidden="true"
               >
                 <path d="M0 6L8 0v12L0 6z" fill="currentColor" />

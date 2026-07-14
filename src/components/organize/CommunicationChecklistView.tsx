@@ -81,7 +81,7 @@ export default function CommunicationChecklistView({ session, onBack }: Props) {
         <button
           onClick={onBack}
           aria-label="返回"
-          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface-soft"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
@@ -141,7 +141,7 @@ export default function CommunicationChecklistView({ session, onBack }: Props) {
               {checklist.disclosure.records.map((record) => (
                 <div
                   key={record.id}
-                  className="rounded-xl border border-line bg-card-soft/30 px-4 py-3"
+                  className="rounded-xl border border-line bg-surface-soft/30 px-4 py-3"
                 >
                   <div className="flex items-center justify-between text-[11.5px] text-ink-faint">
                     <span>来源：{record.sourceLabel}</span>

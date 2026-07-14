@@ -43,7 +43,7 @@ export default function DisclosureStep({ session, onBack, onComplete }: Props) {
         <button
           onClick={onBack}
           aria-label="返回"
-          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface-soft"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
@@ -111,7 +111,7 @@ export default function DisclosureStep({ session, onBack, onComplete }: Props) {
         <div className="flex gap-2.5">
           <button
             onClick={() => onComplete([])}
-            className="flex-1 rounded-xl border border-line bg-white px-4 py-3.5 text-[14px] font-medium text-ink transition-colors hover:bg-card-soft/30"
+            className="flex-1 rounded-xl border border-line bg-white px-4 py-3.5 text-[14px] font-medium text-ink transition-colors hover:bg-surface-soft/30"
           >
             都不放入
           </button>

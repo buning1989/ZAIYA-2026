@@ -141,7 +141,7 @@ export default function RecordSummaryCard({
           disabled={primaryButtonDisabled}
           className={`w-full rounded-xl px-4 py-3 text-[14px] font-medium transition-opacity ${
             primaryButtonDisabled
-              ? "bg-line-soft text-ink-faint"
+              ? "bg-surface-muted text-ink-faint"
               : "bg-action-primary text-action-primary-text hover:opacity-90"
           }`}
         >

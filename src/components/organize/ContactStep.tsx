@@ -85,7 +85,7 @@ export default function ContactStep({ onBack, onSelectContact }: Props) {
           <button
             onClick={onBack}
             aria-label="返回"
-            className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+            className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface-soft"
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
@@ -168,13 +168,13 @@ function AddContactSheet({
         <div className="mt-4 flex flex-col gap-2.5">
           <button
             onClick={() => setMode("trusted")}
-            className="rounded-xl border border-line bg-white px-4 py-3.5 text-left text-[14px] font-medium text-ink transition-colors hover:bg-card-soft/30"
+            className="rounded-xl border border-line bg-white px-4 py-3.5 text-left text-[14px] font-medium text-ink transition-colors hover:bg-surface-soft/30"
           >
             从已有联系人添加
           </button>
           <button
             onClick={() => setMode("new")}
-            className="rounded-xl border border-line bg-white px-4 py-3.5 text-left text-[14px] font-medium text-ink transition-colors hover:bg-card-soft/30"
+            className="rounded-xl border border-line bg-white px-4 py-3.5 text-left text-[14px] font-medium text-ink transition-colors hover:bg-surface-soft/30"
           >
             新增沟通对象
           </button>
@@ -201,8 +201,8 @@ function AddContactSheet({
               onClick={() => setSelectedTrustedId(candidate.id)}
               className={`flex items-center justify-between rounded-xl border px-4 py-3.5 text-left transition-colors ${
                 selectedTrustedId === candidate.id
-                  ? "border-accent bg-accent-soft/40"
-                  : "border-line bg-white hover:bg-card-soft/30"
+                  ? "border-transparent bg-accent-soft"
+                  : "border-line bg-white hover:bg-surface-soft/30"
               }`}
             >
               <div>
@@ -285,7 +285,7 @@ function NewContactForm({
               onClick={() => setRoleType(opt.value)}
               className={`rounded-full border px-3.5 py-1.5 text-[12.5px] transition-colors ${
                 roleType === opt.value
-                  ? "border-accent bg-accent-soft/50 text-accent-pressed"
+                  ? "border-transparent bg-accent-soft text-ink"
                   : "border-line bg-white text-ink-soft"
               }`}
             >

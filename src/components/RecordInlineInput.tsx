@@ -107,7 +107,7 @@ export default function RecordInlineInput({
               <button
                 onClick={handleClose}
                 aria-label="关闭"
-                className="grid h-8 w-8 place-items-center rounded-full text-ink-faint transition-colors hover:bg-line-soft hover:text-ink"
+                className="grid h-8 w-8 place-items-center rounded-full text-ink-faint transition-colors hover:bg-surface-soft hover:text-ink"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -152,7 +152,7 @@ export default function RecordInlineInput({
                 className={`w-full rounded-xl px-4 py-3 text-[13px] font-medium transition-opacity ${
                   canSave
                     ? "bg-action-primary text-action-primary-text hover:opacity-90"
-                    : "bg-line-soft text-ink-faint"
+                    : "bg-surface-muted text-ink-faint"
                 }`}
               >
                 保存

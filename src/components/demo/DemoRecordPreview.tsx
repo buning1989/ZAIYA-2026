@@ -35,7 +35,7 @@ export default function DemoRecordPreview({ preset }: Props) {
         <h2 className="flex-1 text-[17px] font-semibold tracking-tight text-ink">
           {preset.title}
         </h2>
-        <EnergyBadge value={preset.energyValue} />
+        <EnergyBadge />
       </header>
 
       <div className="pt-7">

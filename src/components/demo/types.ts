@@ -167,7 +167,7 @@ export const moduleLabelMap: Record<ProductModuleTag, string> = {
   organize: "帮我整理",
   praise: "夸夸自己",
   privacy: "我的隐私",
-  energy: "我的能量",
+  energy: "我的光",
 };
 
 /** 案例演示单步配置 */
@@ -183,8 +183,12 @@ export type GuidedScenarioStep = {
   narrative: string[];
   /** Word 文档中"心理学技术应用"下的方法名称 */
   principles: string;
-  /** 方法下方的作用说明 */
+  /** 方法下方的作用说明（作为"为什么这样设计"模块的最终设计目标） */
   explanation: string;
+  /** 心理学方法的普通语言解释（可选，仅部分节点提供） */
+  plainExplanation?: string;
+  /** narrative 各段段首需加粗的关键词（可选，与 narrative 数组一一对应，空字符串表示不加粗） */
+  narrativeLeads?: string[];
   /** 当前步骤涉及的产品模块标签（用于故事面板硬功能标识） */
   moduleTags: ProductModuleTag[];
   /** 该步骤对应的产品演示状态（主场景） */

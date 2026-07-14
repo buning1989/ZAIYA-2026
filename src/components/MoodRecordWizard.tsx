@@ -172,13 +172,13 @@ function ChoiceCarousel({
                 data-carousel-card
                 data-carousel-index={index}
                 onClick={() => onCardClick(index)}
-                className={`absolute left-1/2 top-1/2 flex min-h-[118px] w-[72%] items-center justify-center rounded-2xl border px-5 py-6 text-center shadow-sm outline-none transition-[border-color,background-color,box-shadow] duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-status-mood/50 focus-visible:ring-offset-0 active:scale-[0.97] ${
+                className={`absolute left-1/2 top-1/2 flex min-h-[118px] w-[72%] items-center justify-center rounded-2xl border px-5 py-6 text-center shadow-sm outline-none transition-[border-color,background-color,box-shadow] duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary/50 focus-visible:ring-offset-0 active:scale-[0.97] ${
                   selectedFeedback && active
-                    ? "border-status-mood/95 bg-canvas-soft shadow-[0_12px_26px_rgba(44,59,39,0.12)]"
+                    ? "border-transparent bg-accent-soft shadow-[0_12px_26px_rgba(44,59,39,0.12)]"
                     : selected
-                      ? "border-status-mood/75 bg-card-soft shadow-[0_10px_22px_rgba(44,59,39,0.08)]"
+                      ? "border-transparent bg-accent-soft shadow-[0_10px_22px_rgba(44,59,39,0.08)]"
                       : active
-                        ? "border-status-mood/[0.42] bg-card shadow-[0_10px_22px_rgba(44,59,39,0.07)]"
+                        ? "border-action-primary/40 bg-card shadow-[0_10px_22px_rgba(44,59,39,0.07)]"
                         : "border-line bg-card"
                 }`}
                 initial={{
@@ -221,7 +221,7 @@ function ChoiceCarousel({
                     }
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.22, ease }}
-                    className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-status-mood/20 text-ink"
+                    className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-accent-soft text-accent"
                   >
                     <Check className="h-3.5 w-3.5" strokeWidth={2.4} />
                   </motion.span>
@@ -595,8 +595,8 @@ export default function MoodRecordWizard({
   const chipClass = (selected: boolean) =>
     `inline-flex items-center justify-center rounded-full border px-4 py-2 text-[14px] font-medium whitespace-nowrap transition-all active:scale-[0.97] ${
       selected
-        ? "border-status-mood/90 bg-status-mood/[0.22] text-ink"
-        : "border-status-mood/45 bg-white text-ink hover:border-status-mood/70"
+        ? "border-transparent bg-accent-soft text-ink"
+        : "border-line bg-white text-ink hover:border-action-primary/60"
     }`;
 
   // ===================== 渲染：确认页（只读展示，不提供修改/删除入口） =====================
@@ -665,7 +665,7 @@ export default function MoodRecordWizard({
         </div>
 
         {/* 弱提示卡片：不保存说明 + 紧急危险提示 */}
-        <div className="mt-6 rounded-2xl bg-line-soft/50 px-4 py-3">
+        <div className="mt-6 rounded-2xl bg-surface-soft/60 px-4 py-3">
           <p className="text-[12px] leading-[1.7] text-ink-faint">
             这条内容不会作为普通情绪记录保存。如果你正处在紧急危险中，请立刻联系身边可信任的人，或拨打当地急救 / 报警电话。
           </p>
@@ -816,7 +816,7 @@ export default function MoodRecordWizard({
           <div className="flex items-center gap-2.5">
             <div className="h-[2px] flex-1 rounded-full bg-line-soft">
               <div
-                className="h-full rounded-full bg-status-mood/70 transition-all duration-300"
+                className="h-full rounded-full bg-accent-soft transition-all duration-300"
                 style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
               />
             </div>
@@ -858,7 +858,7 @@ export default function MoodRecordWizard({
                         onClick={() => handleSelectPrimary(mood)}
                         className={`flex h-14 items-center gap-3 rounded-2xl border px-5 text-left transition-all active:scale-[0.99] ${
                           selected
-                            ? "border-status-mood/50 bg-status-mood/[0.08] text-ink"
+                            ? "border-transparent bg-accent-soft text-ink"
                             : "border-line bg-white text-ink hover:border-ink-faint"
                         }`}
                       >
@@ -1047,7 +1047,7 @@ export default function MoodRecordWizard({
                       {specialDetails.map((detail) => (
                         <div
                           key={detail}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-status-mood/50 bg-status-mood/[0.08] px-3 py-1.5 text-[13px] text-ink"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-accent/50 bg-accent-soft px-3 py-1.5 text-[13px] text-ink"
                         >
                           <span>{detail}</span>
                           <button
@@ -1080,7 +1080,7 @@ export default function MoodRecordWizard({
             className={`w-full rounded-xl px-4 py-3 text-[14px] font-medium transition-opacity ${
               feelings.length > 0
                 ? "bg-action-primary text-action-primary-text hover:opacity-90"
-                : "bg-line-soft text-ink-faint"
+                : "bg-surface-muted text-ink-faint"
             }`}
           >
             {editMode ? "确认修改" : "确认这些感觉"}
@@ -1095,7 +1095,7 @@ export default function MoodRecordWizard({
             className={`w-full rounded-xl px-4 py-3 text-[14px] font-medium transition-opacity ${
               hasAnyReason
                 ? "bg-action-primary text-action-primary-text hover:opacity-90"
-                : "bg-line-soft text-ink-faint"
+                : "bg-surface-muted text-ink-faint"
             }`}
           >
             {editMode ? "确认修改" : "确认这些原因"}
@@ -1106,7 +1106,7 @@ export default function MoodRecordWizard({
         <div className="bg-white px-5 pb-6 pt-3">
           <button
             onClick={handleSkipSpecial}
-            className="w-full rounded-full border border-line-soft bg-line-soft/55 px-4 py-3 text-[13px] font-medium text-ink-soft transition-colors hover:border-ink-faint hover:bg-white"
+            className="w-full rounded-full border border-line bg-surface-soft px-4 py-3 text-[13px] font-medium text-ink-soft transition-colors hover:border-ink-faint hover:bg-white"
           >
             没有这些情况，暂不补充
           </button>

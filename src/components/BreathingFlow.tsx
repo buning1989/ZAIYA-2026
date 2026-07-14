@@ -1,34 +1,19 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
-import { AnimatePresence, motion, type PanInfo } from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, Volume2, VolumeX } from "lucide-react";
-import { BREATHING_EXERCISE_ENERGY_REWARD, grantEnergy } from "@/data/userProfile";
+import { grantEnergy } from "@/data/userProfile";
 import ZaizaiVideo, { ZAIZAI_RELIEF_VIDEO_SRC } from "./ZaizaiVideo";
 import EnergyBadge from "./EnergyBadge";
 import EnergyRewardFeedback, { type EnergyRewardEvent } from "./EnergyRewardFeedback";
-import { useEnergy } from "@/hooks/useEnergy";
+import {
+  BreathingCarousel,
+  BREATHING_METHODS,
+  BASE_MIN,
+  INHALE_MAX,
+  TOPUP_MAX,
+} from "./BreathingCarousel";
 
 const ease = [0.22, 1, 0.36, 1] as const;
-
-/* —— 呼吸法节奏配置 ——
- * 每个阶段（phase）包含：展示文案、时长（秒）、目标缩放。
- * ring 缩放由「上一阶段目标 → 当前阶段目标」按进度插值得到，
- * 因此 hold 阶段（目标与前一阶段相同）自然表现为「保持」，
- * topup 阶段目标略大于 inhale，体现「再补一小口」的短暂扩张。 */
-type Phase = { label: string; duration: number; scale: number };
-
-type BreathingMethod = {
-  id: string;
-  name: string;
-  purpose: string;
-  rhythm: string;
-  durationLabel: string;
-  rounds: number;
-  phases: Phase[];
-};
-
-const BASE_MIN = 0.72;
-const INHALE_MAX = 1.04;
-const TOPUP_MAX = 1.1;
 
 /* —— 低动态版本（prefers-reduced-motion: reduce）——
  * 不关闭呼吸引导，仅缩小圆圈缩放幅度、移除模糊装饰；
@@ -63,61 +48,6 @@ const SELECT_GUIDE_MESSAGES = [
   "我们只做这一分钟。",
 ] as const;
 
-const BREATHING_METHODS: BreathingMethod[] = [
-  {
-    id: "4-6",
-    name: "4-6 呼吸法",
-    purpose: "日常减压",
-    rhythm: "吸气 4 秒 · 呼气 6 秒",
-    durationLabel: "约 1 分钟",
-    rounds: 6,
-    phases: [
-      { label: "吸气", duration: 4, scale: INHALE_MAX },
-      { label: "呼气", duration: 6, scale: BASE_MIN },
-    ],
-  },
-  {
-    id: "4x4",
-    name: "4x4 呼吸法",
-    purpose: "快速冷静",
-    rhythm: "吸气 · 停住 · 呼气 · 停住",
-    durationLabel: "约 1 分钟",
-    rounds: 4,
-    phases: [
-      { label: "吸气", duration: 4, scale: INHALE_MAX },
-      { label: "停住", duration: 4, scale: INHALE_MAX },
-      { label: "呼气", duration: 4, scale: BASE_MIN },
-      { label: "停住", duration: 4, scale: BASE_MIN },
-    ],
-  },
-  {
-    id: "sigh",
-    name: "生理性叹息",
-    purpose: "快速缓解紧绷",
-    rhythm: "吸气 · 补一小口 · 长呼气",
-    durationLabel: "约 45 秒",
-    rounds: 5,
-    phases: [
-      { label: "吸一口气", duration: 2, scale: INHALE_MAX },
-      { label: "再补一小口", duration: 1, scale: TOPUP_MAX },
-      { label: "慢慢呼出去", duration: 6, scale: BASE_MIN },
-    ],
-  },
-  {
-    id: "4-7-8",
-    name: "4-7-8 呼吸法",
-    purpose: "睡前放松",
-    rhythm: "吸气 4 秒 · 停住 7 秒 · 呼气 8 秒",
-    durationLabel: "约 1 分钟",
-    rounds: 3,
-    phases: [
-      { label: "吸气", duration: 4, scale: INHALE_MAX },
-      { label: "停住", duration: 7, scale: INHALE_MAX },
-      { label: "呼气", duration: 8, scale: BASE_MIN },
-    ],
-  },
-];
-
 const TICK_MS = 50;
 const LONG_PRESS_MS = 700;
 const LONG_PRESS_TICK_MS = 30;
@@ -135,13 +65,27 @@ type Props = {
   onBackToRelief: () => void;
   /** 完成页「回到首页」→ 回到 App 首页 */
   onGoHome: () => void;
+  /** 预设呼吸法索引（从缓解首页 inline 进入时使用，默认 0） */
+  initialMethodIndex?: number;
+  /** 初始子视图（默认 select；从缓解首页 inline 进入时传 practice 跳过选择页） */
+  initialSubView?: SubView;
 };
 
-export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
+export default function BreathingFlow({
+  onBackToRelief,
+  onGoHome,
+  initialMethodIndex,
+  initialSubView,
+}: Props) {
   const prefersReducedMotion = usePrefersReducedMotion();
-  const [subView, setSubView] = useState<SubView>("select");
-  const [methodIndex, setMethodIndex] = useState(0);
-  const [activeCard, setActiveCard] = useState(0);
+  // 派生初始值（prop 缺省时回退到旧默认：select + 第 0 个呼吸法）
+  const initMethodIdx = initialMethodIndex ?? 0;
+  const initMethod = BREATHING_METHODS[initMethodIdx];
+  const initSubView: SubView = initialSubView ?? "select";
+
+  const [subView, setSubView] = useState<SubView>(initSubView);
+  const [methodIndex, setMethodIndex] = useState(initMethodIdx);
+  const [activeCard, setActiveCard] = useState(initMethodIdx);
   const [guideIndex, setGuideIndex] = useState(0);
   const [prepCountdown, setPrepCountdown] = useState<number | null>(null);
   const [isMuted, setIsMuted] = useState(false);
@@ -153,19 +97,18 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
   const [phaseIndex, setPhaseIndex] = useState(0);
   const [roundIndex, setRoundIndex] = useState(0);
   const [phaseRemainingMs, setPhaseRemainingMs] = useState(
-    BREATHING_METHODS[0].phases[0].duration * 1000,
+    initMethod.phases[0].duration * 1000,
   );
-  const remainingRef = useRef(BREATHING_METHODS[0].phases[0].duration * 1000);
+  const remainingRef = useRef(initMethod.phases[0].duration * 1000);
   const timerRef = useRef<number | null>(null);
 
   // 停止确认浮层
   const [stopSheet, setStopSheet] = useState(false);
   const statusBeforeStop = useRef<PlayStatus>("playing");
 
-  // —— 能量奖励：复用「一起发呆」完成后的反馈方式 ——
+  // —— 光反馈：底层仍沿用能量奖励数据 ——
   // 单次练习只发放一次：practiceIdRef 每次开始 / 重来时重新生成，
   // energyGrantedRef 防止完成页重复渲染造成重复发放；grantEnergy 再做幂等兜底。
-  const { value: breathEnergy, freeze: freezeBreathEnergy, unfreeze: unfreezeBreathEnergy } = useEnergy();
   const [breathEnergyReward, setBreathEnergyReward] =
     useState<EnergyRewardEvent | null>(null);
   const [breathEnergyPulse, setBreathEnergyPulse] = useState(false);
@@ -176,6 +119,14 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
   const energyGrantedRef = useRef(false);
 
   const method = BREATHING_METHODS[methodIndex];
+
+  // 直接从 inline 入口进入练习态时，初始化练习 ID（正常流程由 startPractice 设置）
+  useEffect(() => {
+    if (initSubView === "practice" && !practiceIdRef.current) {
+      practiceIdRef.current = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    }
+    // initSubView 来自 props，组件生命周期内不变，仅在 mount 时执行一次
+  }, [initSubView]);
 
   useEffect(() => {
     if (subView !== "practice" || status !== "playing" || stopSheet) {
@@ -280,7 +231,6 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
     energyGrantedRef.current = true;
 
     const grantTimer = window.setTimeout(() => {
-      freezeBreathEnergy();
       const result = grantEnergy({
         source: "breathing_exercise_completed",
         sourceId: practiceIdRef.current,
@@ -289,21 +239,20 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
         breathRewardIdRef.current += 1;
         setBreathEnergyReward({
           id: breathRewardIdRef.current,
-          reward: result.reward,
+          occurredAt: Date.now(),
         });
-      } else {
-        // 已发放过（幂等拦截）：立即解冻，不展示反馈
-        unfreezeBreathEnergy();
       }
     }, 600);
 
     return () => window.clearTimeout(grantTimer);
-  }, [subView, freezeBreathEnergy, unfreezeBreathEnergy]);
+  }, [subView]);
 
-  // toast 粒子飞抵右上角：解冻展示值 + pulse
+  // toast 整段动画结束：清空 event
+  const handleBreathEnergyDone = useCallback(() => {
+    setBreathEnergyReward(null);
+  }, []);
+
   const handleBreathEnergyArrive = useCallback(() => {
-    if (!breathEnergyReward) return;
-    unfreezeBreathEnergy();
     setBreathEnergyPulse(true);
     if (breathPulseTimer.current)
       window.clearTimeout(breathPulseTimer.current);
@@ -311,11 +260,6 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
       setBreathEnergyPulse(false);
       breathPulseTimer.current = null;
     }, 420);
-  }, [breathEnergyReward, unfreezeBreathEnergy]);
-
-  // toast 整段动画结束：清空 event
-  const handleBreathEnergyDone = useCallback(() => {
-    setBreathEnergyReward(null);
   }, []);
 
   useEffect(() => {
@@ -745,16 +689,15 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
         )}
       </AnimatePresence>
 
-      {/* 右上角能量入口：仅呼吸法模块主页展示；练习 / 完成态保持专注。 */}
-      {subView === "select" && (
+      {/* 右上角我的光入口：练习中隐藏，完成反馈时作为光粒目标。 */}
+      {subView !== "practice" && (
         <EnergyBadge
-          value={breathEnergy}
           pulse={breathEnergyPulse}
           buttonRef={breathBadgeRef}
           position="floating"
         />
       )}
-      {/* 能量获得 toast：复用「一起发呆」组件，飞向右上角能量入口 */}
+      {/* 光反馈：完成有效行动后飞向右上角入口 */}
       <EnergyRewardFeedback
         event={breathEnergyReward}
         targetRef={breathBadgeRef}
@@ -765,146 +708,3 @@ export default function BreathingFlow({ onBackToRelief, onGoHome }: Props) {
   );
 }
 
-/* —— 横滑卡片轮播（意图优先 + 左右循环） ——
- * 全部 4 张卡片始终挂载，按相对当前卡的环形位移定位到 3 个可见槽位
- * （左 peek / 居中 / 右 peek）+ 1 个隐藏槽位。环形索引天然支持无限循环，
- * 没有首末终点。卡片主标题为「用户意图」，副标题为「呼吸法名 · 时长」，
- * 不展示完整呼吸步骤。支持左右滑动切换、点击分页点切换；首次进入有一次
- * 轻微横向位移暗示可滑动，不循环播放。 */
-function BreathingCarousel({
-  methods,
-  activeIndex,
-  onActiveChange,
-}: {
-  methods: BreathingMethod[];
-  activeIndex: number;
-  onActiveChange: (i: number) => void;
-}) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [containerW, setContainerW] = useState(0);
-
-  useLayoutEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const update = () => setContainerW(el.offsetWidth);
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  const cardW = containerW * 0.68;
-  const slotOffset = containerW * 0.72; // 相邻卡片中心间距，保证左右露边
-  const cardLeft = (containerW - cardW) / 2;
-  const cardH = 176;
-
-  // 首次进入轻微横向位移暗示（keyframes，仅 mount 时执行一次）
-  const nudgeX = useMemo(() => [0, 8, -6, 0], []);
-
-  const paginate = (dir: number) => {
-    onActiveChange((activeIndex + dir + methods.length) % methods.length);
-  };
-
-  const handlePanEnd = (_: unknown, info: PanInfo) => {
-    const threshold = 50;
-    if (info.offset.x < -threshold || info.velocity.x < -300) paginate(1);
-    else if (info.offset.x > threshold || info.velocity.x > 300) paginate(-1);
-  };
-
-  // 键盘方向键左右切换（循环）：← 上一张，→ 下一张
-  const handleKeyDown = (e: ReactKeyboardEvent) => {
-    if (e.key === "ArrowLeft") {
-      e.preventDefault();
-      paginate(-1);
-    } else if (e.key === "ArrowRight") {
-      e.preventDefault();
-      paginate(1);
-    }
-  };
-
-  // 环形槽位：0=居中，1=右 peek，n-1=左 peek，其余=隐藏
-  const slotFor = (i: number) => {
-    const n = methods.length;
-    const d = ((i - activeIndex + n) % n);
-    if (d === 0) return { x: 0, opacity: 1, z: 30 };
-    if (d === 1) return { x: slotOffset, opacity: 0.5, z: 20 };
-    if (d === n - 1) return { x: -slotOffset, opacity: 0.5, z: 20 };
-    return {
-      x: d <= n / 2 ? 2 * slotOffset : -2 * slotOffset,
-      opacity: 0,
-      z: 10,
-    };
-  };
-
-  return (
-    <div className="flex flex-col">
-      <div
-        ref={containerRef}
-        tabIndex={0}
-        onKeyDown={handleKeyDown}
-        role="listbox"
-        aria-label="呼吸法选择"
-        aria-activedescendant={methods[activeIndex]?.id}
-        className="relative w-full outline-none"
-        style={{ height: cardH, touchAction: "pan-y" }}
-      >
-        <motion.div
-          className="absolute inset-0"
-          initial={{ x: 0 }}
-          animate={{ x: nudgeX }}
-          transition={{
-            duration: 0.7,
-            ease: "easeInOut",
-            times: [0, 0.35, 0.7, 1],
-          }}
-          onPanEnd={handlePanEnd}
-        >
-          {containerW > 0 &&
-            methods.map((m, i) => {
-              const slot = slotFor(i);
-              return (
-                <motion.div
-                  key={m.id}
-                  id={m.id}
-                  role="option"
-                  aria-selected={i === activeIndex}
-                  className="flex flex-col items-center justify-center rounded-3xl border border-line bg-card px-6 text-center"
-                  animate={{ x: slot.x, opacity: slot.opacity }}
-                  transition={{ type: "spring", stiffness: 300, damping: 32 }}
-                  style={{
-                    position: "absolute",
-                    width: cardW,
-                    left: cardLeft,
-                    top: 0,
-                    height: cardH,
-                    zIndex: slot.z,
-                  }}
-                >
-                  <h3 className="text-[20px] font-medium tracking-tight text-ink">
-                    {m.purpose}
-                  </h3>
-                  <p className="mt-3 text-[12px] text-ink-faint">
-                    {m.name} · {m.durationLabel}
-                  </p>
-                </motion.div>
-              );
-            })}
-        </motion.div>
-      </div>
-
-      {/* 分页点：始终 4 个，反映真实 methodId */}
-      <div className="mt-6 flex items-center justify-center gap-2">
-        {methods.map((m, i) => (
-          <button
-            key={m.id}
-            onClick={() => onActiveChange(i)}
-            aria-label={`第 ${i + 1} 个呼吸法`}
-            className={`h-1.5 rounded-full transition-all ${
-              i === activeIndex ? "w-4 bg-ink" : "w-1.5 bg-line"
-            }`}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}

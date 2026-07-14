@@ -392,7 +392,7 @@ export default function LookbackPage({
         <button
           onClick={onBack}
           aria-label="返回更多"
-          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft"
+          className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface-soft"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
@@ -472,7 +472,7 @@ export default function LookbackPage({
           onClick={() => goScene(sceneIdx - 1)}
           disabled={sceneIdx === 0}
           aria-label="上一场景"
-          className="grid h-7 w-7 place-items-center rounded-full transition-colors hover:bg-line-soft disabled:opacity-0"
+          className="grid h-7 w-7 place-items-center rounded-full transition-colors hover:bg-surface-soft disabled:opacity-0"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -481,7 +481,7 @@ export default function LookbackPage({
           onClick={() => goScene(sceneIdx + 1)}
           disabled={sceneIdx === scenes.length - 1}
           aria-label="下一场景"
-          className="grid h-7 w-7 place-items-center rounded-full transition-colors hover:bg-line-soft disabled:opacity-0"
+          className="grid h-7 w-7 place-items-center rounded-full transition-colors hover:bg-surface-soft disabled:opacity-0"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -626,7 +626,7 @@ function TimeRangeSwitcher({
         onClick={onPrev}
         disabled={navDisabled}
         aria-label={timeMode === "week" ? "上一周" : "上个月"}
-        className="grid h-9 w-9 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft active:scale-95 disabled:opacity-25 disabled:hover:bg-transparent"
+        className="grid h-9 w-9 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface-soft active:scale-95 disabled:opacity-25 disabled:hover:bg-transparent"
       >
         <ChevronLeft className="h-5 w-5" />
       </button>
@@ -637,7 +637,7 @@ function TimeRangeSwitcher({
         onClick={onNext}
         disabled={isCurrent || navDisabled}
         aria-label={timeMode === "week" ? "下一周" : "下个月"}
-        className="grid h-9 w-9 place-items-center rounded-full text-ink-soft transition-colors hover:bg-line-soft active:scale-95 disabled:opacity-25 disabled:hover:bg-transparent"
+        className="grid h-9 w-9 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface-soft active:scale-95 disabled:opacity-25 disabled:hover:bg-transparent"
       >
         <ChevronRight className="h-5 w-5" />
       </button>
@@ -681,7 +681,7 @@ function SceneTabs({
             <span
               className="h-[3px] w-5 rounded-full transition-all duration-200"
               style={{
-                backgroundColor: active ? theme.mark : "transparent",
+                backgroundColor: active ? "var(--z-action-primary)" : "transparent",
               }}
             />
           </button>
@@ -790,7 +790,7 @@ function TrendArea({
   const last = data[days - 1];
 
   return (
-    <div className="rounded-[18px] px-4 py-3.5" style={{ backgroundColor: theme.softer }}>
+    <div className="rounded-[18px] px-4 py-3.5" style={{ backgroundColor: "var(--z-surface-soft)" }}>
       {/* 趋势图：直接绘于浅背景上，不再内嵌小卡 */}
       <div style={{ height: 80 }}>
         {sceneKey === "mood" && <MoodTrend data={data} />}
@@ -1165,7 +1165,7 @@ function DayRow({
     <button
       onClick={onClick}
       aria-label={`查看 ${day.displayDate} 的${sceneLabel(sceneKey)}详情`}
-      className="group flex w-full items-center gap-3 px-4 transition-colors hover:bg-line-soft/60"
+      className="group flex w-full items-center gap-3 px-4 transition-colors hover:bg-surface-soft/60"
       style={{
         height: ROW_H,
         borderBottom: isLast ? "none" : "1px solid var(--color-line, #D8E0CA)",
@@ -1306,7 +1306,7 @@ function SleepRow({ day }: { day: DailyLookbackData }) {
   return (
     <div className="flex items-center gap-2.5">
       <span style={{ fontSize: tx.chartAxisLabel, color: theme.text, opacity: 0.4 }}>早</span>
-      <div className="relative h-[2px] flex-1 rounded-full" style={{ backgroundColor: theme.soft }}>
+      <div className="relative h-[2px] flex-1 rounded-full" style={{ backgroundColor: "var(--z-line-soft)" }}>
         <div
           className="absolute top-1/2 h-[8px] w-[8px] -translate-x-1/2 -translate-y-1/2 rounded-full"
           style={{
@@ -1538,13 +1538,13 @@ function MoodRecordAccordion({
   return (
     <div
       style={{
-        borderBottom: isLast ? "none" : `1px solid ${theme.softer}`,
+        borderBottom: isLast ? "none" : `1px solid var(--z-line-soft)`,
       }}
     >
       {/* 收起态/头部：时间 + 情绪值 + 情绪词 + 展开箭头 */}
       <button
         onClick={onToggle}
-        className="flex w-full items-center gap-3 py-3 text-left transition-colors hover:bg-line-soft/40"
+        className="flex w-full items-center gap-3 py-3 text-left transition-colors hover:bg-surface-soft/40"
       >
         {/* 时间 */}
         <span className="w-12 shrink-0 text-[14px] font-medium" style={{ color: theme.text, opacity: 0.7 }}>
@@ -1740,7 +1740,7 @@ function DetailSheet({
         }}
       >
         {/* 把手：仅顶部拖拽短条 */}
-        <div className="mx-auto mt-3 mb-3 h-1 w-9 shrink-0 rounded-full" style={{ backgroundColor: theme.soft }} />
+        <div className="mx-auto mt-3 mb-3 h-1 w-9 shrink-0 rounded-full" style={{ backgroundColor: "var(--z-line-soft)" }} />
 
         {/* 标题区：左 日期+星期+摘要 / 右 仅 ··· */}
         <div className="mb-3 flex shrink-0 items-start justify-between px-6">
@@ -1770,7 +1770,7 @@ function DetailSheet({
               onClick={() => setMenuOpen((v) => !v)}
               aria-label="更多操作"
               aria-expanded={menuOpen}
-              className="grid h-7 w-7 place-items-center rounded-full transition-colors hover:bg-line-soft"
+              className="grid h-7 w-7 place-items-center rounded-full transition-colors hover:bg-surface-soft"
               style={{ color: theme.text, opacity: 0.5 }}
             >
               <MoreHorizontal className="h-4 w-4" />
@@ -1788,13 +1788,13 @@ function DetailSheet({
                 >
                   <button
                     onClick={handleEdit}
-                    className="flex w-full items-center px-3 py-2 text-left text-[14px] text-ink transition-colors hover:bg-line-soft"
+                    className="flex w-full items-center px-3 py-2 text-left text-[14px] text-ink transition-colors hover:bg-surface-soft"
                   >
                     修改记录
                   </button>
                   <button
                     onClick={handleDeleteClick}
-                    className="flex w-full items-center px-3 py-2 text-left text-[14px] text-ink transition-colors hover:bg-line-soft"
+                    className="flex w-full items-center px-3 py-2 text-left text-[14px] text-ink transition-colors hover:bg-surface-soft"
                   >
                     删除记录
                   </button>
@@ -1814,7 +1814,7 @@ function DetailSheet({
             <MealDetailGroups day={day} theme={theme} />
           ) : (
             /* 字段列表（非情绪 / 非饮食场景） */
-            <div className="flex flex-col divide-y" style={{ borderColor: theme.softer }}>
+            <div className="flex flex-col divide-y" style={{ borderColor: "var(--z-line-soft)" }}>
               {rows.map((r, i) =>
                 r.spacer ? (
                   /* 多条记录之间的间隔（不渲染字段，仅留白） */
@@ -1823,7 +1823,7 @@ function DetailSheet({
                   <div
                     key={i}
                     className="flex items-start justify-between gap-3 py-3"
-                    style={{ borderTop: i === 0 ? "none" : `1px solid ${theme.softer}` }}
+                    style={{ borderTop: i === 0 ? "none" : `1px solid var(--z-line-soft)` }}
                   >
                     <span
                       className="w-[72px] shrink-0 text-[14px]"
@@ -1900,7 +1900,7 @@ function EditSheet({
         {/* 顶部：取消 / 标题 / 保存 */}
         <div
           className="flex items-center justify-between px-5 pt-14 pb-3"
-          style={{ borderBottom: `1px solid ${theme.softer}` }}
+          style={{ borderBottom: `1px solid var(--z-line-soft)` }}
         >
           <button
             onClick={onCancel}
@@ -1914,7 +1914,7 @@ function EditSheet({
           <button
             onClick={handleSave}
             className="text-[14px] font-medium transition-opacity hover:opacity-80"
-            style={{ color: theme.mark }}
+            style={{ color: "var(--z-action-pressed)" }}
           >
             保存修改
           </button>
@@ -2124,7 +2124,7 @@ function TextInput({
         className={`w-full rounded-xl border bg-white py-2.5 text-[14px] text-ink outline-none transition-colors focus:border-current ${
           enableVoice ? "pl-3 pr-11" : "px-3"
         }`}
-        style={{ borderColor: theme.softer, color: theme.text }}
+        style={{ borderColor: "var(--z-line-soft)", color: theme.text }}
       />
       {enableVoice && (
         <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
@@ -2158,7 +2158,7 @@ function TimeInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       className="w-full rounded-xl border bg-white px-3 py-2.5 text-[14px] text-ink outline-none transition-colors focus:border-current"
-      style={{ borderColor: theme.softer, color: theme.text }}
+      style={{ borderColor: "var(--z-line-soft)", color: theme.text }}
     />
   );
 }
@@ -2184,9 +2184,9 @@ function SegmentedOptions<T extends string | number>({
             onClick={() => onChange(opt.value)}
             className="rounded-full px-4 py-2 text-[13px] transition-all"
             style={{
-              backgroundColor: active ? theme.mark : "transparent",
-              color: active ? "#27331F" : theme.text,
-              border: `1px solid ${active ? theme.mark : theme.softer}`,
+              backgroundColor: active ? "var(--z-action-primary)" : "transparent",
+              color: active ? "var(--z-action-primary-text)" : theme.text,
+              border: `1px solid ${active ? "var(--z-action-primary)" : "var(--z-line-soft)"}`,
             }}
           >
             {opt.label}
@@ -2220,7 +2220,7 @@ function TextArea({
         className={`w-full resize-none rounded-xl border bg-white py-2.5 text-[14px] text-ink outline-none transition-colors focus:border-current ${
           enableVoice ? "pl-3 pr-3 pb-9" : "px-3 py-2.5"
         }`}
-        style={{ borderColor: theme.softer, color: theme.text }}
+        style={{ borderColor: "var(--z-line-soft)", color: theme.text }}
       />
       {enableVoice && (
         <div className="absolute bottom-1.5 right-1.5">
@@ -2657,3 +2657,4 @@ function sleepToRatio(t: string): number {
 export { TimeModeTabs, TimeRangeSwitcher, SceneTabs, TrendArea };
 export { themes, scenes, reviewTypography as tx, RECORD_CATEGORY_COLOR, PAGE_BG, ease };
 export type { Theme, SceneKey, TimeMode };
+export { SleepRow };

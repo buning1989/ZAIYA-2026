@@ -58,13 +58,13 @@ export type CardGradient = {
 
 export const CARD_GRADIENTS: CardGradient[] = [
   { id: "g1", from: "var(--z-praise-card-1)", to: "var(--z-praise-card-1)" }, // 苔灰绿
-  { id: "g2", from: "var(--z-praise-card-2)", to: "var(--z-praise-card-2)" }, // 浅米
+  { id: "g2", from: "var(--z-praise-card-2)", to: "var(--z-praise-card-2)" }, // 浅蓝
   { id: "g3", from: "var(--z-praise-card-3)", to: "var(--z-praise-card-3)" }, // 浅青
   { id: "g4", from: "var(--z-praise-card-4)", to: "var(--z-praise-card-4)" }, // 暖米
-  { id: "g5", from: "var(--z-praise-card-5)", to: "var(--z-praise-card-5)" }, // 浅柠
+  { id: "g5", from: "var(--z-praise-card-5)", to: "var(--z-praise-card-5)" }, // 淡粉
   { id: "g6", from: "var(--z-praise-card-6)", to: "var(--z-praise-card-6)" }, // 浅藤紫
   { id: "g7", from: "var(--z-praise-card-7)", to: "var(--z-praise-card-7)" }, // 空间底
-  { id: "g8", from: "var(--z-praise-card-8)", to: "var(--z-praise-card-8)" }, // 浅绿
+  { id: "g8", from: "var(--z-praise-card-8)", to: "var(--z-praise-card-8)" }, // 浅杏
 ];
 
 /* —— 随机分配一个渐变 —— */
