@@ -507,7 +507,7 @@ export default function ProductFeatures() {
         <Reveal className="mt-7 md:mt-8">
           <SectionEyebrow index={3} name="解决方案" />
           <SubsectionEyebrow index="03.1" name="我们怎么做" className="mt-5" />
-          <h2 className="mt-4 text-[26px] leading-tight tracking-tight text-ink md:mt-5 md:text-[32px]">
+          <h2 className="mt-5 text-[26px] leading-tight tracking-tight text-ink md:mt-6 md:text-[32px]">
             在呀 ZÀIYA，把支持带进每天的真实生活。
           </h2>
         </Reveal>

@@ -177,7 +177,7 @@ export default function Vision() {
         <div className="mx-auto mt-7 max-w-[940px] md:mt-8">
           <Reveal>
             <SectionEyebrow index={5} name="愿景" />
-            <h2 className="mt-4 max-w-[900px] text-[26px] font-semibold leading-tight tracking-tight text-ink md:mt-5 md:text-[32px]">
+            <h2 className="mt-5 max-w-[900px] text-[26px] font-semibold leading-tight tracking-tight text-ink md:mt-6 md:text-[32px]">
               让每一个因精神心理困扰而生活失序的人，都能连接起持续、完整的支持。
             </h2>
             <p className="mt-6 max-w-[860px] text-[15px] leading-relaxed text-ink-soft md:text-[16px]">

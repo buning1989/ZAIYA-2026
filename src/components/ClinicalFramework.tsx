@@ -76,7 +76,7 @@ export default function ClinicalFramework() {
         <div className="h-px w-full bg-line-soft" aria-hidden="true" />
         <Reveal className="mt-7 md:mt-8">
           <SubsectionEyebrow index="03.2" name="专业方法" />
-          <h2 className="mt-4 text-[26px] leading-tight tracking-tight text-ink md:mt-5 md:text-[32px]">
+          <h2 className="mt-5 text-[26px] leading-tight tracking-tight text-ink md:mt-6 md:text-[32px]">
             先理解一个人的完整处境，
             <br />
             再决定此刻如何回应。

@@ -15,7 +15,7 @@ export default function SectionHeading({ index, name, title, className }: Props)
   return (
     <Reveal className={className}>
       <SectionEyebrow index={index} name={name} />
-      <h2 className="mt-4 text-[26px] leading-tight tracking-tight text-ink md:mt-5 md:text-[32px]">
+      <h2 className="mt-5 text-[26px] leading-tight tracking-tight text-ink md:mt-6 md:text-[32px]">
         {title}
       </h2>
     </Reveal>

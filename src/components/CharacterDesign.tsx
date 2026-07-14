@@ -114,7 +114,7 @@ export default function CharacterDesign() {
             </Reveal>
 
             <Reveal delay={0.04} y={10}>
-              <h2 className="mt-4 text-[26px] font-semibold leading-[1.22] tracking-tight text-ink md:mt-5 md:text-[32px]">
+              <h2 className="mt-5 text-[26px] font-semibold leading-[1.22] tracking-tight text-ink md:mt-6 md:text-[32px]">
                 我们把在在设计成一粒种子：陪你长大，也把你带回屏幕外。
               </h2>
             </Reveal>
