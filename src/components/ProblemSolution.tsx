@@ -4,6 +4,7 @@ type StatCard = {
   label: string;
   value: string;
   suffix?: string;
+  dimension: string;
   meaning: string;
 };
 
@@ -12,18 +13,21 @@ const stats: StatCard[] = [
     label: "问题并不少见",
     value: "17.5",
     suffix: "%",
+    dimension: "患病率",
     meaning: "约每 6 名中小学生，就有 1 人受精神障碍困扰。",
   },
   {
     label: "专业支持仍然有限",
     value: "20",
     suffix: "%",
+    dimension: "就诊率",
     meaning: "多数孩子的困扰，还没进入持续、专业的支持。",
   },
   {
     label: "更多时间发生在日常",
     value: "8700",
     suffix: "小时",
+    dimension: "年度自主时长",
     meaning:
       "即使每周有 1 小时专业支持，一年里绝大多数时间，仍要自己度过。",
   },
@@ -37,15 +41,20 @@ function StatCardView({ stat, delay }: { stat: StatCard; delay: number }) {
           {stat.label}
         </span>
 
-        <div className="mt-4 flex items-baseline gap-1">
-          <span className="text-[40px] font-semibold leading-none tracking-tightest text-ink md:text-[48px]">
-            {stat.value}
-          </span>
-          {stat.suffix && (
-            <span className="text-[20px] font-semibold leading-none tracking-tight text-ink md:text-[24px]">
-              {stat.suffix}
+        <div className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <span className="flex items-baseline gap-1">
+            <span className="text-[40px] font-semibold leading-none tracking-tightest text-ink md:text-[48px]">
+              {stat.value}
             </span>
-          )}
+            {stat.suffix && (
+              <span className="text-[20px] font-semibold leading-none tracking-tight text-ink md:text-[24px]">
+                {stat.suffix}
+              </span>
+            )}
+          </span>
+          <span className="text-[13px] font-medium leading-none text-ink-faint md:text-[14px]">
+            {stat.dimension}
+          </span>
         </div>
 
         <p className="mt-4 text-[14px] leading-relaxed text-ink md:text-[15px]">
@@ -68,7 +77,7 @@ export default function ProblemSolution() {
 
         <Reveal delay={0.04}>
           <h2 className="mt-4 max-w-2xl text-[30px] leading-tight tracking-tight text-ink md:text-[40px]">
-            真正的难题，在诊室之外。
+            对受精神心理困扰的社会功能损伤人群而言，真正的难题在诊室之外
           </h2>
         </Reveal>
 

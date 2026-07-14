@@ -115,7 +115,7 @@ export default function CharacterDesign() {
           <div className="grid auto-rows-fr grid-cols-1 gap-3 md:col-start-2 md:grid-cols-2 md:gap-3 min-[1200px]:gap-4">
             {reasons.map((r, i) => (
               <Reveal key={r.title} delay={0.12 + i * 0.05} y={10}>
-                <article className="flex h-full min-h-[168px] flex-col gap-2.5 rounded-xl border border-line bg-white p-4 shadow-[0_1px_2px_rgba(39,51,31,0.04)] md:min-h-[190px] md:p-5 min-[1200px]:min-h-[186px] min-[1200px]:p-5">
+                <article className="flex h-full min-h-[118px] flex-col gap-2 rounded-xl border border-line bg-white p-3 shadow-[0_1px_2px_rgba(39,51,31,0.04)] md:min-h-[133px] md:p-4 min-[1200px]:min-h-[130px] min-[1200px]:p-4">
                   <h3 className="text-[16px] font-semibold leading-snug tracking-tight text-ink md:text-[16px] min-[1200px]:text-[18px]">
                     {r.title}
                   </h3>

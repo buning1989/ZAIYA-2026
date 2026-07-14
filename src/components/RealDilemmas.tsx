@@ -24,7 +24,7 @@ const voiceCards: VoiceCard[] = [
       "“一想到要回学校，身体就先开始难受。",
       "放假时，我又好像恢复了一点。”",
     ],
-    name: "学习与社交逐渐受阻",
+    name: "学习逐渐受阻",
     explanation:
       "返校、考试和人际互动，可能引发明显的恐惧、躯体不适与回避，让原本正常的学习和社交难以继续。",
     illustration: "/assets/dilemmas/openpeeps93.svg",
@@ -34,7 +34,7 @@ const voiceCards: VoiceCard[] = [
       "“我不是故意不配合，",
       "可家里看到的，常常只是懒、叛逆和不努力。”",
     ],
-    name: "痛苦难以表达，也容易被误解",
+    name: "痛苦不被理解",
     explanation:
       "自己很难说清发生了什么，家长看到的却往往只是行为结果，误解和家庭冲突也因此不断加深。",
     illustration: "/assets/dilemmas/openpeeps54.svg",
@@ -59,28 +59,28 @@ export default function RealDilemmas() {
         <div className="mt-14 grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-5">
           {voiceCards.map((card, i) => (
             <Reveal key={card.name} delay={0.12 + i * 0.06}>
-              <article className="relative flex h-full min-h-[330px] overflow-hidden rounded-lg border border-line bg-white px-6 py-7 md:min-h-[360px] md:px-7 md:py-8">
-                <img
-                  src={card.illustration}
-                  alt=""
-                  aria-hidden="true"
-                  className="pointer-events-none absolute right-3 top-5 h-24 w-20 object-contain opacity-[0.16] md:right-5 md:top-6 md:h-32 md:w-28 md:opacity-[0.28]"
-                />
+              <article className="relative flex h-full min-h-[230px] flex-col justify-center rounded-lg border border-line bg-white px-5 pb-7 pt-9 md:min-h-[250px] md:px-6 md:pb-8 md:pt-10">
+                <h3 className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap bg-white px-4 font-display text-[16px] font-semibold leading-none tracking-tight text-ink md:text-[17px]">
+                  {card.name}
+                </h3>
 
-                <div className="relative z-10 flex h-full flex-col">
-                  <blockquote className="text-[19px] font-medium leading-loose tracking-tight text-ink md:pr-20 md:text-[20px]">
+                <div className="grid grid-cols-[76px_minmax(0,1fr)] items-center gap-4 md:grid-cols-[84px_minmax(0,1fr)] md:gap-5">
+                  <div className="grid aspect-square place-items-center rounded-full border border-line bg-card-soft">
+                    <img
+                      src={card.illustration}
+                      alt=""
+                      aria-hidden="true"
+                      className="h-[84%] w-[84%] object-contain opacity-70"
+                    />
+                  </div>
+
+                  <blockquote className="text-[15px] font-semibold leading-snug tracking-tight text-ink md:text-[16px]">
                     {card.voice.map((line) => (
                       <span key={line} className="block">
                         {line}
                       </span>
                     ))}
                   </blockquote>
-
-                  <div className="mt-auto pt-10">
-                    <h3 className="font-display text-[19px] font-semibold leading-snug tracking-tight text-ink md:text-[20px]">
-                      {card.name}
-                    </h3>
-                  </div>
                 </div>
               </article>
             </Reveal>
