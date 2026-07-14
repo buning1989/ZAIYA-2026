@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import VoiceInputBar from "./VoiceInputBar";
 import type { SceneId } from "./PresenceRoom";
-import FeaturePageTransition, { CollapseButton } from "./FeaturePageTransition";
+import FeaturePageTransition from "./FeaturePageTransition";
 import {
   BreathingCarousel,
   BREATHING_METHODS,
@@ -524,7 +524,7 @@ export default function AppMainSurface({
   // —— 缓解模式状态 ——
   // 未开放能力项已在卡片上标识「暂未开放」标签，不再使用 Toast 提醒。
   // 呼吸法 inline 选择状态机：collapsed → expanded → countingDown → navigating
-  // collapsed：呼吸法卡片收起，底部显示 CollapseButton
+  // collapsed：呼吸法卡片收起，底部空白（页面返回由左上角 ← 负责）
   // expanded：原地展开 BreathingCarousel，底部切换为"开始"按钮
   // countingDown：倒计时期间锁定 carousel 与收起，按钮原位显示 3/2/1
   // navigating：倒计时结束，进入 breathing 模式（由 BreathingFlow 接管）
@@ -1061,6 +1061,18 @@ export default function AppMainSurface({
     }
   };
 
+  // 缓解主页左上角返回：始终可用，不依赖浏览器历史，倒计时期间也保证退出路径。
+  // 必须先停掉倒计时 timer + 重置 inline 状态，再切回 home，避免后台继续倒计时自动跳呼吸页。
+  // 再次进入「缓解」时恢复默认收起状态（resetBreathingEntry 已置 collapsed），不恢复上次展开态。
+  const handleReliefBackToHome = () => {
+    if (breathingCountdownTimerRef.current) {
+      window.clearInterval(breathingCountdownTimerRef.current);
+      breathingCountdownTimerRef.current = null;
+    }
+    resetBreathingEntry();
+    setMode("home");
+  };
+
   // 练习中长按结束 / 停止确认退出：回到缓解主页，呼吸法保持展开并保留所选方法。
   // 不收起、不回到旧选择页；状态式切换天然「replace」，浏览器返回不会重回练习页。
   const returnToReliefExpanded = (methodIdx: number) => {
@@ -1568,6 +1580,17 @@ export default function AppMainSurface({
           >
             {/* 右上角我的光入口：统一组件（floating），与记一下 / 轻社交同一位置规则 */}
             <EnergyBadge position="floating" />
+            {/* 左上角固定返回入口：与二级页返回按钮同款（left-5 top-12），
+                收起 / 展开 / 倒计时各状态下始终显示且可点击，直接回产品主页。
+                z-50 高于 FeaturePageTransition 拖拽手柄(z-30)，保证退出路径不被拦截。 */}
+            <button
+              type="button"
+              onClick={handleReliefBackToHome}
+              aria-label="返回主页"
+              className="absolute left-5 top-12 z-50 grid h-8 w-8 place-items-center rounded-full text-ink-soft outline-none transition-colors hover:bg-line-soft hover:text-ink focus-visible:outline-none"
+            >
+              <ChevronLeft className="h-6 w-6" strokeWidth={1.8} />
+            </button>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1712,10 +1735,10 @@ export default function AppMainSurface({
               </AnimatePresence>
             </motion.div>
 
-            {/* 底部按钮：collapsed 显示收起按钮；expanded/countingDown 显示开始按钮（原位倒计时） */}
-            {breathingEntryState === "collapsed" ? (
-              <CollapseButton onClick={() => setMode("home")} ariaLabel="返回首页" />
-            ) : (
+            {/* 底部按钮：仅承担本页主操作。
+                呼吸法收起时底部空白（页面返回已由左上角 ← 负责）；
+                展开 / 倒计时时显示「开始」按钮（原位倒计时）。 */}
+            {breathingEntryState !== "collapsed" && (
               <div className="absolute inset-x-0 bottom-6 z-40 mx-auto flex justify-center px-6">
                 <button
                   onClick={startBreathingCountdown}
