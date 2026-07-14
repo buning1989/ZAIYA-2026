@@ -11,11 +11,11 @@ import {
 
 const ease = [0.22, 1, 0.36, 1] as const;
 const PARTICLE_COUNT = 3;
-const PARTICLE_START_S = 2.36;
-const PARTICLE_FLIGHT_S = 1.12;
-const PARTICLE_DELAY_S = 0.07;
-const ARRIVE_MS = 3600;
-const DONE_MS = 3980;
+const PARTICLE_START_S = 1.78;
+const PARTICLE_FLIGHT_S = 1.22;
+const PARTICLE_DELAY_S = 0.045;
+const ARRIVE_MS = 3120;
+const DONE_MS = 3500;
 const REDUCED_DONE_MS = 2850;
 const FEEDBACK_BOTTOM_OFFSET = 185;
 const FEEDBACK_MIN_Y_RATIO = 0.58;
@@ -207,30 +207,35 @@ export default function EnergyRewardFeedback({
                 return (
                   <motion.div
                     key={`${event.id}-${index}`}
-                    initial={{ x: 0, y: 0, opacity: 0, scale: 0.65 }}
+                    initial={{ x: 0, y: 0, opacity: 0, scale: 0.72 }}
                     animate={{
-                      x: [0, offset.x, dx],
-                      y: [0, offset.y, dy],
+                      x: [0, offset.x, dx * 0.94, dx],
+                      y: [0, offset.y, dy * 0.94, dy],
                       opacity: [0, 1, 1, 0],
-                      scale: [0.65, 1.08, 0.45],
-                      rotate: [0, offset.rotate, offset.rotate * 0.4],
+                      scale: [0.72, 1.12, 0.94, 0.74],
+                      rotate: [
+                        0,
+                        offset.rotate,
+                        offset.rotate * 0.55,
+                        offset.rotate * 0.25,
+                      ],
                     }}
                     transition={{
                       delay: PARTICLE_START_S + index * PARTICLE_DELAY_S,
                       duration: PARTICLE_FLIGHT_S,
-                      times: [0, 0.18, 1],
+                      times: [0, 0.1, 0.94, 1],
                       ease,
                     }}
-                    className={`absolute grid h-7 w-7 place-items-center ${visual.particleClass}`}
+                    className={`absolute grid h-8 w-8 place-items-center ${visual.particleClass}`}
                     style={{
-                      left: geometry.origin.x - 14,
-                      top: geometry.origin.y - 14,
+                      left: geometry.origin.x - 16,
+                      top: geometry.origin.y - 16,
                     }}
                   >
                     <LightIcon
                       aria-hidden="true"
-                      className="h-5 w-5"
-                      strokeWidth={1.65}
+                      className="h-6 w-6"
+                      strokeWidth={1.6}
                     />
                   </motion.div>
                 );

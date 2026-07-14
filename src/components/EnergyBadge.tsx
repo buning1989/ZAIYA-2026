@@ -65,7 +65,7 @@ export default function EnergyBadge({
       <motion.button
         ref={buttonRef}
         type="button"
-        aria-label="我的能量"
+        aria-label="我的光"
         onClick={handleClick}
         animate={pulse ? { scale: [1, 1.08, 1] } : { scale: 1 }}
         whileTap={{ scale: 0.96 }}
