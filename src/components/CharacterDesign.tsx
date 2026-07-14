@@ -77,10 +77,10 @@ export default function CharacterDesign() {
     <section id="solution-character" className="relative scroll-mt-24">
       <span id="character" className="pointer-events-none absolute -top-20 h-px w-px" aria-hidden="true" />
       <div className="container pt-12 pb-20 md:pt-12 md:pb-24 min-[1200px]:pt-12 min-[1200px]:pb-24">
-        <div className="h-px w-full bg-line-soft" aria-hidden="true" />
+        <div className="h-px w-16 bg-line-soft md:w-20" aria-hidden="true" />
         <div className="mt-7 grid grid-cols-1 gap-10 md:mt-8 md:grid-cols-[0.36fr_0.64fr] md:gap-8 min-[1200px]:grid-cols-[0.4fr_0.6fr] min-[1200px]:gap-8 min-[1200px]:items-stretch">
           {/* 左侧：在在角色视觉区 + 三个轻量虚线标注 */}
-          <Reveal y={10} className="md:col-start-1 md:row-span-2">
+          <Reveal y={10} className="order-2 md:order-none md:col-start-1 md:row-span-2">
             <div className="relative mx-auto flex min-h-[320px] w-full max-w-[420px] items-center justify-center pb-4 md:h-full md:min-h-[428px] md:max-w-[456px] md:translate-y-8 md:pb-3 min-[1200px]:translate-y-12">
               <ZaizaiVideo className="h-64 w-64 md:h-[19rem] md:w-[19rem] min-[1200px]:h-[20.5rem] min-[1200px]:w-[20.5rem]" />
 
@@ -108,9 +108,9 @@ export default function CharacterDesign() {
           </Reveal>
 
           {/* 右侧：标题区 */}
-          <div className="flex flex-col md:col-start-2">
+          <div className="order-1 flex flex-col md:order-none md:col-start-2">
             <Reveal y={10}>
-              <SubsectionEyebrow index="03.3" name="陪伴角色" />
+              <SubsectionEyebrow index="03.C" name="陪伴角色" />
             </Reveal>
 
             <Reveal delay={0.04} y={10}>
