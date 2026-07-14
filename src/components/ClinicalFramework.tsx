@@ -139,8 +139,9 @@ export default function ClinicalFramework() {
                   </div>
 
                   <p className="mt-3 text-[14px] leading-relaxed text-ink-soft md:text-[15px]">
-                    <span className="font-semibold text-ink">{scenario.method}</span>
-                    <span className="mx-1.5 text-ink-faint">·</span>
+                    <span className="mr-2 inline-flex items-center rounded-full border border-line bg-accent-soft px-3 py-1 text-[13px] font-semibold tracking-tight text-ink">
+                      {scenario.method}
+                    </span>
                     {scenario.methodText}
                   </p>
 
