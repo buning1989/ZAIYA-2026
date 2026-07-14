@@ -172,6 +172,28 @@ const LazyVideo = forwardRef<LazyVideoHandle, Props>(function LazyVideo(
     };
   }, [eager, rootMargin, disableAutoplay, pauseWhenOutOfView]);
 
+  // React may reuse the same <video> node inside carousels when only src changes.
+  // Reset media state and explicitly reload so the previous animation frame cannot linger.
+  useEffect(() => {
+    setReady(false);
+    setFailed(false);
+    playedRef.current = false;
+
+    const v = videoRef.current;
+    if (!v || !shouldLoad) return;
+    v.load();
+    if (!disableAutoplay) {
+      const p = v.play();
+      if (p && typeof p.catch === "function") {
+        p.then(() => {
+          playedRef.current = true;
+        }).catch(() => {});
+      } else {
+        playedRef.current = true;
+      }
+    }
+  }, [src, mp4Src, shouldLoad, disableAutoplay]);
+
   // shouldLoad 变化时主动 load + play
   useEffect(() => {
     if (!shouldLoad) return;
@@ -238,10 +260,7 @@ const LazyVideo = forwardRef<LazyVideoHandle, Props>(function LazyVideo(
       {shouldLoad && !failed && (
         <video
           ref={videoRef}
-          className={cn(
-            sharedMediaClass,
-            "pointer-events-auto",
-          )}
+          className={sharedMediaClass}
           style={{
             ...(mediaStyle ?? {}),
             opacity: ready ? 1 : 0,

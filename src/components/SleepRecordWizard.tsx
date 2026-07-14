@@ -594,7 +594,7 @@ export default function SleepRecordWizard({
               </div>
             )}
 
-            {/* —— Step 4：入睡用时（大尺寸分段时间轴，单选，自动进入） —— */}
+            {/* —— Step 4：入睡用时（纵向选择卡，单选，自动进入） —— */}
             {step === 4 && (
               <div className="pt-10">
                 <p className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
@@ -608,6 +608,7 @@ export default function SleepRecordWizard({
                     ariaLabel="入睡用时"
                     startLabel="很快"
                     endLabel="很久"
+                    disabled={isLocked}
                   />
                 </div>
               </div>
@@ -632,7 +633,7 @@ export default function SleepRecordWizard({
               </div>
             )}
 
-            {/* —— Step 6：夜里醒着大概多久（大尺寸分段时间轴，单选，自动进入） —— */}
+            {/* —— Step 6：夜里醒着大概多久（纵向选择卡，单选，自动进入） —— */}
             {step === 6 && (
               <div className="pt-10">
                 <p className="text-center text-[18px] font-medium leading-relaxed tracking-tight text-ink">
@@ -646,6 +647,7 @@ export default function SleepRecordWizard({
                     ariaLabel="夜间清醒时长"
                     startLabel="很少"
                     endLabel="很久"
+                    disabled={isLocked}
                   />
                 </div>
               </div>

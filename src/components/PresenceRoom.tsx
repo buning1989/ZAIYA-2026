@@ -235,15 +235,15 @@ const dazePostures: DazePosture[] = [
   },
   {
     id: "quick-idle",
-    label: "安静坐着",
+    label: "安静躺着",
     src: "./assets/social/daze/action-quick-idle.webm",
     poster: "./assets/social/daze/action-quick-idle-poster.png",
   },
   {
-    id: "lean-back",
-    label: "往后靠着",
-    src: "./assets/social/daze/action-lean-back.webm",
-    poster: "./assets/social/daze/action-lean-back-poster.png",
+    id: "prone-nap",
+    label: "趴着打盹儿",
+    src: "./assets/social/daze/action-prone-nap.webm",
+    poster: "./assets/social/daze/action-prone-nap-poster.png",
   },
 ];
 

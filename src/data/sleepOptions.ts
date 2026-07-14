@@ -6,12 +6,12 @@
  * 结构：
  *   1. 整体睡眠感受（sleepLevel: 3=好 / 2=一般 / 1=不好）
  *   2. 具体睡眠感受（sleepSubwords，按 sleepLevel 动态展示，多选，含「其他感受」自定义）
- *   3. 大概上床时间（bedTimeRange，5 段分段时间轴，单选）
- *   4. 入睡用时（fallAsleepDurationRange，5 段分段时间轴，单选，问题改为「躺下后多久睡着？」）
- *   5. 大概醒来或起床时间（wakeTimeRange，5 段分段时间轴，单选）
- *   6. 夜里醒着大概多久（awakeDurationRange，5 段分段时间轴，单选）
+ *   3. 大概上床时间（bedTimeRange，分组直选，单选）
+ *   4. 入睡用时（fallAsleepDurationRange，纵向选择卡，单选，问题改为「躺下后多久睡着？」）
+ *   5. 大概醒来或起床时间（wakeTimeRange，分组直选，单选）
+ *   6. 夜里醒着大概多久（awakeDurationRange，纵向选择卡，单选）
  *
- * 时间轴步骤 3-6 均使用 SegmentedTimeScale 组件渲染，下方提供「记不清，先跳过」弱化按钮。
+ * 时间选择步骤 3-6 下方均提供「记不清，先跳过」弱化按钮。
  * 跳过后字段保存为 null，不生成估算值，结算页不展示该行。
  * payload 同时保存口语化 label、标准 rangeText 和估算值 estimate。 */
 
