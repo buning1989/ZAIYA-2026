@@ -606,8 +606,6 @@ export default function SleepRecordWizard({
                     value={fallAsleepTimeRange}
                     onChange={(v) => handleSelectTimeRange(v, 4)}
                     ariaLabel="入睡用时"
-                    startLabel="很快"
-                    endLabel="很久"
                     disabled={isLocked}
                   />
                 </div>
@@ -645,8 +643,6 @@ export default function SleepRecordWizard({
                     value={awakeDurationRange}
                     onChange={(v) => handleSelectTimeRange(v, 6)}
                     ariaLabel="夜间清醒时长"
-                    startLabel="很少"
-                    endLabel="很久"
                     disabled={isLocked}
                   />
                 </div>

@@ -25,10 +25,6 @@ interface SegmentedTimeScaleProps {
   value: string | null;
   onChange: (value: string) => void;
   ariaLabel?: string;
-  /** 左侧方向提示，如「晚上」「很快」 */
-  startLabel?: string;
-  /** 右侧方向提示，如「凌晨」「很久」 */
-  endLabel?: string;
   disabled?: boolean;
 }
 
@@ -37,22 +33,10 @@ export default function SegmentedTimeScale({
   value,
   onChange,
   ariaLabel,
-  startLabel,
-  endLabel,
   disabled = false,
 }: SegmentedTimeScaleProps) {
-  const hasDirection = !!(startLabel || endLabel);
-
   return (
     <div className="flex flex-col gap-2">
-      {/* 方向提示：两端弱化文字，帮助理解时长从短到长 */}
-      {hasDirection && (
-        <div className="flex items-center justify-between px-1">
-          <span className="text-[12px] text-ink-faint">{startLabel}</span>
-          <span className="text-[12px] text-ink-faint">{endLabel}</span>
-        </div>
-      )}
-
       {/* 纵向选择卡主体 */}
       <div
         role="radiogroup"
