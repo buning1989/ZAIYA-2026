@@ -2,6 +2,7 @@ import { useState, lazy, Suspense } from "react";
 import Nav from "@/components/Nav";
 import Hero from "@/components/Hero";
 import ProblemSolution from "@/components/ProblemSolution";
+import SectionNavigator from "@/components/SectionNavigator";
 import Footer from "@/components/Footer";
 import { demoExperienceLoader } from "@/lib/moduleLoaders";
 import { setStorageMode } from "@/shared/storage/namespacedStorage";
@@ -55,6 +56,7 @@ export default function App() {
     <div className="min-h-screen bg-white font-body text-ink antialiased">
       <div aria-hidden={demoOpen}>
         <Nav onOpenDemo={() => setDemoOpen(true)} />
+        <SectionNavigator />
         <main>
           <Hero onOpenDemo={() => setDemoOpen(true)} />
           <ProblemSolution />
