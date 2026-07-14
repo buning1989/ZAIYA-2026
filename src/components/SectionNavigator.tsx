@@ -9,30 +9,23 @@ type ObservedSectionId =
   | "solution-character"
   | "team"
   | "vision";
-type SolutionSubsectionId = "product" | "method" | "character";
 
 const mainSections: { id: MainSectionId; label: string; targetId: string }[] = [
   { id: "needs", label: "现实缺口", targetId: "needs" },
   { id: "pain", label: "用户困境", targetId: "pain" },
-  { id: "solution", label: "在呀方案", targetId: "solution-product" },
+  { id: "solution", label: "在呀 ZÀIYA", targetId: "solution-product" },
   { id: "team", label: "关于团队", targetId: "team" },
   { id: "vision", label: "未来愿景", targetId: "vision" },
 ];
 
-const observedSections: { id: ObservedSectionId; mainId: MainSectionId; subId?: SolutionSubsectionId }[] = [
+const observedSections: { id: ObservedSectionId; mainId: MainSectionId }[] = [
   { id: "needs", mainId: "needs" },
   { id: "pain", mainId: "pain" },
-  { id: "solution-product", mainId: "solution", subId: "product" },
-  { id: "solution-method", mainId: "solution", subId: "method" },
-  { id: "solution-character", mainId: "solution", subId: "character" },
+  { id: "solution-product", mainId: "solution" },
+  { id: "solution-method", mainId: "solution" },
+  { id: "solution-character", mainId: "solution" },
   { id: "team", mainId: "team" },
   { id: "vision", mainId: "vision" },
-];
-
-const solutionSubsections: { id: SolutionSubsectionId; label: string; targetId: ObservedSectionId }[] = [
-  { id: "product", label: "产品机制", targetId: "solution-product" },
-  { id: "method", label: "心理技术", targetId: "solution-method" },
-  { id: "character", label: "陪伴角色", targetId: "solution-character" },
 ];
 
 function sectionIndexLabel(index: number) {
@@ -85,7 +78,6 @@ export default function SectionNavigator() {
 
   const activeConfig = getObservedConfig(activeObservedId);
   const activeMainId = activeConfig.mainId;
-  const activeSolutionSubsection = activeConfig.subId;
   const showNavigator = firstSectionHasEntered && !footerHasEntered;
 
   useEffect(() => {
@@ -198,9 +190,6 @@ export default function SectionNavigator() {
         {mainSections.map((section, index) => {
           const isActive = section.id === activeMainId;
           const indexLabel = sectionIndexLabel(index);
-          const activeSubsection = solutionSubsections.find(
-            (subsection) => subsection.id === activeSolutionSubsection,
-          );
 
           return (
             <li key={section.id}>
@@ -236,50 +225,8 @@ export default function SectionNavigator() {
                   <span className="mt-1.5 block whitespace-nowrap text-[13px] font-semibold leading-none tracking-normal text-ink">
                     {section.label}
                   </span>
-                  {section.id === "solution" && activeSubsection && (
-                    <span className="mt-2 block whitespace-nowrap text-[12px] font-medium leading-none text-ink-soft">
-                      03.{solutionSubsections.findIndex((subsection) => subsection.id === activeSubsection.id) + 1} {activeSubsection.label}
-                    </span>
-                  )}
                 </span>
               </button>
-
-              {section.id === "solution" && isActive && (
-                <div className="mt-2 space-y-2 pl-2">
-                  {solutionSubsections.map((subsection) => {
-                    const isSubActive = subsection.id === activeSolutionSubsection;
-
-                    return (
-                      <button
-                        key={subsection.id}
-                        type="button"
-                        aria-label={`跳转到解决方案子章节：${subsection.label}`}
-                        tabIndex={showNavigator ? 0 : -1}
-                        onClick={() => handleNavigate(subsection.targetId, subsection.targetId)}
-                        className="group/sub relative flex h-2.5 w-8 items-center rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ink/25 focus-visible:ring-offset-4 focus-visible:ring-offset-white"
-                      >
-                        <span
-                          aria-hidden="true"
-                          className={[
-                            "block transition-[width,background-color,opacity] duration-[180ms] ease-in-out",
-                            isSubActive
-                              ? "h-0.5 w-5 bg-ink opacity-90 group-hover/sub:w-6"
-                              : "h-px w-2 bg-line opacity-80 group-hover/sub:w-4 group-hover/sub:bg-ink-faint",
-                          ].join(" ")}
-                        />
-                        <span className="pointer-events-none absolute left-10 top-1/2 min-w-[112px] -translate-y-1/2 rounded-md border border-line bg-white px-3 py-2 text-left opacity-0 shadow-[0_6px_18px_-16px_rgba(39,51,31,0.38)] transition-opacity duration-[180ms] ease-in-out group-hover/sub:opacity-100 group-focus-visible/sub:opacity-100">
-                          <span className="block text-[11px] font-medium leading-none tracking-[0.12em] text-ink-faint">
-                            03.{solutionSubsections.findIndex((item) => item.id === subsection.id) + 1}
-                          </span>
-                          <span className="mt-1.5 block whitespace-nowrap text-[13px] font-semibold leading-none text-ink">
-                            {subsection.label}
-                          </span>
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
             </li>
           );
         })}

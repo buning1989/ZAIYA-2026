@@ -9,7 +9,7 @@ export type Member = {
 export const navLinks = [
   { label: "现实缺口", href: "#needs" },
   { label: "用户困境", href: "#pain" },
-  { label: "在呀方案", href: "#solution" },
+  { label: "在呀 ZÀIYA", href: "#solution" },
   { label: "关于团队", href: "#team" },
   { label: "未来愿景", href: "#vision" },
 ];

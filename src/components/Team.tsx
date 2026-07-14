@@ -73,28 +73,6 @@ export default function Team() {
           </p>
         </Reveal>
 
-        <Reveal delay={0.18}>
-          <div className="mt-12 md:mt-14">
-            <div className="max-w-[760px]">
-              <p className="text-[15px] leading-relaxed text-ink-soft md:text-[16px]">
-                从纸笔到一个 App，每一次都在降低门槛，也更接近真实生活。
-              </p>
-            </div>
-
-            <div className="mt-7 hidden w-full items-stretch gap-4 md:flex">
-              {practices.map((item) => (
-                <PracticeCard key={item.no} item={item} />
-              ))}
-            </div>
-
-            <div className="mt-7 grid grid-cols-1 gap-4 md:hidden">
-              {practices.map((item) => (
-                <PracticeCard key={item.no} item={item} />
-              ))}
-            </div>
-          </div>
-        </Reveal>
-
         <div className="mt-12 grid gap-5 md:mt-14 md:grid-cols-2 md:gap-6">
           {team.map((member, index) => (
             <Reveal key={member.name} delay={0.22 + index * 0.04}>
@@ -123,6 +101,28 @@ export default function Team() {
             </Reveal>
           ))}
         </div>
+
+        <Reveal delay={0.18}>
+          <div className="mt-12 md:mt-14">
+            <div className="max-w-[760px]">
+              <p className="text-[15px] leading-relaxed text-ink-soft md:text-[16px]">
+                从纸笔到一个 App，每一次都在降低门槛，也更接近真实生活。
+              </p>
+            </div>
+
+            <div className="mt-7 hidden w-full items-stretch gap-4 md:flex">
+              {practices.map((item) => (
+                <PracticeCard key={item.no} item={item} />
+              ))}
+            </div>
+
+            <div className="mt-7 grid grid-cols-1 gap-4 md:hidden">
+              {practices.map((item) => (
+                <PracticeCard key={item.no} item={item} />
+              ))}
+            </div>
+          </div>
+        </Reveal>
 
         <Reveal delay={0.3}>
           <p className="mx-auto mt-9 max-w-2xl text-center text-[16px] font-semibold leading-relaxed tracking-tight text-accent-deep md:mt-10 md:text-[18px]">
