@@ -42,7 +42,7 @@ export const HOMEPAGE_ANIMATION_CONFIGS: HomepageAnimationConfig[] = [
     startMinutes: 360, // 06:00
     endMinutes: 569, // 09:29
     src: "/assets/homepage-animations/今天有什么小小的好事发生吗？.webm",
-    bubbleText: "今天有什么小小\n的好事发生吗？",
+    bubbleText: "今天有什么小小的好事发生吗？",
   },
   {
     phase: "forenoon",
@@ -63,7 +63,7 @@ export const HOMEPAGE_ANIMATION_CONFIGS: HomepageAnimationConfig[] = [
     startMinutes: 900, // 15:00
     endMinutes: 1049, // 17:29
     src: "/assets/homepage-animations/今天有什么小小的好事发生吗？.webm",
-    bubbleText: "今天有什么小小\n的好事发生吗？",
+    bubbleText: "今天有什么小小的好事发生吗？",
   },
   {
     phase: "dusk",
