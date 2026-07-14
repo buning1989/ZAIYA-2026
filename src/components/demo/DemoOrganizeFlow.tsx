@@ -35,10 +35,10 @@ const RECORD_DAYS = "10/14 天";
 const CREATED_DATE = "2026 年 7 月 18 日";
 
 const COMMUNICATION_POINTS: string[] = [
-  "入睡时间比两周前有所提前，但仍有波动",
-  "饮食状态不稳定，有时会错过正餐",
-  "情绪压力较大时，曾出现哭泣和喘不上气",
-  "我什么时候能回学校上课？",
+  "入睡时间近 7 天平均 00:20（前 7 天 01:40）",
+  "记录到正餐 21 次，跳过 9 次（10 天）",
+  "哭泣 4 次、喘不上气 2 次；均记录于早间时段",
+  "希望讨论下一步返校安排",
 ];
 
 const DISCLAIMER =
@@ -112,14 +112,6 @@ export default function DemoOrganizeFlow() {
                   </span>
                   <span className="text-[14px] leading-relaxed text-ink">
                     {RECORD_DATE}
-                  </span>
-                </div>
-                <div className="flex items-baseline gap-4">
-                  <span className="w-16 shrink-0 text-[12px] text-ink-faint">
-                    记录天数
-                  </span>
-                  <span className="text-[14px] leading-relaxed text-ink">
-                    {RECORD_DAYS}
                   </span>
                 </div>
                 <div className="flex items-baseline gap-4">
@@ -236,14 +228,6 @@ export default function DemoOrganizeFlow() {
                   </span>
                   <span className="text-[14px] leading-relaxed text-ink">
                     {RECORD_DATE}
-                  </span>
-                </div>
-                <div className="flex items-baseline gap-4">
-                  <span className="w-16 shrink-0 text-[12px] text-ink-faint">
-                    记录天数
-                  </span>
-                  <span className="text-[14px] leading-relaxed text-ink">
-                    {RECORD_DAYS}
                   </span>
                 </div>
                 <div className="flex items-baseline gap-4">
