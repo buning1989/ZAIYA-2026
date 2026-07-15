@@ -8,7 +8,7 @@
  * 4. 已加载缓存保留，返回上一节点不重复下载（由 mediaPreloader 去重）。
  * 5. 不改变 Demo 剧情、时间线和页面视觉。
  *
- * 节点 ID 命名规则：phase + index，如 "day1-0"、"day1-summary"、"week2-intro"、"day2-0"。
+ * 节点 ID 命名规则：phase + index，如 "day1-0"、"week2-intro"、"day2-0"。
  */
 
 import {
@@ -27,7 +27,6 @@ import { preloadVideo, preloadImage, preloadAudio } from "@/lib/mediaPreloader";
 export type GuidedPhase =
   | "intro"
   | "day1"
-  | "day1-summary"
   | "week2-intro"
   | "day2"
   | "guided-result"
@@ -84,8 +83,6 @@ const DAY1_4: NodeResources = {
   videos: [DIALOGUE_VIDEOS.idle],
 };
 
-const DAY1_SUMMARY: NodeResources = {};
-
 const WEEK2_INTRO: NodeResources = {};
 
 const DAY2_0: NodeResources = {
@@ -136,8 +133,6 @@ function getNodeKey(
       return "intro";
     case "day1":
       return `day1-${day1Index}`;
-    case "day1-summary":
-      return "day1-summary";
     case "week2-intro":
       return "week2-intro";
     case "day2":
@@ -159,7 +154,6 @@ const NODE_RESOURCES: Record<string, NodeResources> = {
   "day1-2": DAY1_2,
   "day1-3": DAY1_3,
   "day1-4": DAY1_4,
-  "day1-summary": DAY1_SUMMARY,
   "week2-intro": WEEK2_INTRO,
   "day2-0": DAY2_0,
   "day2-1": DAY2_1,
@@ -183,8 +177,6 @@ export function getNextNodeKey(
       return "day1-0";
     case "day1":
       if (day1Index < day1Length - 1) return `day1-${day1Index + 1}`;
-      return "day1-summary";
-    case "day1-summary":
       return "week2-intro";
     case "week2-intro":
       return "day2-0";

@@ -25,13 +25,8 @@ export default function TwoWeekTransition() {
         小晨开始主动使用这些能力
       </h1>
 
-      <p className="mt-6 text-center text-[18px] leading-[1.7] text-ink-soft">变化还没有稳定发生。</p>
-      <p className="mt-3 text-center text-[18px] leading-[1.7] text-ink-soft">
-        但在呀 ZÀIYA 已经不再只在小晨崩溃时出现。
-      </p>
-      <p className="mt-3 text-center text-[18px] leading-[1.7] text-ink-soft">
-        小晨开始主动记录、整理、回看，也开始尝试理解自己正在经历什么。
-      </p>
+      <p className="mt-6 text-center text-[18px] leading-[1.7] text-ink-soft">变化还不稳定，但在呀已经不只在她崩溃时出现。</p>
+      <p className="mt-3 text-center text-[18px] leading-[1.7] text-ink-soft">它持续识别小晨在情绪、饮食、学习和睡眠中卡住的环节，陪她迈出下一步。</p>
     </div>
   );
 }

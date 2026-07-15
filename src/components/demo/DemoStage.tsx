@@ -6,7 +6,6 @@ import GuidedModeSwitch from "./GuidedModeSwitch";
 import GuidedStoryPanel from "./GuidedStoryPanel";
 import GuidedDemoControls, { NavArrow } from "./GuidedDemoControls";
 import XiaochenCaseIntro from "./XiaochenCaseIntro";
-import DayOneSummaryPage from "./DayOneSummaryPage";
 import TwoWeekTransition from "./TwoWeekTransition";
 import GuidedCaseResultPage from "./GuidedCaseResultPage";
 import GuidedProductValuePage from "./GuidedProductValuePage";
@@ -34,7 +33,6 @@ type Props = {
 
 /* —— 阶段页：无手机 Demo、无分页圆点，但保留左右箭头 */
 const PHASE_PAGES: GuidedPhase[] = [
-  "day1-summary",
   "week2-intro",
   "guided-result",
   "guided-product-value",
@@ -71,7 +69,7 @@ const SWIPE_THRESHOLD = 50;
  *
  * 从 UnifiedDemoStage 拆分而来，移除所有 mode=== 条件判断。
  * 仅承载案例演示（guided）的线性叙事流程：
- *   intro → day1 → day1-summary → week2-intro → day2 → guided-result → guided-product-value
+ *   intro → day1 → week2-intro → day2 → guided-result → guided-product-value
  *
  * 导航：左右箭头 / 键盘 ← → / 移动端左右滑动
  * 无 CTA 按钮推进流程（案例结果页主按钮除外，与右箭头等价）。
@@ -130,10 +128,8 @@ export default function DemoStage({ onReturnHome, onSwitchToFree }: Props) {
       setDay1Index(0);
       setPhase("day1");
     } else if (phase === "day1") {
-      if (atEnd) setPhase("day1-summary");
+      if (atEnd) setPhase("week2-intro");
       else setDay1Index((i) => Math.min(i + 1, xiaochenDay1Scenario.steps.length - 1));
-    } else if (phase === "day1-summary") {
-      setPhase("week2-intro");
     } else if (phase === "week2-intro") {
       setDay2Index(0);
       setPhase("day2");
@@ -150,11 +146,9 @@ export default function DemoStage({ onReturnHome, onSwitchToFree }: Props) {
     if (phase === "day1") {
       if (atStart) setPhase("intro");
       else setDay1Index((i) => Math.max(i - 1, 0));
-    } else if (phase === "day1-summary") {
+    } else if (phase === "week2-intro") {
       setDay1Index(xiaochenDay1Scenario.steps.length - 1);
       setPhase("day1");
-    } else if (phase === "week2-intro") {
-      setPhase("day1-summary");
     } else if (phase === "day2") {
       if (atStart) setPhase("week2-intro");
       else setDay2Index((i) => Math.max(i - 1, 0));
@@ -179,7 +173,6 @@ export default function DemoStage({ onReturnHome, onSwitchToFree }: Props) {
   );
 
   const showIntro = phase === "intro";
-  const showDay1Summary = phase === "day1-summary";
   const showWeek2Intro = phase === "week2-intro";
   const showGuidedResult = phase === "guided-result";
   const showGuidedProductValue = phase === "guided-product-value";
@@ -335,16 +328,14 @@ export default function DemoStage({ onReturnHome, onSwitchToFree }: Props) {
     () =>
       showIntro
         ? "intro"
-        : showDay1Summary
-          ? "day1-summary"
-          : showWeek2Intro
-            ? "week2-intro"
-            : showGuidedResult
-              ? "guided-result"
-              : showGuidedProductValue
-                ? "guided-product-value"
-                : "stage",
-    [showIntro, showDay1Summary, showWeek2Intro, showGuidedResult, showGuidedProductValue],
+        : showWeek2Intro
+          ? "week2-intro"
+          : showGuidedResult
+            ? "guided-result"
+            : showGuidedProductValue
+              ? "guided-product-value"
+              : "stage",
+    [showIntro, showWeek2Intro, showGuidedResult, showGuidedProductValue],
   );
 
   return (
@@ -403,18 +394,6 @@ export default function DemoStage({ onReturnHome, onSwitchToFree }: Props) {
             >
               <div className="lg:px-20">
                 <XiaochenCaseIntro />
-              </div>
-            </motion.div>
-          ) : showDay1Summary ? (
-            <motion.div
-              key="day1-summary"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.28, ease: SOFT_EASE }}
-            >
-              <div className="lg:px-20">
-                <DayOneSummaryPage />
               </div>
             </motion.div>
           ) : showWeek2Intro ? (
