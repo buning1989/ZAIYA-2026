@@ -22,11 +22,15 @@
 export type Gender = "male" | "female" | "other";
 
 /* —— Demo 参考日期 ——
- * Demo 的"当前"锚定在 2026-07-13（第一天案例 2026-07-12 之后），用于：
+ * Demo 阶段的"当前"锚定日期，用于：
  *   - 年龄推导（calculateAge 默认参考日期）
  *   - 保证 Demo 展示不随真实系统日期漂移
+ *
+ * 固定剧情的参考日为 Day 2（2026-05-30），见
+ *   src/components/demo/scenarios/xiaochenGuidedTimeConfig.ts
+ *
  * 上线时改为 new Date() 即可。 */
-export const DEMO_REFERENCE_DATE = new Date("2026-07-13T00:00:00+08:00");
+export const DEMO_REFERENCE_DATE = new Date("2026-05-30T00:00:00+08:00");
 
 /* —— 基础资料 ——
  * 注意：不再包含 age 字段。年龄统一由 calculateAge(birthDate) 推导，
@@ -105,7 +109,7 @@ export type UserProfileFlat = UserProfile & {
 /* =========================================================
  * 默认资料解析（演示 / 体验各自独立实例，引用隔离）
  * =======================================================
- * 小晨：15 岁（2026-07 时由 birthDate 2010-09-12 推导得 15 周岁），高一
+ * 小晨：16 岁（由 birthDate 2009-09-12 推导得 16 周岁），高二
  * 演示模式与体验模式各自拥有独立的默认用户资料实例，
  * 由 App 调度器在挂载 Shell 前同步设置当前存储模式。
  * landing 模式不读取业务数据，回退到体验模式默认资料仅作兜底。

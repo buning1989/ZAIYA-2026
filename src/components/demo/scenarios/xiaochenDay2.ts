@@ -1,20 +1,23 @@
 /* —— 小晨第二周案例脚本（使用产品两周后的一天）——
  * 5 个节点串联"从被动看见到主动使用"的一天。
  *
- * 所有文案严格来自最新剧情文件：
- *   /Users/ning/Downloads/小晨DEMO演示第二周第一天剧情线.md
+ * 案例日期统一锚点为 2026-05-30（Day 1 后 14 天，使用两周后的一天）。
  *
  * 本轮只建立数据结构和占位场景，不开发各节点内部的具体产品界面。
  * 后续任务会逐个替换占位组件为真实产品场景。
+ *
+ * 复诊口径调整：
+ *   - Day 2 距离 7-18 复诊较远，不出现「明天复诊」「复诊前一晚」等文案；
+ *   - 「帮我整理」节点改为「为之后和王医生沟通时，先把最近发生的事整理下来」。
  */
 
 import type { GuidedScenario } from "../types";
+import { makeDay2Date } from "./xiaochenGuidedTimeConfig";
 
-/** 案例日期统一锚点（2026-07-26，距第一天约两周，周日，北京时间） */
-const CASE_DATE = "2026-07-26";
-
+/** 案例日期统一锚点：2026-05-30（Day 1 后 14 天，使用两周后的一天）。
+ *  日期由 xiaochenGuidedTimeConfig 统一管理。 */
 function makeDate(hhmm: string): Date {
-  return new Date(`${CASE_DATE}T${hhmm}:00+08:00`);
+  return makeDay2Date(hhmm);
 }
 
 export const xiaochenDay2Scenario: GuidedScenario = {
@@ -69,7 +72,7 @@ export const xiaochenDay2Scenario: GuidedScenario = {
       time: "15:30",
       title: "把两周的自己，整理成一份",
       narrative: [
-        "中午，妈妈提醒她明天复诊、已经跟学校请了假。请假意味着又缺一天课，也意味着离\u201c回去上学\u201d更近一点——这份矛盾，成了她一整天的底色。下午状态平稳时，小晨主动打开\u201c帮我整理\u201d，为明天和王医生的复诊做准备。在系统整理好的沟通重点之外，她补上了自己最想问的一句：\u201c我什么时候能回学校上课？\u201d",
+        "下午状态平稳时，小晨主动打开\u201c帮我整理\u201d，为之后和王医生沟通时，先把最近发生的事整理下来。在系统整理好的沟通重点之外，她补上了自己最想问的一句：\u201c我什么时候能回学校上课？\u201d",
       ],
       principles: "叙事重建 × 用户授权 × 结构化临床沟通 × 隐私边界",
       explanation: "把散落两周的自己收拢成一份能替她说话的东西，交给谁、说什么，都由她决定。",

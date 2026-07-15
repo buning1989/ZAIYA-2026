@@ -6,6 +6,9 @@
  *
  * 这份数据只用于案例演示，不影响真实用户数据。
  * 表达边界：不使用「治好/康复/诊断报告」，明确仍然困难但齿轮开始咬合。
+ *
+ * 日期统一锚点为 2026-05-30（Day 2），夸夸卡日期为 5-16 ~ 5-30 之间的快照。
+ * 不出现 7 月 18、26、27 等未来或穿越日期。
  */
 
 import {
@@ -19,6 +22,11 @@ import type {
   OrganizeDemoConfig,
   PraiseDemoConfig,
 } from "../types";
+import {
+  XIAOCHEN_GUIDED_DAY2_DATE,
+  XIAOCHEN_GUIDED_DATA_START,
+  XIAOCHEN_GUIDED_DATA_END,
+} from "./xiaochenGuidedTimeConfig";
 
 /** Step 7｜18:50 夸夸自己：被误解后，把做成的事还给她 */
 export const day2PraiseDemo: PraiseDemoConfig = {
@@ -29,43 +37,43 @@ export const day2PraiseDemo: PraiseDemoConfig = {
     {
       id: "day2-organize-card",
       text: "今天把这两周整理好了，还写下了最想问医生的那句话。",
-      dateLabel: "7月26日",
+      dateLabel: "5月30日",
       gradientId: "g4",
     },
     {
       id: "day2-school-card",
       text: "我今天下午去了学校，把作业交了。",
-      dateLabel: "7月26日",
+      dateLabel: "5月30日",
       gradientId: "g1",
     },
     {
       id: "day2-cloud-card",
       text: "今天的云彩很漂亮，狗子也很可爱",
-      dateLabel: "7月25日",
+      dateLabel: "5月29日",
       gradientId: "g2",
     },
     {
       id: "day2-bread-card",
       text: "中午主动吃了一个面包",
-      dateLabel: "7月24日",
+      dateLabel: "5月28日",
       gradientId: "g3",
     },
     {
       id: "day2-small-win-card",
       text: "真是每一次小胜",
-      dateLabel: "7月23日",
+      dateLabel: "5月27日",
       gradientId: "g4",
     },
     {
       id: "day2-paper-card",
       text: "把卷子按顺序码好了",
-      dateLabel: "7月22日",
+      dateLabel: "5月26日",
       gradientId: "g1",
     },
     {
       id: "day2-night-card",
       text: "今天好像没那么糟",
-      dateLabel: "7月21日",
+      dateLabel: "5月25日",
       gradientId: "g2",
     },
   ],
@@ -73,12 +81,12 @@ export const day2PraiseDemo: PraiseDemoConfig = {
 
 /** Step 8｜22:30 回头看看：用真实回头看看结构展示两周后当天的记录 */
 const day2LookbackDemo: LookbackDemoConfig = {
-  referenceDate: "2026-07-26T22:30:00+08:00",
+  referenceDate: "2026-05-30T22:30:00+08:00",
   initialTimeMode: "week",
   initialScene: "activity",
   readOnly: true,
   dataOverrides: {
-    "2026-07-26": {
+    "2026-05-30": {
       activityLevel: 2,
       activityContent: "去学校交作业",
       activityDuration: "约 30 分钟",
@@ -113,14 +121,14 @@ const day2LookbackDemo: LookbackDemoConfig = {
         },
       ],
     },
-    "2026-07-25": {
+    "2026-05-29": {
       activityLevel: 1,
       activityContent: "整理书桌",
       activityDuration: "约 10 分钟",
       activityFeeling: "还可以",
       activityRecordTime: "21:20",
     },
-    "2026-07-24": {
+    "2026-05-28": {
       meals: { breakfast: "unknown", lunch: "yes", dinner: "yes" },
       mealEntries: [
         {
@@ -144,8 +152,9 @@ const day2OrganizeTopics: CommunicationTopic[] = [
     evidenceSummary: [
       "最近 14 天内多次记录早晨起床困难",
       "近几天醒来后开始主动打开应用",
-      "7 月 26 日早晨没有返校，但能继续讨论一个替代目标",
+      "5 月 30 日早晨没有返校，但能继续讨论一个替代目标",
     ],
+    evidenceDates: ["2026-05-30"],
     selected: true,
     edited: false,
     allowedInMaterial: true,
@@ -153,13 +162,14 @@ const day2OrganizeTopics: CommunicationTopic[] = [
   {
     id: "day2-topic-food-action",
     title: "饭点回应和现实行动开始出现",
-    content: "她开始能在饭点主动说吃一点，也在 7 月 26 日下午去学校交了作业。",
+    content: "她开始能在饭点主动说吃一点，也在 5 月 30 日下午去学校交了作业。",
     sourceType: "system_summary",
     evidenceSummary: [
-      "7 月 26 日 12:30 记录：午餐吃了一个面包",
-      "7 月 26 日 15:30 记录：去学校交作业，往返约 30 分钟",
+      "5 月 30 日 12:30 记录：午餐吃了一个面包",
+      "5 月 30 日 15:30 记录：去学校交作业，往返约 30 分钟",
       "这些行动仍然很小，但已经从讨论落到现实生活里",
     ],
+    evidenceDates: ["2026-05-30"],
     selected: true,
     edited: false,
     allowedInMaterial: true,
@@ -170,10 +180,11 @@ const day2OrganizeTopics: CommunicationTopic[] = [
     content: "家人可能仍然只看到她躺着，但这两周已经出现一些具体完成过的事。",
     sourceType: "system_summary",
     evidenceSummary: [
-      "7 月 26 日傍晚因“家人没看见下午去学校”产生委屈",
+      "5 月 30 日傍晚因“家人没看见下午去学校”产生委屈",
       "冲突后她能更快回到应用里求助和整理事实",
       "下次沟通可讨论如何让小行动被看见，而不是只讨论没做到的部分",
     ],
+    evidenceDates: ["2026-05-30"],
     selected: true,
     edited: false,
     allowedInMaterial: true,
@@ -198,15 +209,15 @@ const day2OrganizeSession: CommunicationSession = {
     roleLabel: "精神科医生",
   },
   rangeKey: "14",
-  startDate: "2026-07-13",
-  endDate: "2026-07-26",
+  startDate: XIAOCHEN_GUIDED_DATA_START,
+  endDate: XIAOCHEN_GUIDED_DATA_END,
   totalDays: 14,
   recordedDays: 9,
   recordCategories: ["睡眠", "情绪", "饮食", "学校与家庭"],
   communicationTopics: day2OrganizeTopics,
   specialDisclosure: day2Disclosure,
   status: "completed",
-  createdAt: Date.parse("2026-07-26T22:40:00+08:00"),
+  createdAt: Date.parse(`${XIAOCHEN_GUIDED_DAY2_DATE}T22:40:00+08:00`),
 };
 
 /** Step 9｜帮我整理：用真实整理材料详情展示用户确认后的沟通材料 */

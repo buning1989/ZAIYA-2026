@@ -44,10 +44,10 @@ export default function DemoLookbackFlow() {
 
   const sleepTheme = themes.sleep;
 
-  /* Demo 固定参数 */
-  const fixedReferenceDate = new Date("2026-07-13T23:59:59+08:00");
-  const fixedWeekStartKey = "2026-06-30";
-  const fixedMonthKey = "2026-07";
+  /* Demo 固定参数 —— 对齐固定剧情时间配置（Day 2 = 2026-05-30） */
+  const fixedReferenceDate = new Date("2026-05-29T23:59:59+08:00");
+  const fixedWeekStartKey = "2026-05-16";
+  const fixedMonthKey = "2026-05";
   const sleepSceneIdx = 1; // scenes[1] = { key: "sleep", label: "入睡" }
 
   /* 每日列表：降序（最近一天在顶部），与体验模式 ScenePanel 一致 */
@@ -127,7 +127,7 @@ export default function DemoLookbackFlow() {
         <div className="mt-4 flex flex-col gap-3">
           {/* 月份分组标题 */}
           <div className="mb-1.5 px-1 text-[12px] font-medium text-ink-faint">
-            2026年7月
+            2026年5月
           </div>
           {/* 当月详情卡 */}
           <div className="overflow-hidden rounded-[20px] border border-line-soft bg-white shadow-[0_1px_3px_-1px_rgba(0,0,0,0.04)]">

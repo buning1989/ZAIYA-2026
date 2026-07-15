@@ -6,6 +6,8 @@
  *   4. 20:00 一起发呆
  *   5. 01:30 反刍失眠
  *
+ * 案例日期统一锚点为 2026-05-16（小晨开始使用在呀的第一天），
+ * 与自由体验模式开始使用日期一致。
  * 所有文案严格来自最新剧情线文档，不做自行概括或改写。
  */
 
@@ -15,12 +17,12 @@ import type {
   DialogTimeItem,
   GuidedScenario,
 } from "../types";
+import { makeDay1Date } from "./xiaochenGuidedTimeConfig";
 
-/** 案例日期统一锚点（2026-07-12，北京时间） */
-const CASE_DATE = "2026-07-12";
-
+/** 案例日期统一锚点：2026-05-16（小晨开始使用在呀的第一天）。
+ *  日期由 xiaochenGuidedTimeConfig 统一管理。 */
 function makeDate(hhmm: string): Date {
-  return new Date(`${CASE_DATE}T${hhmm}:00+08:00`);
+  return makeDay1Date(hhmm);
 }
 
 function msg(

@@ -3,7 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronLeft, FolderOpen } from "lucide-react";
 import PhoneStatusBar from "@/components/PhoneStatusBar";
 
-/* —— 第二周 15:30 节点：复诊沟通确认单 → 预览 演示流程 ——
+/* —— 第二周 15:30 节点：沟通确认单 → 预览 演示流程 ——
  *
  * 状态 A（confirm）：沟通确认单
  *   - 沟通对象、记录日期、记录天数、创建日期
@@ -22,18 +22,26 @@ import PhoneStatusBar from "@/components/PhoneStatusBar";
  *
  * UI 对齐：与「帮我整理」体验模块 DoneStep 沟通确认单 UI 保持一致——
  * 单一圆角卡片 + 分割线分隔区块 + 相同的信息行/编号列表样式。
+ *
+ * 复诊口径调整：
+ *   - 不出现「复诊沟通单」「复诊前一晚」「明天复诊」等文案；
+ *   - 标题改为「沟通确认单」，定位为「为之后和王医生沟通时，先把最近发生的事整理下来」；
+ *   - 数据范围统一为 2026-05-16 ~ 2026-05-30（固定剧情数据范围）；
+ *   - 创建时间不超过 2026-05-30。
  */
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
 type FlowState = "confirm" | "preview";
 
-/* 固定 Demo 数据 —— 对齐剧情文件 */
+/* 固定 Demo 数据 —— 对齐固定剧情时间配置
+ *   - 记录日期：5 月 16 日—5 月 30 日（固定剧情数据范围）
+ *   - 创建日期：2026 年 5 月 30 日（不超过 Day 2） */
 const CONTACT_NAME = "王医生";
 const CONTACT_ROLE = "精神科医生";
-const RECORD_DATE = "7 月 3 日—7 月 17 日";
+const RECORD_DATE = "5 月 16 日—5 月 30 日";
 const RECORD_DAYS = "10/14 天";
-const CREATED_DATE = "2026 年 7 月 18 日";
+const CREATED_DATE = "2026 年 5 月 30 日";
 
 const COMMUNICATION_POINTS: string[] = [
   "入睡时间比两周前有所提前，但仍有波动",
@@ -194,7 +202,7 @@ export default function DemoOrganizeFlow() {
                 <ChevronLeft className="h-6 w-6" />
               </button>
               <h1 className="text-[18px] font-medium leading-relaxed tracking-tight text-ink">
-                复诊沟通单
+                沟通确认单
               </h1>
             </div>
             <button

@@ -504,7 +504,7 @@ export default function DemoStage({ onReturnHome, onSwitchToFree }: Props) {
                       overlay={<DemoSleepRecordFlow />}
                     />
                   ) : isDay2OrganizeNode ? (
-                    /* 第二周 15:30：复诊沟通确认单 → 预览（内部两状态流程） */
+                    /* 第二周 15:30：沟通确认单 → 预览（内部两状态流程） */
                     <DemoPhoneFrame
                       demoState={step.demoState}
                       overlay={<DemoOrganizeFlow />}
