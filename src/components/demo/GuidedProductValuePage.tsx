@@ -84,7 +84,7 @@ export default function GuidedProductValuePage({
             <span className="inline-block w-fit rounded-full border border-line-soft bg-white px-2.5 py-0.5 text-[11px] tracking-[0.04em] text-ink">
               {card.tag}
             </span>
-            <p className="mt-3 text-[16px] font-normal leading-[1.4] text-ink">
+            <p className="mt-3 text-[16px] font-semibold leading-[1.4] text-ink">
               {card.title}
             </p>
             <div className="mt-3 space-y-2 text-[14px] leading-[1.75] text-ink-soft">

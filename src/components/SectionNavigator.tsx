@@ -180,7 +180,7 @@ export default function SectionNavigator() {
       aria-label="章节目录"
       aria-hidden={!showNavigator}
       className={[
-        "fixed left-6 top-[calc(50vh-76px)] z-30 hidden transition-[opacity,transform] duration-200 ease-out xl:flex",
+        "fixed right-[max(32px,calc((100vw-1120px)/2-64px))] top-[calc(50vh-76px)] z-30 hidden flex-col items-start transition-[opacity,transform] duration-200 ease-out xl:flex",
         showNavigator
           ? "pointer-events-auto translate-y-0 opacity-100"
           : "pointer-events-none translate-y-1 opacity-0",
@@ -218,7 +218,7 @@ export default function SectionNavigator() {
                   ].join(" ")}
                 />
 
-                <span className="pointer-events-none absolute left-12 top-1/2 min-w-[124px] -translate-y-1/2 rounded-md border border-line bg-white px-3 py-2 text-left opacity-0 shadow-[0_6px_18px_-16px_rgba(39,51,31,0.38)] transition-opacity duration-[180ms] ease-in-out group-hover:opacity-100 group-focus-visible:opacity-100">
+                <span className="pointer-events-none absolute right-12 top-1/2 min-w-[124px] -translate-y-1/2 rounded-md border border-line bg-white px-3 py-2 text-left opacity-0 shadow-[0_6px_18px_-16px_rgba(39,51,31,0.38)] transition-opacity duration-[180ms] ease-in-out group-hover:opacity-100 group-focus-visible:opacity-100">
                   <span className="block text-[11px] font-medium leading-none tracking-[0.14em] text-ink-faint">
                     {indexLabel}
                   </span>

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import PhoneStatusBar from "@/components/PhoneStatusBar";
 import {
   TimeModeTabs,
   TimeRangeSwitcher,
@@ -60,6 +61,9 @@ export default function DemoLookbackFlow() {
       animate={{ opacity: 1 }}
       transition={{ duration: prefersReducedMotion ? 0 : 0.28, ease }}
     >
+      {/* iOS 风格状态栏 */}
+      <PhoneStatusBar />
+
       {/* === 顶部导航：返回按钮 + 标题 === */}
       <div className="flex items-center gap-3 px-5 pt-14 pb-3">
         <button

@@ -8,16 +8,26 @@ import {
   getLightRewardTitle,
   type LightRewardKind,
 } from "@/lib/lightReward";
-import { getLightRewardTargetPoint } from "@/lib/lightRewardGeometry";
+import {
+  buildLightParticlePath,
+  getLightRewardArrivalMs,
+  getLightRewardTargetPoint,
+} from "@/lib/lightRewardGeometry";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 const PARTICLE_COUNT = 3;
 const PARTICLE_START_S = 1.78;
-const PARTICLE_FLIGHT_S = 1.34;
+const PARTICLE_TRAVEL_S = 1.18;
+const PARTICLE_ABSORB_S = 0.18;
 const PARTICLE_DELAY_S = 0.045;
-const PARTICLE_LAND_AT = 0.84;
-const PARTICLE_ABSORB_AT = 0.93;
-const ARRIVE_MS = 3030;
+const PARTICLE_TOTAL_S = PARTICLE_TRAVEL_S + PARTICLE_ABSORB_S;
+const PARTICLE_LAND_PROGRESS = PARTICLE_TRAVEL_S / PARTICLE_TOTAL_S;
+const ARRIVE_MS = getLightRewardArrivalMs({
+  startSeconds: PARTICLE_START_S,
+  particleCount: PARTICLE_COUNT,
+  staggerSeconds: PARTICLE_DELAY_S,
+  travelSeconds: PARTICLE_TRAVEL_S,
+});
 const DONE_MS = 3500;
 const REDUCED_DONE_MS = 2850;
 const FEEDBACK_BOTTOM_OFFSET = 185;
@@ -210,43 +220,48 @@ export default function EnergyRewardFeedback({
                 const dy = geometry.target.y - geometry.origin.y;
                 const delay =
                   PARTICLE_START_S + index * PARTICLE_DELAY_S;
-                const flightTransition = {
+                const path = buildLightParticlePath(
+                  { x: dx, y: dy },
+                  { x: offset.x, y: offset.y },
+                );
+                const positionTransition = {
                   delay,
-                  duration: PARTICLE_FLIGHT_S,
-                  times: [
-                    0,
-                    0.1,
-                    0.68,
-                    PARTICLE_LAND_AT,
-                    PARTICLE_ABSORB_AT,
-                    1,
-                  ],
-                  ease,
+                  duration: PARTICLE_TRAVEL_S,
+                  times: path.times,
+                  ease: "linear" as const,
                 };
 
                 return (
                   <motion.div
                     key={`${event.id}-${index}`}
-                    initial={{ x: 0, y: 0, opacity: 0, scale: 0.72 }}
+                    initial={{
+                      x: path.x[0],
+                      y: path.y[0],
+                      opacity: 0,
+                      scale: 0.72,
+                      rotate: offset.rotate,
+                    }}
                     animate={{
-                      x: [0, offset.x, dx * 0.88, dx, dx, dx],
-                      y: [0, offset.y, dy * 0.88, dy, dy, dy],
+                      x: path.x,
+                      y: path.y,
                       opacity: 1,
-                      scale: [0.72, 1.12, 1, 0.92, 0.72, 0.18],
-                      rotate: [
-                        0,
-                        offset.rotate,
-                        offset.rotate * 0.55,
-                        0,
-                        0,
-                        0,
-                      ],
+                      scale: [0.72, 1.08, 0.92, 0.92, 0.18],
+                      rotate: 0,
                     }}
                     transition={{
-                      x: flightTransition,
-                      y: flightTransition,
-                      scale: flightTransition,
-                      rotate: flightTransition,
+                      x: positionTransition,
+                      y: positionTransition,
+                      scale: {
+                        delay,
+                        duration: PARTICLE_TOTAL_S,
+                        times: [0, 0.1, 0.35, PARTICLE_LAND_PROGRESS, 1],
+                        ease,
+                      },
+                      rotate: {
+                        delay,
+                        duration: PARTICLE_TRAVEL_S,
+                        ease,
+                      },
                       opacity: { delay, duration: 0.12, ease },
                     }}
                     data-light-reward-particle

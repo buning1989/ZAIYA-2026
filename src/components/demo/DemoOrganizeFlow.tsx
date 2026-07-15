@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronLeft, FolderOpen } from "lucide-react";
+import PhoneStatusBar from "@/components/PhoneStatusBar";
 
 /* —— 第二周 15:30 节点：复诊沟通确认单 → 预览 演示流程 ——
  *
@@ -59,6 +60,9 @@ export default function DemoOrganizeFlow() {
           exit={{ opacity: 0 }}
           transition={{ duration: prefersReducedMotion ? 0 : 0.28, ease }}
         >
+          {/* iOS 风格状态栏 */}
+          <PhoneStatusBar />
+
           {/* 顶部导航：对齐体验模块 DoneStep 导航栏（返回 + 标题 + 文件夹图标） */}
           <div className="flex items-center justify-between px-5 pt-14 pb-3">
             <div className="flex items-center gap-3">
@@ -175,6 +179,9 @@ export default function DemoOrganizeFlow() {
           exit={{ opacity: 0 }}
           transition={{ duration: prefersReducedMotion ? 0 : 0.28, ease }}
         >
+          {/* iOS 风格状态栏 */}
+          <PhoneStatusBar />
+
           {/* 顶部导航（对齐体验模块导航栏） */}
           <div className="flex items-center justify-between px-5 pt-14 pb-3">
             <div className="flex items-center gap-3">
