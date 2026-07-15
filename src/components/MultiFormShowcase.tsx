@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import AppMainSurface from "./AppMainSurface";
 import LazyVideo from "./LazyVideo";
 
 const ease = [0.22, 1, 0.36, 1] as const;
+const LOGICAL_APP_SCREEN_WIDTH = 390;
 
 type Surface = "app" | "widget" | "watch";
 const SURFACES: Surface[] = ["app", "widget", "watch"];
@@ -41,12 +42,54 @@ function formatTime(date: Date) {
   return `${hh}:${mm}`;
 }
 
+function useLogicalAppScreenScale() {
+  const screenRef = useRef<HTMLDivElement>(null);
+  const [metrics, setMetrics] = useState({ scale: 1, logicalHeight: 820 });
+
+  useLayoutEffect(() => {
+    const screen = screenRef.current;
+    if (!screen) return;
+
+    const update = () => {
+      const rect = screen.getBoundingClientRect();
+      const scale = rect.width / LOGICAL_APP_SCREEN_WIDTH;
+      if (scale <= 0) return;
+      setMetrics({
+        scale,
+        logicalHeight: rect.height / scale,
+      });
+    };
+
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(screen);
+    return () => observer.disconnect();
+  }, []);
+
+  return { screenRef, ...metrics };
+}
+
 /* —— 统一手机外框（轻薄边框） —— */
 function PhoneFrame({ children }: { children: React.ReactNode }) {
+  const { screenRef, scale, logicalHeight } = useLogicalAppScreenScale();
+
   return (
     <div className="rounded-[40px] border-[7px] border-ink bg-ink shadow-[0_8px_40px_-12px_rgba(0,0,0,0.18)]">
-      <div className="relative aspect-[9/19] overflow-hidden rounded-[33px] bg-white">
-        {children}
+      <div
+        ref={screenRef}
+        className="relative aspect-[9/18] overflow-hidden rounded-[33px] bg-white"
+      >
+        <div
+          className="absolute left-0 top-0"
+          style={{
+            width: LOGICAL_APP_SCREEN_WIDTH,
+            height: logicalHeight,
+            transform: `scale(${scale})`,
+            transformOrigin: "top left",
+          }}
+        >
+          {children}
+        </div>
       </div>
     </div>
   );
@@ -55,7 +98,7 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
 /* —— App 形态：完整手机 App 主界面 —— */
 function AppSurface() {
   return (
-    <div className="mx-auto w-[min(380px,calc(100vw-64px))] -translate-y-10">
+    <div className="absolute left-1/2 top-1/2 w-[min(342px,calc(100vw-64px),calc((100vh-64px)*0.45))] -translate-x-1/2 -translate-y-1/2">
       <PhoneFrame>
         <AppMainSurface mode="landing-preview" previewMode />
       </PhoneFrame>
@@ -221,7 +264,7 @@ export default function MultiFormShowcase() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.5, ease }}
-            className="w-full"
+            className="relative grid h-[560px] w-full place-items-center"
           >
             {surface === "app" && <AppSurface />}
             {surface === "widget" && <WidgetSurface />}
