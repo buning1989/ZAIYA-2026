@@ -196,7 +196,6 @@ function HomeBreathingMenuIcon({ className = "" }: { className?: string }) {
             reduceMotion
               ? undefined
               : {
-                  x2: [line.x2, line.x2 + line.grow, line.x2],
                   opacity: [0.82, 1, 0.86, 0.82],
                 }
           }
