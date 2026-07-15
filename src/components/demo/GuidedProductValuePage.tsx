@@ -33,31 +33,29 @@ type RelationCard = {
 
 const relationCards: RelationCard[] = [
   {
-    tag: "医疗｜明天",
-    title: "王医生会第一次看到这两周",
+    tag: "家庭",
+    title: "小晨和父母",
     body: (
       <>
-        <p>不是“她说她最近很累”，是十天的入睡时间、三餐记录、几次哭泣发生在什么时候。</p>
+        <p>父母从只看到结果，到逐渐理解过程，减少误解和冲突。</p>
       </>
     ),
   },
   {
-    tag: "家庭｜明天",
-    title: "妈妈第一次不用替她描述",
+    tag: "学校",
+    title: "小晨和老师",
     body: (
       <>
-        <p>诊室里的材料，是小晨自己带去的。</p>
-        <p>这两周过得怎么样，妈妈不用再猜。</p>
+        <p>老师更早看见她的困难，也更容易提供合适的节奏和支持。</p>
       </>
     ),
   },
   {
-    tag: "学校｜之后",
-    title: "老师可以早一点知道她卡在哪儿",
+    tag: "医疗",
+    title: "小晨和医生",
     body: (
       <>
-        <p>不是成绩，也不是请假天数——</p>
-        <p>是她哪几天连起床都没做到。</p>
+        <p>医生不只依赖一次门诊，也能了解更连续的生活状态。</p>
       </>
     ),
   },
@@ -69,16 +67,9 @@ export default function GuidedProductValuePage({
   return (
     <div className="mx-auto w-full max-w-[920px]">
       {/* —— A. 主标题 —— */}
-      <h1 className="text-center text-[26px] font-semibold leading-[1.5] text-ink">
-        接下来，会发生什么
+      <h1 className="text-center text-[15px] font-semibold leading-[1.5] text-ink">
+        小晨和身边的人，开始重新建立连接
       </h1>
-
-      {/* —— B. 副标题 —— */}
-      <p className="mt-6 text-center text-[17px] leading-[1.8] text-ink-soft">
-        这两周记下的东西，暂时只在小晨自己手里。
-        <br />
-        从明天开始，它会一件一件地，被交出去——每一次，都由她自己确认。
-      </p>
 
       {/* —— C. 三张并列支持交付卡片 —— */}
       <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5">
