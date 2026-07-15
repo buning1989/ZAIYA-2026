@@ -63,7 +63,7 @@ export default function ExperienceStage({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.28, ease: SOFT_EASE }}
           >
-            <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-[auto_400px] lg:justify-center lg:gap-x-20 lg:gap-y-0">
+            <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-[auto_minmax(280px,360px)] lg:justify-center lg:gap-x-16 lg:gap-y-0">
               <div className="order-2 justify-self-center lg:order-1">
                 <DemoPhoneFrame
                   appMode="experience"
