@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ArrowRight, Send } from "lucide-react";
 import ZaizaiVideo from "./ZaizaiVideo";
-import AppMainSurface, { PhoneStatusBar } from "./AppMainSurface";
+import AppMainSurface from "./AppMainSurface";
+import PhoneStatusBar from "./PhoneStatusBar";
 
 type Props = { onClose: () => void };
 

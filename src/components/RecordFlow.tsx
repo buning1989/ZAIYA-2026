@@ -28,7 +28,7 @@ import EnergyRewardFeedback, {
   type EnergyRewardEvent,
 } from "./EnergyRewardFeedback";
 import EnergyBadge from "./EnergyBadge";
-import { PhoneStatusBar } from "./AppMainSurface";
+import PhoneStatusBar from "./PhoneStatusBar";
 import { MoonPhaseIcon, type MoonPhaseLevel } from "./MoonPhaseIcon";
 import { calculateBMI, getUserProfile, grantEnergy } from "@/data/userProfile";
 import {

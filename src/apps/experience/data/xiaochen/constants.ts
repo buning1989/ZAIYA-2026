@@ -4,7 +4,7 @@
  * 修改此处的值会自动影响所有消费该常量的模块和 Selector。 */
 
 /** 体验模式 Mock 数据版本号 */
-export const EXPERIENCE_MOCK_DATA_VERSION = 2;
+export const EXPERIENCE_MOCK_DATA_VERSION = 3;
 
 /** 数据周期开始日期（YYYY-MM-DD） */
 export const PERIOD_START = "2026-06-15";
@@ -68,7 +68,7 @@ export const XIAOCHEN_UNRECORDED_DATE_KEYS = [
   "2026-07-16",
 ] as const;
 
-/** 漏服舍曲林日期 */
+/** 漏服喹硫平日期 */
 export const MISSED_MED_DATES = [
   "2026-06-19",
   "2026-06-28",
@@ -133,10 +133,10 @@ export const DOCTOR_ROLE = "精神科医生";
 export const DIAGNOSIS = "中度抑郁、重度焦虑";
 
 /** 当前用药 */
-export const MEDICATION_NAME = "舍曲林";
+export const MEDICATION_NAME = "喹硫平";
 export const MEDICATION_DOSE = "50mg";
 export const MEDICATION_FREQUENCY = "每日一次";
-export const MEDICATION_TIME = "早晨服用";
+export const MEDICATION_TIME = "睡前服用";
 
 /** 体重记录点数量 */
 export const WEIGHT_RECORD_COUNT = WEIGHT_RECORDS.length;

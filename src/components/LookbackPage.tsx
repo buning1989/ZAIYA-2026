@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 import { MoonPhaseIcon } from "./MoonPhaseIcon";
 import VoiceInputBar from "./VoiceInputBar";
+import PhoneStatusBar from "./PhoneStatusBar";
 import {
   buildMonthRange,
   buildWeekRange,
@@ -19,6 +20,8 @@ import {
 import { calculateBMI, getBMIRemark, getUserProfile } from "@/data/userProfile";
 import { getStorageMode } from "@/shared/storage/namespacedStorage";
 import {
+  getXiaochenAllowedMonths,
+  getXiaochenAllowedWeekStarts,
   getXiaochenReferenceDate,
   getXiaochenWeekRange,
   getXiaochenMonthRange,
@@ -27,7 +30,9 @@ import {
 /* —— 体验模式数据源切换（仅调整数据注入，不改变 UI/布局/交互）——
  * 体验模式使用小晨统一数据源（固定 33 天 / 24 记录日），
  * 演示模式保持原有 buildWeekRange / buildMonthRange 行为。 */
-const IS_EXPERIENCE_MODE = getStorageMode() === "experience";
+function isExperienceModeActive(): boolean {
+  return getStorageMode() === "experience";
+}
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -207,9 +212,9 @@ function parseMonthKey(key: string): { year: number; month: number } {
   const [y, m] = key.split("-").map(Number);
   return { year: y, month: m };
 }
-function monthLabelCN(key: string): string {
+function monthRangeLabelCN(key: string): string {
   const { year, month } = parseMonthKey(key);
-  return `${year}年${month}月`;
+  return `${year} 年 ${month} 月`;
 }
 
 /* —— 日期 key：YYYY-MM-DD（用于周状态）—— */
@@ -229,6 +234,27 @@ function weekRangeLabel(weekStartKey: string): string {
   return `${start.getMonth() + 1}.${start.getDate()} - ${end.getMonth() + 1}.${end.getDate()}`;
 }
 
+function canGoTime(
+  delta: number,
+  timeMode: TimeMode,
+  weekStartKey: string,
+  monthKey: string,
+  referenceDate: Date,
+): boolean {
+  if (timeMode === "week") {
+    const start = parseDateKey(weekStartKey);
+    const next = new Date(start);
+    next.setDate(next.getDate() + delta * 7);
+    const key = toDateKey(next);
+    return getXiaochenAllowedWeekStarts().includes(key);
+  }
+  const { year, month } = parseMonthKey(monthKey);
+  const next = new Date(year, month - 1 + delta, 1);
+  const key = toMonthKey(next.getFullYear(), next.getMonth() + 1);
+  const nowKey = toMonthKey(referenceDate.getFullYear(), referenceDate.getMonth() + 1);
+  return key <= nowKey && getXiaochenAllowedMonths().includes(key);
+}
+
 /* =========================================================
  * LookbackPage —— 单屏单场景 + 横滑切换
  * ======================================================= */
@@ -239,23 +265,38 @@ export default function LookbackPage({
   onBack: () => void;
   demoOptions?: LookbackDemoOptions;
 }) {
+  const isExperienceMode = isExperienceModeActive();
   const [fallbackReferenceDate] = useState(() =>
-    IS_EXPERIENCE_MODE ? getXiaochenReferenceDate() : new Date(),
+    isExperienceModeActive() ? getXiaochenReferenceDate() : new Date(),
   );
   const referenceDate = demoOptions?.referenceDate ?? fallbackReferenceDate;
-  // 时间模式：默认「按周查看」
+  // 自由体验默认展示月视图；固定剧情演示继续由 demoOptions 显式控制。
   const [timeMode, setTimeMode] = useState<TimeMode>(
-    () => demoOptions?.initialTimeMode ?? "week",
+    () =>
+      demoOptions
+        ? demoOptions.initialTimeMode ?? "week"
+        : isExperienceMode
+          ? "month"
+          : "week",
   );
   // 当前周起始（周一），默认本周
   const [currentWeekStart, setCurrentWeekStart] = useState<string>(() => {
-    return toDateKey(getWeekStart(referenceDate));
+    const fallback = toDateKey(getWeekStart(referenceDate));
+    if (!isExperienceMode || demoOptions) return fallback;
+    const allowed = getXiaochenAllowedWeekStarts();
+    return allowed.includes(fallback) ? fallback : allowed[allowed.length - 1] ?? fallback;
   });
   // 当前月份 key，默认本月
   const [currentMonth, setCurrentMonth] = useState<string>(() => {
     const now = referenceDate;
-    return toMonthKey(now.getFullYear(), now.getMonth() + 1);
+    const fallback = toMonthKey(now.getFullYear(), now.getMonth() + 1);
+    if (!isExperienceMode || demoOptions) return fallback;
+    const allowed = getXiaochenAllowedMonths();
+    return allowed.includes(fallback) ? fallback : allowed[allowed.length - 1] ?? fallback;
   });
+  const timeModeTabOrder: TimeMode[] = isExperienceMode && !demoOptions
+    ? ["month", "week"]
+    : ["week", "month"];
   const [timeDirection, setTimeDirection] = useState(0);
 
   const [sceneIdx, setSceneIdx] = useState(() => {
@@ -293,16 +334,16 @@ export default function LookbackPage({
   const baseData = useMemo(() => {
     if (timeMode === "month") {
       const { year, month } = parseMonthKey(currentMonth);
-      if (IS_EXPERIENCE_MODE) {
+      if (isExperienceMode) {
         return getXiaochenMonthRange(year, month);
       }
       return buildMonthRange(year, month, referenceDate);
     }
-    if (IS_EXPERIENCE_MODE) {
+    if (isExperienceMode) {
       return getXiaochenWeekRange(parseDateKey(currentWeekStart));
     }
     return buildWeekRange(parseDateKey(currentWeekStart), referenceDate);
-  }, [timeMode, currentWeekStart, currentMonth, referenceDate]);
+  }, [timeMode, currentWeekStart, currentMonth, referenceDate, isExperienceMode]);
   const data = useMemo(
     () => baseData.map((d) => (overrides[d.date] ? { ...d, ...overrides[d.date] } : d)),
     [baseData, overrides],
@@ -321,6 +362,23 @@ export default function LookbackPage({
   // 切换时间模式：保留当前分类，重置详情/编辑态
   const changeTimeMode = (m: TimeMode) => {
     if (m === timeMode) return;
+    if (m === "week") {
+      if (isExperienceMode && !demoOptions) {
+        const allowed = getXiaochenAllowedWeekStarts();
+        const referenceWeek = toDateKey(getWeekStart(referenceDate));
+        const monthWeek = allowed.find((weekStart) => weekStart.startsWith(currentMonth));
+        setCurrentWeekStart(
+          currentMonth === toMonthKey(referenceDate.getFullYear(), referenceDate.getMonth() + 1)
+            ? referenceWeek
+            : monthWeek ?? allowed[allowed.length - 1] ?? referenceWeek,
+        );
+      } else {
+        setCurrentWeekStart(toDateKey(getWeekStart(referenceDate)));
+      }
+    } else {
+      const weekStart = parseDateKey(currentWeekStart);
+      setCurrentMonth(toMonthKey(weekStart.getFullYear(), weekStart.getMonth() + 1));
+    }
     setTimeMode(m);
     setDetailIdx(null);
     setEditIdx(null);
@@ -336,6 +394,10 @@ export default function LookbackPage({
       // 不能超过本周（未来周）
       const thisWeekStart = getWeekStart(referenceDate);
       if (newStart > thisWeekStart) return;
+      if (isExperienceMode && !demoOptions) {
+        const newKey = toDateKey(newStart);
+        if (!getXiaochenAllowedWeekStarts().includes(newKey)) return;
+      }
       setCurrentWeekStart(toDateKey(newStart));
     } else {
       const { year, month } = parseMonthKey(currentMonth);
@@ -344,6 +406,7 @@ export default function LookbackPage({
       const nowKey = toMonthKey(now.getFullYear(), now.getMonth() + 1);
       const newKey = toMonthKey(d.getFullYear(), d.getMonth() + 1);
       if (newKey > nowKey) return; // 不能超过当前月
+      if (isExperienceMode && !demoOptions && !getXiaochenAllowedMonths().includes(newKey)) return;
       setCurrentMonth(newKey);
     }
     setDetailIdx(null);
@@ -407,6 +470,8 @@ export default function LookbackPage({
       className="relative flex h-full w-full flex-col"
       style={{ backgroundColor: PAGE_BG }}
     >
+      <PhoneStatusBar />
+
       {/* 顶部：返回 + 标题 */}
       <div className="flex items-center gap-3 px-5 pt-14 pb-3">
         <button
@@ -423,10 +488,10 @@ export default function LookbackPage({
 
       {/* 时间模式切换：按周查看 / 按月查看 */}
       <div className="px-5 pb-2">
-        <TimeModeTabs value={timeMode} onChange={changeTimeMode} />
+        <TimeModeTabs value={timeMode} onChange={changeTimeMode} order={timeModeTabOrder} />
       </div>
 
-      {/* 具体时间范围：按周显示 7.6 - 7.12；按月显示 2026年7月，左右箭头切换 */}
+      {/* 具体时间范围：按周显示 7.6 - 7.12；按月显示 2026 年 7 月，左右箭头切换 */}
       <div className="px-5 pb-2.5">
         <TimeRangeSwitcher
           timeMode={timeMode}
@@ -435,6 +500,8 @@ export default function LookbackPage({
           referenceDate={referenceDate}
           onPrev={() => goTime(-1)}
           onNext={() => goTime(1)}
+          canGoPrev={isExperienceMode && !demoOptions ? canGoTime(-1, timeMode, currentWeekStart, currentMonth, referenceDate) : undefined}
+          canGoNext={isExperienceMode && !demoOptions ? canGoTime(1, timeMode, currentWeekStart, currentMonth, referenceDate) : undefined}
         />
       </div>
 
@@ -573,14 +640,17 @@ export default function LookbackPage({
 function TimeModeTabs({
   value,
   onChange,
+  order = ["week", "month"],
 }: {
   value: TimeMode;
   onChange: (m: TimeMode) => void;
+  order?: TimeMode[];
 }) {
-  const tabs: { key: TimeMode; label: string }[] = [
-    { key: "week", label: "按周查看" },
-    { key: "month", label: "按月查看" },
-  ];
+  const labels: Record<TimeMode, string> = {
+    month: "按月查看",
+    week: "按周查看",
+  };
+  const tabs = order.map((key) => ({ key, label: labels[key] }));
   return (
     <div
       className="flex gap-1 rounded-lg p-1"
@@ -617,6 +687,8 @@ function TimeRangeSwitcher({
   referenceDate,
   onPrev,
   onNext,
+  canGoPrev = true,
+  canGoNext,
   label: labelOverride,
   disableNav = false,
 }: {
@@ -626,6 +698,8 @@ function TimeRangeSwitcher({
   referenceDate: Date;
   onPrev: () => void;
   onNext: () => void;
+  canGoPrev?: boolean;
+  canGoNext?: boolean;
   /** 覆盖默认日期范围文案（Guided Demo 固定近两周时使用） */
   label?: string;
   /** 禁用左右切换箭头（Guided Demo 固定时间段时使用） */
@@ -636,15 +710,16 @@ function TimeRangeSwitcher({
   const isCurrent = timeMode === "week"
     ? weekStartKey === toDateKey(getWeekStart(now))
     : monthKey === toMonthKey(now.getFullYear(), now.getMonth() + 1);
+  const nextDisabled = canGoNext ?? isCurrent;
   const label = labelOverride ?? (timeMode === "week"
     ? weekRangeLabel(weekStartKey)
-    : monthLabelCN(monthKey));
+    : monthRangeLabelCN(monthKey));
   const navDisabled = disableNav;
   return (
     <div className="flex items-center justify-between py-0.5">
       <button
         onClick={onPrev}
-        disabled={navDisabled}
+        disabled={navDisabled || !canGoPrev}
         aria-label={timeMode === "week" ? "上一周" : "上个月"}
         className="grid h-9 w-9 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface-soft active:scale-95 disabled:opacity-25 disabled:hover:bg-transparent"
       >
@@ -655,7 +730,7 @@ function TimeRangeSwitcher({
       </span>
       <button
         onClick={onNext}
-        disabled={isCurrent || navDisabled}
+        disabled={navDisabled || nextDisabled}
         aria-label={timeMode === "week" ? "下一周" : "下个月"}
         className="grid h-9 w-9 place-items-center rounded-full text-ink-soft transition-colors hover:bg-surface-soft active:scale-95 disabled:opacity-25 disabled:hover:bg-transparent"
       >
@@ -883,11 +958,18 @@ function MoodTrend({ data }: { data: DailyLookbackData[] }) {
   const padY = 20;
   const usable = H - padY * 2;
 
-  const points = data.map((d, i) => {
-    if (d.mood === null) return null;
-    const x = ((i + 0.5) / days) * 100;
-    const y = padY + (1 - (d.mood - 1) / 4) * usable;
-    return { x, y };
+  const points = data.flatMap((d, i) => {
+    const entries = d.moodEntries && d.moodEntries.length > 0
+      ? d.moodEntries
+      : d.mood !== null
+        ? [{ mood: d.mood }]
+        : null;
+    if (!entries) return [null];
+    return entries.map((entry, entryIdx) => {
+      const x = ((i + (entryIdx + 1) / (entries.length + 1)) / days) * 100;
+      const y = padY + (1 - (entry.mood - 1) / 4) * usable;
+      return { x, y };
+    });
   });
   const segments = trendSegments(points);
   const dotR = days <= 7 ? 2.8 : days <= 14 ? 2.2 : 1.6;
@@ -1021,7 +1103,7 @@ function MealsTrend({ data }: { data: DailyLookbackData[] }) {
   );
 }
 
-/* —— 4. 服药趋势：早/晚药盒矩阵带 —— */
+/* —— 4. 服药趋势：体验模式单剂量；演示模式保留早/晚药盒矩阵 —— */
 function MedTrend({ data }: { data: DailyLookbackData[] }) {
   const theme = themes.med;
   const days = data.length;
@@ -1032,6 +1114,21 @@ function MedTrend({ data }: { data: DailyLookbackData[] }) {
     if (s === "changed") return { backgroundColor: theme.mark, opacity: 0.4 };
     return { backgroundColor: theme.soft, opacity: 0.5 };
   };
+
+  if (isExperienceModeActive()) {
+    return (
+      <div
+        className="grid h-full w-full"
+        style={{ gridTemplateColumns: `repeat(${days}, minmax(0, 1fr))`, gap: 2 }}
+      >
+        {data.map((d, i) => (
+          <div key={i} className="flex items-center justify-center">
+            <div className="h-[12px] w-[12px] rounded-[4px]" style={cellStyle(d.medication.evening)} />
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -1048,58 +1145,41 @@ function MedTrend({ data }: { data: DailyLookbackData[] }) {
   );
 }
 
-/* —— 5. 活动趋势：0-3 等级圆滑曲线 —— */
+/* —— 5. 活动趋势：大小圆点表达活动量 —— */
 function ActivityTrend({ data }: { data: DailyLookbackData[] }) {
   const theme = themes.activity;
   const days = data.length;
-  const H = 80;
-  const padY = 10;
-  const usable = H - padY * 2;
-
-  const points = data.map((d, i) => {
-    if (d.activityLevel === null) return null;
-    const x = ((i + 0.5) / days) * 100;
-    const y = padY + (1 - d.activityLevel / 3) * usable;
-    return { x, y };
-  });
-  const segments = trendSegments(points);
-  const dotR = days <= 7 ? 2.8 : days <= 14 ? 2.2 : 1.6;
+  const sizeForLevel: Record<ActivityLevel, number> = {
+    0: days <= 7 ? 8 : days <= 15 ? 6 : 4,
+    1: days <= 7 ? 12 : days <= 15 ? 9 : 6,
+    2: days <= 7 ? 16 : days <= 15 ? 12 : 8,
+    3: days <= 7 ? 20 : days <= 15 ? 15 : 10,
+  };
 
   return (
-    <div className="relative h-full w-full">
-      <svg className="absolute inset-0 h-full w-full" viewBox={`0 0 100 ${H}`} preserveAspectRatio="none">
-        {segments.map((seg, si) => (
-          <path
-            key={si}
-            d={smoothPath(seg)}
-            fill="none"
-            stroke={theme.mark}
-            strokeWidth={1.6}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            vectorEffect="non-scaling-stroke"
-            opacity={0.55}
-          />
-        ))}
-      </svg>
-      {points.map(
-        (p, i) =>
-          p && (
-            <div
-              key={i}
-              className="absolute rounded-full"
-              style={{
-                left: `${p.x}%`,
-                top: p.y,
-                width: dotR * 2,
-                height: dotR * 2,
-                transform: "translate(-50%, -50%)",
-                backgroundColor: theme.mark,
-                opacity: 0.7,
-              }}
-            />
-          ),
-      )}
+    <div
+      className="grid h-full w-full"
+      style={{ gridTemplateColumns: `repeat(${days}, minmax(0, 1fr))`, gap: 2 }}
+    >
+      {data.map((d, i) => {
+        const lvl = d.activityLevel;
+        return (
+          <div key={i} className="flex items-center justify-center">
+            {lvl !== null && (
+              <div
+                className="rounded-full"
+                style={{
+                  width: sizeForLevel[lvl],
+                  height: sizeForLevel[lvl],
+                  backgroundColor: lvl === 0 ? "transparent" : theme.mark,
+                  border: lvl === 0 ? `1px solid ${theme.mark}` : "none",
+                  opacity: lvl === 0 ? 0.34 : 0.46 + lvl * 0.16,
+                }}
+              />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -1375,10 +1455,33 @@ function MealsRow({ day }: { day: DailyLookbackData }) {
 }
 
 /* =========================================================
- * 4. MedRow —— 每日药盒状态（早/晚 两块）
+ * 4. MedRow —— 体验模式单剂量；演示模式保留早/晚两块
  * ======================================================= */
 function MedRow({ day }: { day: DailyLookbackData }) {
   const theme = themes.med;
+  if (isExperienceModeActive()) {
+    const state = day.medication.evening;
+    const style: React.CSSProperties =
+      state === "taken"
+        ? { backgroundColor: theme.mark }
+        : state === "missed"
+          ? { borderColor: theme.mark, borderWidth: 1, borderStyle: "solid", backgroundColor: "transparent" }
+          : state === "changed"
+            ? { backgroundColor: theme.soft }
+            : { backgroundColor: theme.softer };
+    const label =
+      state === "taken" ? "已服用" : state === "missed" ? "漏服" : state === "changed" ? "有改动" : "未记录";
+    return (
+      <div className="flex items-center gap-2">
+        <span style={{ fontSize: tx.chartAxisLabel, color: theme.text, opacity: 0.5 }}>睡前</span>
+        <div className="h-[12px] w-[12px] rounded-[3px]" style={style} />
+        <span style={{ fontSize: tx.listContent, color: theme.text, opacity: 0.7 }}>
+          {label}
+        </span>
+      </div>
+    );
+  }
+
   const items: { label: string; state: MedState }[] = [
     { label: "早", state: day.medication.morning },
     { label: "晚", state: day.medication.evening },
@@ -1442,7 +1545,7 @@ function ActivityRow({ day }: { day: DailyLookbackData }) {
 function WeightRow({ day }: { day: DailyLookbackData }) {
   const theme = themes.weight;
   if (day.weight === null) {
-    return <EmptyRow text="未记录" />;
+    return <span className="sr-only">未称重</span>;
   }
   const profile = getUserProfile();
   const bmi = calculateBMI(day.weight, profile.heightCm);

@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, Plus } from "lucide-react";
 import { getGradient } from "@/data/praise";
 import EnergyBadge from "@/components/EnergyBadge";
+import PhoneStatusBar from "@/components/PhoneStatusBar";
 import ZaizaiVideo from "@/components/ZaizaiVideo";
 import type { PraiseDemoConfig, PraiseDemoCard } from "./types";
 
@@ -26,6 +27,8 @@ export default function DemoPraisePreview({ preset }: Props) {
       transition={{ duration: 0.28, ease }}
     >
       <div className="relative flex h-full flex-col bg-white">
+        <PhoneStatusBar />
+
         <header className="flex items-center gap-3 px-5 pt-14 pb-1">
           <button
             type="button"

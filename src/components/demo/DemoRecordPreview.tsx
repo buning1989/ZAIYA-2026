@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { ChevronLeft, Edit3 } from "lucide-react";
 import EnergyBadge from "@/components/EnergyBadge";
+import PhoneStatusBar from "@/components/PhoneStatusBar";
 import { formatRecordLabel } from "@/components/RecordSummaryCard";
 import type { RecordDemoPreset } from "./types";
 
@@ -24,6 +25,8 @@ export default function DemoRecordPreview({ preset }: Props) {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.28, ease }}
     >
+      <PhoneStatusBar />
+
       <header className="flex items-center gap-3 pt-14 pb-2">
         <button
           type="button"

@@ -22,6 +22,7 @@ import EnergyBadge from "./EnergyBadge";
 import EnergyRewardFeedback, {
   type EnergyRewardEvent,
 } from "./EnergyRewardFeedback";
+import PhoneStatusBar from "./PhoneStatusBar";
 
 /* —— 体验模式数据源切换（仅切换数据注入，不改变 UI/布局/交互）——
  * 体验模式首次进入「夸夸自己」时预填小晨统一夸夸卡（6 张，可追溯时间线事件）；
@@ -164,6 +165,8 @@ export default function PraisePage({ onBack }: Props) {
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-white">
+      <PhoneStatusBar />
+
       <AnimatePresence mode="wait">
         <motion.div
           key={layer}

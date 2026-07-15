@@ -5,7 +5,7 @@ import RecordSummaryCard, {
   type SummaryRow,
 } from "@/components/RecordSummaryCard";
 import RecordNoteSection from "@/components/RecordNoteSection";
-import { PhoneStatusBar } from "@/components/AppMainSurface";
+import PhoneStatusBar from "@/components/PhoneStatusBar";
 import EnergyBadge from "@/components/EnergyBadge";
 
 /* —— 第二周 10:00 节点：睡眠记录确认 → 结果态演示流程 ——

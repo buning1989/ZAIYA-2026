@@ -6,8 +6,6 @@ import {
   BookOpen,
   Users,
   Wind,
-  Wifi,
-  X,
   Waves,
   Hand,
   Leaf,
@@ -17,6 +15,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import VoiceInputBar from "./VoiceInputBar";
+import PhoneStatusBar from "./PhoneStatusBar";
 import type { SceneId } from "./PresenceRoom";
 import FeaturePageTransition from "./FeaturePageTransition";
 import {
@@ -323,69 +322,6 @@ function shouldInsertTimeMarker(items: DialogItem[], now: Date): boolean {
   const lastMinute = Math.floor(lastTimeItem.createdAt / 60000);
   const currentMinute = Math.floor(now.getTime() / 60000);
   return lastMinute !== currentMinute;
-}
-
-/* —— iOS 风格手机状态栏（抽象绘制，仅增强真实感，不承担功能） ——
- * 左：时间；右：信号 / Wi-Fi / 电池。颜色 text-ink，接近真实状态栏。
- * 可选关闭按钮（非首页用），位于状态栏右侧之外，不挤占信号区。
- */
-export function PhoneStatusBar({
-  showClose = false,
-  onClose,
-  now,
-}: {
-  showClose?: boolean;
-  onClose?: () => void;
-  now?: Date;
-}) {
-  const [fallbackNow, setFallbackNow] = useState<Date>(() => new Date());
-
-  useEffect(() => {
-    if (now) return;
-
-    const iv = window.setInterval(() => setFallbackNow(new Date()), 20000);
-    return () => window.clearInterval(iv);
-  }, [now]);
-
-  const displayNow = now ?? fallbackNow;
-
-  return (
-    <>
-      <div className="absolute left-0 right-0 top-0 z-[30] flex items-center justify-between px-6 pt-3.5 pb-1 text-ink">
-        {/* 左：时间 */}
-        <span className="text-[12px] font-semibold tracking-wide">
-          {formatHHMM(displayNow)}
-        </span>
-        {/* 右：信号 / Wi-Fi / 电池 */}
-        <div className="flex items-center gap-1.5">
-          {/* 信号条：4 条递增 */}
-          <div className="flex items-end gap-[2px]">
-            <div className="h-1 w-1 rounded-[1px] bg-ink" />
-            <div className="h-1.5 w-1 rounded-[1px] bg-ink" />
-            <div className="h-2 w-1 rounded-[1px] bg-ink" />
-            <div className="h-2.5 w-1 rounded-[1px] bg-ink" />
-          </div>
-          {/* Wi-Fi */}
-          <Wifi className="h-3.5 w-3.5" strokeWidth={1.8} />
-          {/* 电池 */}
-          <div className="relative ml-0.5 h-3 w-6 rounded-[3px] border border-ink/55 p-[1.5px]">
-            <div className="absolute -right-[3px] top-1/2 h-1.5 w-[2px] -translate-y-1/2 rounded-r bg-ink/55" />
-            <div className="h-full w-3/4 rounded-[1px] bg-ink" />
-          </div>
-        </div>
-      </div>
-      {/* 关闭按钮：非首页用，位于状态栏下方右上角，不挤占状态栏信号区 */}
-      {showClose && onClose && (
-        <button
-          onClick={onClose}
-          aria-label="关闭 Demo"
-          className="absolute right-5 top-12 z-[80] grid h-7 w-7 place-items-center rounded-full bg-white/50 backdrop-blur-xl border border-white/30 shadow-sm text-ink-faint transition-colors hover:text-ink"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
-      )}
-    </>
-  );
 }
 
 /* —— 首页内模式：均在首页内部展开，非独立页面 / 不跳转路由 ——
@@ -1939,6 +1875,8 @@ export default function AppMainSurface({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.28, ease }}
           >
+            <PhoneStatusBar now={effectiveNow} />
+
             {demoState.organizeDemo.view === "materialDetail" ? (
               <Suspense fallback={null}>
                 <MaterialDetailView

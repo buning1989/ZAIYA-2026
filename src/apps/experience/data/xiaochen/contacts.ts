@@ -5,8 +5,8 @@
  *
  * 联系人 createdAt 为 ISO 字符串（与 Contact 类型定义一致）。
  * 服用安排与 constants.ts 中的当前用药保持一致：
- *   MEDICATION_NAME = "舍曲林" / MEDICATION_DOSE = "50mg"
- *   / MEDICATION_FREQUENCY = "每日一次" / MEDICATION_TIME = "早晨服用"。 */
+ *   MEDICATION_NAME = "喹硫平" / MEDICATION_DOSE = "50mg"
+ *   / MEDICATION_FREQUENCY = "每日一次" / MEDICATION_TIME = "睡前服用"。 */
 
 import type { Contact, MedSchedule } from "@/data/privacy";
 
@@ -45,11 +45,11 @@ export const XIAOCHEN_CONTACTS: Contact[] = [
 /* —— 预置服用安排 —— */
 export const XIAOCHEN_MED_SCHEDULES: MedSchedule[] = [
   {
-    id: "xc-med-sertraline",
-    name: "舍曲林",
+    id: "xc-med-quetiapine",
+    name: "喹硫平",
     dose: "50mg",
     frequency: "每日一次",
-    time: "早晨服用",
+    time: "睡前服用",
     note: undefined,
   },
 ];

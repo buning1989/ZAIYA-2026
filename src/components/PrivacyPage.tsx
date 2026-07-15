@@ -49,6 +49,7 @@ import {
   getXiaochenContacts,
   getXiaochenMedSchedules,
 } from "@/apps/experience/selectors/selectPrivacySeed";
+import PhoneStatusBar from "./PhoneStatusBar";
 
 /* —— 体验模式数据源切换（仅切换数据注入，不改变 UI/布局/交互）——
  * 体验模式首次进入「我的隐私」时预填小晨统一联系人和服用安排；
@@ -201,6 +202,8 @@ export default function PrivacyPage({ onBack }: Props) {
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-white">
+      <PhoneStatusBar />
+
       <AnimatePresence mode="wait">
         <motion.div
           key={layer}

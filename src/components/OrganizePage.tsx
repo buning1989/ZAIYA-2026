@@ -8,7 +8,7 @@
  *
  * 沟通对象为具体人物（王医生），不写死"医生"
  * 不做诊断、治疗建议、用药建议、因果解释或风险等级判断 */
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   createInitialSession,
@@ -33,6 +33,7 @@ import DisclosureStep from "./organize/DisclosureStep";
 import DoneStep from "./organize/DoneStep";
 import MaterialDetailView from "./organize/MaterialDetailView";
 import CommunicationHistoryPage from "./organize/CommunicationHistoryPage";
+import PhoneStatusBar from "./PhoneStatusBar";
 
 /* —— 体验模式数据源切换（仅切换数据注入，不改变 UI/布局/交互）——
  * 体验模式使用小晨统一数据源（固定 5 条沟通重点 + 2 条真实高风险披露），
@@ -40,6 +41,15 @@ import CommunicationHistoryPage from "./organize/CommunicationHistoryPage";
 const IS_EXPERIENCE_MODE = getStorageMode() === "experience";
 
 const ease = [0.22, 1, 0.36, 1] as const;
+
+function ModuleStatusShell({ children }: { children: ReactNode }) {
+  return (
+    <div className="relative h-full w-full overflow-hidden bg-white">
+      <PhoneStatusBar />
+      {children}
+    </div>
+  );
+}
 
 type Step = "contact" | "topics" | "disclosure" | "done";
 
@@ -196,81 +206,89 @@ export default function OrganizePage({
   /* —— 渲染辅助视图 —— */
   if (auxView === "history") {
     return (
-      <CommunicationHistoryPage
-        history={history}
-        onBack={() => setAuxView(null)}
-        onViewDetail={handleViewHistoryDetail}
-        onHistoryChange={handleHistoryChange}
-      />
+      <ModuleStatusShell>
+        <CommunicationHistoryPage
+          history={history}
+          onBack={() => setAuxView(null)}
+          onViewDetail={handleViewHistoryDetail}
+          onHistoryChange={handleHistoryChange}
+        />
+      </ModuleStatusShell>
     );
   }
 
   if (auxView === "historyDetail" && viewingHistory) {
     return (
-      <MaterialDetailView
-        session={viewingHistory.session}
-        title="沟通材料详情"
-        onBack={() => {
-          setAuxView("history");
-          setViewingHistory(null);
-        }}
-      />
+      <ModuleStatusShell>
+        <MaterialDetailView
+          session={viewingHistory.session}
+          title="沟通材料详情"
+          onBack={() => {
+            setAuxView("history");
+            setViewingHistory(null);
+          }}
+        />
+      </ModuleStatusShell>
     );
   }
 
   if (auxView === "materialDetail" && session) {
     return (
-      <MaterialDetailView
-        session={session}
-        title="完整内容"
-        onBack={() => setAuxView(null)}
-      />
+      <ModuleStatusShell>
+        <MaterialDetailView
+          session={session}
+          title="完整内容"
+          onBack={() => setAuxView(null)}
+        />
+      </ModuleStatusShell>
     );
   }
 
   /* —— 渲染主流程 —— */
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={step}
-        initial={{ opacity: 0, x: 8 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: -8 }}
-        transition={{ duration: 0.25, ease }}
-        className="h-full"
-      >
-        {step === "contact" && (
-          <ContactStep
-            onBack={onBack}
-            onSelectContact={handleSelectContact}
-          />
-        )}
+    <ModuleStatusShell>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={step}
+          initial={{ opacity: 0, x: 8 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -8 }}
+          transition={{ duration: 0.25, ease }}
+          className="h-full"
+        >
+          {step === "contact" && (
+            <ContactStep
+              onBack={onBack}
+              onSelectContact={handleSelectContact}
+            />
+          )}
 
-        {step === "topics" && session && (
-          <TopicsStep
-            session={session}
-            onBack={handleTopicsBack}
-            onNext={handleTopicsNext}
-          />
-        )}
+          {step === "topics" && session && (
+            <TopicsStep
+              session={session}
+              onBack={handleTopicsBack}
+              onNext={handleTopicsNext}
+            />
+          )}
 
-        {step === "disclosure" && session && (
-          <DisclosureStep
-            session={session}
-            onBack={() => setStep("topics")}
-            onComplete={handleDisclosureComplete}
-          />
-        )}
+          {step === "disclosure" && session && (
+            <DisclosureStep
+              session={session}
+              onBack={() => setStep("topics")}
+              onComplete={handleDisclosureComplete}
+            />
+          )}
 
-        {step === "done" && session && (
-          <DoneStep
-            session={session}
-            onBack={() => setStep("disclosure")}
-            onHome={handleDoneHome}
-            onViewMaterial={() => setAuxView("materialDetail")}
-          />
-        )}
-      </motion.div>
-    </AnimatePresence>
+          {step === "done" && session && (
+            <DoneStep
+              session={session}
+              onBack={() => setStep("disclosure")}
+              onHome={handleDoneHome}
+              onViewMaterial={() => setAuxView("materialDetail")}
+            />
+          )}
+        </motion.div>
+      </AnimatePresence>
+    </ModuleStatusShell>
   );
 }

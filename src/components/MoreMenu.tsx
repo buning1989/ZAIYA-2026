@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import type { ForwardRefExoticComponent } from "react";
 import VoiceInputBar from "./VoiceInputBar";
+import PhoneStatusBar from "./PhoneStatusBar";
 import type { Answers, RecordTypeId } from "@/data/record";
 import type { OrganizeHistoryEntry } from "@/data/organize";
 
@@ -253,6 +254,8 @@ function SettingsDetail({
   if (subPage === "deletion") {
     return (
       <div className="relative flex h-full flex-col bg-white">
+        <PhoneStatusBar />
+
         <div className="flex items-center gap-3 px-5 pt-14 pb-2">
           <button
             onClick={() => setSubPage(null)}
@@ -284,6 +287,8 @@ function SettingsDetail({
   if (subPage === "privacy-policy") {
     return (
       <div className="relative flex h-full flex-col bg-white">
+        <PhoneStatusBar />
+
         <div className="flex items-center gap-3 px-5 pt-14 pb-2">
           <button
             onClick={() => setSubPage(null)}
@@ -305,6 +310,8 @@ function SettingsDetail({
   if (subPage === "user-agreement") {
     return (
       <div className="relative flex h-full flex-col bg-white">
+        <PhoneStatusBar />
+
         <div className="flex items-center gap-3 px-5 pt-14 pb-2">
           <button
             onClick={() => setSubPage(null)}
@@ -325,6 +332,8 @@ function SettingsDetail({
   /* —— 设置主页 —— */
   return (
     <div className="relative flex h-full flex-col bg-white">
+      <PhoneStatusBar />
+
       <div className="flex items-center gap-3 px-5 pt-14 pb-2">
         <button
           onClick={onBack}
@@ -478,6 +487,8 @@ function HelpFeedbackPage({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="relative flex h-full flex-col bg-white">
+      <PhoneStatusBar />
+
       {/* Toast 固定在页面顶部居中，不随滚动漂移 */}
       {toastMsg && (
         <div className="pointer-events-none absolute inset-x-0 top-14 z-20 flex justify-center px-4">
@@ -734,6 +745,8 @@ export function MoreDetailContent({
 
   return (
     <div className="relative flex h-full flex-col bg-white">
+      <PhoneStatusBar />
+
       <div className="flex items-center gap-3 px-5 pt-14 pb-2">
         <button
           onClick={onBack}
