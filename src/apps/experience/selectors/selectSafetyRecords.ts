@@ -12,7 +12,7 @@
  * 并纳入 organize 模块 topic-3 的 evidence。 */
 import type { HighRiskOriginalRecord } from "@/data/organize";
 import { XIAOCHEN_ORGANIZE_DISCLOSURE } from "../data/xiaochen/organize";
-import { NEGATIVE_THOUGHT_DATES } from "../data/xiaochen/constants";
+import { TIMELINE_NEGATIVE_THOUGHT_DATES } from "../data/xiaochen/timeline";
 
 /* —— 返回 2 条高风险记录（每次返回新数组）—— */
 export function getXiaochenSafetyRecords(): HighRiskOriginalRecord[] {
@@ -26,10 +26,10 @@ export function getXiaochenSafetyRecordCount(): number {
 
 /* —— 返回消极念头日期列表 —— */
 export function getXiaochenNegativeThoughtDates(): readonly string[] {
-  return NEGATIVE_THOUGHT_DATES;
+  return TIMELINE_NEGATIVE_THOUGHT_DATES;
 }
 
 /* —— 检测某日期是否为消极念头日 —— */
 export function isNegativeThoughtDate(dateStr: string): boolean {
-  return (NEGATIVE_THOUGHT_DATES as readonly string[]).includes(dateStr);
+  return TIMELINE_NEGATIVE_THOUGHT_DATES.includes(dateStr);
 }

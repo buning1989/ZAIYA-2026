@@ -1,13 +1,14 @@
 /* —— 小晨体验模式统一数据源：人物资料 ——
  *
  * 从 experienceUser.ts 派生人物资料视图，统一口径：
- *   - 16 岁（birthDate 2009-09-12，参考日 2026-07-17 推导得 16 周岁）
+ *   - 16 岁（birthDate 2009-09-12，参考日 2026-07-15 推导得 16 周岁）
  *   - 高二学生
  *   - 二线城市
  *   - 当前体重 48.7kg（更新于 2026-07-12）
  *   - 中度抑郁、重度焦虑（诊断信息由 constants.ts 维护，不在 UserProfile 字段中）
  *
- * 实际 UserProfile 实例定义在 experienceUser.ts，本文件提供只读视图。 */
+ * 实际 UserProfile 实例定义在 experienceUser.ts，本文件提供只读视图。
+ * REFERENCE_DATE 来自 constants.ts（= XIAOCHEN_CURRENT_DATE = 2026-07-15）。 */
 import { EXPERIENCE_USER_PROFILE } from "../experienceUser";
 import { DIAGNOSIS, DOCTOR_NAME, MEDICATION_NAME, MEDICATION_DOSE, MEDICATION_FREQUENCY, MEDICATION_TIME, APPOINTMENT_DATE, REFERENCE_DATE } from "./constants";
 
@@ -37,7 +38,7 @@ export interface XiaochenProfileView {
   referenceDate: string;
 }
 
-/* —— 计算年龄（参考日 2026-07-17）—— */
+/* —— 计算年龄（参考日 2026-07-15）—— */
 function calculateAgeAt(birthDate: string, referenceDate: string): number {
   const birth = new Date(birthDate + "T00:00:00+08:00");
   const ref = new Date(referenceDate + "T00:00:00+08:00");

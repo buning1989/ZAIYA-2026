@@ -112,6 +112,10 @@ export interface CommunicationTopic {
   sourceType: TopicSourceType;
   /** 依据摘要条目（系统整理结果用）；用户补充为 ["用户主动表达的问题"] */
   evidenceSummary: string[];
+  /** 证据日期（YYYY-MM-DD），用于跨模块校验。
+   *  日期必须能在 dailyRecords 或 timeline 事件标注中追溯。
+   *  体验模式 organize 模块必须填写此字段。 */
+  evidenceDates?: string[];
   selected: boolean;
   edited: boolean;
   /** 是否允许进入最终材料（未选择 = false） */

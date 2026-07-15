@@ -1,8 +1,16 @@
 /* —— 小晨体验模式统一数据源：帮我整理模块数据 ——
  *
  * 替代 src/data/organize.ts 中 createMockTopics / createMockDisclosure 在
- * 体验模式下的兜底行为。所有时间基准来自 ./timeConfig，所有日级事实来自
- * ./dailyRecords，沟通重点 evidence 中的日期与事件可在 dailyRecords 中验证。
+ * 体验模式下的兜底行为。
+ *
+ * 数据来源（单一事实源）：
+ *   - 时间基准 → ./timeConfig
+ *   - 日级事实 → ./dailyRecords（睡眠/服药/饮食/活动/体重）
+ *   - 独立事件标注 → ./timeline（未到校/家庭冲突/呼吸练习/消极念头/白天困倦）
+ *
+ * 不再从 ./constants 引入 STATS / NO_SCHOOL_DATES / BEFORE_MIDNIGHT_SLEEP_DATES /
+ * LATEST_SLEEP_DATE / LATEST_SLEEP_TIME / BREATHING_EXERCISE_DATE / WEIGHT_RECORDS。
+ * constants 仅用于业务配置（医生姓名/诊断/用药名/剂量/频次）。
  *
  * 时间基准（来自 timeConfig，不在本文件中重新硬编码）：
  *   - 数据周期：XIAOCHEN_START_DATE（2026-05-16）~ XIAOCHEN_CURRENT_DATE（2026-07-15）
@@ -28,19 +36,24 @@ import {
   MEDICATION_NAME,
   MEDICATION_DOSE,
   MEDICATION_FREQUENCY,
-  NO_SCHOOL_DATES,
-  BEFORE_MIDNIGHT_SLEEP_DATES,
-  LATEST_SLEEP_DATE,
-  LATEST_SLEEP_TIME,
-  BREATHING_EXERCISE_DATE,
-  WEIGHT_RECORDS,
-  STATS,
 } from "./constants";
 import {
   XIAOCHEN_CURRENT_DATE,
   XIAOCHEN_START_DATE,
 } from "./timeConfig";
 import { XIAOCHEN_DAILY_ALL_DAYS } from "./dailyRecords";
+import {
+  TIMELINE_NO_SCHOOL_DATES,
+  TIMELINE_BREATHING_EXERCISE_DATE,
+  TIMELINE_BEFORE_MIDNIGHT_DATES,
+  TIMELINE_LATEST_SLEEP_DATE,
+  TIMELINE_LATEST_SLEEP_TIME,
+  TIMELINE_WEIGHT_RECORDS,
+  TIMELINE_MISSED_MED_DATES,
+  TIMELINE_NEGATIVE_THOUGHT_DATES,
+  XIAOCHEN_FAMILY_CONFLICT_DATES,
+  XIAOCHEN_DROWSINESS_DATES,
+} from "./timeline";
 
 /* =========================================================
  * 沟通对象：王医生（与 constants.ts 一致）
@@ -67,7 +80,7 @@ export const XIAOCHEN_ORGANIZE_CONTACT: CommunicationContact = {
 };
 
 /* =========================================================
- * 沟通重点（5 条，evidence 全部来自统一常量与 dailyRecords）
+ * 沟通重点（5 条，evidence 全部来自 dailyRecords + timeline）
  * ======================================================= */
 
 function formatMedDates(dates: readonly string[]): string {
@@ -79,9 +92,9 @@ function formatMedDates(dates: readonly string[]): string {
     .join("、");
 }
 
-/** 从 dailyRecords 派生的实际统计数字（替代旧 STATS 的固定值）。
- *  保证与日级事实完全一致。 */
-function deriveStatsFromDailyRecords() {
+/** 从 dailyRecords + timeline 派生的实际统计数字。
+ *  保证与日级事实 + 事件标注完全一致，不重复硬编码。 */
+function deriveStatsFromSources() {
   const allDays = XIAOCHEN_DAILY_ALL_DAYS;
   const totalDays = allDays.length;
   const recordedDays = allDays.filter(
@@ -93,9 +106,7 @@ function deriveStatsFromDailyRecords() {
       d.activityLevel !== null ||
       d.weight !== null,
   ).length;
-  const missedMedCount = allDays.filter(
-    (d) => d.medication.evening === "missed",
-  ).length;
+  const missedMedCount = TIMELINE_MISSED_MED_DATES.length;
   const breakfastYesDays = allDays.filter(
     (d) => d.meals.breakfast === "yes",
   ).length;
@@ -103,6 +114,12 @@ function deriveStatsFromDailyRecords() {
   const dinnerYesDays = allDays.filter(
     (d) => d.meals.dinner === "yes",
   ).length;
+  const weightRecordCount = TIMELINE_WEIGHT_RECORDS.length;
+  const beforeMidnightSleepDays = TIMELINE_BEFORE_MIDNIGHT_DATES.length;
+  const negativeThoughtCount = TIMELINE_NEGATIVE_THOUGHT_DATES.length;
+  const noSchoolCount = TIMELINE_NO_SCHOOL_DATES.length;
+  const familyConflictCount = XIAOCHEN_FAMILY_CONFLICT_DATES.length;
+  const drowsinessDays = XIAOCHEN_DROWSINESS_DATES.length;
   return {
     totalDays,
     recordedDays,
@@ -111,20 +128,25 @@ function deriveStatsFromDailyRecords() {
     breakfastYesDays,
     lunchYesDays,
     dinnerYesDays,
+    weightRecordCount,
+    beforeMidnightSleepDays,
+    negativeThoughtCount,
+    noSchoolCount,
+    familyConflictCount,
+    drowsinessDays,
   };
 }
 
 /** 体验模式 5 条沟通重点（默认全部选中）。
- *  evidenceSummary 中的所有数字与日期均派生自 dailyRecords 或 constants.ts，
- *  不重复硬编码日级事实。 */
+ *  evidenceSummary 中的所有数字与日期均派生自 dailyRecords 或 timeline.ts，
+ *  evidenceDates 字段提供该 topic 的证据日期（用于跨模块校验）。 */
 export function buildXiaochenOrganizeTopics(): CommunicationTopic[] {
-  const noSchoolLabel = formatMedDates(NO_SCHOOL_DATES);
-  const derived = deriveStatsFromDailyRecords();
-  const weightTrend = `${WEIGHT_RECORDS[0].weightKg}kg（${formatMedDates([
-    WEIGHT_RECORDS[0].date,
-  ])}) → ${WEIGHT_RECORDS[1].weightKg}kg（${formatMedDates([
-    WEIGHT_RECORDS[1].date,
-  ])})`;
+  const derived = deriveStatsFromSources();
+  const noSchoolLabel = formatMedDates(TIMELINE_NO_SCHOOL_DATES);
+  const beforeMidnightLabel = formatMedDates(TIMELINE_BEFORE_MIDNIGHT_DATES);
+  const weightFirst = TIMELINE_WEIGHT_RECORDS[0];
+  const weightLast = TIMELINE_WEIGHT_RECORDS[TIMELINE_WEIGHT_RECORDS.length - 1];
+  const weightTrend = `${weightFirst.weightKg}kg（${formatMedDates([weightFirst.date])}）→ ${weightLast.weightKg}kg（${formatMedDates([weightLast.date])}）`;
 
   return [
     {
@@ -133,12 +155,13 @@ export function buildXiaochenOrganizeTopics(): CommunicationTopic[] {
       content: "上午第二三节课基本撑不住，趴过好几次。不知道是不是药的原因。",
       sourceType: "system_summary",
       evidenceSummary: [
-        `${derived.totalDays} 天内有 ${STATS.daytimeDrowsinessDays} 天记录白天困倦`,
+        `${derived.totalDays} 天内有 ${derived.drowsinessDays} 天记录白天困倦`,
         "相关记录主要集中在上午第二、三节课",
         `当前记录用药为${MEDICATION_NAME} ${MEDICATION_DOSE}，${MEDICATION_FREQUENCY}`,
         `${derived.recordedDays} 个记录日中漏服 ${derived.missedMedCount} 次`,
         "产品只表达「服药期间记录到白天困倦」，不判断困倦由药物导致",
       ],
+      evidenceDates: [...XIAOCHEN_DROWSINESS_DATES],
       selected: true,
       edited: false,
       allowedInMaterial: true,
@@ -150,10 +173,17 @@ export function buildXiaochenOrganizeTopics(): CommunicationTopic[] {
       sourceType: "system_summary",
       evidenceSummary: [
         "多数记录日在 00:30—02:00 入睡",
-        `最晚一次为 ${LATEST_SLEEP_TIME}（${formatMedDates([LATEST_SLEEP_DATE])}）`,
-        `${formatMedDates(BEFORE_MIDNIGHT_SLEEP_DATES)} 在零点前入睡`,
-        `${BREATHING_EXERCISE_DATE} 完成一次呼吸/接地练习`,
+        `最晚一次为 ${TIMELINE_LATEST_SLEEP_TIME}（${formatMedDates([TIMELINE_LATEST_SLEEP_DATE])}）`,
+        beforeMidnightLabel
+          ? `${beforeMidnightLabel} 在零点前入睡`
+          : "记录周期内未出现零点前入睡的日期",
+        `${formatMedDates([TIMELINE_BREATHING_EXERCISE_DATE])} 完成一次呼吸/接地练习`,
         "后期只呈现少数较早入睡的日期，不形成持续向好的曲线",
+      ],
+      evidenceDates: [
+        TIMELINE_LATEST_SLEEP_DATE,
+        ...TIMELINE_BEFORE_MIDNIGHT_DATES,
+        TIMELINE_BREATHING_EXERCISE_DATE,
       ],
       selected: true,
       edited: false,
@@ -165,12 +195,13 @@ export function buildXiaochenOrganizeTopics(): CommunicationTopic[] {
       content: "不是不想去，是出门前那种难受劲儿上来，动不了。",
       sourceType: "system_summary",
       evidenceSummary: [
-        `${derived.totalDays} 天内有 ${STATS.noSchoolCount} 天未到校`,
+        `${derived.totalDays} 天内有 ${derived.noSchoolCount} 天未到校`,
         `日期为 ${noSchoolLabel}`,
-        "4 个未到校日均有晨起困难相关记录",
+        `${derived.noSchoolCount} 个未到校日均有晨起困难相关记录`,
         "部分到校日存在打开作业后难以启动学习的情况（如「落了三张数学卷子，打开三分钟就受不了了」）",
         "到校日仍可能出现迟到、趴在桌上、作业未完成、与同学互动减少",
       ],
+      evidenceDates: [...TIMELINE_NO_SCHOOL_DATES],
       selected: true,
       edited: false,
       allowedInMaterial: true,
@@ -181,12 +212,13 @@ export function buildXiaochenOrganizeTopics(): CommunicationTopic[] {
       content: "尤其是关于上学的事。他们觉得我在找借口。",
       sourceType: "system_summary",
       evidenceSummary: [
-        `${derived.totalDays} 天内有 ${STATS.familyConflictCount} 次与父母冲突记录`,
+        `${derived.totalDays} 天内有 ${derived.familyConflictCount} 次与父母冲突记录`,
         "内容主要与是否到校、是否在找借口有关",
         "多数发生在晚间",
         "父母不是反派，也不被表现为完全理解或始终支持",
         "家庭冲突不被全部归类为安全风险事件",
       ],
+      evidenceDates: [...XIAOCHEN_FAMILY_CONFLICT_DATES],
       selected: true,
       edited: false,
       allowedInMaterial: true,
@@ -198,10 +230,11 @@ export function buildXiaochenOrganizeTopics(): CommunicationTopic[] {
       sourceType: "system_summary",
       evidenceSummary: [
         "用户主动表达的问题",
-        `体重记录：${weightTrend}（仅有 2 个记录点，趋势不确定）`,
+        `体重记录：${weightTrend}（共 ${derived.weightRecordCount} 个记录点，趋势基本稳定）`,
         "后期只呈现有限变化，不形成持续上升曲线",
         `早餐记录 ${derived.breakfastYesDays} 天，午餐 ${derived.lunchYesDays} 天，晚餐 ${derived.dinnerYesDays} 天（早餐更易缺失）`,
       ],
+      evidenceDates: TIMELINE_WEIGHT_RECORDS.map((w) => w.date),
       selected: true,
       edited: false,
       allowedInMaterial: true,
@@ -215,7 +248,7 @@ export function buildXiaochenOrganizeTopics(): CommunicationTopic[] {
 
 /** 体验模式高风险披露。
  *  仅包含 2 条真实包含深夜消极念头的情绪记录，对应 timeline.ts 中
- *  NEGATIVE_THOUGHT_DATES 的两个日期。
+ *  TIMELINE_NEGATIVE_THOUGHT_DATES 的两个日期。
  *
  *  「我又没去学校」与「落了三张数学卷子」不再放入高风险披露：
  *    - 前者作为学校功能受损记录纳入 topic-3 evidence
@@ -273,7 +306,7 @@ export const XIAOCHEN_ORGANIZE_RECORD_CATEGORIES = [
  * 不再使用旧 constants.PERIOD_START / PERIOD_END（6-15 ~ 7-17，含未来日期）。
  * totalDays / recordedDays 从 dailyRecords 派生，保证与日级事实一致。 */
 export const XIAOCHEN_ORGANIZE_RANGE = (() => {
-  const derived = deriveStatsFromDailyRecords();
+  const derived = deriveStatsFromSources();
   return {
     rangeKey: "custom" as const,
     startDate: XIAOCHEN_START_DATE,
