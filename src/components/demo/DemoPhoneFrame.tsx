@@ -1,9 +1,13 @@
 import type { ReactNode } from "react";
-import AppMainSurface from "@/components/AppMainSurface";
+import AppMainSurface, { type AppSurfaceMode } from "@/components/AppMainSurface";
 import DemoWidgetScreen from "./DemoWidgetScreen";
 import type { AppMainSurfaceDemoState } from "./types";
 
 type Props = {
+  /** 当前手机壳承载的 App 模式，由上层 Shell 显式传入。 */
+  appMode?: AppSurfaceMode;
+  /** 数据日期基准，主要用于自由体验模式固定 2026-07-15。 */
+  referenceNow?: Date;
   /** 案例演示状态注入 */
   demoState?: AppMainSurfaceDemoState;
   /** 对话流末尾行动卡片：用于 07:35 呼吸入口 */
@@ -30,6 +34,8 @@ type Props = {
  * showWidget=false/undefined: 渲染 AppMainSurface（其他节点）
  */
 export default function DemoPhoneFrame({
+  appMode = "guided",
+  referenceNow,
   demoState,
   dialogActionCard,
   showWidget,
@@ -45,6 +51,8 @@ export default function DemoPhoneFrame({
             <DemoWidgetScreen time={widgetTime ?? "06:40"} />
           ) : (
             <AppMainSurface
+              mode={appMode}
+              referenceNow={referenceNow}
               interactive
               variant="immersive"
               demoState={demoState}

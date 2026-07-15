@@ -1,4 +1,12 @@
-import { useState, useRef, useEffect, useCallback, lazy, Suspense } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+  lazy,
+  Suspense,
+} from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   ArrowUp,
@@ -38,6 +46,10 @@ import {
   getNextHomePhase,
   type HomeTimePhase,
 } from "@/lib/homeTimePhase";
+import {
+  formatDialogTimeForReference,
+  isSameCalendarDay,
+} from "@/lib/dialogTime";
 import { getHomePhaseBubbleText } from "@/shared/config/homeAnimationRegistry";
 import EnergyRewardFeedback, {
   type EnergyRewardEvent,
@@ -46,23 +58,18 @@ import EnergyBadge from "./EnergyBadge";
 import type { Answers, RecordEntry, RecordTypeId } from "@/data/record";
 import type { OrganizeHistoryEntry } from "@/data/organize";
 import { grantEnergy } from "@/data/userProfile";
-import { getStorageMode } from "@/shared/storage/namespacedStorage";
 import {
   getXiaochenInitialDialog,
   buildXiaochenReply,
   shouldTriggerSafetyResponse,
 } from "@/apps/experience/selectors/selectConversationThreads";
+import { XIAOCHEN_CURRENT_DATETIME } from "@/apps/experience/data/xiaochen/timeConfig";
 import type {
   AppMainSurfaceDemoState,
   DialogItem,
   DialogMessageItem,
   DialogTimeItem,
 } from "./demo/types";
-
-/* —— 体验模式数据源切换（仅切换数据注入，不改变 UI/布局/交互）——
- * 体验模式 AI 对话使用小晨统一对话历史与确定性 Mock 回复，
- * 演示模式保持原有 createMockDialogItems / buildDemoReply 行为。 */
-const IS_EXPERIENCE_MODE = getStorageMode() === "experience";
 
 /* 性能优化（2026-07-13）：按功能模块拆包，落地页 / 首页首屏不加载以下重型模块。
  * 预加载优化（2026-07-13）：所有 loader 复用集中式 moduleLoaders，
@@ -99,6 +106,16 @@ const MaterialDetailView = lazy(materialDetailViewLoader);
 const DoneStep = lazy(doneStepLoader);
 
 const ease = [0.22, 1, 0.36, 1] as const;
+
+export type AppSurfaceMode =
+  | "landing-preview"
+  | "guided"
+  | "experience"
+  | "default";
+
+function makeXiaochenReferenceNow(): Date {
+  return new Date(XIAOCHEN_CURRENT_DATETIME);
+}
 
 function createSocialSessionId(scene: SceneId): string {
   if (typeof window !== "undefined" && window.crypto?.randomUUID) {
@@ -145,8 +162,6 @@ function buildDemoReply(text: string) {
 
   return "我先记下来了。今天不用一次解决全部问题，只选一个最小动作：喝一口水、坐起来两分钟，或告诉身边的人“我现在需要慢一点”。";
 }
-
-const WEEKDAY_CHARS = ["日", "一", "二", "三", "四", "五", "六"];
 
 function HomeBreathingMenuIcon({ className = "" }: { className?: string }) {
   const reduceMotion = useReducedMotion();
@@ -200,51 +215,30 @@ function HomeBreathingMenuIcon({ className = "" }: { className?: string }) {
   );
 }
 
-function formatHHMM(date: Date): string {
-  const h = String(date.getHours()).padStart(2, "0");
-  const m = String(date.getMinutes()).padStart(2, "0");
-  return `${h}:${m}`;
-}
-
-function isSameCalendarDay(a: Date, b: Date): boolean {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
-}
-
-function isYesterday(date: Date, reference: Date): boolean {
-  const yesterday = new Date(reference);
-  yesterday.setDate(reference.getDate() - 1);
-  return isSameCalendarDay(date, yesterday);
-}
-
-function formatDialogTime(date: Date, reference = new Date()): string {
-  const hhmm = formatHHMM(date);
-
-  if (isSameCalendarDay(date, reference)) {
-    return `今天 ${hhmm}`;
-  }
-
-  if (isYesterday(date, reference)) {
-    return `昨天 ${hhmm}`;
-  }
-
-  return `周${WEEKDAY_CHARS[date.getDay()]} ${hhmm}`;
-}
-
 function dialogTimeItem(
   id: string,
   date: Date,
-  reference?: Date,
+  reference: Date,
 ): DialogTimeItem {
   return {
     kind: "time",
     id,
-    label: formatDialogTime(date, reference),
+    label: formatDialogTimeForReference(date, reference),
     createdAt: date.getTime(),
   };
+}
+
+function normalizeDialogTimeLabels(
+  items: DialogItem[],
+  reference: Date,
+): DialogItem[] {
+  return items.map((item) => {
+    if (item.kind !== "time") return item;
+    return {
+      ...item,
+      label: formatDialogTimeForReference(new Date(item.createdAt), reference),
+    };
+  });
 }
 
 function dialogMessageItem(
@@ -308,6 +302,17 @@ function createMockDialogItems(now: Date): DialogItem[] {
   ];
 }
 
+function createInitialDialogItems(
+  appMode: AppSurfaceMode,
+  reference: Date,
+): DialogItem[] {
+  if (appMode === "experience") {
+    return normalizeDialogTimeLabels(getXiaochenInitialDialog(), reference);
+  }
+
+  return createMockDialogItems(reference);
+}
+
 function shouldInsertTimeMarker(items: DialogItem[], now: Date): boolean {
   const lastTimeItem = [...items]
     .reverse()
@@ -349,6 +354,12 @@ type SurfaceMode =
   | "verify";
 
 type Props = {
+  /** 运行时应用场景：由上层 App Shell / 官网预览显式传入，避免模块加载阶段读取 storage。 */
+  mode?: AppSurfaceMode;
+  /** 数据日期基准：用于对话今天/昨天、初始线程等业务日期判断。 */
+  referenceNow?: Date;
+  /** 视觉时钟：仅用于状态栏、首页时段动画等展示层节律。 */
+  displayClock?: Date;
   /** 预览态：仅瞬时视觉反馈，不触发任何回调（首页 Hero 使用） */
   previewMode?: boolean;
   /** 可交互态：点击触发回调（沉浸式 Demo 使用）。previewMode 优先 */
@@ -396,6 +407,9 @@ type Props = {
  * 关闭后回到 home。当前阶段对话回复为本地模拟，不接 LLM / API。
  */
 export default function AppMainSurface({
+  mode: appMode = "default",
+  referenceNow,
+  displayClock,
   previewMode = false,
   interactive = false,
   variant = "hero",
@@ -408,17 +422,27 @@ export default function AppMainSurface({
 
   // —— 演示状态：enabled !== true 时所有派生值回落到内部状态 ——
   const demoEnabled = demoState?.enabled === true;
+  const isExperienceMode = appMode === "experience";
 
-  // —— 首页环境节律：当前时间（每 20s 刷新，保证分钟及时更新）+ 派生时间段 ——
-  // 仅用于 home 模式下的环境信息行 / 在在场景 / 状态文案；非 home 模式不消费。
-  const [now, setNow] = useState<Date>(() => new Date());
+  // —— 首页环境节律：展示时钟（每 20s 刷新，保证分钟及时更新）+ 数据日期基准 ——
+  // referenceNow 用于对话今天/昨天等业务日期；displayClock 只用于状态栏 / 首页时段。
+  const [now, setNow] = useState<Date>(() =>
+    isExperienceMode ? makeXiaochenReferenceNow() : new Date(),
+  );
   useEffect(() => {
-    if (demoEnabled) return; // 演示模式使用固定时间，不刷新
+    if (demoEnabled || isExperienceMode) return; // 演示/体验模式使用注入时间，不跟随系统日期
     const iv = window.setInterval(() => setNow(new Date()), 20000);
     return () => window.clearInterval(iv);
-  }, [demoEnabled]);
-  // 演示模式下使用 demoState.now；否则使用系统时间
-  const effectiveNow = demoEnabled && demoState?.now ? demoState.now : now;
+  }, [demoEnabled, isExperienceMode]);
+  const xiaochenReferenceNow = useMemo(() => makeXiaochenReferenceNow(), []);
+  const effectiveReferenceNow =
+    demoEnabled && demoState?.now
+      ? demoState.now
+      : referenceNow ?? (isExperienceMode ? xiaochenReferenceNow : now);
+  const effectiveNow =
+    demoEnabled && demoState?.now
+      ? demoState.now
+      : displayClock ?? (isExperienceMode ? effectiveReferenceNow : now);
   const homePhase = getHomeTimePhase(effectiveNow);
 
   // —— 自由体验模式首页轮播：从真实时间对应的 phase 起步，自动循环播放 7 个时间段 ——
@@ -444,11 +468,31 @@ export default function AppMainSurface({
 
   // —— 首页内模式状态（仅 interactive/immersive 下由对应 icon 触发）——
   const [mode, setMode] = useState<SurfaceMode>("home");
-  // 体验模式：使用小晨统一对话历史（7/17 复诊前线程）作为初始对话
+  // 体验模式：使用小晨统一对话历史（7/15 复诊前线程）作为初始对话
   // 演示模式：使用通用 createMockDialogItems（昨日 + 今日 mock）
   const [messages, setMessages] = useState<DialogItem[]>(() =>
-    IS_EXPERIENCE_MODE ? getXiaochenInitialDialog() : createMockDialogItems(now),
+    createInitialDialogItems(appMode, effectiveReferenceNow),
   );
+  const referenceNowMs = referenceNow?.getTime();
+  const initialDialogSignature = `${appMode}:${
+    referenceNowMs ??
+    (isExperienceMode ? xiaochenReferenceNow.getTime() : "runtime")
+  }`;
+  useEffect(() => {
+    const nextReference =
+      referenceNowMs != null
+        ? new Date(referenceNowMs)
+        : isExperienceMode
+          ? xiaochenReferenceNow
+          : new Date();
+    setMessages(createInitialDialogItems(appMode, nextReference));
+  }, [
+    initialDialogSignature,
+    appMode,
+    referenceNowMs,
+    isExperienceMode,
+    xiaochenReferenceNow,
+  ]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
@@ -458,6 +502,7 @@ export default function AppMainSurface({
   const scrollRef = useRef<HTMLDivElement>(null);
   // AI 回复 setTimeout 的句柄：返回对话时清理，避免迟到回复残留到下次进入
   const dialogReplyTimerRef = useRef<number | null>(null);
+  const dialogEventCounterRef = useRef(0);
 
   // —— 缓解模式状态 ——
   // 未开放能力项已在卡片上标识「暂未开放」标签，不再使用 Toast 提醒。
@@ -873,19 +918,27 @@ export default function AppMainSurface({
     if (demoEnabled) return;
     const text = input.trim();
     if (!text || sending) return;
-    const sentAt = new Date();
+    dialogEventCounterRef.current += 1;
+    const sentAt = isExperienceMode
+      ? new Date(effectiveReferenceNow.getTime())
+      : new Date();
+    const sentId = `${sentAt.getTime()}-${dialogEventCounterRef.current}`;
     setMessages((items) => {
       const nextItems = shouldInsertTimeMarker(items, sentAt)
         ? [
             ...items,
-            dialogTimeItem(`time-${sentAt.getTime()}`, sentAt),
+            dialogTimeItem(
+              `time-${sentId}`,
+              sentAt,
+              isExperienceMode ? effectiveReferenceNow : sentAt,
+            ),
           ]
         : [...items];
 
       return [
         ...nextItems,
         dialogMessageItem(
-          `user-${sentAt.getTime()}`,
+          `user-${sentId}`,
           "user",
           text,
           sentAt,
@@ -897,23 +950,27 @@ export default function AppMainSurface({
     // 体验模式：安全承接回复内容较长，给予更长延迟让用户充分阅读
     // 普通回复保持 300–600ms；安全承接回复 800–1100ms
     const isSafetyTrigger =
-      IS_EXPERIENCE_MODE && shouldTriggerSafetyResponse(text);
+      isExperienceMode && shouldTriggerSafetyResponse(text);
     const delay = isSafetyTrigger
       ? 800 + Math.random() * 300
       : 300 + Math.random() * 300;
     // 保存 timer 句柄：返回对话时由 closeDialog 清理，避免迟到回复写入历史
     dialogReplyTimerRef.current = window.setTimeout(() => {
       dialogReplyTimerRef.current = null;
-      const replyAt = new Date();
+      dialogEventCounterRef.current += 1;
+      const replyAt = isExperienceMode
+        ? new Date(effectiveReferenceNow.getTime())
+        : new Date();
+      const replyId = `${replyAt.getTime()}-${dialogEventCounterRef.current}`;
       // 体验模式：使用小晨统一确定性 Mock 回复（含安全承接逻辑）
       // 演示模式：使用通用 buildDemoReply
-      const replyText = IS_EXPERIENCE_MODE
+      const replyText = isExperienceMode
         ? buildXiaochenReply(text)
         : buildDemoReply(text);
       setMessages((m) => [
         ...m,
         dialogMessageItem(
-          `zaizai-${replyAt.getTime()}`,
+          `zaizai-${replyId}`,
           "zaizai",
           replyText,
           replyAt,

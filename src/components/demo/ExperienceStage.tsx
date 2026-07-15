@@ -1,8 +1,10 @@
+import { useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import GuidedModeSwitch from "./GuidedModeSwitch";
 import DemoPhoneFrame from "./DemoPhoneFrame";
 import FreeExperiencePanel from "./FreeExperiencePanel";
 import { SOFT_EASE } from "@/lib/motionVariants";
+import { XIAOCHEN_CURRENT_DATETIME } from "@/apps/experience/data/xiaochen/timeConfig";
 
 type Props = {
   onReturnHome: () => void;
@@ -19,6 +21,11 @@ export default function ExperienceStage({
   onReturnHome,
   onSwitchToGuided,
 }: Props) {
+  const referenceNow = useMemo(
+    () => new Date(XIAOCHEN_CURRENT_DATETIME),
+    [],
+  );
+
   return (
     <div className="mx-auto flex min-h-full w-full max-w-[1120px] flex-col px-6 py-8">
       {/* 顶部弱导航：返回入口位于舞台左侧，模式切换器严格居中 */}
@@ -58,7 +65,10 @@ export default function ExperienceStage({
           >
             <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-[auto_400px] lg:justify-center lg:gap-x-20 lg:gap-y-0">
               <div className="order-2 justify-self-center lg:order-1">
-                <DemoPhoneFrame />
+                <DemoPhoneFrame
+                  appMode="experience"
+                  referenceNow={referenceNow}
+                />
               </div>
 
               <div className="order-1 w-full lg:order-2">

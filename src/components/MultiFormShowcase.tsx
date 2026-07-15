@@ -57,7 +57,7 @@ function AppSurface() {
   return (
     <div className="mx-auto w-[min(380px,calc(100vw-64px))] -translate-y-10">
       <PhoneFrame>
-        <AppMainSurface previewMode />
+        <AppMainSurface mode="landing-preview" previewMode />
       </PhoneFrame>
     </div>
   );

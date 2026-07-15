@@ -156,7 +156,7 @@ function IntroScreen({ onNext }: { onNext: () => void }) {
  *    右下角 AI对话 icon 进入首页内 dialog 模式；
  *    左下角 Users（陪做）icon 进入首页内 presenceSelect 模式（共同在场）。 */
 function HomeScreen() {
-  return <AppMainSurface interactive variant="immersive" />;
+  return <AppMainSurface mode="default" interactive variant="immersive" />;
 }
 
 /* —— 屏 2：故事推进（生活节点，不做治疗承诺） —— */
