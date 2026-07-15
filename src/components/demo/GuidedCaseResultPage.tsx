@@ -48,17 +48,13 @@ export default function GuidedCaseResultPage() {
   return (
     <div className="mx-auto w-full max-w-[920px]">
       {/* —— A. 弱化时间标签 —— */}
-      <p className="text-center text-[13px] leading-[1.6] text-ink-faint">
+      <p className="text-center text-[15px] leading-[1.6] text-ink-faint">
         使用在呀 ZÀIYA 两周后
       </p>
 
       {/* —— B. 主标题 —— */}
       <h1 className="mt-3 text-center text-[26px] font-semibold leading-[1.5] text-ink">
-        小晨没有痊愈。
-        <br />
-        但有几件事，
-        <br className="sm:hidden" />
-        两周前她做不到。
+        小晨在悄无声息的发生变化
       </h1>
 
       {/* —— D. 四张变化证据卡片 —— */}
