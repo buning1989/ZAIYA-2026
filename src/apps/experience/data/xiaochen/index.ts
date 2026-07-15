@@ -148,15 +148,16 @@ export type { ExperiencePrivacyState } from "./contacts";
 /* —— 隐私状态（re-export）—— */
 export type { ExperiencePrivacyState as ExperiencePrivacyStateType } from "./privacyState";
 
-/* —— 对话 —— */
+/* —— 对话 ——
+ * 仅包含日期 ≤ XIAOCHEN_CURRENT_DATE（2026-07-15）的线程。
+ * 原 CONVERSATION_THREAD_0717 / 0718 已移除（未来事件）。 */
 export {
   CONVERSATION_THREAD_0701,
   CONVERSATION_THREAD_0704,
   CONVERSATION_THREAD_0706,
   CONVERSATION_THREAD_0709,
   CONVERSATION_THREAD_0710,
-  CONVERSATION_THREAD_0717,
-  CONVERSATION_THREAD_0718,
+  CONVERSATION_THREAD_0715,
   createExperienceDialogItems,
   buildExperienceReply,
   EXPERIENCE_CONVERSATION,

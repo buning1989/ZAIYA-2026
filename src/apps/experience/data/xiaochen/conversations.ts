@@ -9,13 +9,26 @@
  *   - 时间条目使用 label 字段承载人类可读时间串，createdAt 承载确定性时间戳
  *   - 消息条目仅含 kind / id / role / text / createdAt，不引入额外字段
  *   - 所有回复为确定性输出（正则优先级匹配），不依赖随机数或网络
+ *   - 所有线程日期 ≤ XIAOCHEN_CURRENT_DATE（2026-07-15）
  *
- * 与 constants.ts 一致，本文件为小晨体验模式的统一对话数据源。 */
+ * 时间基准：来自 ./timeConfig 的 XIAOCHEN_CURRENT_DATE，不在本文件中重新硬编码。 */
 import type { DialogItem } from "@/components/demo/types";
+import { XIAOCHEN_CURRENT_DATE } from "./timeConfig";
 
-/** 构造 2026 年 7 月的确定性时间戳（本地时区，与 createMockDialogItems 约定一致）。 */
-const ts = (month: number, day: number, hour: number, minute: number): number =>
-  new Date(2026, month - 1, day, hour, minute).getTime();
+/** 构造 YYYY-MM-DD HH:mm 格式的本地可读时间串（用于 time 条目的 label）。 */
+function formatTimeLabel(month: number, day: number, hour: number, minute: number): string {
+  const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+  return `${month}月${day}日 ${pad(hour)}:${pad(minute)}`;
+}
+
+/** 构造带 +08:00 时区的确定性时间戳（避免本地时区偏移）。
+ *  不使用 new Date(本地参数) 或 Date.now()。 */
+const ts = (month: number, day: number, hour: number, minute: number): number => {
+  const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+  return new Date(
+    `2026-${pad(month)}-${pad(day)}T${pad(hour)}:${pad(minute)}:00+08:00`,
+  ).getTime();
+};
 
 /* ——————————————————————————————————————————————————————————————
  * 线程1：7月1日深夜 - 脑子停不下来
@@ -54,6 +67,7 @@ export const CONVERSATION_THREAD_0706: DialogItem[] = [
 
 /* ——————————————————————————————————————————————————————————————
  * 线程4：7月9日早上 - 起不来不想去学校
+ * 事实基准（dailyRecords.ts 2026-07-09）：mood=1（很糟）、漏服、仅晚餐、无活动、入睡 02:50。
  * —————————————————————————————————————————————————————————————— */
 export const CONVERSATION_THREAD_0709: DialogItem[] = [
   { kind: "time", id: "xc-0709-time", label: "7月9日 06:50", createdAt: ts(7, 9, 6, 50) },
@@ -75,34 +89,26 @@ export const CONVERSATION_THREAD_0710: DialogItem[] = [
 ];
 
 /* ——————————————————————————————————————————————————————————————
- * 线程6：7月17日 - 复诊前不知道怎么向医生表达
+ * 线程6：7月15日晚 - 复诊前不知道怎么向医生表达
+ * 事实基准（dailyRecords.ts 2026-07-15）：mood=4（还可以），moodNote="复诊前把这几周看了一遍，还是有点紧张。"
+ * 当前日期 = XIAOCHEN_CURRENT_DATE = 2026-07-15，复诊日 7-18，复诊前 3 天。
+ * 原 7-17 线程已迁移为 7-15，以匹配统一时间线（不再有 7-16 之后的已发生对话）。
  * —————————————————————————————————————————————————————————————— */
-export const CONVERSATION_THREAD_0717: DialogItem[] = [
-  { kind: "time", id: "xc-0717-time", label: "7月17日 21:30", createdAt: ts(7, 17, 21, 30) },
-  { kind: "message", id: "xc-0717-u1", role: "user", text: "明天要复诊了，不知道该跟王医生说什么", createdAt: ts(7, 17, 21, 31) },
-  { kind: "message", id: "xc-0717-z1", role: "zaizai", text: "嗯。要不先说一件你最想让她知道的事？", createdAt: ts(7, 17, 21, 32) },
-  { kind: "message", id: "xc-0717-u2", role: "user", text: "就是……我不知道我算不算在变好。有的地方好像松了一点，有的地方还是老样子。", createdAt: ts(7, 17, 21, 33) },
-  { kind: "message", id: "xc-0717-z2", role: "zaizai", text: "这句话本身就很重要。你愿意的话，我可以帮你把这两周的事情整理一下，方便你带过去。", createdAt: ts(7, 17, 21, 34) },
-  { kind: "message", id: "xc-0717-u3", role: "user", text: "好。", createdAt: ts(7, 17, 21, 35) },
-  { kind: "message", id: "xc-0717-z3", role: "zaizai", text: "我已经准备好了。你可以去「帮我整理」里看看，有不想要的可以删掉。", createdAt: ts(7, 17, 21, 36) },
-];
-
-/* ——————————————————————————————————————————————————————————————
- * 线程7：7月18日 - 复诊后
- * —————————————————————————————————————————————————————————————— */
-export const CONVERSATION_THREAD_0718: DialogItem[] = [
-  { kind: "time", id: "xc-0718-time", label: "7月18日 15:00", createdAt: ts(7, 18, 15, 0) },
-  { kind: "message", id: "xc-0718-u1", role: "user", text: "复诊完了。王医生说继续吃药，不用改。", createdAt: ts(7, 18, 15, 1) },
-  { kind: "message", id: "xc-0718-z1", role: "zaizai", text: "嗯。有听到想听的话吗？", createdAt: ts(7, 18, 15, 2) },
-  { kind: "message", id: "xc-0718-u2", role: "user", text: "她说能看到一些小的变化，让我继续记录。", createdAt: ts(7, 18, 15, 3) },
-  { kind: "message", id: "xc-0718-z2", role: "zaizai", text: "那就好。你今天已经做了一件很大的事——去复诊，还把情况说清楚了。", createdAt: ts(7, 18, 15, 4) },
+export const CONVERSATION_THREAD_0715: DialogItem[] = [
+  { kind: "time", id: "xc-0715-time", label: formatTimeLabel(7, 15, 21, 30), createdAt: ts(7, 15, 21, 30) },
+  { kind: "message", id: "xc-0715-u1", role: "user", text: "过几天要复诊了，不知道该跟王医生说什么", createdAt: ts(7, 15, 21, 31) },
+  { kind: "message", id: "xc-0715-z1", role: "zaizai", text: "嗯。要不先说一件你最想让她知道的事？", createdAt: ts(7, 15, 21, 32) },
+  { kind: "message", id: "xc-0715-u2", role: "user", text: "就是……我不知道我算不算在变好。有的地方好像松了一点，有的地方还是老样子。", createdAt: ts(7, 15, 21, 33) },
+  { kind: "message", id: "xc-0715-z2", role: "zaizai", text: "这句话本身就很重要。你愿意的话，我可以帮你把这段时间的事情整理一下，方便你带过去。", createdAt: ts(7, 15, 21, 34) },
+  { kind: "message", id: "xc-0715-u3", role: "user", text: "好。", createdAt: ts(7, 15, 21, 35) },
+  { kind: "message", id: "xc-0715-z3", role: "zaizai", text: "我已经准备好了。你可以去「帮我整理」里看看，有不想要的可以删掉。", createdAt: ts(7, 15, 21, 36) },
 ];
 
 /**
  * 体验模式进入对话页时的初始对话历史。
- * 使用最近的线程（7月17日复诊前）作为上下文。 */
+ * 使用最近的线程（7月15日复诊前）作为上下文，与 XIAOCHEN_CURRENT_DATE 一致。 */
 export function createExperienceDialogItems(): DialogItem[] {
-  return [...CONVERSATION_THREAD_0717];
+  return [...CONVERSATION_THREAD_0715];
 }
 
 /**
@@ -130,7 +136,7 @@ export function buildExperienceReply(text: string): string {
   }
 
   if (/复诊|王医生|医生|怎么说明天/.test(text)) {
-    return "要不先说一件你最想让她知道的事？我也可以帮你整理一下这两周的事。";
+    return "要不先说一件你最想让她知道的事？我也可以帮你整理一下这段时间的事。";
   }
 
   if (/没用|撑不下去|没意思|不想活|不想存在|不想醒来|消失/.test(text)) {
@@ -149,7 +155,13 @@ export interface ExperienceConversationData {
   replyBuilder: (text: string) => string;
 }
 
-/** 小晨体验模式对话数据汇总导出。 */
+/**
+ * 小晨体验模式对话数据汇总导出。
+ *
+ * 仅包含日期 ≤ XIAOCHEN_CURRENT_DATE（2026-07-15）的线程。
+ * 原 CONVERSATION_THREAD_0717 / 0718 已移除：
+ *   - 0717（7-17 复诊前）迁移为 0715（7-15 复诊前），与统一时间线对齐；
+ *   - 0718（7-18 复诊后）属于未来事件，不得展示为已发生对话。 */
 export const EXPERIENCE_CONVERSATION: ExperienceConversationData = {
   threads: [
     CONVERSATION_THREAD_0701,
@@ -157,9 +169,11 @@ export const EXPERIENCE_CONVERSATION: ExperienceConversationData = {
     CONVERSATION_THREAD_0706,
     CONVERSATION_THREAD_0709,
     CONVERSATION_THREAD_0710,
-    CONVERSATION_THREAD_0717,
-    CONVERSATION_THREAD_0718,
+    CONVERSATION_THREAD_0715,
   ],
   initialDialog: createExperienceDialogItems(),
   replyBuilder: buildExperienceReply,
 };
+
+/* —— 当前演示日期（re-export 自 timeConfig，便于对话模块内部引用）—— */
+export { XIAOCHEN_CURRENT_DATE };

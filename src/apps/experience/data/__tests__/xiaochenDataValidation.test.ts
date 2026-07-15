@@ -15,11 +15,11 @@ import {
   WEIGHT_RECORDS,
   NEGATIVE_THOUGHT_DATES,
   APPOINTMENT_DATE,
-  PERIOD_START,
   PERIOD_END,
   REFERENCE_DATE,
   STATS,
 } from "../xiaochen/constants";
+import { XIAOCHEN_CURRENT_DATE } from "../xiaochen/timeConfig";
 import { XIAOCHEN_PRAISE_CARDS } from "../xiaochen/praiseCards";
 import { EXPERIENCE_CONVERSATION } from "../xiaochen/conversations";
 
@@ -75,9 +75,12 @@ describe("小晨体验模式统一数据源校验", () => {
   });
 
   it("夸夸卡日期可追溯到时间线事件", () => {
+    // 与 validators.ts 第 16 项保持一致：允许 RECORDED_DATE_KEYS + APPOINTMENT_DATE + CURRENT_DATE
+    // CURRENT_DATE（2026-07-15）在 dailyRecords.ts 中有完整记录，但 constants.ts 旧逻辑列为无记录日
     const timelineDates = new Set<string>([
       ...XIAOCHEN_RECORDED_DATE_KEYS,
       APPOINTMENT_DATE,
+      XIAOCHEN_CURRENT_DATE,
     ]);
     for (const card of XIAOCHEN_PRAISE_CARDS) {
       const cardDate = card.createdAt.slice(0, 10);
@@ -85,7 +88,9 @@ describe("小晨体验模式统一数据源校验", () => {
     }
   });
 
-  it("对话线程覆盖关键事件日期（7/4 呼吸练习、7/17 复诊准备、7/18 复诊）", () => {
+  it("对话线程覆盖关键事件日期（7/4 呼吸练习、7/9 低谷、7/15 复诊前）", () => {
+    // 对齐统一时间线（XIAOCHEN_CURRENT_DATE = 2026-07-15）
+    // 不再要求 7/17 / 7/18 已发生对话（属于未来事件，已移除）
     const conversationDates = new Set<string>();
     for (const thread of EXPERIENCE_CONVERSATION.threads) {
       for (const item of thread) {
@@ -95,7 +100,7 @@ describe("小晨体验模式统一数据源校验", () => {
       }
     }
     expect(conversationDates.has("2026-07-04")).toBe(true);
-    expect(conversationDates.has("2026-07-17")).toBe(true);
-    expect(conversationDates.has("2026-07-18")).toBe(true);
+    expect(conversationDates.has("2026-07-09")).toBe(true);
+    expect(conversationDates.has("2026-07-15")).toBe(true);
   });
 });

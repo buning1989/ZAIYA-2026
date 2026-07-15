@@ -26,6 +26,7 @@ import { XIAOCHEN_DROWSINESS_DATES, XIAOCHEN_FAMILY_CONFLICT_DATES } from "./tim
 import { XIAOCHEN_PRAISE_CARDS } from "./praiseCards";
 import { XIAOCHEN_ORGANIZE_DISCLOSURE } from "./organize";
 import { EXPERIENCE_CONVERSATION } from "./conversations";
+import { XIAOCHEN_CURRENT_DATE } from "./timeConfig";
 
 export interface ValidationResult {
   ok: boolean;
@@ -217,10 +218,16 @@ export function validateXiaochenExperienceData(): ValidationResult {
     );
   }
 
-  /* —— 16. 夸夸卡日期必须能追溯到时间线事件 —— */
+  /* —— 16. 夸夸卡日期必须能追溯到时间线事件 ——
+   * 时间线集合以 constants.ts 的 RECORDED_DATE_KEYS 为基准，并额外允许：
+   *   - APPOINTMENT_DATE（复诊日，未来事件，但夸夸卡可能引用）
+   *   - XIAOCHEN_CURRENT_DATE（当前演示日 2026-07-15，dailyRecords.ts 中
+   *     该日有完整三餐+服药+步行记录，但 constants.ts 旧逻辑仍将其列为
+   *     无记录日；夸夸卡允许引用当天发生的复诊前整理行为） */
   const timelineDates = new Set<string>([
     ...XIAOCHEN_RECORDED_DATE_KEYS,
     APPOINTMENT_DATE,
+    XIAOCHEN_CURRENT_DATE,
   ]);
   for (const card of XIAOCHEN_PRAISE_CARDS) {
     const cardDate = extractDate(card.createdAt);
@@ -231,8 +238,13 @@ export function validateXiaochenExperienceData(): ValidationResult {
     }
   }
 
-  /* —— 17. 对话线程覆盖关键事件日期 —— */
-  const requiredConversationDates = ["2026-07-04", "2026-07-17", "2026-07-18"];
+  /* —— 17. 对话线程覆盖关键事件日期 ——
+   * 关键事件对齐统一时间线（XIAOCHEN_CURRENT_DATE = 2026-07-15）：
+   *   - 7/4  凌晨呼吸练习
+   *   - 7/9  低谷日（漏服+仅晚餐+无活动，对话事实与 dailyRecords 一致）
+   *   - 7/15 复诊前夜（当前最近线程，与 currentDate 一致）
+   * 不再要求 7/17 / 7/18 已发生对话（属于未来事件，已移除）。 */
+  const requiredConversationDates = ["2026-07-04", "2026-07-09", "2026-07-15"];
   const conversationDates = new Set<string>();
   for (const thread of EXPERIENCE_CONVERSATION.threads) {
     for (const item of thread) {
@@ -244,7 +256,7 @@ export function validateXiaochenExperienceData(): ValidationResult {
   for (const required of requiredConversationDates) {
     if (!conversationDates.has(required)) {
       warnings.push(
-        `[validators] 对话线程未覆盖关键日期 ${required}（7/4 呼吸练习 / 7/17 复诊准备 / 7/18 复诊）`,
+        `[validators] 对话线程未覆盖关键日期 ${required}（7/4 呼吸练习 / 7/9 低谷 / 7/15 复诊前）`,
       );
     }
   }

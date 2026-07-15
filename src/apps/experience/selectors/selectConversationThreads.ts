@@ -1,8 +1,8 @@
 /* —— Selector：AI 对话预置历史与确定性 Mock 回复 ——
  *
  * 体验模式 AI 对话模块必须通过本 Selector 读取：
- *   - 初始对话历史（7/17 复诊前线程）
- *   - 全部对话线程（7 个，覆盖关键事件）
+ *   - 初始对话历史（7/15 复诊前线程，与 XIAOCHEN_CURRENT_DATE 一致）
+ *   - 全部对话线程（6 个，覆盖 7/1—7/15 关键事件，日期 ≤ 7-15）
  *   - 确定性 Mock 回复生成器
  *
  * 不再使用 AppMainSurface 中的 createMockDialogItems / buildDemoReply。
@@ -27,7 +27,7 @@ export function getXiaochenInitialDialog(): DialogItem[] {
   return createExperienceDialogItems();
 }
 
-/* —— 全部对话线程（7 个）—— */
+/* —— 全部对话线程（6 个，日期 ≤ 2026-07-15）—— */
 export function getXiaochenConversationThreads(): DialogItem[][] {
   return EXPERIENCE_CONVERSATION.threads.map((thread) => [...thread]);
 }
