@@ -446,11 +446,13 @@ export default function AppMainSurface({
       : displayClock ?? (isExperienceMode ? effectiveReferenceNow : now);
   const homePhase = getHomeTimePhase(effectiveNow);
 
-  // —— 自由体验模式首页轮播：从真实时间对应的 phase 起步，自动循环播放 7 个时间段 ——
-  // 仅在 immersive + 非 demo 模式下启用，让体验者在短时间内能感知到全部 7 段动画+文案。
+  // —— 首页轮播：从真实时间对应的 phase 起步，自动循环播放 7 个时间段 ——
+  // 仅在普通 immersive + 非 demo/experience 模式下启用，让体验者在短时间内能感知到全部 7 段动画+文案。
+  // 自由体验模式使用固定的小晨时间锚点，避免状态栏 23:59 与轮播文案错位。
   // 案例演示模式（demoEnabled）使用 demoState.now 注入的固定 phase，不受轮播影响。
   // 落地页 Hero 固定 morning，也不受影响。
-  const isFreeImmersive = variant === "immersive" && !demoEnabled;
+  const isFreeImmersive =
+    variant === "immersive" && !demoEnabled && !isExperienceMode;
   const [carouselPhase, setCarouselPhase] =
     useState<HomeTimePhase>(homePhase);
   useEffect(() => {

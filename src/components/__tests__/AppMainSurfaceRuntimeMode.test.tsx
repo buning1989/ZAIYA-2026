@@ -26,6 +26,17 @@ function renderDialog(mode: AppSurfaceMode) {
   );
 }
 
+function renderExperienceHome() {
+  return renderToStaticMarkup(
+    <AppMainSurface
+      mode="experience"
+      referenceNow={xiaochenReferenceNow}
+      interactive
+      variant="immersive"
+    />,
+  );
+}
+
 describe("AppMainSurface runtime mode", () => {
   it("switches from landing preview data to Xiaochen experience data without module-level mode residue", () => {
     const landing = renderDialog("landing-preview");
@@ -69,5 +80,17 @@ describe("AppMainSurface runtime mode", () => {
     expect(experience).toContain("王医生");
     expect(experience).toContain("今天 21:30");
     expect(experience).not.toContain("刚刚又有点卡住");
+  });
+
+  it("keeps the experience home bubble aligned with the fixed 23:59 clock", () => {
+    const experience = renderExperienceHome();
+
+    expect(experience).toContain("23:59");
+    expect(experience).toMatch(
+      /把心里的事一件件摆出来，它们就没那么挤了。\.webm"[^>]+style="opacity:1"/,
+    );
+    expect(experience).not.toMatch(
+      /今天有什么小小的好事发生吗？\.webm"[^>]+style="opacity:1"/,
+    );
   });
 });
