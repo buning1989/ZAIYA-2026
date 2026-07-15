@@ -67,7 +67,10 @@ export default function GuidedProductValuePage({
   return (
     <div className="mx-auto w-full max-w-[920px]">
       {/* —— A. 主标题 —— */}
-      <h1 className="text-center text-[15px] font-semibold leading-[1.5] text-ink">
+      <p className="text-center text-[15px] leading-[1.6] text-ink-faint">
+        持续使用在呀 ZÀIYA 会发生什么
+      </p>
+      <h1 className="mt-3 text-center text-[36px] font-semibold leading-[1.5] text-ink">
         小晨和身边的人，开始重新建立连接
       </h1>
 
@@ -76,8 +79,11 @@ export default function GuidedProductValuePage({
         {relationCards.map((card) => (
           <div
             key={card.title}
-            className="flex min-h-[238px] flex-col rounded-2xl border border-line-soft bg-white px-5 py-5"
+            className="flex flex-col rounded-2xl border border-line-soft bg-white px-5 py-5"
           >
+            <span className="inline-block w-fit rounded-full border border-line-soft bg-white px-2.5 py-0.5 text-[11px] tracking-[0.04em] text-ink">
+              {card.tag}
+            </span>
             <p className="mt-3 text-[16px] font-normal leading-[1.4] text-ink">
               {card.title}
             </p>
