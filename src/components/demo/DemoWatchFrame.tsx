@@ -10,8 +10,7 @@
  * - 只传递"在呀在饭点轻轻出现"
  *
  * 文案严格使用剧情文件原文：
- *   到饭点啦，
- *   今天吃点什么呀?
+ *   到饭点了，今天吃什么呀？
  */
 
 type Props = {
@@ -58,7 +57,7 @@ export default function DemoWatchFrame({ time = "12:00" }: Props) {
             {/* 文案区域（标题 + 辅助文案） */}
             <div className="mt-auto w-full pb-[20px] text-center">
               <p className="text-[15px] font-semibold leading-[21px] text-[#34402F]">
-                我的饭点到了，先吃了呀
+                到饭点了，今天吃什么呀？
               </p>
             </div>
           </div>
