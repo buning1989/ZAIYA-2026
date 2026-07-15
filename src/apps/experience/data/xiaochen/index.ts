@@ -4,10 +4,13 @@
  * 不得直接 import 子文件，避免数据源分散。
  *
  * 子文件职责：
- *   - constants.ts     统一常量（日期/统计/用药/诊断）
+ *   - timeConfig.ts    统一时间配置（当前日/开始日/复诊日/时区）← 单一事实源
+ *   - dailyRecords.ts  统一日级事实数据（情绪/入睡/三餐/服药/活动/体重）← 单一事实源
+ *   - lookbackRecords.ts 回头看看适配层（周/月视图配置 + 兼容别名）
+ *   - constants.ts     旧统一常量（日期/统计/用药/诊断）— 待后续轮次迁移
  *   - profile.ts       人物资料只读视图（年龄/体重/诊断/复诊）
  *   - timeline.ts      时间线事件汇总（供校验与 organize 派生）
- *   - records.ts       33 天每日 DailyLookbackData
+ *   - records.ts       旧 33 天每日 DailyLookbackData — 待后续轮次迁移
  *   - praiseCards.ts   预置夸夸卡（6 张，可追溯时间线）
  *   - contacts.ts      预置联系人与服用安排
  *   - privacyState.ts  隐私权限状态（re-export from contacts.ts）
@@ -35,6 +38,25 @@ import {
   XIAOCHEN_ORGANIZE_RANGE,
   XIAOCHEN_ORGANIZE_RECORD_CATEGORIES,
 } from "./organize";
+
+/* —— 统一时间配置（单一事实源，下一轮迁移目标）—— */
+export {
+  XIAOCHEN_CURRENT_DATE,
+  XIAOCHEN_START_DATE,
+  XIAOCHEN_FOLLOWUP_DATE,
+  XIAOCHEN_TIMEZONE,
+  XIAOCHEN_CURRENT_DATETIME,
+  XIAOCHEN_CURRENT_DATE_INSTANCE,
+} from "./timeConfig";
+
+/* —— 统一日级事实数据（单一事实源，下一轮迁移目标）——
+ * 注：XIAOCHEN_DAILY_RECORDS 与旧 records.ts 的同名导出冲突，
+ * 因此本入口仅 re-export 数组形态 XIAOCHEN_DAILY_ALL_DAYS 与类型。
+ * 需要 Record<string, DailyLookbackData> 形态时，
+ * 请通过 lookbackRecords.ts 的 XIAOCHEN_LOOKBACK_DAILY_RECORDS 别名访问，
+ * 该别名直接引用本数据源。 */
+export { XIAOCHEN_DAILY_ALL_DAYS } from "./dailyRecords";
+export type { XiaochenDailyRecord } from "./dailyRecords";
 
 /* —— 常量 —— */
 export {
