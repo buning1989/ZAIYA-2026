@@ -13,6 +13,7 @@ import Reveal from "./Reveal";
 import SectionEyebrow from "./SectionEyebrow";
 import ZaizaiVideo, { ZAIZAI_RELIEF_VIDEO_SRC } from "./ZaizaiVideo";
 import SubsectionEyebrow from "./SubsectionEyebrow";
+import ZaizaiSpeechBubble from "./ZaizaiSpeechBubble";
 
 type Solution = {
   step: string;
@@ -272,25 +273,29 @@ function ReliefEntryPreview() {
 
           <div className="mt-7 flex items-center justify-between">
             <ChevronLeft className="h-6 w-6 text-ink-soft" strokeWidth={1.8} />
-            <div className="grid h-9 w-9 place-items-center rounded-full border border-[#E8D9B8] bg-[#FFF8EB] text-[#C69838]">
+            <div className="grid h-9 w-9 place-items-center rounded-full border border-[#E8D9B8] bg-white text-[#C69838]">
               <Sprout className="h-4 w-4" strokeWidth={1.8} />
             </div>
           </div>
 
-          <div className="mt-1 flex flex-col items-center">
-            <div className="flex h-[168px] items-center justify-center">
+          <div className="mt-6 flex items-center justify-center gap-1">
+            <div className="flex h-[112px] w-[96px] shrink-0 items-center justify-center">
               <ZaizaiVideo
                 src={ZAIZAI_RELIEF_VIDEO_SRC}
                 className="h-[98px] w-[98px]"
                 shadow={false}
               />
             </div>
-            <p className="mt-1 text-[13px] leading-relaxed text-ink-soft/80">
+            <ZaizaiSpeechBubble
+              size="regular"
+              className="-ml-2 max-w-[176px]"
+              textClassName="text-[13px]"
+            >
               不着急，先让自己慢下来。
-            </p>
+            </ZaizaiSpeechBubble>
           </div>
 
-          <div className="mt-4 pb-8">
+          <div className="mt-6 pb-8">
             <div className="mb-[10px] text-[13px] font-medium leading-5 text-[#7B8376]">
               当前可用
             </div>

@@ -53,6 +53,11 @@ type Point = {
   y: number;
 };
 
+type Size = {
+  width: number;
+  height: number;
+};
+
 type FlightGeometry = {
   origin: Point;
   target: Point;
@@ -66,19 +71,19 @@ type LightVisual = {
 const lightVisuals: Record<LightRewardKind, LightVisual> = {
   sunlight: {
     Icon: Sun,
-    particleClass: "text-ink/75 drop-shadow-[0_7px_12px_rgba(44,59,39,0.16)]",
+    particleClass: "text-ink/75",
   },
   moonlight: {
     Icon: Moon,
-    particleClass: "text-ink/75 drop-shadow-[0_7px_12px_rgba(44,59,39,0.16)]",
+    particleClass: "text-ink/75",
   },
   starlight: {
     Icon: Star,
-    particleClass: "text-ink/75 drop-shadow-[0_7px_12px_rgba(44,59,39,0.16)]",
+    particleClass: "text-ink/75",
   },
 };
 
-function getFallbackTarget(bounds: DOMRect): Point {
+function getFallbackTarget(bounds: Size): Point {
   return {
     x: bounds.width - 54,
     y: 78,
@@ -89,7 +94,7 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-function getFeedbackOrigin(bounds: DOMRect): Point {
+function getFeedbackOrigin(bounds: Size): Point {
   const minY = bounds.height * FEEDBACK_MIN_Y_RATIO;
   const maxY = bounds.height - FEEDBACK_BOTTOM_SAFE_GAP;
   const idealY = bounds.height - FEEDBACK_BOTTOM_OFFSET;
@@ -122,8 +127,16 @@ export default function EnergyRewardFeedback({
       return;
     }
 
-    const overlayBounds = overlayRef.current?.getBoundingClientRect();
-    if (!overlayBounds) return;
+    const overlayElement = overlayRef.current;
+    const overlayBounds = overlayElement?.getBoundingClientRect();
+    if (!overlayElement || !overlayBounds) return;
+
+    // The surrounding demo can be CSS-scaled. DOMRects use rendered pixels,
+    // while absolute positions inside the overlay use its unscaled layout pixels.
+    const overlayLayoutSize = {
+      width: overlayElement.clientWidth,
+      height: overlayElement.clientHeight,
+    };
 
     const targetElement =
       targetRef.current?.querySelector<SVGElement>(
@@ -131,11 +144,15 @@ export default function EnergyRewardFeedback({
       ) ?? targetRef.current;
     const targetBounds = targetElement?.getBoundingClientRect();
     const target = targetBounds
-      ? getLightRewardTargetPoint(overlayBounds, targetBounds)
-      : getFallbackTarget(overlayBounds);
+      ? getLightRewardTargetPoint(
+          overlayBounds,
+          overlayLayoutSize,
+          targetBounds,
+        )
+      : getFallbackTarget(overlayLayoutSize);
 
     setGeometry({
-      origin: getFeedbackOrigin(overlayBounds),
+      origin: getFeedbackOrigin(overlayLayoutSize),
       target,
     });
   }, [event, targetRef]);
@@ -269,6 +286,8 @@ export default function EnergyRewardFeedback({
                     style={{
                       left: geometry.origin.x - 16,
                       top: geometry.origin.y - 16,
+                      willChange: "transform, opacity",
+                      backfaceVisibility: "hidden",
                     }}
                   >
                     <LightIcon

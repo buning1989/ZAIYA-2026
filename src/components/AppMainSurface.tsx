@@ -55,6 +55,7 @@ import EnergyRewardFeedback, {
   type EnergyRewardEvent,
 } from "./EnergyRewardFeedback";
 import EnergyBadge from "./EnergyBadge";
+import ZaizaiSpeechBubble from "./ZaizaiSpeechBubble";
 import type { Answers, RecordEntry, RecordTypeId } from "@/data/record";
 import type { OrganizeHistoryEntry } from "@/data/organize";
 import { grantEnergy } from "@/data/userProfile";
@@ -1623,8 +1624,8 @@ export default function AppMainSurface({
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, ease, delay: 0.05 }}
-                className="flex flex-col items-center"
-                style={{ paddingTop: 68 }}
+                className="flex flex-row items-center justify-center gap-1 px-2"
+                style={{ paddingTop: 88 }}
               >
                 <video
                   src="./assets/zaiya/zaiya-transparent.webm"
@@ -1633,12 +1634,16 @@ export default function AppMainSurface({
                   muted
                   playsInline
                   preload="auto"
-                  className="block h-[152px] w-[152px] select-none object-contain"
+                  className="block h-[132px] w-[116px] shrink-0 select-none object-contain"
                   style={{ transform: "scale(1.12)", transformOrigin: "center center" }}
                 />
-                <p className="mt-1 text-[13px] leading-relaxed text-ink-soft/80">
+                <ZaizaiSpeechBubble
+                  size="regular"
+                  className="-ml-2 max-w-[176px]"
+                  textClassName="text-[13px]"
+                >
                   不着急，先让自己慢下来。
-                </p>
+                </ZaizaiSpeechBubble>
               </motion.div>
 
               {/* 当前可用：呼吸法主卡片 */}
@@ -1646,7 +1651,7 @@ export default function AppMainSurface({
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, ease, delay: 0.1 }}
-                style={{ marginTop: 28 }}
+                style={{ marginTop: 30 }}
               >
                 <div className="mb-[10px] text-[13px] font-medium leading-5 text-[#7B8376]">
                   当前可用

@@ -1,7 +1,12 @@
 type TargetBounds = Pick<DOMRect, "left" | "top" | "width" | "height">;
+type OverlayBounds = Pick<DOMRect, "left" | "top" | "width" | "height">;
+type LayoutSize = {
+  width: number;
+  height: number;
+};
 
 const TARGET_SEED_Y_RATIO = 0.78;
-const PARTICLE_PATH_SAMPLE_COUNT = 9;
+const PARTICLE_PATH_SAMPLE_COUNT = 17;
 
 export type LightRewardPoint = {
   x: number;
@@ -15,16 +20,27 @@ export type LightParticlePath = {
 };
 
 export function getLightRewardTargetPoint(
-  overlayBounds: Pick<DOMRect, "left" | "top">,
+  overlayBounds: OverlayBounds,
+  overlayLayoutSize: LayoutSize,
   targetBounds: TargetBounds,
 ) {
+  const scaleX = overlayLayoutSize.width
+    ? overlayBounds.width / overlayLayoutSize.width
+    : 1;
+  const scaleY = overlayLayoutSize.height
+    ? overlayBounds.height / overlayLayoutSize.height
+    : 1;
+
   return {
-    x: targetBounds.left - overlayBounds.left + targetBounds.width / 2,
+    x:
+      (targetBounds.left - overlayBounds.left + targetBounds.width / 2) /
+      scaleX,
     // The sprout receives light at its seed/root area, below the SVG center.
     y:
-      targetBounds.top -
-      overlayBounds.top +
-      targetBounds.height * TARGET_SEED_Y_RATIO,
+      (targetBounds.top -
+        overlayBounds.top +
+        targetBounds.height * TARGET_SEED_Y_RATIO) /
+      scaleY,
   };
 }
 

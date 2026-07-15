@@ -23,6 +23,7 @@ import EnergyRewardFeedback, {
   type EnergyRewardEvent,
 } from "./EnergyRewardFeedback";
 import PhoneStatusBar from "./PhoneStatusBar";
+import ZaizaiSpeechBubble from "./ZaizaiSpeechBubble";
 
 /* —— 体验模式数据源切换（仅切换数据注入，不改变 UI/布局/交互）——
  * 体验模式首次进入「夸夸自己」时预填小晨统一夸夸卡（6 张，可追溯时间线事件）；
@@ -251,7 +252,7 @@ function HomeView({
 
       {/* 在在引导区：固定高度，避免气泡轮播时带动动画和 feed 漂移。 */}
       <section className="relative z-20 h-[96px] shrink-0 overflow-visible px-5">
-        <div className="absolute left-1/2 top-4 flex h-[88px] w-[188px] -translate-x-1/2 items-start justify-between overflow-visible">
+        <div className="absolute left-1/2 top-4 flex h-[88px] -translate-x-1/2 items-start justify-center gap-2 overflow-visible">
           <div className="relative h-[88px] w-[72px] shrink-0 overflow-visible">
             <div className="absolute left-[46%] top-1 h-[88px] w-[88px] -translate-x-1/2 scale-[1.08] overflow-visible">
               <ZaizaiVideo className="h-full w-full" />
@@ -311,7 +312,7 @@ function ZaizaiBubble({ items }: { items: string[] }) {
   }, [items.length]);
 
   return (
-    <div className="relative h-[52px] w-[120px] shrink-0 pt-2">
+    <div className="relative -ml-1 h-[52px] w-[136px] shrink-0 pt-2">
       <AnimatePresence mode="wait">
         <motion.div
           key={index}
@@ -321,24 +322,12 @@ function ZaizaiBubble({ items }: { items: string[] }) {
           transition={{ duration: 0.3, ease }}
           className="absolute inset-x-0 top-2"
         >
-          {/* 气泡主体：偏方正、轻圆角 */}
-          <div className="relative min-h-[42px] rounded-lg bg-surface-soft px-3 py-2">
-            <p className="line-clamp-2 text-[12px] leading-relaxed text-ink-soft">
-              {items[index]}
-            </p>
-            {/* 小尾巴：指向左侧的在在 */}
-            <div className="absolute -left-1.5 top-3">
-              <svg
-                width="8"
-                height="12"
-                viewBox="0 0 8 12"
-                fill="none"
-                className="text-surface-soft"
-              >
-                <path d="M0 6L8 0v12L0 6z" fill="currentColor" />
-              </svg>
-            </div>
-          </div>
+          <ZaizaiSpeechBubble
+            className="min-h-[42px]"
+            textClassName="line-clamp-2"
+          >
+            {items[index]}
+          </ZaizaiSpeechBubble>
         </motion.div>
       </AnimatePresence>
     </div>

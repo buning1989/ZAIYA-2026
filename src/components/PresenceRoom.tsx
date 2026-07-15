@@ -13,6 +13,7 @@ import {
   VolumeX,
 } from "lucide-react";
 import LazyVideo from "./LazyVideo";
+import ZaizaiSpeechBubble from "./ZaizaiSpeechBubble";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -117,7 +118,7 @@ export function SocialSceneSelectContent({
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease, delay: 0.05 }}
-        className="flex flex-row items-center justify-center gap-3 px-[18px] max-[360px]:gap-[9px] max-[360px]:px-[12px]"
+        className="flex flex-row items-center justify-center gap-1 px-[18px] max-[360px]:gap-1 max-[360px]:px-[12px]"
         style={{ marginTop: 100, marginBottom: 34 }}
       >
         <div className="flex h-[104px] w-[100px] flex-shrink-0 items-center justify-center overflow-visible max-[360px]:h-[94px] max-[360px]:w-[90px]">
@@ -133,12 +134,13 @@ export function SocialSceneSelectContent({
             style={{ transform: "scale(1.2)", transformOrigin: "center center" }}
           />
         </div>
-        <div
-          className="max-w-[178px] rounded-[16px] border bg-white px-[14px] py-[10px] text-left text-[15px] font-normal leading-[1.6] text-[#4C5348] max-[360px]:max-w-[164px] max-[360px]:px-[12px] max-[360px]:py-[9px] max-[360px]:text-[14px]"
-          style={{ borderColor: "#E1E4DE", boxShadow: "none" }}
+        <ZaizaiSpeechBubble
+          size="regular"
+          className="-ml-2 max-w-[178px] max-[360px]:max-w-[164px] max-[360px]:px-[12px] max-[360px]:py-[9px]"
+          textClassName="text-[15px] leading-[1.6] text-[#4C5348] max-[360px]:text-[14px]"
         >
           {COMPANION_COPY}
-        </div>
+        </ZaizaiSpeechBubble>
       </motion.div>
 
       {/* 已开放场景 */}

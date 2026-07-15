@@ -5,6 +5,7 @@ import { grantEnergy } from "@/data/userProfile";
 import ZaizaiVideo, { ZAIZAI_RELIEF_VIDEO_SRC } from "./ZaizaiVideo";
 import EnergyBadge from "./EnergyBadge";
 import EnergyRewardFeedback, { type EnergyRewardEvent } from "./EnergyRewardFeedback";
+import ZaizaiSpeechBubble from "./ZaizaiSpeechBubble";
 import {
   BreathingCarousel,
   BREATHING_METHODS,
@@ -452,26 +453,29 @@ export default function BreathingFlow({
             </button>
 
             {/* 在在与场景引导：左侧主视觉，右侧轻气泡。整体略下移，形成均衡三段结构上部 */}
-            <div className="flex items-center gap-3 px-6 pt-[132px]">
+            <div className="flex items-center gap-1 px-6 pt-[132px]">
               <ZaizaiVideo
                 className="h-32 w-32 shrink-0"
                 shadow={false}
               />
-              <div className="relative mt-5 min-w-0 flex-1 rounded-[24px] border border-line bg-white/82 px-4 py-3 shadow-[0_14px_34px_-26px_rgba(39,51,31,0.45)]">
-                <span className="absolute left-[-6px] top-[44%] h-3 w-3 -translate-y-1/2 rotate-45 border-b border-l border-line bg-white" />
+              <ZaizaiSpeechBubble
+                size="regular"
+                className="-ml-2 mt-5 min-w-0 flex-1"
+                textClassName="text-[13px]"
+              >
                 <AnimatePresence mode="wait">
-                  <motion.p
+                  <motion.span
                     key={SELECT_GUIDE_MESSAGES[guideIndex]}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -6 }}
                     transition={{ duration: 0.28, ease }}
-                    className="relative text-[13px] leading-relaxed text-ink-soft"
+                    className="block"
                   >
                     {SELECT_GUIDE_MESSAGES[guideIndex]}
-                  </motion.p>
+                  </motion.span>
                 </AnimatePresence>
-              </div>
+              </ZaizaiSpeechBubble>
             </div>
 
             {/* 横滑卡片（意图优先 + 左右循环横滑）- 中部 */}

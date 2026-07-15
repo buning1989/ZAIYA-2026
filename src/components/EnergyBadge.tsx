@@ -70,10 +70,10 @@ export default function EnergyBadge({
         animate={pulse ? { scale: [1, 1.08, 1] } : { scale: 1 }}
         whileTap={{ scale: 0.96 }}
         transition={{ duration: 0.36, ease }}
-        className={`grid h-8 min-w-8 place-items-center rounded-full border px-2 text-ink transition-colors hover:bg-light-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-light-warm/45 ${
+        className={`grid h-8 min-w-8 place-items-center rounded-full border bg-white px-2 text-ink transition-colors hover:border-light-warm/40 hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-light-warm/45 ${
           pulse
-            ? "border-light-warm/40 bg-light-soft shadow-[0_6px_16px_rgba(201,168,92,0.18)]"
-            : "border-light-warm/25 bg-light-soft/60"
+            ? "border-light-warm/40 shadow-[0_6px_16px_rgba(201,168,92,0.18)]"
+            : "border-light-warm/25"
         }`}
       >
         <Sprout

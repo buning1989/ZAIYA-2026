@@ -29,6 +29,7 @@ import EnergyRewardFeedback, {
 } from "./EnergyRewardFeedback";
 import EnergyBadge from "./EnergyBadge";
 import PhoneStatusBar from "./PhoneStatusBar";
+import ZaizaiSpeechBubble from "./ZaizaiSpeechBubble";
 import { MoonPhaseIcon, type MoonPhaseLevel } from "./MoonPhaseIcon";
 import { calculateBMI, getUserProfile, grantEnergy } from "@/data/userProfile";
 import {
@@ -631,7 +632,7 @@ function RecordHome({
       {/* 在在 + 最近记录气泡 */}
       {bubbles.length > 0 ? (
         // 有记录：左右结构，在在在左，气泡在右
-        <div className="flex items-start justify-center gap-3 py-4">
+        <div className="flex items-start justify-center gap-1 pb-4 pt-7">
           <ZaizaiVideo className="h-20 w-20 shrink-0" />
           <RecentBubbles items={bubbles} />
         </div>
@@ -695,7 +696,7 @@ function RecentBubbles({ items }: { items: string[] }) {
   }, [items.length]);
 
   return (
-    <div className="relative max-w-[220px]">
+    <div className="relative -ml-2 w-[156px]">
       <AnimatePresence mode="wait">
         <motion.div
           key={index}
@@ -704,24 +705,12 @@ function RecentBubbles({ items }: { items: string[] }) {
           exit={{ opacity: 0, y: -4 }}
           transition={{ duration: 0.3, ease }}
         >
-          {/* 气泡主体：偏方正、轻圆角 */}
-          <div className="relative rounded-lg bg-surface-soft px-4 py-2.5">
-            <p className="line-clamp-2 text-[12px] leading-relaxed text-ink-soft">
-              {items[index]}
-            </p>
-            {/* 小尾巴：指向左侧的在在 */}
-            <div className="absolute -left-1.5 top-3">
-              <svg
-                width="8"
-                height="12"
-                viewBox="0 0 8 12"
-                fill="none"
-                className="text-surface-soft"
-              >
-                <path d="M0 6L8 0v12L0 6z" fill="currentColor" />
-              </svg>
-            </div>
-          </div>
+          <ZaizaiSpeechBubble
+            className="px-4 py-2.5"
+            textClassName="line-clamp-2"
+          >
+            {items[index]}
+          </ZaizaiSpeechBubble>
         </motion.div>
       </AnimatePresence>
     </div>

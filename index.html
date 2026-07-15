@@ -5,12 +5,27 @@
     <link rel="icon" type="image/png" href="./favicon.png?v=20260714" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="在呀 ZÀIYA —— 面向社会功能受损青少年的陪伴式 AI 健康生活管理助手。" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="在呀 ZÀIYA" />
+    <meta property="og:title" content="在呀 ZÀIYA — 陪伴式 AI 健康生活管理助手" />
+    <meta property="og:description" content="面向社会功能受损青少年的陪伴式 AI 健康生活管理助手，帮助他们重构健康生活模式。" />
+    <meta name="twitter:card" content="summary" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- 字体样式表非阻塞加载：大陆网络下 fonts.googleapis.com 不可达时不阻塞首屏，
+         字体栈已配置完整系统回退（tailwind.config.js fontFamily） -->
     <link
       href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600&family=Cormorant+Garamond:wght@400;500;600&family=Geist:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600&family=Cormorant+Garamond:wght@400;500;600&family=Geist:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
     <title>在呀 ZÀIYA — 陪伴式 AI 健康生活管理助手</title>
     <script type="module">
       if (import.meta.hot?.on) {
