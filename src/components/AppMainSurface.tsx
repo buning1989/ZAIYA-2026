@@ -1228,7 +1228,7 @@ export default function AppMainSurface({
           effectiveMode !== "praise" &&
           effectiveMode !== "lookback" &&
           effectiveMode !== "organize" && (
-          <div className="relative">
+          <div className="relative translate-x-[5%]">
             {effectiveMode === "home" && variant === "immersive" ? (
               <ZaizaiHomeScene
                 phase={effectiveHomePhase}
@@ -1598,7 +1598,7 @@ export default function AppMainSurface({
             key="relief-select"
             pageKey="reliefSelect"
             onExit={() => setMode("home")}
-            enableDragExit={!demoEnabled}
+            enableDragExit={false}
           >
             {/* 右上角我的光入口：统一组件（floating），与记一下 / 轻社交同一位置规则 */}
             <EnergyBadge position="floating" />

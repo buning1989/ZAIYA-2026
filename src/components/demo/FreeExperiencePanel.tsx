@@ -29,7 +29,7 @@ export default function FreeExperiencePanel() {
       </p>
 
       {/* 第 4 层：弱化提示 */}
-      <p className="mt-6 text-[12px] text-ink-faint">
+      <p className="mt-6 text-[15px] text-ink-faint">
         可直接点击手机内的任一入口
       </p>
 
