@@ -23,24 +23,19 @@ type ChangeCard = {
 
 const changeCards: ChangeCard[] = [
   {
-    tag: "作息",
-    title: "入睡时间提前了一个多小时",
-    body: "两周前的这个时间，她还在凌晨一两点醒着看天花板。这两周，多数夜里在午夜前后睡着。仍有起伏。",
+    tag: "生活状态",
+    title: "生活重新有了节奏",
+    body: "她开始留意睡眠、饮食、情绪和每天发生的事。",
   },
   {
-    tag: "学业",
-    title: "她去了一趟学校，把作业交了",
-    body: "早上仍然起不来。但那天下午，她自己去了。",
+    tag: "主动参与",
+    title: "从被动支持，到主动参与",
+    body: "她开始主动记录状态、整理复诊问题，也能决定哪些信息可以分享。",
   },
   {
-    tag: "饮食",
-    title: "中午主动吃了一个面包",
-    body: "三餐还是有空格。这一格是她自己填上的。",
-  },
-  {
-    tag: "治疗配合",
-    title: "复诊前的材料，是她自己整理的",
-    body: "记了 10 天，自己整理成一份，自己按的确认，还在后面补上了最想问医生的那句话。",
+    tag: "自我察觉",
+    title: "开始重新看见自己",
+    body: "她不再只看到做不到的事，也开始看见自己已经做出的努力。",
   },
 ];
 
@@ -54,11 +49,11 @@ export default function GuidedCaseResultPage() {
 
       {/* —— B. 主标题 —— */}
       <h1 className="mt-3 text-center text-[26px] font-semibold leading-[1.5] text-ink">
-        小晨在悄无声息的发生变化
+        小晨开始重新参与自己的生活
       </h1>
 
-      {/* —— D. 四张变化证据卡片 —— */}
-      <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
+      {/* —— D. 三张变化证据卡片（横向排列） —— */}
+      <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5">
         {changeCards.map((card) => (
           <div
             key={card.title}
