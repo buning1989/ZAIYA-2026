@@ -75,7 +75,7 @@ export default function DemoPhoneFrame({
   const { screenRef, scale, logicalHeight } = useLogicalScreenScale();
 
   return (
-    <div className="aspect-[9/18] w-[min(390px,calc(100vw-32px),calc((100vh-128px)/2))] shrink-0">
+    <div className="aspect-[9/18] w-[min(390px,calc(100vw-32px),calc((100vh-190px)/2))] shrink-0">
       <div className="h-full w-full rounded-[40px] border-[7px] border-ink bg-ink p-[2px] shadow-[0_8px_40px_-12px_rgba(0,0,0,0.18)]">
         <div
           ref={screenRef}
