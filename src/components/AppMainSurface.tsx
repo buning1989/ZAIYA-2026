@@ -1207,9 +1207,7 @@ export default function AppMainSurface({
         animate={{
           top:
             effectiveMode === "home"
-              ? variant === "immersive"
-                ? "39%"
-                : "34%"
+              ? "39%" // hero 预览与 immersive Demo 首页统一角色垂直位置，避免底部图标显得"飘"
               : effectiveMode === "dialog"
                 ? "-6%"
                 : "15%",

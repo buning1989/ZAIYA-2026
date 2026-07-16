@@ -44,19 +44,20 @@ function formatTime(date: Date) {
 
 function useLogicalAppScreenScale() {
   const screenRef = useRef<HTMLDivElement>(null);
-  const [metrics, setMetrics] = useState({ scale: 1, logicalHeight: 820 });
+  const [metrics, setMetrics] = useState({ scale: 1, logicalHeight: 780 });
 
   useLayoutEffect(() => {
     const screen = screenRef.current;
     if (!screen) return;
 
     const update = () => {
-      const rect = screen.getBoundingClientRect();
-      const scale = rect.width / LOGICAL_APP_SCREEN_WIDTH;
+      const width = screen.clientWidth;
+      const height = screen.clientHeight;
+      const scale = width / LOGICAL_APP_SCREEN_WIDTH;
       if (scale <= 0) return;
       setMetrics({
         scale,
-        logicalHeight: rect.height / scale,
+        logicalHeight: height / scale,
       });
     };
 
