@@ -12,8 +12,11 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@fontsource/barlow-condensed": "^5.2.8",
+    "@fontsource/cormorant-garamond": "^5.2.11",
+    "@fontsource/geist-sans": "^5.2.5",
+    "@fontsource/hanken-grotesk": "^5.2.8",
     "@rive-app/react-canvas": "^4.17.2",
-    "@vercel/analytics": "^2.0.1",
     "clsx": "^2.1.1",
     "framer-motion": "^11.18.2",
     "lucide-react": "^0.511.0",

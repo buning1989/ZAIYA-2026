@@ -81,7 +81,7 @@ export default {
         "scene-calm": "#F1F3E8",
       },
       fontFamily: {
-        display: ['"Geist"', "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ['"Geist Sans"', '"Geist"', "ui-sans-serif", "system-ui", "sans-serif"],
         body: ['"Hanken Grotesk"', "ui-sans-serif", "system-ui", "sans-serif"],
         brand: ['"Songti SC"', '"STSong"', '"Noto Serif CJK SC"', "serif"],
         watch: [
