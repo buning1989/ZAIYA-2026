@@ -27,3 +27,5 @@ dist-ssr
 archive/
 transparent-output/
 dist-review/
+.vercel
+.env*
