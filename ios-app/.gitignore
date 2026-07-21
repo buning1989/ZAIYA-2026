@@ -31,7 +31,9 @@ yarn-error.*
 *.pem
 
 # local env files
-.env*.local
+.env
+.env.*
+!.env.example
 
 # typescript
 *.tsbuildinfo
@@ -41,5 +43,12 @@ example
 # generated native folders
 /ios
 /android
-src/app/*.bak
-src/app/*.bak2
+
+# backups and temp files
+*.bak
+*.bak2
+*.log
+*.tmp
+
+# Vercel local output
+.vercel

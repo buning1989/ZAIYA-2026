@@ -27,3 +27,16 @@ dist-ssr
 archive/
 transparent-output/
 dist-review/
+
+# Env files (never track secrets)
+.env
+.env.*
+!.env.example
+
+# Backups and temp files
+*.bak
+*.bak2
+*.tmp
+
+# Vercel local output
+.vercel
