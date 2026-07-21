@@ -1,8 +1,11 @@
-# 28 小时节点 - 真实 AI 接入验证记录
+# 28 小时节点 - 真实 AI 接入验证记录（最终版）
 
 **验证时间**：2026-07-21
 **阶段**：18～28 小时「真实 AI + 最小安全边界」
-**验证环境**：iPhone 17 Pro 模拟器（iOS 26.5）+ Vercel Preview Deployment
+**验证环境**：
+- 模拟器：iPhone 17 Pro 模拟器（iOS 26.5）
+- 真机：iPhone 16（iOS 26.5.2）
+- 服务端：Vercel Preview Deployment
 
 ## 一、服务端接口验证（Preview URL）
 
@@ -45,16 +48,38 @@
 | 9 | 请求中返回首页 | 发送中→点击"返回首页" | 请求取消，无永久 loading，重新进入状态正常 | ✅ |
 | 10 | 请求中切后台 | 发送中→Cmd+Shift+H→回前台 | 不崩溃，状态正常 | ✅ |
 
-**客户端验证结果**：10/10 通过
+**模拟器验证结果**：10/10 通过
 
-## 三、静态检查
+## 三、iOS 客户端验证（真实 iPhone）
+
+**设备**：iPhone 16（iPhone17,3），iOS 26.5.2
+**网络**：Wi-Fi 信号满格，与 Mac 同一 Wi-Fi
+**构建方式**：`npx expo run:ios --device`（development client）
+**环境变量**：EXPO_PUBLIC_API_BASE_URL 已加载
+
+| # | 测试项 | 期望 | 结果 |
+|---|---|---|---|
+| 1 | normal（睡眠困扰） | 收到真实回复 + sleep_record 行动卡 | ✅ 通过 |
+| 2 | 点击行动卡进入睡眠记录页 | 跳转 /sleep | ✅ 通过 |
+| 3 | diagnosis boundary | 不诊断，无行动卡 | ✅ 通过 |
+| 4 | medication boundary | 不提供停药/减药/加药建议，无行动卡 | ✅ 通过 |
+| 5 | high | 显示客户端固定安全兜底，无行动卡 | ✅ 通过 |
+| 6 | 断网发送 | 出现可理解的错误提示 | ✅ 通过 |
+| 7 | 恢复网络后重试 | 不重复插入用户消息 | ✅ 通过 |
+| 8 | 请求中切后台再返回 | 无永久 loading | ✅ 通过 |
+| 9 | 连续使用真实 AI ≥10 分钟 | 无闪退/重复消息/顺序错乱/按钮失效 | ✅ 通过 |
+| 10 | 整体稳定性 | 按钮持续可用 | ✅ 通过 |
+
+**真实 iPhone 验证结果**：10/10 通过
+
+## 四、静态检查
 
 | 检查项 | 结果 |
 |---|---|
 | `npx tsc --noEmit` | ✅ 通过，无错误 |
 | `npx expo-doctor` | ✅ 21/21 checks passed |
 
-## 四、安全分级契约
+## 五、安全分级契约
 
 ### normal
 - 调用模型
@@ -73,7 +98,7 @@
 - 客户端固定兜底（即使服务端返回空也显示）
 - 不返回自伤方法/工具/剂量/细节
 
-## 五、错误分类（客户端）
+## 六、错误分类（客户端）
 
 | 类型 | 触发条件 | 用户感知 |
 |---|---|---|
@@ -83,15 +108,16 @@
 | invalid_response | 响应结构非法或 reply 为空 | "没连上，再试一次？" |
 | cancelled | 主动取消（离开页面/重试） | 不显示错误，静默取消 |
 
-## 六、Git 提交记录
+## 七、Git 提交记录
 
 | commit | 类型 | 说明 |
 |---|---|---|
 | 3dc7b97 | feat | add minimal ai chat serverless endpoint |
 | f0fbf01 | fix | align ai safety response contract |
 | cd1cd02 | feat | connect native chat to real ai |
+| 4c385b7 | test | record real ai validation results（模拟器版） |
 
-## 七、修改文件清单
+## 八、修改文件清单
 
 ### 服务端
 - `api/chat.js`（新增）
@@ -105,16 +131,39 @@
 - `ios-app/src/chat/replies.ts`（删除）
 - `ios-app/.env.local`（新增，gitignored）
 
-## 八、已知问题与处理
+## 九、已知问题与处理
 
 1. **Vercel Preview SSO 保护**：初次部署 Preview 被 Vercel Authentication 保护导致 iOS 无法访问，已在 Dashboard 关闭 Preview 的 Vercel Authentication。
 2. **Vercel CLI 在 Node 26 下 fetch 失败**：切换到 Node 24 解决。
 3. **中文路径导致 vercel link 项目名生成失败**：通过 `vercel link --project zaiya --yes` 显式指定项目名绕过。
-4. **iOS 模拟器首次发送消息无反馈**：用户手动修复（具体修复方式未记录，需补充）。
+4. **iOS 首次发送消息无反馈**（测试中发现并修复，详见第十节）。
 
-## 九、28 小时节点结论
+## 十、"首次发送无反馈"根因与修复
 
-**PASS** - 真实 AI 接入完成，所有验证通过。
+**现象**：首次启动 app 后在 chat 页输入消息点击发送，无任何反馈（无 loading、无回复、无错误）。
+
+**根因**：Metro bundler 处于 CI 模式（`CI=true` 环境变量被读取），加载了缓存的旧 bundle。app 运行的是未接入真实 API 的旧代码（`replies.ts` 已删除但旧 bundle 仍引用），导致 `sendMessage` 调用失败且无错误反馈。
+
+**证据**：Metro 启动日志输出 `Metro is running in CI mode, reloads are disabled. Remove CI=true to enable watch mode.`
+
+**修复方式**（无代码修改，仅环境与缓存清理）：
+1. 终止旧 Metro 进程
+2. `unset CI` 环境变量
+3. `npx expo start --clear` 清缓存重启
+4. 模拟器/真机重启 app 加载新 bundle
+5. 新 bundle 加载成功（4162ms，1255 modules），真实 API 接入生效
+
+**修改文件**：无
+
+**所属 commit**：无（非代码修复）
+
+**真机复测**：通过
+
+**处理状态**：测试中发现并修复，不再列为已知问题。
+
+## 十一、28 小时节点最终结论
+
+**PASS** - 真实 AI 接入完成，模拟器与真实 iPhone 验证全部通过。
 
 - 用户输入 → 服务端真实模型请求 → 返回真实回复 → 显示建议行动 → 超时、断网和失败后可恢复
 - 服务端密钥只在服务端，客户端不含 API Key
@@ -122,5 +171,6 @@
 - high 级别客户端固定兜底
 - 12 秒超时 + AbortController
 - 错误分类完整（timeout/network/server/invalid_response/cancelled）
+- 真实 iPhone 连续使用 ≥10 分钟无闪退、重复消息、顺序错乱或按钮持续失效
 
 **下一阶段（28～48 小时）**：不提前实现 SQLite。
