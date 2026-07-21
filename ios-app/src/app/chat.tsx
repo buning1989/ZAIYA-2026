@@ -19,6 +19,18 @@ import { ChatMessage } from '@/chat/types';
 
 const MAX_INPUT_HEIGHT = 140;
 
+function formatErrorDiagnostic(item: ChatMessage): string {
+  const parts = [
+    item.errorType ? `type=${item.errorType}` : null,
+    item.errorStatus ? `status=${item.errorStatus}` : null,
+    item.errorRequestId ? `req=${item.errorRequestId}` : null,
+    item.errorClientRequestId ? `client=${item.errorClientRequestId}` : null,
+    item.errorDurationMs ? `${item.errorDurationMs}ms` : null,
+    item.errorAttempts ? `attempts=${item.errorAttempts}` : null,
+  ].filter(Boolean);
+  return parts.join('  ');
+}
+
 export default function ChatScreen() {
   const { messages, pending, sendMessage, retry, cancel } = useChat();
   const [input, setInput] = useState('');
@@ -50,6 +62,9 @@ export default function ChatScreen() {
         <View style={[styles.row, styles.rowAssistant]}>
           <View style={[styles.bubble, styles.bubbleAssistant, styles.bubbleError]}>
             <Text style={styles.errorText}>没连上，再试一次？</Text>
+            {__DEV__ && formatErrorDiagnostic(item).length > 0 && (
+              <Text style={styles.errorDiagnostic}>{formatErrorDiagnostic(item)}</Text>
+            )}
             <Pressable
               style={styles.retryBtn}
               onPress={() => item.retryOf && retry(item.retryOf)}
@@ -239,6 +254,11 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 14,
     color: '#60646C',
+  },
+  errorDiagnostic: {
+    fontSize: 11,
+    lineHeight: 15,
+    color: '#7B8089',
   },
   retryBtn: {
     alignSelf: 'flex-start',

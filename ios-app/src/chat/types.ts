@@ -23,4 +23,10 @@ export interface ChatMessage {
   requestId?: string;
   // 用于重试：触发本条 assistant 回复的用户消息 id
   retryOf?: string;
+  errorType?: string;
+  errorStatus?: number;
+  errorRequestId?: string;
+  errorClientRequestId?: string;
+  errorDurationMs?: number;
+  errorAttempts?: number;
 }

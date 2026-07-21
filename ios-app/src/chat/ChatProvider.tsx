@@ -99,6 +99,34 @@ function genId(): string {
   return `m_${Date.now()}_${messageSeq}`;
 }
 
+function getErrorMeta(err: unknown) {
+  if (err instanceof ChatApiError) {
+    return {
+      errorType: err.type,
+      errorStatus: err.status,
+      errorRequestId: err.requestId,
+      errorClientRequestId: err.clientRequestId,
+      errorDurationMs: err.durationMs,
+      errorAttempts: err.attempts,
+    };
+  }
+  return {
+    errorType: 'unknown',
+  };
+}
+
+function toApiHistory(messages: ChatMessage[], currentUser?: ChatApiMessage): ChatApiMessage[] {
+  const history: ChatApiMessage[] = messages
+    .filter((m) => (m.role === 'user' || m.role === 'assistant') && m.status !== 'error')
+    .map((m) => ({ role: m.role, content: m.content }));
+
+  if (currentUser) {
+    history.push(currentUser);
+  }
+
+  return history.slice(-20);
+}
+
 export function ChatProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const stateRef = useRef(state);
@@ -177,6 +205,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           dispatch({ type: 'CLEAR_PENDING' });
           return;
         }
+        const errorMeta = getErrorMeta(err);
+        console.warn('[chat] request failed', {
+          ...errorMeta,
+          messageCount: history.length,
+        });
         // 其他错误：插入 error 占位 assistant 消息，允许重试
         const errorMsg: ChatMessage = {
           id: genId(),
@@ -185,6 +218,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           status: 'error',
           createdAt: Date.now(),
           retryOf: userId,
+          ...errorMeta,
         };
         dispatch({ type: 'ADD_ASSISTANT_MESSAGE', message: errorMsg });
       } finally {
@@ -218,10 +252,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'MARK_USER_SENT', id: userMessage.id });
     }, 80);
 
-    const history: ChatApiMessage[] = stateRef.current.messages
-      .filter((m) => (m.role === 'user' || m.role === 'assistant') && m.status !== 'error')
-      .map((m) => ({ role: m.role, content: m.content }));
-    history.push({ role: 'user', content: trimmed });
+    const history = toApiHistory(stateRef.current.messages, { role: 'user', content: trimmed });
 
     // 异步发起请求（不阻塞 UI）
     void doRequest(userMessage.id, history, false);
@@ -237,13 +268,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     const userMsg = currentMessages[userIdx];
     if (!userMsg || userMsg.role !== 'user') return;
 
-    const history: ChatApiMessage[] = [];
-    for (let i = 0; i <= userIdx; i++) {
-      const m = currentMessages[i];
-      if ((m.role === 'user' || m.role === 'assistant') && m.status !== 'error') {
-        history.push({ role: m.role, content: m.content });
-      }
-    }
+    const history = toApiHistory(currentMessages.slice(0, userIdx + 1));
 
     void doRequest(userId, history, true);
   }, [doRequest]);
