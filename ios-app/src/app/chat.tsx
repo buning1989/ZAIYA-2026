@@ -13,18 +13,25 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useChat } from '@/chat/ChatProvider';
 import { ChatMessage } from '@/chat/types';
 
 const MAX_INPUT_HEIGHT = 140;
 
 export default function ChatScreen() {
-  const { messages, pending, sendMessage } = useChat();
+  const { messages, pending, sendMessage, retry, cancel } = useChat();
   const [input, setInput] = useState('');
 
   const inputRef = useRef<TextInput>(null);
   const invertedMessages = useMemo(() => [...messages].reverse(), [messages]);
+
+  // 离开页面取消请求
+  useEffect(() => {
+    return () => {
+      cancel();
+    };
+  }, [cancel]);
 
   const handleSend = () => {
     if (input.trim().length === 0 || pending) return;
@@ -36,25 +43,57 @@ export default function ChatScreen() {
 
   const renderItem = ({ item }: { item: ChatMessage }) => {
     const isUser = item.role === 'user';
+
+    // error 状态的 assistant 消息：显示重试卡片
+    if (!isUser && item.status === 'error') {
+      return (
+        <View style={[styles.row, styles.rowAssistant]}>
+          <View style={[styles.bubble, styles.bubbleAssistant, styles.bubbleError]}>
+            <Text style={styles.errorText}>没连上，再试一次？</Text>
+            <Pressable
+              style={styles.retryBtn}
+              onPress={() => item.retryOf && retry(item.retryOf)}
+              hitSlop={8}
+            >
+              <Text style={styles.retryBtnText}>重新试试</Text>
+            </Pressable>
+          </View>
+        </View>
+      );
+    }
+
     return (
-      <View
-        style={[styles.row, isUser ? styles.rowUser : styles.rowAssistant]}
-      >
-        <View
-          style={[
-            styles.bubble,
-            isUser ? styles.bubbleUser : styles.bubbleAssistant,
-          ]}
-        >
-          <Text
+      <View style={styles.col}>
+        <View style={[styles.row, isUser ? styles.rowUser : styles.rowAssistant]}>
+          <View
             style={[
-              styles.bubbleText,
-              isUser ? styles.bubbleTextUser : styles.bubbleTextAssistant,
+              styles.bubble,
+              isUser ? styles.bubbleUser : styles.bubbleAssistant,
             ]}
           >
-            {item.content}
-          </Text>
+            <Text
+              style={[
+                styles.bubbleText,
+                isUser ? styles.bubbleTextUser : styles.bubbleTextAssistant,
+              ]}
+            >
+              {item.content}
+            </Text>
+          </View>
         </View>
+        {/* 行动卡片：仅 sleep_record 显示，high 和 boundary 不显示 */}
+        {!isUser && item.suggestedAction?.type === 'sleep_record' && item.status === 'sent' && (
+          <View style={styles.actionRow}>
+            <Pressable
+              style={styles.actionCard}
+              onPress={() => router.push('/sleep')}
+              hitSlop={6}
+            >
+              <Text style={styles.actionCardText}>{item.suggestedAction.label}</Text>
+              <Text style={styles.actionCardArrow}>→</Text>
+            </Pressable>
+          </View>
+        )}
       </View>
     );
   };
@@ -147,6 +186,9 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     paddingBottom: 16,
   },
+  col: {
+    width: '100%',
+  },
   row: {
     width: '100%',
     flexDirection: 'row',
@@ -175,6 +217,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
+  bubbleError: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: 10,
+  },
   bubbleText: {
     fontSize: 16,
     lineHeight: 22,
@@ -188,6 +235,51 @@ const styles = StyleSheet.create({
   thinkingText: {
     fontSize: 14,
     color: '#60646C',
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#60646C',
+  },
+  retryBtn: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#3B7A4F',
+  },
+  retryBtnText: {
+    color: '#3B7A4F',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    marginTop: 6,
+    marginBottom: 4,
+    marginLeft: 4,
+  },
+  actionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#3B7A4F',
+  },
+  actionCardText: {
+    color: '#3B7A4F',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  actionCardArrow: {
+    color: '#3B7A4F',
+    fontSize: 14,
   },
   inputBar: {
     flexDirection: 'row',
