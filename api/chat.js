@@ -5,9 +5,9 @@
 // - 服务端密钥只在服务端（MODEL_API_KEY 永不返回客户端）
 // - 12 秒超时（AbortController）
 // - 三类安全分级：normal / boundary / high
-//   - high 级别（自伤/自杀/紧急危机）：不调用模型，直接返回固定兜底，suggestedAction 指向危机资源
-//   - boundary 级别（睡眠/药物等敏感话题）：调用模型但系统提示词禁止医疗建议
-//   - normal 级别：正常调用模型
+//   - high 级别（自伤/自杀/紧急危机）：不调用模型，直接返回固定兜底，suggestedAction=null
+//   - boundary 级别（诊断/用药调整类询问）：调用模型但系统提示词禁止诊断与调药建议
+//   - normal 级别：正常调用模型；若涉及睡眠词，suggestedAction 返回 sleep_record
 // - 统一返回 { reply, suggestedAction, safetyLevel, requestId }
 // - 不记录对话内容到日志
 
@@ -25,11 +25,13 @@ const SYSTEM_PROMPT = `你是"在在"，一个温柔、安静、不评判的陪�
 
 const BOUNDARY_SYSTEM_PROMPT = `${SYSTEM_PROMPT}
 
-本次对话触及敏感话题（如睡眠、药物）。额外要求：
-- 不要给出任何关于睡眠、安眠、药物剂量、用药时间的建议
-- 不要建议用户记录睡眠或调整用药
-- 如果用户明确询问相关话题，温和地把话题引回当下感受
-- 不要使用"建议咨询医生"等套话，先陪伴，再引导`;
+本次对话触及诊断或用药调整类话题。额外要求：
+- 不要给出任何诊断判断，不判断用户是否患有某种疾病（如抑郁症、焦虑症、双相等）
+- 不要建议停药、减药、加药或换药
+- 不要给出药物剂量、用药时间相关建议
+- 不要使用"建议咨询医生"等套话，先陪伴当下感受
+- 如果用户明确询问能否调药，温和地把话题引回当下感受，并提及可以与开药医生或其他专业人员沟通
+- 不主动提到睡眠记录或就诊行动`;
 
 // high 级别关键词：自伤 / 自杀 / 紧急危机
 const HIGH_RISK_KEYWORDS = [
@@ -57,33 +59,93 @@ const HIGH_RISK_KEYWORDS = [
   "杀掉",
   "杀了他",
   "杀了她",
+  "可能会伤害自己",
+  "今晚可能",
+  "今夜可能",
 ];
 
-// boundary 级别关键词：睡眠 / 药物
-const BOUNDARY_KEYWORDS = [
+// boundary 级别关键词：诊断类（直接匹配）
+const BOUNDARY_DIAGNOSIS_KEYWORDS = [
+  "抑郁症",
+  "抑郁",
+  "焦虑症",
+  "焦虑障碍",
+  "双相",
+  "躁郁",
+  "是不是抑郁",
+  "是不是焦虑",
+  "是不是双相",
+  "有没有病",
+  "是不是有病",
+  "心理疾病",
+  "精神疾病",
+  "精神病",
+];
+
+// boundary 级别：用药调整类（药 + 动词组合判断，覆盖"把药停了"、"停药"、"减药"等多种语序）
+const MEDICATION_ADJUST_VERBS = [
+  "停",
+  "减",
+  "换",
+  "多吃",
+  "少吃",
+  "不吃",
+  "不吃了",
+  "停了",
+  "减了",
+  "换了",
+];
+
+// boundary 级别：具体药物名（直接匹配）
+const MEDICATION_NAMES = [
+  "舍曲林",
+  "喹硫平",
+  "安定",
+  "褪黑素",
+  "百忧解",
+  "左洛复",
+  "碳酸锂",
+  "阿普唑仑",
+  "劳拉西泮",
+];
+
+function isMedicationAdjustment(text) {
+  // 包含具体药物名 → boundary
+  for (const name of MEDICATION_NAMES) {
+    if (text.includes(name)) return true;
+  }
+  // 包含 "药" 字 + 调药动词 → boundary
+  if (text.includes("药")) {
+    // "加" 单独太宽泛，必须是 "加药"
+    if (text.includes("加药")) return true;
+    for (const v of MEDICATION_ADJUST_VERBS) {
+      if (text.includes(v)) return true;
+    }
+    // 剂量/药量相关
+    if (text.includes("剂量") || text.includes("药量")) return true;
+  }
+  return false;
+}
+
+// 睡眠关键词（normal 级别）：返回 sleep_record suggestedAction
+const SLEEP_KEYWORDS = [
   "失眠",
   "睡不着",
-  "睡眠",
-  "安眠",
+  "睡不好",
   "入睡",
   "做梦",
   "噩梦",
   "早醒",
   "睡不醒",
-  "梦游",
-  "吃药",
-  "服药",
-  "漏服",
-  "药量",
-  "剂量",
-  "舍曲林",
-  "喹硫平",
-  "安定",
-  "褪黑素",
+  "睡眠",
+  "睡了",
+  "没睡",
+  "晚睡",
+  "熬夜",
 ];
 
 const HIGH_FALLBACK_REPLY =
-  "听到你说这些，我很想陪你停一下。我没办法替你承担这些，但你愿意说出口已经是很大的勇气。如果你愿意，可以联系信任的人或专业支持资源。我在这里。";
+  "听到你说今晚可能伤害自己，我很担心你现在的安全。请现在就联系身边可信任的成年人或家人，并尽量不要独处。如果你正面临立即危险，请联系当地急救服务或前往最近的急诊。";
 
 const TIMEOUT_MS = 12000;
 
@@ -91,10 +153,20 @@ function classifySafety(text) {
   for (const kw of HIGH_RISK_KEYWORDS) {
     if (text.includes(kw)) return "high";
   }
-  for (const kw of BOUNDARY_KEYWORDS) {
+  // 诊断类关键词
+  for (const kw of BOUNDARY_DIAGNOSIS_KEYWORDS) {
     if (text.includes(kw)) return "boundary";
   }
+  // 用药调整类（药 + 动词组合）
+  if (isMedicationAdjustment(text)) return "boundary";
   return "normal";
+}
+
+function shouldSuggestSleepRecord(text) {
+  for (const kw of SLEEP_KEYWORDS) {
+    if (text.includes(kw)) return true;
+  }
+  return false;
 }
 
 function isValidMessages(messages) {
@@ -139,12 +211,11 @@ export default async function handler(req, res) {
   const safetyLevel = classifySafety(lastUserMessage);
   const requestId = genRequestId();
 
-  // high 级别：不调用模型，直接返回兜底
-  // 客户端必须能识别 safetyLevel==='high' 并使用固定兜底
+  // high 级别：不调用模型，直接返回固定兜底，suggestedAction 为 null
   if (safetyLevel === "high") {
     return jsonRes(res, 200, {
       reply: HIGH_FALLBACK_REPLY,
-      suggestedAction: { type: "crisis", label: "查看支持资源" },
+      suggestedAction: null,
       safetyLevel: "high",
       requestId,
     });
@@ -193,9 +264,15 @@ export default async function handler(req, res) {
       return jsonRes(res, 502, { error: "invalid_response" });
     }
 
+    // normal 级别且包含睡眠词 → 返回 sleep_record suggestedAction
+    const suggestedAction =
+      safetyLevel === "normal" && shouldSuggestSleepRecord(lastUserMessage)
+        ? { type: "sleep_record", label: "记一下睡眠" }
+        : null;
+
     return jsonRes(res, 200, {
       reply,
-      suggestedAction: null,
+      suggestedAction,
       safetyLevel,
       requestId,
     });
