@@ -41,3 +41,5 @@ example
 # generated native folders
 /ios
 /android
+src/app/*.bak
+src/app/*.bak2

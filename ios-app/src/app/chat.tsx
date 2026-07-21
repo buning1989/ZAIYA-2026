@@ -4,17 +4,16 @@ import {
   FlatList,
   Keyboard,
   KeyboardAvoidingView,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
   Platform,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
+  TouchableWithoutFeedback,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useEffect, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useChat } from '@/chat/ChatProvider';
 import { ChatMessage } from '@/chat/types';
 
@@ -24,37 +23,15 @@ export default function ChatScreen() {
   const { messages, pending, sendMessage } = useChat();
   const [input, setInput] = useState('');
 
-  const listRef = useRef<FlatList<ChatMessage>>(null);
-  // 用户主动滚动后暂停自动滚动，直到接近底部
-  const userScrolledAwayRef = useRef(false);
   const inputRef = useRef<TextInput>(null);
-
-  const trimmed = input.trim();
-  const canSend = trimmed.length > 0 && !pending;
-
-  // 收到新消息或 pending 变化时，如果用户在底部附近，自动滚动到底
-  useEffect(() => {
-    if (messages.length === 0) return;
-    if (userScrolledAwayRef.current) return;
-    const timer = setTimeout(() => {
-      listRef.current?.scrollToEnd({ animated: true });
-    }, 60);
-    return () => clearTimeout(timer);
-  }, [messages.length, pending]);
+  const invertedMessages = useMemo(() => [...messages].reverse(), [messages]);
 
   const handleSend = () => {
-    if (!canSend) return;
+    if (input.trim().length === 0 || pending) return;
     const text = input;
     setInput('');
     inputRef.current?.clear();
     sendMessage(text);
-  };
-
-  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
-    const distanceFromBottom =
-      contentSize.height - contentOffset.y - layoutMeasurement.height;
-    userScrolledAwayRef.current = distanceFromBottom > 120;
   };
 
   const renderItem = ({ item }: { item: ChatMessage }) => {
@@ -82,6 +59,8 @@ export default function ChatScreen() {
     );
   };
 
+  const canSend = input.trim().length > 0 && !pending;
+
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <KeyboardAvoidingView
@@ -89,18 +68,23 @@ export default function ChatScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
       >
-        <Pressable style={styles.flex} onPress={() => Keyboard.dismiss()}>
+        <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
           <FlatList
-            ref={listRef}
-            data={messages}
+            style={styles.flex}
+            data={invertedMessages}
+            inverted
             keyExtractor={(item) => item.id}
             renderItem={renderItem}
             contentContainerStyle={styles.listContent}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
+            maintainVisibleContentPosition={{
+              minIndexForVisible: 0,
+              autoscrollToTopThreshold: 120,
+            }}
             keyboardShouldPersistTaps="handled"
-            onScrollToIndexFailed={() => {}}
-            ListFooterComponent={
+            keyboardDismissMode={
+              Platform.OS === 'ios' ? 'interactive' : 'on-drag'
+            }
+            ListHeaderComponent={
               pending ? (
                 <View style={[styles.row, styles.rowAssistant]}>
                   <View style={[styles.bubble, styles.bubbleAssistant]}>
@@ -111,7 +95,7 @@ export default function ChatScreen() {
               ) : null
             }
           />
-        </Pressable>
+        </TouchableWithoutFeedback>
 
         <View style={styles.inputBar}>
           <TextInput
@@ -160,8 +144,8 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 24,
+    paddingTop: 24,
+    paddingBottom: 16,
   },
   row: {
     width: '100%',
