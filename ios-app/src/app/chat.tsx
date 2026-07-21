@@ -32,7 +32,7 @@ function formatErrorDiagnostic(item: ChatMessage): string {
 }
 
 export default function ChatScreen() {
-  const { messages, pending, sendMessage, retry, cancel } = useChat();
+  const { loadState, messages, pending, sendMessage, retry, cancel, reload } = useChat();
   const [input, setInput] = useState('');
 
   const inputRef = useRef<TextInput>(null);
@@ -113,7 +113,8 @@ export default function ChatScreen() {
     );
   };
 
-  const canSend = input.trim().length > 0 && !pending;
+  const isReady = loadState === 'ready';
+  const canSend = isReady && input.trim().length > 0 && !pending;
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
@@ -123,6 +124,19 @@ export default function ChatScreen() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
       >
         <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+          {loadState === 'loading' ? (
+            <View style={styles.centerState}>
+              <ActivityIndicator size="small" color="#60646C" />
+              <Text style={styles.stateText}>正在加载历史对话</Text>
+            </View>
+          ) : loadState === 'error' ? (
+            <View style={styles.centerState}>
+              <Text style={styles.stateText}>历史对话加载失败</Text>
+              <Pressable style={styles.reloadBtn} onPress={reload} hitSlop={8}>
+                <Text style={styles.reloadBtnText}>重新加载</Text>
+              </Pressable>
+            </View>
+          ) : (
           <FlatList
             style={styles.flex}
             data={invertedMessages}
@@ -149,6 +163,7 @@ export default function ChatScreen() {
               ) : null
             }
           />
+          )}
         </TouchableWithoutFeedback>
 
         <View style={styles.inputBar}>
@@ -343,6 +358,30 @@ const styles = StyleSheet.create({
   },
   sendBtnTextDisabled: {
     color: '#9CA0A8',
+  },
+  centerState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 24,
+  },
+  stateText: {
+    fontSize: 14,
+    color: '#60646C',
+    textAlign: 'center',
+  },
+  reloadBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#3B7A4F',
+  },
+  reloadBtnText: {
+    color: '#3B7A4F',
+    fontSize: 14,
+    fontWeight: '500',
   },
   footerLink: {
     paddingHorizontal: 16,
