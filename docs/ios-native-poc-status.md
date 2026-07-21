@@ -74,6 +74,17 @@
 - 睡眠记录备注 UI（数据层已支持 note 字段，UI 未实现输入）
 - 回头看看列表/统计/趋势（当前仅展示最近一条）
 
+## 服务端代码与部署归属
+
+- 服务端文件位置：`/Users/ning/Documents/在呀 ZÀIYA/webdemo开发/api/chat.js`；`/Users/ning/zaiya-ios48h` 当前没有 `api` 目录
+- 所属分支：本地 `main` 包含服务端提交；`origin/main` 当前停在 `42c4354eab562dbc6d760e7458820d19cdbf46af`，不包含服务端提交；`spike/ios-48h` 不包含服务端提交
+- 对应 commit：`3dc7b97d8e98f97b6e195d28eb5b0ea93eaac3bc` 首次加入真实 AI Serverless endpoint；本地 `main` 后续 `f0fbf01bdafb92e15fd433d1e456d8207e3385c1` 调整 AI 安全响应契约；Web 主工作树当前还有未提交的 `api/chat.js` 本地修改
+- main 是否包含：本地 `main` 包含 `3dc7b97` 和 `f0fbf01`；`origin/main` 不包含
+- spike/ios-48h 是否包含：不包含 `3dc7b97`，当前 iOS 分支不能单独恢复服务端
+- Vercel 当前部署来源：本轮核对时最新 AI Preview 为 `zaiya-3qipy4h5u-buning1989-4923s-projects.vercel.app`，来源 `main` / `f0fbf01bdafb92e15fd433d1e456d8207e3385c1`，Vercel 记录 `source=cli`、`target=null`、`gitDirty=1`
+- 远程是否可恢复：冻结分支 `spike/ios-48h` 可恢复 iOS 客户端；服务端需从非生产备份分支 `backup/ios-poc-backend-f0fbf01` 恢复，不能从当前 `origin/main` 或 `spike/ios-48h` 恢复
+- 当前 Preview 安全状态：本次 AI 验证相关的 4 个 `webdemo` Preview 部署已删除；Preview scope 的 `MODEL_API_KEY`、`MODEL_BASE_URL`、`MODEL_NAME` 已移除；Production scope 同名变量保留；生产站点 `https://zaiya.vercel.app` 检查为 HTTP 200
+
 ## 6. 已知工程限制
 
 - 中文路径不适合当前 React Native / CocoaPods 构建，iOS 工程必须在纯英文路径运行（已通过 git worktree 隔离到 `/Users/ning/zaiya-ios48h`）
