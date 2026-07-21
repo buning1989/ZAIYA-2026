@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
-import { StyleSheet, View, Pressable, Text } from 'react-native';
+import { AppState, AppStateStatus, StyleSheet, View, Pressable, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useVideoPlayer, VideoView } from 'expo-video';
+import { useEffect, useRef } from 'react';
 
 import testVideo from '@/assets/videos/zaiya-test.mp4';
 
@@ -11,6 +12,18 @@ export default function HomeScreen() {
     p.muted = true;
     p.play();
   });
+  const playerRef = useRef(player);
+  playerRef.current = player;
+
+  // 修复：app 回到前台时恢复视频播放
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
+      if (state === 'active') {
+        playerRef.current.play();
+      }
+    });
+    return () => subscription.remove();
+  }, []);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
