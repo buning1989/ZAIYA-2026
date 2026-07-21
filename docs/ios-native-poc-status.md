@@ -78,7 +78,7 @@
 
 - 服务端文件位置：`/Users/ning/Documents/在呀 ZÀIYA/webdemo开发/api/chat.js`；`/Users/ning/zaiya-ios48h` 当前没有 `api` 目录
 - 所属分支：本地 `main` 包含服务端提交；`origin/main` 当前停在 `42c4354eab562dbc6d760e7458820d19cdbf46af`，不包含服务端提交；`spike/ios-48h` 不包含服务端提交
-- 对应 commit：`3dc7b97d8e98f97b6e195d28eb5b0ea93eaac3bc` 首次加入真实 AI Serverless endpoint；本地 `main` 后续 `f0fbf01bdafb92e15fd433d1e456d8207e3385c1` 调整 AI 安全响应契约；Web 主工作树当前还有未提交的 `api/chat.js` 本地修改
+- 对应 commit：`api/chat.js` 文件最早在 `4d0bc750c52d4514d2e007000d86fc3d74b271e0` 的预检分支中出现；本地 `main` 上真实 AI Serverless endpoint 由 `3dc7b97d8e98f97b6e195d28eb5b0ea93eaac3bc` 引入，后续 `f0fbf01bdafb92e15fd433d1e456d8207e3385c1` 调整 AI 安全响应契约；Web 主工作树当前还有未提交的 `api/chat.js` 本地修改
 - main 是否包含：本地 `main` 包含 `3dc7b97` 和 `f0fbf01`；`origin/main` 不包含
 - spike/ios-48h 是否包含：不包含 `3dc7b97`，当前 iOS 分支不能单独恢复服务端
 - Vercel 当前部署来源：本轮核对时最新 AI Preview 为 `zaiya-3qipy4h5u-buning1989-4923s-projects.vercel.app`，来源 `main` / `f0fbf01bdafb92e15fd433d1e456d8207e3385c1`，Vercel 记录 `source=cli`、`target=null`、`gitDirty=1`
